@@ -1,0 +1,40 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        
+      {
+        "name": "Backend: Debug Uvicorn",
+        "type": "debugpy",
+        "request": "launch",
+        "module": "uvicorn",
+        "args": [
+          "open_webui.main:app",
+          "--host", "0.0.0.0",
+          "--port", "8080",
+          "--reload"
+        ],
+        "env": {
+          "PYTHONPATH": "${workspaceFolder}",
+          "PORT": "8080"
+        },
+        "jinja": true,
+        "console": "integratedTerminal"
+      },
+      {
+        "name": "Frontend: Run Dev Server",
+        "type": "node",
+        "request": "launch",
+        "runtimeExecutable": "npm",
+        "runtimeArgs": ["run", "dev"],
+        "console": "integratedTerminal",
+        "cwd": "${workspaceFolder}"
+      }
+    ],
+    "compounds": [
+      {
+        "name": "Start All",
+        "configurations": ["Backend: Debug Uvicorn", "Frontend: Run Dev Server"]
+      }
+    ]
+  }
+  
