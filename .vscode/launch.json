@@ -1,40 +1,47 @@
 {
     "version": "0.2.0",
     "configurations": [
-        
-      {
-        "name": "Backend: Debug Uvicorn",
-        "type": "debugpy",
-        "request": "launch",
-        "module": "uvicorn",
-        "args": [
-          "open_webui.main:app",
-          "--host", "0.0.0.0",
-          "--port", "8080",
-          "--reload"
-        ],
-        "env": {
-          "PYTHONPATH": "${workspaceFolder}",
-          "PORT": "8080"
+        // ============================================
+        // 프론트엔드: npm run dev 실행
+        // ============================================
+        // 이 설정을 사용하기 전에 PowerShell의 실행 정책을 변경해야 합니다.
+        // 관리자 권한으로 PowerShell을 열고 다음 명령어를 실행하세요:
+        // Set-ExecutionPolicy RemoteSigned -Scope CurrentUser
+        {
+            "name": "Frontend: npm dev",
+            "type": "node-terminal",
+            "request": "launch",
+            "command": "npm run dev",
+            "cwd": "${workspaceFolder}"
         },
-        "jinja": true,
-        "console": "integratedTerminal"
-      },
-      {
-        "name": "Frontend: Run Dev Server",
-        "type": "node",
-        "request": "launch",
-        "runtimeExecutable": "npm",
-        "runtimeArgs": ["run", "dev"],
-        "console": "integratedTerminal",
-        "cwd": "${workspaceFolder}"
-      }
+        
+        // ============================================
+        // 백엔드: Uvicorn 디버깅 실행
+        // ============================================
+        {
+            "name": "Backend: Debug Uvicorn",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "uvicorn",
+            "args": [
+                "open_webui.main:app",
+                "--host", "0.0.0.0",
+                "--port", "8080",
+                "--reload"
+            ],
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}",
+                "PORT": "8080"
+            },
+            "jinja": true,
+            "console": "integratedTerminal"
+        }
     ],
     "compounds": [
-      {
-        "name": "Start All",
-        "configurations": ["Backend: Debug Uvicorn", "Frontend: Run Dev Server"]
-      }
+        {
+            "name": "Full Stack",
+            "configurations": ["Frontend: npm dev", "Backend: Debug Uvicorn"],
+            "stopAll": true
+        }
     ]
-  }
-  
+}
