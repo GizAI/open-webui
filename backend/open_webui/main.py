@@ -1192,3 +1192,11 @@ else:
     log.warning(
         f"Frontend build directory not found at '{FRONTEND_BUILD_DIR}'. Serving API only."
     )
+
+try:
+    from .main_extension import extend_app
+    app = extend_app(app)
+except ImportError as e:
+    import traceback
+    log.error(traceback.format_exc())  
+    
