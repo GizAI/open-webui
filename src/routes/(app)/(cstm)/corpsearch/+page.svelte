@@ -1,7 +1,7 @@
-<script lang="ts">
+	<script>
+		import Map from './components/Map.svelte';
+  	</script>
 	
-</script>
-
-<div>
-	corpsearch
-</div>
+	<Map />
+  
+  
