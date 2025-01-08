@@ -431,6 +431,8 @@
 	"Filter is now globally enabled": "필터가 전역적으로 활성화되었습니다",
 	"Filters": "필터",
 	"Fingerprint spoofing detected: Unable to use initials as avatar. Defaulting to default profile image.": "Fingerprint spoofing 감지: 이니셜을 아바타로 사용할 수 없습니다. 기본 프로필 이미지로 설정합니다.",
+	"Find Companies": "기업 찾기",
+	"Companies": "기업",
 	"Fluidly stream large external response chunks": "대규모 외부 응답 청크를 유연하게 스트리밍",
     "Focus chat input": "채팅 입력창에 포커스",
 	"Folder deleted successfully": "성공적으로 폴터가 생성되었습니다",
