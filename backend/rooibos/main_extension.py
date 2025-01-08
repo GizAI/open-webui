@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from starlette.middleware.base import BaseHTTPMiddleware
-from .config_extension import init_extended_config
-from open_webui.rooibos.routers import (
+from rooibos.config_extension import init_extended_config
+from rooibos.routers import (
     corpsearch)
 
 class CustomHeaderMiddleware(BaseHTTPMiddleware):

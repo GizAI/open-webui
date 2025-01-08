@@ -1194,7 +1194,7 @@ else:
     )
 
 try:
-    from .rooibos.main_extension import extend_app
+    from rooibos.main_extension import extend_app
     app = extend_app(app)
 except ImportError as e:
     import traceback
