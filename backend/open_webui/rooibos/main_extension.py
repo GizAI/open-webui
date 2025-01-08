@@ -1,6 +1,8 @@
 from fastapi import FastAPI
 from starlette.middleware.base import BaseHTTPMiddleware
 from .config_extension import init_extended_config
+from open_webui.rooibos.routers import (
+    corpsearch)
 
 class CustomHeaderMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request, call_next):
@@ -15,6 +17,8 @@ def extend_app(app: FastAPI):
     Args:
         app (FastAPI): The main FastAPI application instance
     """
+
+    app.include_router(corpsearch.router, prefix="/api/v1/corpsearch", tags=["corpsearch"])
 
     # Initialize extended configurations
     init_extended_config(app)
