@@ -16,7 +16,7 @@ const config = {
 			fallback: 'index.html'
 		}),
 		alias: {
-			$cstm: './src/cstm'
+			$rooibos: './src/rooibos'
 		}
 	},
 	onwarn: (warning, handler) => {
