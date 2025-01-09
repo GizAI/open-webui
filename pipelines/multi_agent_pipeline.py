@@ -227,9 +227,12 @@ class Tools:
 class Pipeline:
     """
     멀티 에이전트 파이프라인 예시 코드:
-    - 사용자 프롬프트를 기반으로 멀티 에이전트 사용 여부를 판단
-    - 필요한 경우 에이전트 병렬 호출 (웹 요청)
-    - 모든 결과를 종합하여 최종 결과만 반환
+    1) messages에서 사용자 요청(user_message)와 연관 있는 정보만 추출하고 정리
+    2) user_message + 정리된정보 를 GPT에 전달 -> 멀티 에이전트 필요 여부("예"/"아니오") 판단
+    3) 멀티 에이전트가 필요한 경우:
+        - 검색 에이전트: 연관 추가 검색어(JSON 배열) 추천받음 -> 병렬 검색
+        - 정리 에이전트: 검색 결과까지 종합하여 최종 답변
+    4) 필요 없다면 단일 에이전트 로직으로 즉시 응답
     """
 
     class Valves(BaseModel):
@@ -238,7 +241,7 @@ class Pipeline:
         MODEL: str = "gpt-4o-mini"
 
     def __init__(self):
-        self.name = "MultiAgent Parallel Pipeline"
+        self.name = "Web Search Pipeline"
         self.valves = self.Valves(
             **{
                 "OPENAI_API_KEY": os.getenv("OPENAI_API_KEY", "your-openai-api-key-here"),
@@ -258,7 +261,7 @@ class Pipeline:
         print(f"on_valves_updated: {__name__}")
 
     ###########################################################################
-    # 아래 부분: 검색 결과를 알아내는 헬퍼
+    # 검색 헬퍼
     ###########################################################################
     async def search_web_helper(self, query: str) -> str:
         """
@@ -270,12 +273,11 @@ class Pipeline:
         return search_results_json
 
     ###########################################################################
-    # OpenAI API 헬퍼
+    # GPT 호출 헬퍼
     ###########################################################################
     async def _call_openai_chat(self, session: aiohttp.ClientSession, messages: List[dict], stream: bool = False):
         """
         OpenAI ChatCompletion API를 호출하는 헬퍼 함수
-        (stream 모드의 처리는 간단화를 위해 생략/혹은 필요에 따라 구현)
         """
         headers = {
             "Authorization": f"Bearer {self.valves.OPENAI_API_KEY}",
@@ -293,106 +295,230 @@ class Pipeline:
             data = await resp.json()
             return data
 
-    async def _agent_worker(
-        self, 
-        session: aiohttp.ClientSession, 
-        role: str, 
-        user_prompt: str,
-        additional_messages: List[dict]
+    ###########################################################################
+    # (1) messages 중 필요한 항목만 추출하여 요약(정리)하는 함수
+    ###########################################################################
+    async def _filter_and_summarize_messages(
+        self,
+        session: aiohttp.ClientSession,
+        user_message: str,
+        messages: List[dict]
     ) -> str:
         """
-        에이전트별로 서로 다른 system 프롬프트를 구성하여 병렬로 호출.
-        role 매개변수를 통해 다른 에이전트가 될 수 있도록 설정.
-        + 기존 messages(추가된 정보 포함)도 함께 전달
+        주어진 messages 중 user_message와 직접적으로 연관 있는 부분만 추출 & 간단 요약
+        요약된 텍스트(예: consolidated_context)를 문자열 형태로 리턴
         """
-        system_prompt = f"""당신은 {role} 분야의 전문 에이전트입니다.
-이 사용자 요청에 대해, {role} 분야 관점에서 필요한 정보를 수집하기 위해 검색 및 분석/추론을 여러 단계 거쳐 최선의 답을 도출해보세요.
-반드시 단계별 접근 방식으로 생각하고, 자세한 결론을 작성 하시오
+        # 간단한 system 프롬프트 예시
+        system_prompt = """당신은 비서 역할입니다.
+사용자의 최종 질문(user_message)과 관련이 있는 messages만 골라서 추출하세요
+불필요하거나 관련 없는 메시지는 제외하세요. 요약하지 마세요
+출력은 '정리된 텍스트' 형태의 자연어로만 주세요. 
 """
-
-        # system 프롬프트 + 기존 messages + 이번 user_prompt를 합침
-        merged_messages = [
+        # user_message와 messages 내용을 합쳐서 GPT에 보냄
+        # (messages는 role=user/assistant/에이전트 등으로 이미 구성되어 있을 수 있음)
+        # 여기서는 하나의 user 메시지로 간단히 처리 (추가 가공 가능)
+        merged_prompt = (
+            f"사용자 최종 질문:\n{user_message}\n\n"
+            f"기존 메시지들:\n{messages}\n\n"
+            "이 둘을 비교해, 사용자 질문과 직접 연관된 메시지만 간단 요약해줘."
+        )
+        input_messages = [
             {"role": "system", "content": system_prompt},
-            *additional_messages,
-            {"role": "user", "content": user_prompt},
+            {"role": "user", "content": merged_prompt},
         ]
 
-        data = await self._call_openai_chat(session, merged_messages)
-        result = data["choices"][0]["message"]["content"]
-        return result
+        data = await self._call_openai_chat(session, input_messages)
+        summarized = data["choices"][0]["message"]["content"].strip()
+        return summarized
 
-    def _needs_multi_agents(self, user_message: str) -> bool:
+    ###########################################################################
+    # (2) 멀티 에이전트 필요 여부 판단
+    ###########################################################################
+    async def _ask_multi_agent_needed(
+        self,
+        session: aiohttp.ClientSession,
+        user_message: str,
+        consolidated_context: str
+    ) -> bool:
         """
-        간단한 로직으로 멀티 에이전트가 필요한지 여부를 판별하는 예시.
-        (예: 메시지 길이가 길거나 특정 키워드가 있으면 멀티에이전트로 분기)
+        user_message + consolidated_context를 종합하여 
+        '최신 웹 검색 필요 + 보고서 형태/종합 판단이 필요한지' 여부를 GPT에게 물어봄.
+        답변은 "예" 또는 "아니오"만 출력.
         """
-        keywords = ["분석", "비교", "종합", "복합", "프로젝트", "연구", "보고"]
-        if any(keyword in user_message for keyword in keywords) or len(user_message) > 30:
+        system_prompt = """당신은 판단 에이전트입니다.
+사용자의 질문이 복합적 분석, 최신 정보(웹 검색) 필요, 보고서 형태 요구 등을 포함한다면 "1" 
+단순 답변이면 "0" 만 출력하세요.
+답변은 반드시 한 글자(예 또는 아니오)만 출력합니다.
+"""
+        user_prompt = (
+            f"사용자 질문:\n{user_message}\n\n"
+            f"정리된 메시지:\n{consolidated_context}\n\n"
+            "멀티 에이전트가 필요한가? (1/0 으로만 답변)"
+        )
+        messages = [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_prompt},
+        ]
+        data = await self._call_openai_chat(session, messages)
+        answer = data["choices"][0]["message"]["content"].strip()
+
+        if "1" in answer:
             return True
-        return False
+        else:
+            return False
 
+    ###########################################################################
+    # (3-1) 검색 에이전트 -> 추가 검색어 추천
+    ###########################################################################
+    async def _search_agent_suggest_keywords(
+        self,
+        session: aiohttp.ClientSession,
+        user_message: str,
+        consolidated_context: str
+    ) -> List[str]:
+        """
+        검색 에이전트: 사용자 프롬프트 + 정리된 정보를 바탕으로
+        '아주 중요한 추가 검색어'를 JSON 배열 형태로 반환받음.
+        예: ["키워드1", "키워드2"] 
+        """
+        system_prompt = """당신은 검색 에이전트입니다.
+사용자 질문과 관련된 '추가 검색어'를 찾아야 합니다.
+최신 정보를 얻기 위해 필요한 키워드나 구체적 검색어를 1~3개 정도 추천해 주세요.
+출력은 반드시 ["검색어1", "검색어2", ...] 형태의 JSON 배열로만 주세요. 다른 말은 하지 마세요.
+"""
+        user_prompt = (
+            f"사용자 질문:\n{user_message}\n\n"
+            f"정리된 메시지:\n{consolidated_context}\n\n"
+            "중요한 추가 검색어들만 JSON 배열로 알려줘."
+        )
+        messages = [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_prompt},
+        ]
+        data = await self._call_openai_chat(session, messages)
+        keywords_str = data["choices"][0]["message"]["content"].strip()
+
+        # JSON 파싱 시도
+        try:
+            suggested_keywords = json.loads(keywords_str)
+            if isinstance(suggested_keywords, list):
+                return suggested_keywords
+            else:
+                return []
+        except:
+            return []
+
+    ###########################################################################
+    # (3-2) 정리 에이전트 -> 검색 결과와 기존 맥락 종합 최종 답변
+    ###########################################################################
+    async def _summary_agent_final_answer(
+        self,
+        session: aiohttp.ClientSession,
+        user_message: str,
+        consolidated_context: str,
+        search_results_list: List[str],
+    ) -> str:
+        """
+        정리 에이전트: 
+        - user_message + consolidated_context + (병렬 검색결과)를 모두 종합해서 최종 답변을 만듦
+        - search_results_list는 각 검색어에 대한 JSON 결과 문자열들의 목록
+        """
+        # 각 검색 키워드 결과를 순회하며 요약
+        combined_search_summary = ""
+        for idx, sr_json in enumerate(search_results_list):
+            combined_search_summary += f"\n\n[검색 {idx+1} 결과] {sr_json}"
+
+        system_prompt = """당신은 종합 정리 에이전트입니다.
+아래 자료(사용자 질문, 정리된 메시지, 검색 결과)를 종합하여 
+가장 최적의 답변을 자세히 작성해 주세요.
+"""
+        user_prompt = (
+            f"사용자 질문:\n{user_message}\n\n"
+            f"정리된 메시지:\n{consolidated_context}\n\n"
+            f"검색 결과:\n{combined_search_summary}\n\n"
+            "위 정보를 모두 종합해서 최종 답변을 작성해주세요."
+        )
+        messages = [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_prompt},
+        ]
+        data = await self._call_openai_chat(session, messages)
+        final_answer = data["choices"][0]["message"]["content"].strip()
+        return final_answer
+
+    ###########################################################################
+    # 멀티 에이전트 파이프라인 메인 로직
+    ###########################################################################
     async def pipe_async(
         self,
         user_message: str,
-        model_id: str,   # (더 이상 사용되지 않지만 시그니처 유지)
+        model_id: str,
         messages: List[dict],
         body: dict
     ) -> Union[str, Generator, Iterator]:
         """
-        멀티에이전트 로직을 수행하는 파이프라인의 핵심 메서드 (비동기 버전).
-        내부에서 사용자 프롬프트를 분석해서 멀티 에이전트가 필요한 경우
-        여러 에이전트를 병렬로 호출하고 결과를 종합해 최종 답변을 생성합니다.
+        1) messages에서 user_message와 관련있는 부분만 요약(consolidated_context)
+        2) user_message + consolidated_context -> GPT에게 물어봐서 멀티 에이전트 필요 여부 판단("예"/"아니오")
+        3) 필요하다면(예) -> 검색 에이전트로 추가 키워드 추천 -> 병렬 검색 -> 정리 에이전트로 최종 답변
+           아니면(아니오) -> 기존 단일 에이전트 로직(직접 OpenAI 호출)
         """
         print(f"pipe_async: {__name__}")
 
-        # 멀티 에이전트 필요 여부 판단
-        use_multi_agents = self._needs_multi_agents(user_message)
-        
-        async with aiohttp.ClientSession() as session:
-            if use_multi_agents:
-                # 여러 에이전트를 병렬 호출
-                print("[INFO] 멀티 에이전트 로직 시작")
-                agent_roles = ["검색", "분석", "요약"]  
-                tasks = []
-                for role in agent_roles:
-                    tasks.append(
-                        asyncio.create_task(
-                            self._agent_worker(session, role, user_message, messages)
-                        )
-                    )
-                
-                # 병렬 실행 후 결과 수집
-                results = await asyncio.gather(*tasks)
-                
-                # 중간결과를 취합하여 최종 요약을 구한다
-                combined_content = "\n\n".join(
-                    f"{agent_roles[i]} 에이전트 응답:\n{res}" for i, res in enumerate(results)
-                )
+        # 불필요한 key 제거
+        for key in ["user", "chat_id", "title"]:
+            body.pop(key, None)
 
-                # 최종 요약/응답을 얻기 위해 다시 한 번 OpenAI에 요청
-                final_system_prompt = """당신은 멀티 에이전트 시스템의 최종 종합 에이전트입니다.
-아래 여러 에이전트의 응답을 종합하여, 사용자에게 줄 최종 답변을 자세하게 보기 좋게 포멧팅해서 답변하세요. 중요한 정보는 빠뜨리지 마세요.
-"""
-                final_messages = [
-                    {"role": "system", "content": final_system_prompt},
-                    {"role": "user", "content": combined_content},
-                ]
-                final_data = await self._call_openai_chat(session, final_messages)
-                final_answer = final_data["choices"][0]["message"]["content"]
+        async with aiohttp.ClientSession() as session:
+            # (1) messages 필터링 및 요약
+            consolidated_context = await self._filter_and_summarize_messages(
+                session, user_message, messages
+            )
+            print("\n[DEBUG] consolidated_context:\n", consolidated_context)
+
+            # (2) 멀티 에이전트가 필요한지 여부 판단
+            is_multi_needed = await self._ask_multi_agent_needed(
+                session, user_message, consolidated_context
+            )
+            print(f"[DEBUG] Multi-agent needed? -> {is_multi_needed}")
+
+            if is_multi_needed:
+                print("[INFO] 멀티 에이전트 로직 시작")
+
+                # (3-1) 검색 에이전트 -> 추가 검색어 추천
+                suggested_keywords = await self._search_agent_suggest_keywords(
+                    session, user_message, consolidated_context
+                )
+                print("[DEBUG] suggested_keywords:", suggested_keywords)
+
+                # 해당 추천 검색어 각각에 대해 병렬로 웹 검색
+                search_tasks = []
+                for kw in suggested_keywords:
+                    search_tasks.append(
+                        asyncio.create_task(self.search_web_helper(kw))
+                    )
+                search_results_list = await asyncio.gather(*search_tasks)
+
+                # (3-2) 정리 에이전트 -> 최종 종합
+                final_answer = await self._summary_agent_final_answer(
+                    session,
+                    user_message,
+                    consolidated_context,
+                    search_results_list,
+                )
                 return final_answer
             else:
-                # 단일 에이전트(기존 로직) 사용 예시
+                # 단일 에이전트 로직: 그냥 GPT 한 번 호출로 끝낸다고 가정
                 print("[INFO] 단일 에이전트 로직")
                 # 기존 messages + user_message 를 활용하여 바로 API 호출
+                # 여기서 consolidated_context를 추가적으로 전달할 수도 있음
                 modified_messages = [
-                    *messages,
+                    {
+                        "role": "system",
+                        "content": "당신은 단일 에이전트입니다. 사용자 질문에 간단히 답하세요."
+                    },
+                    {"role": "assistant", "content": f"정리된 메시지: {consolidated_context}"},
                     {"role": "user", "content": user_message},
                 ]
-
-                # 불필요한 key 제거
-                for key in ["user", "chat_id", "title"]:
-                    body.pop(key, None)
-                
                 data = await self._call_openai_chat(session, modified_messages, body.get("stream", False))
                 single_answer = data["choices"][0]["message"]["content"]
                 return single_answer
@@ -407,11 +533,6 @@ class Pipeline:
         """
         asyncio.run()을 통해 비동기 함수(pipe_async)를 동기처럼 동작시키는 래퍼.
         """
-        print("---------------------------------- message ----------------------------------")
-        print(messages)
-        print("---------------------------------- user_message ----------------------------------")
-        print(user_message)
-        print("---------------------------------- body ----------------------------------")
-        print(body)
+   
         
         return asyncio.run(self.pipe_async(user_message, model_id, messages, body))
