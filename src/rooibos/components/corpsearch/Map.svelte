@@ -57,6 +57,7 @@
   let script: HTMLScriptElement;
   let searchValue: string = '';
   let showSearchList = false;
+  let isListIconVisible = true;
   const userLocation = writable(null);
 
   const handleSearch = async (searchValue: string, filters: any) => {
@@ -213,10 +214,13 @@
     }
 
     showSearchList = false;
-};
+    isListIconVisible = !isListIconVisible;
+    handleSearchListChange(false);
+  };
 
-const handleSearchListChange = (newValue: boolean) => {
-    showSearchList = newValue;
+  const handleSearchListChange = (newValue: boolean) => {
+      showSearchList = newValue;
+      isListIconVisible = newValue;
   };
 
   onMount(() => {
@@ -268,7 +272,7 @@ const handleSearchListChange = (newValue: boolean) => {
     searchValue={searchValue}
     onSearchValueChange={(value) => (searchValue = value)}
     onShowSearchListChange={handleSearchListChange}
-    isListIconVisible={true}
+    isListIconVisible={isListIconVisible}
     isFilterOpen={false}
     setIsFilterOpen={(open) => console.log('Filter open status:', open)}
     toggleFilter={(groupId) => console.log('Toggled filter group:', groupId)}
