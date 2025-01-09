@@ -56,22 +56,32 @@ class Pipeline:
             data = await resp.json()
             return data
 
-    async def _agent_worker(self, session: aiohttp.ClientSession, role: str, user_prompt: str) -> str:
+    async def _agent_worker(
+        self, 
+        session: aiohttp.ClientSession, 
+        role: str, 
+        user_prompt: str,
+        additional_messages: List[dict]
+    ) -> str:
         """
         에이전트별로 서로 다른 system 프롬프트를 구성하여 병렬로 호출.
         role 매개변수를 통해 다른 에이전트가 될 수 있도록 설정.
+        + 기존 messages(추가된 정보 포함)도 함께 전달
         """
         system_prompt = f"""당신은 {role} 분야의 전문 에이전트입니다.
-이 사용자 요청에 대해, {role} 분야 관점에서 필요한 정보를 수집하기 위해 웹검색 및 분석/추론을 여러 단계 거쳐 최선의 답을 도출해보세요.
+이 사용자 요청에 대해, {role} 분야 관점에서 필요한 정보를 수집하기 위해 검색 및 분석/추론을 여러 단계 거쳐 최선의 답을 도출해보세요.
 반드시 단계별 접근 방식으로 생각하고, 자세한 결론을 작성 하시오
 """
 
-        messages = [
+        # system 프롬프트 + 기존 messages + 이번 user_prompt를 합침
+        merged_messages = [
             {"role": "system", "content": system_prompt},
+            # 기존 대화나 사전에 검색된 정보가 들어있는 messages
+            *additional_messages,
             {"role": "user", "content": user_prompt},
         ]
 
-        data = await self._call_openai_chat(session, messages)
+        data = await self._call_openai_chat(session, merged_messages)
         # OpenAI의 ChatCompletion 응답 중 어시스턴트 메시지 추출
         result = data["choices"][0]["message"]["content"]
         return result
@@ -81,7 +91,7 @@ class Pipeline:
         간단한 로직으로 멀티 에이전트가 필요한지 여부를 판별하는 예시.
         (예: 메시지 길이가 길거나 특정 키워드가 있으면 멀티에이전트로 분기)
         """
-        keywords = ["분석", "비교", "종합", "복합", "프로젝트", "연구","보고"]
+        keywords = ["분석", "비교", "종합", "복합", "프로젝트", "연구", "보고"]
         if any(keyword in user_message for keyword in keywords) or len(user_message) > 30:
             return True
         return False
@@ -110,7 +120,12 @@ class Pipeline:
                 agent_roles = ["검색", "분석", "요약"]  # 예시로 3개
                 tasks = []
                 for role in agent_roles:
-                    tasks.append(asyncio.create_task(self._agent_worker(session, role, user_message)))
+                    # messages(추가 정보 포함)를 함께 넘겨줌
+                    tasks.append(
+                        asyncio.create_task(
+                            self._agent_worker(session, role, user_message, messages)
+                        )
+                    )
                 
                 # 병렬 실행 후 결과 수집
                 results = await asyncio.gather(*tasks)
@@ -160,4 +175,11 @@ class Pipeline:
         """
         asyncio.run()을 통해 비동기 함수(pipe_async)를 동기처럼 동작시키는 래퍼.
         """
+        print("---------------------------------- message ----------------------------------")
+        print(messages)
+        print("---------------------------------- user_message ----------------------------------")
+        print(user_message)
+        print("---------------------------------- body ----------------------------------")
+        print(body)
+        
         return asyncio.run(self.pipe_async(user_message, model_id, messages, body))
