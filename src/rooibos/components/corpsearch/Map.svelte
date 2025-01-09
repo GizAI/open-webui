@@ -8,11 +8,13 @@
   import SearchBar from './SearchBar.svelte';
 	import MenuLines from '$lib/components/icons/MenuLines.svelte';
   import { compayMarkerInfo } from './companymarkerinfo';
+  import { filterGroups } from './filterdata';
 
   import {
 		showSidebar
 	} from '$lib/stores';
 	import SearchCompanyList from './SearchCompanyList.svelte';
+	import SearchFilter from './SearchFilter.svelte';
 
   type MapInstance = {
     map: any;
@@ -48,9 +50,19 @@
     bookmark_id?: string | null;
   };
 
+  type Filters = {
+    radius?: string;
+    distance?: string;
+    representative?: string;
+    gender?: string;
+    loan?: string;
+    [key: string]: any; // Allow additional keys
+  };
+
+  let selectedFilters: Filters = {}; // Define selectedFilters with the Filters type
+
   let mapInstance: MapInstance | null = null;
   let searchResults: SearchResult[] = [];
-  let selectedFilters = {};
   let location: Location | null = null;
   let error: string | null = null;
   let loading = true;
@@ -58,6 +70,8 @@
   let searchValue: string = '';
   let showSearchList = false;
   let isListIconVisible = true;
+  let activeFilterGroup: string | null = null;
+  let isFilterOpen = false;
   const userLocation = writable(null);
 
   const handleSearch = async (searchValue: string, filters: any) => {
@@ -286,6 +300,76 @@
       }
     };
   });
+
+
+  // 필터 변경 핸들러
+  function onFilterChange(groupId: string, optionId: string, checked: boolean | string) {
+    const group = filterGroups.find((g) => g.id === groupId);
+    if (!group) return;
+  
+    const newFilters = { ...selectedFilters };
+  
+    if (groupId === 'radius' && typeof checked === 'string') {
+      newFilters[groupId] = checked;
+    } else if (
+      groupId === 'distance' ||
+      groupId === 'representative' ||
+      groupId === 'gender' || groupId === 'loan'
+    ) {
+      newFilters[groupId] = checked ? optionId : "";
+    } else if (typeof checked === 'string') {
+      newFilters[groupId] = {
+        ...(selectedFilters[groupId] as any),
+        [optionId]: checked,
+      };
+    } else if (group.isMulti) {
+      const currentValues = Array.isArray(selectedFilters[groupId])
+        ? (selectedFilters[groupId] as string[])
+        : [];
+      if (checked) {
+        newFilters[groupId] = [...currentValues, optionId];
+      } else {
+        newFilters[groupId] = currentValues.filter((id) => id !== optionId);
+      }
+    } else {
+      newFilters[groupId] = checked ? optionId : "";
+    }
+  
+    Object.keys(newFilters).forEach((key) => {
+      if (Array.isArray(newFilters[key]) && newFilters[key].length === 0) {
+        delete newFilters[key];
+      }
+      if (newFilters[key] === null) {
+        delete newFilters[key];
+      }
+    });
+  
+    selectedFilters = newFilters;
+    return newFilters;
+  }
+
+  // 필터 초기화 핸들러
+  function onReset() {
+    selectedFilters = {};
+  }
+
+  // 필터 적용 핸들러
+  function onApply() {
+    activeFilterGroup = null;
+  }
+
+  
+  const toggleFilter = (groupId: string) => {
+    if (mapInstance?.infoWindow) {
+      mapInstance.infoWindow.close();
+    }
+    activeFilterGroup = groupId === activeFilterGroup ? null : groupId;
+    isFilterOpen = (groupId !== activeFilterGroup);
+    handleSearchListChange(false);
+  };
+
+  
+
 </script>
 <div 
     class="search-bar-wrapper w-full"
@@ -299,9 +383,8 @@
     onSearchValueChange={(value) => (searchValue = value)}
     onShowSearchListChange={handleSearchListChange}
     isListIconVisible={isListIconVisible}
-    isFilterOpen={false}
-    setIsFilterOpen={(open) => console.log('Filter open status:', open)}
-    toggleFilter={(groupId) => console.log('Toggled filter group:', groupId)}
+    isFilterOpen={isFilterOpen}
+    toggleFilter={toggleFilter}
     activeFilterGroup={null}
     searchResults={searchResults}
   />
@@ -315,6 +398,20 @@
     <SearchCompanyList
       searchResults={searchResults}
       onResultClick={handleResultClick}
+    />
+  </div>
+{/if}
+
+{#if activeFilterGroup}
+  <div 
+  class="search-filter-wrapper fixed bottom-0 left-1/2 transform -translate-x-1/2 w-1/2 bg-white border-t border-gray-300 rounded-t-lg shadow-lg p-4 z-[1000]"
+  class:sidebar-visible={$showSidebar}>
+    <SearchFilter
+      {selectedFilters}
+      {onFilterChange}
+      {onReset}
+      {onApply}
+      activeGroup={activeFilterGroup}
     />
   </div>
 {/if}
@@ -401,6 +498,10 @@
 
   .company-list-wrapper.sidebar-visible {
     left: 250px !important; /* 사이드바가 보일 때 250px 만큼 띄우기 */
+  }
+
+  .search-filter-wrapper.sidebar-visible {
+    left: calc(50% + 125px);
   }
 
   #map {

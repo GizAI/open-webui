@@ -10,7 +10,6 @@
 
   export const isFilterOpen: boolean = false;
   export const activeFilterGroup: string | null = null;
-  export let setIsFilterOpen: (open: boolean) => void;
   export let toggleFilter: (groupId: string) => void;
   export let onReset: () => void;
   export let onApply: () => void;
@@ -18,7 +17,6 @@
 
   async function handleSubmit(event: SubmitEvent) {
     event.preventDefault();
-    setIsFilterOpen(false);
     await onSearch(searchValue, {});
     // input blur 처리
     const inputEl = (event.target as HTMLFormElement).querySelector('input');
