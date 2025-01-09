@@ -7,10 +7,12 @@
   import { writable } from 'svelte/store';
   import SearchBar from './SearchBar.svelte';
 	import MenuLines from '$lib/components/icons/MenuLines.svelte';
+  import { compayMarkerInfo } from './companymarkerinfo';
 
   import {
 		showSidebar
 	} from '$lib/stores';
+	import SearchCompanyList from './SearchCompanyList.svelte';
 
   type MapInstance = {
     map: any;
@@ -54,14 +56,73 @@
   let loading = true;
   let script: HTMLScriptElement;
   let searchValue: string = '';
-
+  let showSearchList = false;
   const userLocation = writable(null);
 
   const handleSearch = async (searchValue: string, filters: any) => {
-    
     if (!mapInstance) return;
-    console.log('Searching for:', searchValue, 'with filters:', filters);
+      console.log('Searching for:', searchValue, 'with filters:', filters);
+
+    try {
+      const queryParams = new URLSearchParams({
+      query: searchValue,
+      latitude: location ? location.lat.toString() : '',
+      longitude: location ? location.lng.toString() : '',
+      userLatitude: location?.lat?.toString() || '',
+      userLongitude: location?.lng?.toString() || '',
+      filters: JSON.stringify(filters)
+    });
+
+
+      const response = await fetch(`http://localhost:8080/api/v1/corpsearch?${queryParams.toString()}`, {
+        method: 'GET',
+      });
+
+      if (!response.ok) {
+        throw new Error('검색 요청 실패');
+      }
+
+      const data = await response.json();
+      searchResults = data.data;
+      showSearchList = true;
+
+      if (mapInstance?.companyMarkers) {
+        mapInstance.companyMarkers.forEach(marker => marker.setMap(null));
+        mapInstance.companyMarkers = [];
+      }
+
+      if (mapInstance?.marker) {
+        mapInstance.marker.setMap(null);
+      }
+
+      searchResults.forEach(result => {
+        const point = new naver.maps.LatLng(
+          parseFloat(result.latitude),
+          parseFloat(result.longitude)
+        );
+        
+        if (mapInstance) {
+          const marker = new naver.maps.Marker({
+            position: point,
+            map: mapInstance.map,
+            title: result.company_name,
+          });
+
+          naver.maps.Event.addListener(marker, 'click', () => {
+            mapInstance?.infoWindow.close();
+            mapInstance?.infoWindow.setContent(compayMarkerInfo(result));
+            mapInstance?.infoWindow.open(mapInstance.map, marker);
+          });
+          mapInstance.companyMarkers.push(marker);
+        }
+
+      });
+
+    } catch (error) {
+      console.error('검색 중 오류가 발생했습니다:', error);
+    }
   };
+
 
   const handleReset = () => {
     selectedFilters = {};
@@ -93,6 +154,7 @@
     const marker = new naver.maps.Marker({
       position: new naver.maps.LatLng(position.lat, position.lng),
       map: map,
+      
     });
 
     const infoWindow = new naver.maps.InfoWindow({
@@ -127,6 +189,34 @@
     const currentLocation = new naver.maps.LatLng(location.lat, location.lng);
     mapInstance.map.setCenter(currentLocation);
     mapInstance.map.setZoom(15);
+  };
+
+  const handleResultClick = (result: SearchResult) => {
+    if (!mapInstance) return;
+
+    const point = new naver.maps.LatLng(
+        parseFloat(result.latitude),
+        parseFloat(result.longitude)
+    );
+
+    mapInstance.map.setCenter(point);
+    mapInstance.map.setZoom(15);
+    mapInstance.infoWindow.close();
+    mapInstance.infoWindow.setContent(compayMarkerInfo(result));
+
+    const marker = mapInstance.companyMarkers.find(
+        (m) => m.getTitle() === result.company_name
+    );
+
+    if (marker) {
+        mapInstance.infoWindow.open(mapInstance.map, marker);
+    }
+
+    showSearchList = false;
+};
+
+const handleSearchListChange = (newValue: boolean) => {
+    showSearchList = newValue;
   };
 
   onMount(() => {
@@ -177,9 +267,7 @@
     onApply={handleApply}
     searchValue={searchValue}
     onSearchValueChange={(value) => (searchValue = value)}
-    handleListIconClick={() => {
-      console.log('List icon clicked');
-    }}
+    onShowSearchListChange={handleSearchListChange}
     isListIconVisible={true}
     isFilterOpen={false}
     setIsFilterOpen={(open) => console.log('Filter open status:', open)}
@@ -188,6 +276,18 @@
     searchResults={searchResults}
   />
 </div>
+
+{#if searchResults.length > 0 && showSearchList}
+  <div 
+  class="company-list-wrapper w-full"
+  class:sidebar-visible={$showSidebar}
+  >
+    <SearchCompanyList
+      searchResults={searchResults}
+      onResultClick={handleResultClick}
+    />
+  </div>
+{/if}
 
 {#if loading}
   <div class="absolute inset-0 flex items-center justify-center bg-white/80 z-10">
@@ -259,8 +359,24 @@
     left: calc(50% + 125px);
   }
 
+  .company-list-wrapper {
+    position: absolute;
+    top: 80px;
+    right: 0;
+    z-index: 40;
+    transition: all 0.3s ease;
+    padding: 0 20px;
+    left: 0; /* 기본적으로 전체 화면 사용 */
+  }
+
+  .company-list-wrapper.sidebar-visible {
+    left: 250px !important; /* 사이드바가 보일 때 250px 만큼 띄우기 */
+  }
+
   #map {
     position: relative;
   }
+
+  
 </style>
 
