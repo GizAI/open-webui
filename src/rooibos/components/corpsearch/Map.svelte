@@ -56,7 +56,6 @@
   let script: HTMLScriptElement;
   let searchValue: string = '';
   let showSearchList = false;
-
   const userLocation = writable(null);
 
   const handleSearch = async (searchValue: string, filters: any) => {
@@ -218,6 +217,10 @@
     showSearchList = false;
 };
 
+const handleSearchListChange = (newValue: boolean) => {
+    showSearchList = newValue;
+  };
+
   onMount(() => {
     const initialize = async () => {
       try {
@@ -266,9 +269,7 @@
     onApply={handleApply}
     searchValue={searchValue}
     onSearchValueChange={(value) => (searchValue = value)}
-    handleListIconClick={() => {
-      console.log('List icon clicked');
-    }}
+    onShowSearchListChange={handleSearchListChange}
     isListIconVisible={true}
     isFilterOpen={false}
     setIsFilterOpen={(open) => console.log('Filter open status:', open)}

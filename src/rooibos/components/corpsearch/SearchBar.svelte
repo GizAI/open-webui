@@ -6,8 +6,7 @@
   export let onSearch: (searchValue: string, selectedFilters: any) => Promise<void>;
   export let searchValue: string;
   export let onSearchValueChange: (value: string) => void;
-  export let handleListIconClick: () => void;
-  export let isListIconVisible: boolean = false;
+  export let isListIconVisible: boolean = true;
 
   export const isFilterOpen: boolean = false;
   export const activeFilterGroup: string | null = null;
@@ -15,6 +14,7 @@
   export let toggleFilter: (groupId: string) => void;
   export let onReset: () => void;
   export let onApply: () => void;
+  export let onShowSearchListChange: (value: boolean) => void; // Add this prop
 
   async function handleSubmit(event: SubmitEvent) {
     event.preventDefault();
@@ -23,6 +23,11 @@
     // input blur 처리
     const inputEl = (event.target as HTMLFormElement).querySelector('input');
     inputEl?.blur();
+  }
+  
+  function handleListIconClick() {
+    isListIconVisible = !isListIconVisible;
+    onShowSearchListChange(isListIconVisible);
   }
 
   function handleAction(action: 'reset' | 'apply') {
@@ -85,9 +90,9 @@
         class="text-gray-700 hover:text-blue-600 transition-colors p-1 rounded-full hover:bg-blue-50"
       >
         {#if typeof isListIconVisible !== 'undefined' && !isListIconVisible}
-          <Map class="h-6 w-6" />
+        <List class="h-6 w-6" />
         {:else}
-          <List class="h-6 w-6" />
+        <Map class="h-6 w-6" />
         {/if}
     
       </button>
