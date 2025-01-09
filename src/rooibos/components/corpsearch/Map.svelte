@@ -60,33 +60,61 @@
   const userLocation = writable(null);
 
   const handleSearch = async (searchValue: string, filters: any) => {
-  if (!mapInstance) return;
-  console.log('Searching for:', searchValue, 'with filters:', filters);
+    if (!mapInstance) return;
+      console.log('Searching for:', searchValue, 'with filters:', filters);
 
-  try {
-    // GET 요청 예시 (필요에 따라 POST, PUT 등 변경 가능)
-    // 쿼리 스트링 형태로 searchValue, filters 등을 전달
-    const queryParams = new URLSearchParams({
-      query: searchValue,
-      filters: JSON.stringify(filters),
-    });
+    try {
+      // GET 요청 예시 (필요에 따라 POST, PUT 등 변경 가능)
+      // 쿼리 스트링 형태로 searchValue, filters 등을 전달
+      const queryParams = new URLSearchParams({
+        query: searchValue,
+        filters: JSON.stringify(filters),
+      });
 
-    const response = await fetch(`http://localhost:8080/api/v1/corpsearch?${queryParams.toString()}`, {
-      method: 'GET',
-    });
+      const response = await fetch(`http://localhost:8080/api/v1/corpsearch?${queryParams.toString()}`, {
+        method: 'GET',
+      });
 
-    if (!response.ok) {
-      throw new Error('검색 요청 실패');
+      if (!response.ok) {
+        throw new Error('검색 요청 실패');
+      }
+
+      const data = await response.json();
+      searchResults = data.data;
+      showSearchList = true;
+
+      if (mapInstance?.companyMarkers) {
+        mapInstance.companyMarkers.forEach(marker => marker.setMap(null));
+        mapInstance.companyMarkers = [];
+      }
+
+      searchResults.forEach(result => {
+        const point = new naver.maps.LatLng(
+          parseFloat(result.latitude),
+          parseFloat(result.longitude)
+        );
+        
+        if (mapInstance) {
+          const marker = new naver.maps.Marker({
+            position: point,
+            map: mapInstance.map,
+            title: result.company_name,
+          });
+
+          naver.maps.Event.addListener(marker, 'click', () => {
+            mapInstance?.infoWindow.close();
+            mapInstance?.infoWindow.setContent(compayMarkerInfo(result));
+            mapInstance?.infoWindow.open(mapInstance.map, marker);
+          });
+          mapInstance.companyMarkers.push(marker);
+        }
+
+      });
+
+    } catch (error) {
+      console.error('검색 중 오류가 발생했습니다:', error);
     }
-
-    const data = await response.json();
-    searchResults = data.data;
-    showSearchList = true;
-
-  } catch (error) {
-    console.error('검색 중 오류가 발생했습니다:', error);
-  }
-};
+  };
 
 
   const handleReset = () => {
@@ -168,35 +196,27 @@
 
   const handleResultClick = (result: SearchResult) => {
     if (!mapInstance) return;
-    
+
     const point = new naver.maps.LatLng(
-      parseFloat(result.latitude),
-      parseFloat(result.longitude)
+        parseFloat(result.latitude),
+        parseFloat(result.longitude)
     );
-    
-    if (mapInstance.companyMarkers) {
-      mapInstance.companyMarkers.forEach(marker => marker.setMap(null));
-      mapInstance.companyMarkers = [];
-    }
 
-    const marker = new naver.maps.Marker({
-      position: point,
-      map: mapInstance.map,
-      title: result.company_name
-    });
-
-    mapInstance.companyMarkers.push(marker);
-    
     mapInstance.map.setCenter(point);
     mapInstance.map.setZoom(15);
+    mapInstance.infoWindow.close();
+    mapInstance.infoWindow.setContent(compayMarkerInfo(result));
+
+    const marker = mapInstance.companyMarkers.find(
+        (m) => m.getTitle() === result.company_name
+    );
 
     if (marker) {
-      mapInstance.infoWindow.setContent(compayMarkerInfo(result));
-      mapInstance.infoWindow.open(mapInstance.map, marker);
+        mapInstance.infoWindow.open(mapInstance.map, marker);
     }
-    
+
     showSearchList = false;
-}
+};
 
   onMount(() => {
     const initialize = async () => {

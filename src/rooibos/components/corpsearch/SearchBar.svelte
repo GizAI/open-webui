@@ -75,7 +75,7 @@
   </form>
 
   <!-- 지도/리스트 전환 버튼 + 필터 버튼 -->
-  <div class="flex items-start gap-2 mt-2">
+  <div class="absolute left-1/2 transform -translate-x-1/2  z-10 flex items-center gap-2">
     {#if searchResults.length > 0}
     <!-- 지도/리스트 전환 버튼 -->
       <button
@@ -92,7 +92,7 @@
     
       </button>
       
-      <div class="flex flex-wrap gap-2">
+      <div class="flex items-start gap-2 w-full">
         {#each filterGroups as group}
             <button
               type="button"
