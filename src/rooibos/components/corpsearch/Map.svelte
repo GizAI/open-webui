@@ -8,11 +8,13 @@
   import SearchBar from './SearchBar.svelte';
 	import MenuLines from '$lib/components/icons/MenuLines.svelte';
   import { compayMarkerInfo } from './companymarkerinfo';
+  import { filterGroups } from './filterdata';
 
   import {
 		showSidebar
 	} from '$lib/stores';
 	import SearchCompanyList from './SearchCompanyList.svelte';
+	import SearchFilter from './SearchFilter.svelte';
 
   type MapInstance = {
     map: any;
@@ -48,59 +50,97 @@
     bookmark_id?: string | null;
   };
 
+  type Filters = {
+    radius?: string;
+    distance?: string;
+    representative?: string;
+    gender?: string;
+    loan?: string;
+    [key: string]: any; // Allow additional keys
+  };
+
+  let selectedFilters: Filters = {}; // Define selectedFilters with the Filters type
+
   let mapInstance: MapInstance | null = null;
   let searchResults: SearchResult[] = [];
-  let selectedFilters = {};
   let location: Location | null = null;
   let error: string | null = null;
   let loading = true;
   let script: HTMLScriptElement;
   let searchValue: string = '';
   let showSearchList = false;
+  let isListIconVisible = true;
+  let activeFilterGroup: string | null = null;
+  let isFilterOpen = false;
   const userLocation = writable(null);
 
   const handleSearch = async (searchValue: string, filters: any) => {
-    if (!mapInstance) return;
-      console.log('Searching for:', searchValue, 'with filters:', filters);
+  if (!mapInstance) return;
+  console.log('Searching for:', searchValue, 'with filters:', filters);
 
-    try {
-      const queryParams = new URLSearchParams({
+  try {
+    const queryParams = new URLSearchParams({
       query: searchValue,
       latitude: location ? location.lat.toString() : '',
       longitude: location ? location.lng.toString() : '',
       userLatitude: location?.lat?.toString() || '',
       userLongitude: location?.lng?.toString() || '',
-      filters: JSON.stringify(filters)
+      filters: JSON.stringify(filters),
     });
 
+    const response = await fetch(`http://localhost:8080/api/v1/corpsearch?${queryParams.toString()}`, {
+      method: 'GET',
+    });
 
-      const response = await fetch(`http://localhost:8080/api/v1/corpsearch?${queryParams.toString()}`, {
-        method: 'GET',
+    if (!response.ok) {
+      throw new Error('검색 요청 실패');
+    }
+
+    const data = await response.json();
+    searchResults = data.data;
+    showSearchList = true;
+
+    if (mapInstance?.companyMarkers) {
+      mapInstance.companyMarkers.forEach((marker) => marker.setMap(null));
+      mapInstance.companyMarkers = [];
+    }
+
+    if (mapInstance?.marker) {
+      mapInstance.marker.setMap(null);
+    }
+
+    if (searchResults.length === 1) {
+      const singleResult = searchResults[0];
+      const singlePoint = new naver.maps.LatLng(
+        parseFloat(singleResult.latitude),
+        parseFloat(singleResult.longitude)
+      );
+
+      mapInstance?.map.setCenter(singlePoint);
+      mapInstance?.map.setZoom(15);
+
+      const marker = new naver.maps.Marker({
+        position: singlePoint,
+        map: mapInstance.map,
+        title: singleResult.company_name,
       });
 
-      if (!response.ok) {
-        throw new Error('검색 요청 실패');
-      }
+      naver.maps.Event.addListener(marker, 'click', () => {
+        mapInstance?.infoWindow.setContent(compayMarkerInfo(singleResult));
+        mapInstance?.infoWindow.open(mapInstance.map, marker);
+      });
 
-      const data = await response.json();
-      searchResults = data.data;
-      showSearchList = true;
+      mapInstance.companyMarkers.push(marker);
 
-      if (mapInstance?.companyMarkers) {
-        mapInstance.companyMarkers.forEach(marker => marker.setMap(null));
-        mapInstance.companyMarkers = [];
-      }
-
-      if (mapInstance?.marker) {
-        mapInstance.marker.setMap(null);
-      }
-
-      searchResults.forEach(result => {
+      mapInstance.infoWindow.setContent(compayMarkerInfo(singleResult));
+      mapInstance.infoWindow.open(mapInstance.map, marker);
+    } else {
+      searchResults.forEach((result) => {
         const point = new naver.maps.LatLng(
           parseFloat(result.latitude),
           parseFloat(result.longitude)
         );
-        
+
         if (mapInstance) {
           const marker = new naver.maps.Marker({
             position: point,
@@ -115,13 +155,14 @@
           });
           mapInstance.companyMarkers.push(marker);
         }
-
       });
+    }    
+    activeFilterGroup = null;
+  } catch (error) {
+    console.error('검색 중 오류가 발생했습니다:', error);
+  }
+};
 
-    } catch (error) {
-      console.error('검색 중 오류가 발생했습니다:', error);
-    }
-  };
 
 
   const handleReset = () => {
@@ -169,6 +210,7 @@
 
     naver.maps.Event.addListener(map, 'click', () => {
       infoWindow.close();
+      handleSearchListChange(false);
     });
 
     document.addEventListener('keydown', (e) => {
@@ -213,10 +255,13 @@
     }
 
     showSearchList = false;
-};
+    isListIconVisible = !isListIconVisible;
+    handleSearchListChange(false);
+  };
 
-const handleSearchListChange = (newValue: boolean) => {
-    showSearchList = newValue;
+  const handleSearchListChange = (newValue: boolean) => {
+      showSearchList = newValue;
+      isListIconVisible = newValue;
   };
 
   onMount(() => {
@@ -256,6 +301,76 @@ const handleSearchListChange = (newValue: boolean) => {
       }
     };
   });
+
+
+  // 필터 변경 핸들러
+  function onFilterChange(groupId: string, optionId: string, checked: boolean | string) {
+    const group = filterGroups.find((g) => g.id === groupId);
+    if (!group) return;
+  
+    const newFilters = { ...selectedFilters };
+  
+    if (groupId === 'radius' && typeof checked === 'string') {
+      newFilters[groupId] = checked;
+    } else if (
+      groupId === 'distance' ||
+      groupId === 'representative' ||
+      groupId === 'gender' || groupId === 'loan'
+    ) {
+      newFilters[groupId] = checked ? optionId : "";
+    } else if (typeof checked === 'string') {
+      newFilters[groupId] = {
+        ...(selectedFilters[groupId] as any),
+        [optionId]: checked,
+      };
+    } else if (group.isMulti) {
+      const currentValues = Array.isArray(selectedFilters[groupId])
+        ? (selectedFilters[groupId] as string[])
+        : [];
+      if (checked) {
+        newFilters[groupId] = [...currentValues, optionId];
+      } else {
+        newFilters[groupId] = currentValues.filter((id) => id !== optionId);
+      }
+    } else {
+      newFilters[groupId] = checked ? optionId : "";
+    }
+  
+    Object.keys(newFilters).forEach((key) => {
+      if (Array.isArray(newFilters[key]) && newFilters[key].length === 0) {
+        delete newFilters[key];
+      }
+      if (newFilters[key] === null) {
+        delete newFilters[key];
+      }
+    });
+  
+    selectedFilters = newFilters;
+    return newFilters;
+  }
+
+  // 필터 초기화 핸들러
+  function onReset() {
+    selectedFilters = {};
+  }
+
+  // 필터 적용 핸들러
+  function onApply() {
+    activeFilterGroup = null;
+  }
+
+  
+  const toggleFilter = (groupId: string) => {
+    if (mapInstance?.infoWindow) {
+      mapInstance.infoWindow.close();
+    }
+    activeFilterGroup = groupId === activeFilterGroup ? null : groupId;
+    isFilterOpen = (groupId !== activeFilterGroup);
+    handleSearchListChange(false);
+  };
+
+  
+
 </script>
 <div 
     class="search-bar-wrapper w-full"
@@ -268,10 +383,9 @@ const handleSearchListChange = (newValue: boolean) => {
     searchValue={searchValue}
     onSearchValueChange={(value) => (searchValue = value)}
     onShowSearchListChange={handleSearchListChange}
-    isListIconVisible={true}
-    isFilterOpen={false}
-    setIsFilterOpen={(open) => console.log('Filter open status:', open)}
-    toggleFilter={(groupId) => console.log('Toggled filter group:', groupId)}
+    isListIconVisible={isListIconVisible}
+    isFilterOpen={isFilterOpen}
+    toggleFilter={toggleFilter}
     activeFilterGroup={null}
     searchResults={searchResults}
   />
@@ -285,6 +399,20 @@ const handleSearchListChange = (newValue: boolean) => {
     <SearchCompanyList
       searchResults={searchResults}
       onResultClick={handleResultClick}
+    />
+  </div>
+{/if}
+
+{#if activeFilterGroup}
+  <div 
+  class="search-filter-wrapper fixed bottom-0 left-1/2 transform -translate-x-1/2 w-1/2 bg-white border-t border-gray-300 rounded-t-lg shadow-lg p-4 z-[1000]"
+  class:sidebar-visible={$showSidebar}>
+    <SearchFilter
+      {selectedFilters}
+      {onFilterChange}
+      {onReset}
+      {onApply}
+      activeGroup={activeFilterGroup}
     />
   </div>
 {/if}
@@ -326,7 +454,7 @@ const handleSearchListChange = (newValue: boolean) => {
 
 <button
   on:click={moveToCurrentLocation}
-  class="absolute bottom-20 right-5 bg-transparent border rounded-full w-12 h-12 flex items-center justify-center shadow-lg z-50"
+  class="absolute bottom-20 right-5 bg-transparent border rounded-full w-12 h-12 flex items-center justify-center shadow-lg z-30 hover:bg-gray-100"
 >
   <svg
     xmlns="http://www.w3.org/2000/svg"
@@ -371,6 +499,10 @@ const handleSearchListChange = (newValue: boolean) => {
 
   .company-list-wrapper.sidebar-visible {
     left: 250px !important; /* 사이드바가 보일 때 250px 만큼 띄우기 */
+  }
+
+  .search-filter-wrapper.sidebar-visible {
+    left: calc(50% + 125px);
   }
 
   #map {

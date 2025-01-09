@@ -6,11 +6,10 @@
   export let onSearch: (searchValue: string, selectedFilters: any) => Promise<void>;
   export let searchValue: string;
   export let onSearchValueChange: (value: string) => void;
-  export let isListIconVisible: boolean = true;
+  export let isListIconVisible: boolean;
 
   export const isFilterOpen: boolean = false;
   export const activeFilterGroup: string | null = null;
-  export let setIsFilterOpen: (open: boolean) => void;
   export let toggleFilter: (groupId: string) => void;
   export let onReset: () => void;
   export let onApply: () => void;
@@ -18,7 +17,6 @@
 
   async function handleSubmit(event: SubmitEvent) {
     event.preventDefault();
-    setIsFilterOpen(false);
     await onSearch(searchValue, {});
     // input blur 처리
     const inputEl = (event.target as HTMLFormElement).querySelector('input');
@@ -26,8 +24,8 @@
   }
   
   function handleListIconClick() {
-    isListIconVisible = !isListIconVisible;
-    onShowSearchListChange(isListIconVisible);
+    const newValue = !isListIconVisible;
+    onShowSearchListChange(newValue);
   }
 
   function handleAction(action: 'reset' | 'apply') {
@@ -83,19 +81,18 @@
   <div class="absolute left-1/2 transform -translate-x-1/2  z-10 flex items-center gap-2">
     {#if searchResults.length > 0}
     <!-- 지도/리스트 전환 버튼 -->
-      <button
-        type="button"
-        on:click={handleListIconClick}
-        aria-label={isListIconVisible ? "지도 보기" : "리스트 보기"}
-        class="text-gray-700 hover:text-blue-600 transition-colors p-1 rounded-full hover:bg-blue-50"
-      >
-        {#if typeof isListIconVisible !== 'undefined' && !isListIconVisible}
-        <List class="h-6 w-6" />
-        {:else}
-        <Map class="h-6 w-6" />
-        {/if}
-    
-      </button>
+    <button
+    type="button"
+    on:click={handleListIconClick}
+    aria-label={isListIconVisible ? "지도 보기" : "리스트 보기"}
+    class="text-gray-700 hover:text-blue-600 transition-colors p-1 rounded-full hover:bg-blue-50"
+  >
+    {#if isListIconVisible}
+      <Map class="h-6 w-6" />
+    {:else}
+      <List class="h-6 w-6" />
+    {/if}
+  </button>
       
       <div class="flex items-start gap-2 w-full">
         {#each filterGroups as group}
