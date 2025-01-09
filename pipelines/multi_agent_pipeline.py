@@ -534,5 +534,6 @@ class Pipeline:
         asyncio.run()을 통해 비동기 함수(pipe_async)를 동기처럼 동작시키는 래퍼.
         """
    
+        #todo 상황에 맞는 파이프 라인 생성 및 질문에 적합한 pipeline 을 AI 가 선택하게 하고 수행 하도록 
         
         return asyncio.run(self.pipe_async(user_message, model_id, messages, body))
