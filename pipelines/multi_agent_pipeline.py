@@ -4,6 +4,226 @@ import aiohttp
 from typing import List, Union, Generator, Iterator
 from pydantic import BaseModel
 
+###############################################################################
+# 검색 관련 헬퍼 기능 
+###############################################################################
+import requests
+from datetime import datetime
+import json
+from requests import get
+from bs4 import BeautifulSoup
+import concurrent.futures
+from html.parser import HTMLParser
+from urllib.parse import urlparse, urljoin
+import re
+import unicodedata
+from pydantic import BaseModel, Field
+import asyncio
+from typing import Callable, Any
+
+
+class HelpFunctions:
+    def __init__(self):
+        pass
+
+    def get_base_url(self, url):
+        parsed_url = urlparse(url)
+        base_url = f"{parsed_url.scheme}://{parsed_url.netloc}"
+        return base_url
+
+    def generate_excerpt(self, content, max_length=200):
+        return content[:max_length] + "..." if len(content) > max_length else content
+
+    def format_text(self, original_text):
+        soup = BeautifulSoup(original_text, "html.parser")
+        formatted_text = soup.get_text(separator=" ", strip=True)
+        formatted_text = unicodedata.normalize("NFKC", formatted_text)
+        formatted_text = re.sub(r"\s+", " ", formatted_text)
+        formatted_text = formatted_text.strip()
+        formatted_text = self.remove_emojis(formatted_text)
+        return formatted_text
+
+    def remove_emojis(self, text):
+        return "".join(c for c in text if not unicodedata.category(c).startswith("So"))
+
+    def process_search_result(self, result, valves):
+        title_site = self.remove_emojis(result["title"])
+        url_site = result["url"]
+        snippet = result.get("content", "")
+
+        if valves.IGNORED_WEBSITES:
+            base_url = self.get_base_url(url_site)
+            if any(
+                ignored_site.strip() in base_url
+                for ignored_site in valves.IGNORED_WEBSITES.split(",")
+            ):
+                return None
+
+        try:
+            response_site = requests.get(url_site, timeout=20)
+            response_site.raise_for_status()
+            html_content = response_site.text
+
+            soup = BeautifulSoup(html_content, "html.parser")
+            content_site = self.format_text(soup.get_text(separator=" ", strip=True))
+
+            truncated_content = self.truncate_to_n_words(
+                content_site, valves.PAGE_CONTENT_WORDS_LIMIT
+            )
+
+            return {
+                "title": title_site,
+                "url": url_site,
+                "content": truncated_content,
+                "snippet": self.remove_emojis(snippet),
+            }
+
+        except requests.exceptions.RequestException:
+            return None
+
+    def truncate_to_n_words(self, text, token_limit):
+        tokens = text.split()
+        truncated_tokens = tokens[:token_limit]
+        return " ".join(truncated_tokens)
+
+
+class Tools:
+    class Valves(BaseModel):
+        SEARXNG_ENGINE_API_BASE_URL: str = Field(
+            default="http://45.132.75.98:8089/search",
+            description="The base URL for Search Engine",
+        )
+        IGNORED_WEBSITES: str = Field(
+            default="",
+            description="Comma-separated list of websites to ignore",
+        )
+        RETURNED_SCRAPPED_PAGES_NO: int = Field(
+            default=3,
+            description="The number of Search Engine Results to Parse",
+        )
+        SCRAPPED_PAGES_NO: int = Field(
+            default=5,
+            description="Total pages scapped. Ideally greater than one of the returned pages",
+        )
+        PAGE_CONTENT_WORDS_LIMIT: int = Field(
+            default=5000,
+            description="Limit words content for each page.",
+        )
+        CITATION_LINKS: bool = Field(
+            default=False,
+            description="If True, (previously) used for custom citations with links",
+        )
+
+    def __init__(self):
+        self.valves = self.Valves()
+        self.headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3"
+        }
+
+    async def search_web(self, query: str) -> str:
+        """
+        Search the web and get the content of the relevant pages (JSON).
+        """
+        functions = HelpFunctions()
+        search_engine_url = self.valves.SEARXNG_ENGINE_API_BASE_URL
+
+        # Ensure RETURNED_SCRAPPED_PAGES_NO does not exceed SCRAPPED_PAGES_NO
+        if self.valves.RETURNED_SCRAPPED_PAGES_NO > self.valves.SCRAPPED_PAGES_NO:
+            self.valves.RETURNED_SCRAPPED_PAGES_NO = self.valves.SCRAPPED_PAGES_NO
+
+        params = {
+            "q": query,
+            "format": "json",
+            "number_of_results": self.valves.RETURNED_SCRAPPED_PAGES_NO,
+        }
+
+        try:
+            resp = requests.get(
+                search_engine_url, params=params, headers=self.headers, timeout=120
+            )
+            resp.raise_for_status()
+            data = resp.json()
+
+            results = data.get("results", [])
+            limited_results = results[: self.valves.SCRAPPED_PAGES_NO]
+
+        except requests.exceptions.RequestException as e:
+            return json.dumps({"error": str(e)})
+
+        results_json = []
+        if limited_results:
+            with concurrent.futures.ThreadPoolExecutor() as executor:
+                futures = [
+                    executor.submit(
+                        functions.process_search_result, result, self.valves
+                    )
+                    for result in limited_results
+                ]
+                for future in concurrent.futures.as_completed(futures):
+                    result_json = future.result()
+                    if result_json:
+                        try:
+                            json.dumps(result_json)
+                            results_json.append(result_json)
+                        except (TypeError, ValueError):
+                            continue
+                    # 결과를 너무 많이 가져오지 않도록 제한
+                    if len(results_json) >= self.valves.RETURNED_SCRAPPED_PAGES_NO:
+                        break
+
+            results_json = results_json[: self.valves.RETURNED_SCRAPPED_PAGES_NO]
+
+        return json.dumps(results_json, ensure_ascii=False)
+
+    async def get_website(self, url: str) -> str:
+        """
+        Simple web scrape of a given URL (returns JSON).
+        """
+        functions = HelpFunctions()
+        results_json = []
+
+        try:
+            response_site = requests.get(url, headers=self.headers, timeout=120)
+            response_site.raise_for_status()
+            html_content = response_site.text
+
+            soup = BeautifulSoup(html_content, "html.parser")
+
+            page_title = soup.title.string if soup.title else "No title found"
+            page_title = unicodedata.normalize("NFKC", page_title.strip())
+            page_title = functions.remove_emojis(page_title)
+            title_site = page_title
+            url_site = url
+            content_site = functions.format_text(
+                soup.get_text(separator=" ", strip=True)
+            )
+
+            truncated_content = functions.truncate_to_n_words(
+                content_site, self.valves.PAGE_CONTENT_WORDS_LIMIT
+            )
+
+            result_site = {
+                "title": title_site,
+                "url": url_site,
+                "content": truncated_content,
+                "excerpt": functions.generate_excerpt(content_site),
+            }
+
+            results_json.append(result_site)
+
+        except requests.exceptions.RequestException as e:
+            results_json.append(
+                {
+                    "url": url,
+                    "content": f"Failed to retrieve the page. Error: {str(e)}",
+                }
+            )
+
+        return json.dumps(results_json, ensure_ascii=False)
+
+###############################################################################
+# 메인 파이프라인 클래스
+###############################################################################
 class Pipeline:
     """
     멀티 에이전트 파이프라인 예시 코드:
@@ -25,6 +245,8 @@ class Pipeline:
                 "MODEL": os.getenv("OPENAI_MODEL", "gpt-4o-mini"),
             }
         )
+        # Tools 인스턴스 (웹 검색 헬퍼)
+        self.tools = Tools()
 
     async def on_startup(self):
         print(f"on_startup: {__name__}")
@@ -35,6 +257,21 @@ class Pipeline:
     async def on_valves_updated(self):
         print(f"on_valves_updated: {__name__}")
 
+    ###########################################################################
+    # 아래 부분: 검색 결과를 알아내는 헬퍼
+    ###########################################################################
+    async def search_web_helper(self, query: str) -> str:
+        """
+        Pipeline 내부에서 웹 검색을 호출할 수 있도록 만든 헬퍼 메서드.
+        - Tools.search_web(query)를 직접 호출
+        - 응답은 JSON 문자열 형태로 반환
+        """
+        search_results_json = await self.tools.search_web(query)
+        return search_results_json
+
+    ###########################################################################
+    # OpenAI API 헬퍼
+    ###########################################################################
     async def _call_openai_chat(self, session: aiohttp.ClientSession, messages: List[dict], stream: bool = False):
         """
         OpenAI ChatCompletion API를 호출하는 헬퍼 함수
@@ -76,13 +313,11 @@ class Pipeline:
         # system 프롬프트 + 기존 messages + 이번 user_prompt를 합침
         merged_messages = [
             {"role": "system", "content": system_prompt},
-            # 기존 대화나 사전에 검색된 정보가 들어있는 messages
             *additional_messages,
             {"role": "user", "content": user_prompt},
         ]
 
         data = await self._call_openai_chat(session, merged_messages)
-        # OpenAI의 ChatCompletion 응답 중 어시스턴트 메시지 추출
         result = data["choices"][0]["message"]["content"]
         return result
 
@@ -117,10 +352,9 @@ class Pipeline:
             if use_multi_agents:
                 # 여러 에이전트를 병렬 호출
                 print("[INFO] 멀티 에이전트 로직 시작")
-                agent_roles = ["검색", "분석", "요약"]  # 예시로 3개
+                agent_roles = ["검색", "분석", "요약"]  
                 tasks = []
                 for role in agent_roles:
-                    # messages(추가 정보 포함)를 함께 넘겨줌
                     tasks.append(
                         asyncio.create_task(
                             self._agent_worker(session, role, user_message, messages)
@@ -136,10 +370,8 @@ class Pipeline:
                 )
 
                 # 최종 요약/응답을 얻기 위해 다시 한 번 OpenAI에 요청
-                # messages 파라미터를 사용하여, 기존 대화 히스토리를 활용할 수도 있음
                 final_system_prompt = """당신은 멀티 에이전트 시스템의 최종 종합 에이전트입니다.
-아래 여러 에이전트의 응답을 종합하여, 사용자에게 줄 최종 답변을 완성하세요.
-가능하면 간결하게 요약하되, 중요한 정보는 빠뜨리지 마세요.
+아래 여러 에이전트의 응답을 종합하여, 사용자에게 줄 최종 답변을 자세하게 보기 좋게 포멧팅해서 답변하세요. 중요한 정보는 빠뜨리지 마세요.
 """
                 final_messages = [
                     {"role": "system", "content": final_system_prompt},
