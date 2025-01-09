@@ -156,7 +156,8 @@
           mapInstance.companyMarkers.push(marker);
         }
       });
-    }
+    }    
+    activeFilterGroup = null;
   } catch (error) {
     console.error('검색 중 오류가 발생했습니다:', error);
   }

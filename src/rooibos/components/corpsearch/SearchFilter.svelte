@@ -72,7 +72,7 @@
   >
     <div class="bg-white rounded-lg shadow-sm p-4">
       <div class="filter-group-title flex items-center space-x-2 mb-3"> 
-        <svelte:component this={group.icon} class="h-4 w-4 text-blue-600" />   
+        <svelte:component this={group.icon} class="h-5 w-5 {group.iconClass}" />   
         <h3 class="font-semibold text-gray-800 text-sm">{group.title}</h3>
       </div>
 
@@ -83,9 +83,9 @@
               <input
                 type="number"
                 placeholder="나이 입력"
-                bind:value={ageValue}
+                value={selectedFilters[group.id]?.gender_age || ''}
                 class="w-20 px-2 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all" 
-                on:input={(e) => onFilterChange(group.id, 'age', e.currentTarget?.value || '')}
+                on:input={(e) => onFilterChange(group.id, 'gender_age', e.currentTarget?.value || '')}
               />
               <span class="text-sm text-gray-600 ml-1">세</span>
             </div>
@@ -123,11 +123,11 @@
                       type="number"
                       placeholder="최소"
                       value={selectedFilters[group.id]?.min || ''}
-                      class="w-20 px-2 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                      class="w-20 px-2 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
                       on:input={(e) => onFilterChange(group.id, 'min', e.currentTarget?.value || '')}
                     />
-                    <span class="text-sm text-gray-600">{group.id === 'employee_count' ? '명' : '백만'}</span>
-                    <span class="text-sm text-gray-600">~</span>
+                    <span class="text-sm text-gray-600 whitespace-nowrap inline-block">{group.id === 'employee_count' ? '명' : '백만'}</span>
+                    <span class="text-sm text-gray-600 whitespace-nowrap inline-block">~</span>
                     <input
                       type="number"
                       placeholder="최대"
@@ -135,7 +135,7 @@
                       class="w-20 px-2 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
                       on:input={(e) => onFilterChange(group.id, 'max', e.currentTarget?.value || '')}
                     />
-                    <span class="text-sm text-gray-600">{group.id === 'employee_count' ? '명' : '백만'}</span>
+                    <span class="text-sm text-gray-600 whitespace-nowrap inline-block">{group.id === 'employee_count' ? '명' : '백만'}</span>
                   </div>
 
                 {:else if group.id === 'establishment_year' && option.id === 'input_year'}
