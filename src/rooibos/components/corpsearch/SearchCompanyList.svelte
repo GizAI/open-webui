@@ -3,6 +3,8 @@
     business_registration_number?: string;
     company_name: string;
     address: string;
+    latitude: string;
+    longitude: string;
   }
 
   export let searchResults: SearchResult[] = [];

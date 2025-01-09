@@ -55,6 +55,7 @@
   let loading = true;
   let script: HTMLScriptElement;
   let searchValue: string = '';
+  let showSearchList = false;
 
   const userLocation = writable(null);
 
@@ -80,6 +81,7 @@
 
     const data = await response.json();
     searchResults = data.data;
+    showSearchList = true;
 
   } catch (error) {
     console.error('검색 중 오류가 발생했습니다:', error);
@@ -117,6 +119,7 @@
     const marker = new naver.maps.Marker({
       position: new naver.maps.LatLng(position.lat, position.lng),
       map: map,
+      
     });
 
     const infoWindow = new naver.maps.InfoWindow({
@@ -153,9 +156,47 @@
     mapInstance.map.setZoom(15);
   };
 
-  const handleResultClick = () => {
+  const compayMarkerInfo = (result: SearchResult) => {
+    return `
+      <div class="p-4">
+        <h3 class="font-bold text-lg mb-2">${result.company_name}</h3>
+        <p class="text-gray-600 mb-1">${result.address}</p>
+        ${result.phone_number ? `<p class="text-gray-600">${result.phone_number}</p>` : ''}
+      </div>
+    `;
+  };
 
-  }
+  const handleResultClick = (result: SearchResult) => {
+    if (!mapInstance) return;
+    
+    const point = new naver.maps.LatLng(
+      parseFloat(result.latitude),
+      parseFloat(result.longitude)
+    );
+    
+    if (mapInstance.companyMarkers) {
+      mapInstance.companyMarkers.forEach(marker => marker.setMap(null));
+      mapInstance.companyMarkers = [];
+    }
+
+    const marker = new naver.maps.Marker({
+      position: point,
+      map: mapInstance.map,
+      title: result.company_name
+    });
+
+    mapInstance.companyMarkers.push(marker);
+    
+    mapInstance.map.setCenter(point);
+    mapInstance.map.setZoom(15);
+
+    if (marker) {
+      mapInstance.infoWindow.setContent(compayMarkerInfo(result));
+      mapInstance.infoWindow.open(mapInstance.map, marker);
+    }
+    
+    showSearchList = false;
+}
 
   onMount(() => {
     const initialize = async () => {
@@ -217,7 +258,7 @@
   />
 </div>
 
-{#if searchResults.length > 0}
+{#if searchResults.length > 0 && showSearchList}
   <div 
   class="company-list-wrapper w-full"
   class:sidebar-visible={$showSidebar}
