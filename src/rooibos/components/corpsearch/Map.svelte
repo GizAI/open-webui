@@ -7,6 +7,7 @@
   import { writable } from 'svelte/store';
   import SearchBar from './SearchBar.svelte';
 	import MenuLines from '$lib/components/icons/MenuLines.svelte';
+  import { compayMarkerInfo } from './companymarkerinfo';
 
   import {
 		showSidebar
@@ -181,16 +182,6 @@
     const currentLocation = new naver.maps.LatLng(location.lat, location.lng);
     mapInstance.map.setCenter(currentLocation);
     mapInstance.map.setZoom(15);
-  };
-
-  const compayMarkerInfo = (result: SearchResult) => {
-    return `
-      <div class="p-4">
-        <h3 class="font-bold text-lg mb-2">${result.company_name}</h3>
-        <p class="text-gray-600 mb-1">${result.address}</p>
-        ${result.phone_number ? `<p class="text-gray-600">${result.phone_number}</p>` : ''}
-      </div>
-    `;
   };
 
   const handleResultClick = (result: SearchResult) => {

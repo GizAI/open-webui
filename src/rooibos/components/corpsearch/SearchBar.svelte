@@ -14,7 +14,7 @@
   export let toggleFilter: (groupId: string) => void;
   export let onReset: () => void;
   export let onApply: () => void;
-  export let onShowSearchListChange: (value: boolean) => void; // Add this prop
+  export let onShowSearchListChange: (value: boolean) => void;
 
   async function handleSubmit(event: SubmitEvent) {
     event.preventDefault();
@@ -119,7 +119,7 @@
         {#each filterActions as action}
           <button
             type="button"
-            class="p-2 rounded-full"
+            class="p-2 rounded-full hover:bg-gray-100"
             on:click={() => handleAction(action.action)}
             aria-label={action.label}
           >
