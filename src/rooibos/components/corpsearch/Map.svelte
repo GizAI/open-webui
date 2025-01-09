@@ -11,6 +11,7 @@
   import {
 		showSidebar
 	} from '$lib/stores';
+	import SearchCompanyList from './SearchCompanyList.svelte';
 
   type MapInstance = {
     map: any;
@@ -58,10 +59,33 @@
   const userLocation = writable(null);
 
   const handleSearch = async (searchValue: string, filters: any) => {
-    
-    if (!mapInstance) return;
-    console.log('Searching for:', searchValue, 'with filters:', filters);
-  };
+  if (!mapInstance) return;
+  console.log('Searching for:', searchValue, 'with filters:', filters);
+
+  try {
+    // GET 요청 예시 (필요에 따라 POST, PUT 등 변경 가능)
+    // 쿼리 스트링 형태로 searchValue, filters 등을 전달
+    const queryParams = new URLSearchParams({
+      query: searchValue,
+      filters: JSON.stringify(filters),
+    });
+
+    const response = await fetch(`http://localhost:8080/api/v1/corpsearch?${queryParams.toString()}`, {
+      method: 'GET',
+    });
+
+    if (!response.ok) {
+      throw new Error('검색 요청 실패');
+    }
+
+    const data = await response.json();
+    searchResults = data.data;
+
+  } catch (error) {
+    console.error('검색 중 오류가 발생했습니다:', error);
+  }
+};
+
 
   const handleReset = () => {
     selectedFilters = {};
@@ -129,6 +153,10 @@
     mapInstance.map.setZoom(15);
   };
 
+  const handleResultClick = () => {
+
+  }
+
   onMount(() => {
     const initialize = async () => {
       try {
@@ -188,6 +216,18 @@
     searchResults={searchResults}
   />
 </div>
+
+{#if searchResults.length > 0}
+  <div 
+  class="company-list-wrapper w-full"
+  class:sidebar-visible={$showSidebar}
+  >
+    <SearchCompanyList
+      searchResults={searchResults}
+      onResultClick={handleResultClick}
+    />
+  </div>
+{/if}
 
 {#if loading}
   <div class="absolute inset-0 flex items-center justify-center bg-white/80 z-10">
@@ -259,8 +299,24 @@
     left: calc(50% + 125px);
   }
 
+  .company-list-wrapper {
+    position: absolute;
+    top: 80px;
+    right: 0;
+    z-index: 40;
+    transition: all 0.3s ease;
+    padding: 0 20px;
+    left: 0; /* 기본적으로 전체 화면 사용 */
+  }
+
+  .company-list-wrapper.sidebar-visible {
+    left: 250px !important; /* 사이드바가 보일 때 250px 만큼 띄우기 */
+  }
+
   #map {
     position: relative;
   }
+
+  
 </style>
 
