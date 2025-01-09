@@ -2,16 +2,12 @@ from fastapi import APIRouter, Request, HTTPException
 from typing import Optional
 import json
 
-from open_webui.internal.db import Base, get_db
+from open_webui.internal.db import get_db
 from sqlalchemy import text
 
 router = APIRouter()
 
 def format_parameter(param):
-    """
-    파라미터를 SQL 문자열에 직접 치환하기 전, 포매팅 처리하는 함수.
-    작은따옴표/None 등에 대한 처리를 수행.
-    """
     if param is None:
         return "NULL"
     if isinstance(param, str):
@@ -47,26 +43,20 @@ async def search(request: Request):
 
     distance = float(filters.get("radius", 200))
 
-    # 직원 수
     employee_count_data = filters.get("employee_count", {})
     employee_count_min = employee_count_data.get("min")
     employee_count_max = employee_count_data.get("max")
 
-    # 자격증 / 인증
     certification = filters.get("certification", [])
 
-    # 설립년도
     establishment_year = filters.get("establishment_year", {}).get("year")
 
-    # 제외할 업종
     excluded_industries = filters.get("excluded_industries", [])
 
-    # 대표자 성별, 나이
     gender_raw = filters.get("gender")
     gender = "남" if gender_raw == "male" else ("여" if gender_raw == "female" else None)
     gender_age = filters.get("gender_age", {}).get("age")
 
-    # 대출 여부
     loan = filters.get("loan")
 
     net_profit_data = filters.get("net_profit", {})
@@ -149,6 +139,42 @@ async def search(request: Request):
             FinancialComparison.total_assets AS recent_total_assets,
             FinancialComparison.total_liabilities AS recent_total_liabilities,
             FinancialComparison.revenue_growth_rate
+        """
+        if not id:
+            if latitude and longitude:
+                sql_query += f"""
+                    , ROUND(
+                        (
+                            6371 * acos(
+                                cos(radians(${param_count})) *
+                                cos(radians(ci.latitude)) *
+                                cos(radians(ci.longitude) - radians(${param_count + 1})) +
+                                sin(radians(${param_count})) *
+                                sin(radians(ci.latitude))
+                            )
+                        ) * 1000
+                    ) AS distance_from_location
+                """
+                params.extend([float(latitude), float(longitude)])
+                param_count += 2
+
+            sql_query += f"""
+                , ROUND(
+                    (
+                        6371 * acos(
+                            cos(radians(${param_count})) *
+                            cos(radians(ci.latitude)) *
+                            cos(radians(ci.longitude) - radians(${param_count + 1})) +
+                            sin(radians(${param_count})) *
+                            sin(radians(ci.latitude))
+                        )
+                    ) * 1000
+                ) AS distance_from_user
+            """
+            params.extend([user_latitude, user_longitude])
+            param_count += 2
+
+        sql_query += """
         FROM smtp_company_info ci
         LEFT JOIN smtp_financial_company fc 
             ON ci.company_name = fc.company_name
@@ -159,7 +185,58 @@ async def search(request: Request):
             ON fc.id = FinancialComparison.financial_company_id
         WHERE ci.latitude IS NOT NULL
         """
+        if id:
+            sql_query += f" AND ci.id = ${param_count}"
+            params.append(float(id))
+            param_count += 1
+        else:
+            if not query:
+                if latitude and longitude:
+                    sql_query += f"""
+                        AND ROUND(
+                            (
+                                6371 * acos(
+                                    cos(radians(${param_count})) *
+                                    cos(radians(ci.latitude)) *
+                                    cos(radians(ci.longitude) - radians(${param_count + 1})) +
+                                    sin(radians(${param_count})) *
+                                    sin(radians(ci.latitude))
+                                )
+                            ) * 1000
+                        ) <= ${param_count + 2}
+                    """
+                    params.extend([float(latitude), float(longitude), distance])
+                    param_count += 3
+                else:
+                    if distance:
+                        sql_query += f"""
+                            AND ROUND(
+                                (
+                                    6371 * acos(
+                                        cos(radians(${param_count})) *
+                                        cos(radians(ci.latitude)) *
+                                        cos(radians(ci.longitude) - radians(${param_count + 1})) +
+                                        sin(radians(${param_count})) *
+                                        sin(radians(ci.latitude))
+                                    )
+                                ) * 1000
+                            ) <= ${param_count + 2}
+                        """
+                        params.extend([user_latitude, user_longitude, distance])
+                        param_count += 3
 
+            if query:
+                sql_query += f"""
+                    AND (
+                        ci.company_name ILIKE ${param_count}
+                        OR ci.representative ILIKE ${param_count}
+                        OR ci.address ILIKE ${param_count}
+                    )
+                """
+                params.append(f"%{query}%")
+                param_count += 1
+
+        # 기존 필터 조건들
         if sales_min is not None:
             sql_query += f" AND (FinancialComparison.revenue)::numeric >= ${param_count}"
             params.append(sales_min)
@@ -241,7 +318,14 @@ async def search(request: Request):
             params.append(loan)
             param_count += 1
 
-        sql_query += " LIMIT 10"
+        if not id:
+            if latitude and longitude:
+                sql_query += " ORDER BY distance_from_location ASC"
+            else:
+                sql_query += " ORDER BY distance_from_user ASC"
+
+        sql_query += " LIMIT 100"
+
         executable_query = get_executable_query(sql_query, params)
 
         with get_db() as db:

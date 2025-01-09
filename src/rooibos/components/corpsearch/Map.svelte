@@ -64,12 +64,15 @@
       console.log('Searching for:', searchValue, 'with filters:', filters);
 
     try {
-      // GET 요청 예시 (필요에 따라 POST, PUT 등 변경 가능)
-      // 쿼리 스트링 형태로 searchValue, filters 등을 전달
       const queryParams = new URLSearchParams({
-        query: searchValue,
-        filters: JSON.stringify(filters),
-      });
+      query: searchValue,
+      latitude: location ? location.lat.toString() : '',
+      longitude: location ? location.lng.toString() : '',
+      userLatitude: location?.lat?.toString() || '',
+      userLongitude: location?.lng?.toString() || '',
+      filters: JSON.stringify(filters)
+    });
+
 
       const response = await fetch(`http://localhost:8080/api/v1/corpsearch?${queryParams.toString()}`, {
         method: 'GET',
@@ -86,6 +89,10 @@
       if (mapInstance?.companyMarkers) {
         mapInstance.companyMarkers.forEach(marker => marker.setMap(null));
         mapInstance.companyMarkers = [];
+      }
+
+      if (mapInstance?.marker) {
+        mapInstance.marker.setMap(null);
       }
 
       searchResults.forEach(result => {
