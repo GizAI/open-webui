@@ -61,47 +61,72 @@
   const userLocation = writable(null);
 
   const handleSearch = async (searchValue: string, filters: any) => {
-    if (!mapInstance) return;
-      console.log('Searching for:', searchValue, 'with filters:', filters);
+  if (!mapInstance) return;
+  console.log('Searching for:', searchValue, 'with filters:', filters);
 
-    try {
-      const queryParams = new URLSearchParams({
+  try {
+    const queryParams = new URLSearchParams({
       query: searchValue,
       latitude: location ? location.lat.toString() : '',
       longitude: location ? location.lng.toString() : '',
       userLatitude: location?.lat?.toString() || '',
       userLongitude: location?.lng?.toString() || '',
-      filters: JSON.stringify(filters)
+      filters: JSON.stringify(filters),
     });
 
+    const response = await fetch(`http://localhost:8080/api/v1/corpsearch?${queryParams.toString()}`, {
+      method: 'GET',
+    });
 
-      const response = await fetch(`http://localhost:8080/api/v1/corpsearch?${queryParams.toString()}`, {
-        method: 'GET',
+    if (!response.ok) {
+      throw new Error('검색 요청 실패');
+    }
+
+    const data = await response.json();
+    searchResults = data.data;
+    showSearchList = true;
+
+    if (mapInstance?.companyMarkers) {
+      mapInstance.companyMarkers.forEach((marker) => marker.setMap(null));
+      mapInstance.companyMarkers = [];
+    }
+
+    if (mapInstance?.marker) {
+      mapInstance.marker.setMap(null);
+    }
+
+    if (searchResults.length === 1) {
+      const singleResult = searchResults[0];
+      const singlePoint = new naver.maps.LatLng(
+        parseFloat(singleResult.latitude),
+        parseFloat(singleResult.longitude)
+      );
+
+      mapInstance?.map.setCenter(singlePoint);
+      mapInstance?.map.setZoom(15);
+
+      const marker = new naver.maps.Marker({
+        position: singlePoint,
+        map: mapInstance.map,
+        title: singleResult.company_name,
       });
 
-      if (!response.ok) {
-        throw new Error('검색 요청 실패');
-      }
+      naver.maps.Event.addListener(marker, 'click', () => {
+        mapInstance?.infoWindow.setContent(compayMarkerInfo(singleResult));
+        mapInstance?.infoWindow.open(mapInstance.map, marker);
+      });
 
-      const data = await response.json();
-      searchResults = data.data;
-      showSearchList = true;
+      mapInstance.companyMarkers.push(marker);
 
-      if (mapInstance?.companyMarkers) {
-        mapInstance.companyMarkers.forEach(marker => marker.setMap(null));
-        mapInstance.companyMarkers = [];
-      }
-
-      if (mapInstance?.marker) {
-        mapInstance.marker.setMap(null);
-      }
-
-      searchResults.forEach(result => {
+      mapInstance.infoWindow.setContent(compayMarkerInfo(singleResult));
+      mapInstance.infoWindow.open(mapInstance.map, marker);
+    } else {
+      searchResults.forEach((result) => {
         const point = new naver.maps.LatLng(
           parseFloat(result.latitude),
           parseFloat(result.longitude)
         );
-        
+
         if (mapInstance) {
           const marker = new naver.maps.Marker({
             position: point,
@@ -116,13 +141,13 @@
           });
           mapInstance.companyMarkers.push(marker);
         }
-
       });
-
-    } catch (error) {
-      console.error('검색 중 오류가 발생했습니다:', error);
     }
-  };
+  } catch (error) {
+    console.error('검색 중 오류가 발생했습니다:', error);
+  }
+};
+
 
 
   const handleReset = () => {
@@ -170,6 +195,7 @@
 
     naver.maps.Event.addListener(map, 'click', () => {
       infoWindow.close();
+      handleSearchListChange(false);
     });
 
     document.addEventListener('keydown', (e) => {
@@ -330,7 +356,7 @@
 
 <button
   on:click={moveToCurrentLocation}
-  class="absolute bottom-20 right-5 bg-transparent border rounded-full w-12 h-12 flex items-center justify-center shadow-lg z-50"
+  class="absolute bottom-20 right-5 bg-transparent border rounded-full w-12 h-12 flex items-center justify-center shadow-lg z-30 hover:bg-gray-100"
 >
   <svg
     xmlns="http://www.w3.org/2000/svg"
