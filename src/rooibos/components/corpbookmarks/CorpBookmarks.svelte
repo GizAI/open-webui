@@ -48,7 +48,7 @@
 	};
 
 	onMount(async () => {
-		const response = await fetch(`${WEBUI_API_BASE_URL}/corpbookmarks`, {
+		const response = await fetch(`${WEBUI_API_BASE_URL}/rooibos/corpbookmarks`, {
       		method: 'GET',
     	});
 		if (!response.ok) {

@@ -15,6 +15,7 @@
 	} from '$lib/stores';
 	import SearchCompanyList from './SearchCompanyList.svelte';
 	import SearchFilter from './SearchFilter.svelte';
+	import { WEBUI_API_BASE_URL } from '$lib/constants';
 
   type MapInstance = {
     map: any;
@@ -88,7 +89,7 @@
       filters: JSON.stringify(filters),
     });
 
-    const response = await fetch(`http://localhost:8080/api/v1/corpsearch?${queryParams.toString()}`, {
+    const response = await fetch(`${WEBUI_API_BASE_URL}/rooibos/corpsearch?${queryParams.toString()}`, {
       method: 'GET',
     });
 
