@@ -46,11 +46,18 @@ class HelpFunctions:
     def remove_emojis(self, text):
         return "".join(c for c in text if not unicodedata.category(c).startswith("So"))
 
+    def truncate_to_n_words(self, text, token_limit):
+        tokens = text.split()
+        truncated_tokens = tokens[:token_limit]
+        return " ".join(truncated_tokens)
+
     def process_search_result(self, result, valves):
+ 
         title_site = self.remove_emojis(result["title"])
         url_site = result["url"]
         snippet = result.get("content", "")
 
+        # 무시할 사이트는 여기서 걸러냄
         if valves.IGNORED_WEBSITES:
             base_url = self.get_base_url(url_site)
             if any(
@@ -81,50 +88,28 @@ class HelpFunctions:
         except requests.exceptions.RequestException:
             return None
 
-    def truncate_to_n_words(self, text, token_limit):
-        tokens = text.split()
-        truncated_tokens = tokens[:token_limit]
-        return " ".join(truncated_tokens)
 
-
-class Tools:
-    class Valves(BaseModel):
-        SEARXNG_ENGINE_API_BASE_URL: str = Field(
-            default="http://45.132.75.98:8089/search",
-            description="The base URL for Search Engine",
-        )
-        IGNORED_WEBSITES: str = Field(
-            default="",
-            description="Comma-separated list of websites to ignore",
-        )
-        RETURNED_SCRAPPED_PAGES_NO: int = Field(
-            default=3,
-            description="The number of Search Engine Results to Parse",
-        )
-        SCRAPPED_PAGES_NO: int = Field(
-            default=5,
-            description="Total pages scapped. Ideally greater than one of the returned pages",
-        )
-        PAGE_CONTENT_WORDS_LIMIT: int = Field(
-            default=5000,
-            description="Limit words content for each page.",
-        )
-        CITATION_LINKS: bool = Field(
-            default=False,
-            description="If True, (previously) used for custom citations with links",
-        )
-
-    def __init__(self):
-        self.valves = self.Valves()
+###############################################################################
+# Searxng 웹 검색 헬퍼 
+###############################################################################
+class Searxng:
+    def __init__(self, valves: BaseModel):
+        """
+        Pipeline의 Valves(검색 관련 옵션 포함)를 직접 받아와서 사용.
+        """
+        self.valves = valves
         self.headers = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3"
+            "User-Agent": (
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+                "(KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3"
+            )
         }
+        self.functions = HelpFunctions()
 
     async def search_web(self, query: str) -> str:
         """
         Search the web and get the content of the relevant pages (JSON).
         """
-        functions = HelpFunctions()
         search_engine_url = self.valves.SEARXNG_ENGINE_API_BASE_URL
 
         # Ensure RETURNED_SCRAPPED_PAGES_NO does not exceed SCRAPPED_PAGES_NO
@@ -155,7 +140,7 @@ class Tools:
             with concurrent.futures.ThreadPoolExecutor() as executor:
                 futures = [
                     executor.submit(
-                        functions.process_search_result, result, self.valves
+                        self.functions.process_search_result, result, self.valves
                     )
                     for result in limited_results
                 ]
@@ -179,7 +164,6 @@ class Tools:
         """
         Simple web scrape of a given URL (returns JSON).
         """
-        functions = HelpFunctions()
         results_json = []
 
         try:
@@ -191,14 +175,14 @@ class Tools:
 
             page_title = soup.title.string if soup.title else "No title found"
             page_title = unicodedata.normalize("NFKC", page_title.strip())
-            page_title = functions.remove_emojis(page_title)
+            page_title = self.functions.remove_emojis(page_title)
             title_site = page_title
             url_site = url
-            content_site = functions.format_text(
+            content_site = self.functions.format_text(
                 soup.get_text(separator=" ", strip=True)
             )
 
-            truncated_content = functions.truncate_to_n_words(
+            truncated_content = self.functions.truncate_to_n_words(
                 content_site, self.valves.PAGE_CONTENT_WORDS_LIMIT
             )
 
@@ -206,7 +190,7 @@ class Tools:
                 "title": title_site,
                 "url": url_site,
                 "content": truncated_content,
-                "excerpt": functions.generate_excerpt(content_site),
+                "excerpt": self.functions.generate_excerpt(content_site),
             }
 
             results_json.append(result_site)
@@ -220,6 +204,7 @@ class Tools:
             )
 
         return json.dumps(results_json, ensure_ascii=False)
+
 
 ###############################################################################
 # 메인 파이프라인 클래스
@@ -236,20 +221,49 @@ class Pipeline:
     """
 
     class Valves(BaseModel):
+        # OpenAI 관련
         OPENAI_API_BASE_URL: str = "https://api.openai.com/v1"
         OPENAI_API_KEY: str = ""
         MODEL: str = "gpt-4o-mini"
 
+        # Searxng(검색) 관련
+        SEARXNG_ENGINE_API_BASE_URL: str = Field(
+            default="http://45.132.75.98:8089/search",
+            description="The base URL for Search Engine",
+        )
+        IGNORED_WEBSITES: str = Field(
+            default="",
+            description="Comma-separated list of websites to ignore",
+        )
+        RETURNED_SCRAPPED_PAGES_NO: int = Field(
+            default=3,
+            description="The number of Search Engine Results to Parse",
+        )
+        SCRAPPED_PAGES_NO: int = Field(
+            default=5,
+            description="Total pages scapped. Ideally greater than one of the returned pages",
+        )
+        PAGE_CONTENT_WORDS_LIMIT: int = Field(
+            default=5000,
+            description="Limit words content for each page.",
+        )
+        CITATION_LINKS: bool = Field(
+            default=False,
+            description="If True, (previously) used for custom citations with links",
+        )
+
     def __init__(self):
         self.name = "Web Search Pipeline"
+        # 외부 환경변수 등에 따라 유연하게 설정값 주입
         self.valves = self.Valves(
             **{
                 "OPENAI_API_KEY": os.getenv("OPENAI_API_KEY", "your-openai-api-key-here"),
                 "MODEL": os.getenv("OPENAI_MODEL", "gpt-4o-mini"),
             }
         )
-        # Tools 인스턴스 (웹 검색 헬퍼)
-        self.tools = Tools()
+
+        # Searxng 인스턴스화 시점에 Pipeline의 Valves(검색 관련 옵션 등)를 넘겨주어 사용
+        self.searxng = Searxng(self.valves)
 
     async def on_startup(self):
         print(f"on_startup: {__name__}")
@@ -266,10 +280,10 @@ class Pipeline:
     async def search_web_helper(self, query: str) -> str:
         """
         Pipeline 내부에서 웹 검색을 호출할 수 있도록 만든 헬퍼 메서드.
-        - Tools.search_web(query)를 직접 호출
+        - Searxng.search_web(query)를 직접 호출
         - 응답은 JSON 문자열 형태로 반환
         """
-        search_results_json = await self.tools.search_web(query)
+        search_results_json = await self.searxng.search_web(query)
         return search_results_json
 
     ###########################################################################
@@ -315,8 +329,6 @@ class Pipeline:
 출력은 '정리된 텍스트' 형태의 자연어로만 주세요. 
 """
         # user_message와 messages 내용을 합쳐서 GPT에 보냄
-        # (messages는 role=user/assistant/에이전트 등으로 이미 구성되어 있을 수 있음)
-        # 여기서는 하나의 user 메시지로 간단히 처리 (추가 가공 가능)
         merged_prompt = (
             f"사용자 최종 질문:\n{user_message}\n\n"
             f"기존 메시지들:\n{messages}\n\n"
@@ -348,7 +360,7 @@ class Pipeline:
         system_prompt = """당신은 판단 에이전트입니다.
 사용자의 질문이 복합적 분석, 최신 정보(웹 검색) 필요, 보고서 형태 요구 등을 포함한다면 "1" 
 단순 답변이면 "0" 만 출력하세요.
-답변은 반드시 한 글자(예 또는 아니오)만 출력합니다.
+답변은 반드시 한 글자(예 또는 아니오)가 아닌, 숫자(1 또는 0)만 출력합니다.
 """
         user_prompt = (
             f"사용자 질문:\n{user_message}\n\n"
@@ -458,9 +470,9 @@ class Pipeline:
     ) -> Union[str, Generator, Iterator]:
         """
         1) messages에서 user_message와 관련있는 부분만 요약(consolidated_context)
-        2) user_message + consolidated_context -> GPT에게 물어봐서 멀티 에이전트 필요 여부 판단("예"/"아니오")
-        3) 필요하다면(예) -> 검색 에이전트로 추가 키워드 추천 -> 병렬 검색 -> 정리 에이전트로 최종 답변
-           아니면(아니오) -> 기존 단일 에이전트 로직(직접 OpenAI 호출)
+        2) user_message + consolidated_context -> GPT에게 물어봐서 멀티 에이전트 필요 여부 판단("1"/"0")
+        3) 필요하다면(1) -> 검색 에이전트로 추가 키워드 추천 -> 병렬 검색 -> 정리 에이전트로 최종 답변
+           아니면(0) -> 기존 단일 에이전트 로직(직접 OpenAI 호출)
         """
         print(f"pipe_async: {__name__}")
 
@@ -510,7 +522,6 @@ class Pipeline:
                 # 단일 에이전트 로직: 그냥 GPT 한 번 호출로 끝낸다고 가정
                 print("[INFO] 단일 에이전트 로직")
                 # 기존 messages + user_message 를 활용하여 바로 API 호출
-                # 여기서 consolidated_context를 추가적으로 전달할 수도 있음
                 modified_messages = [
                     {
                         "role": "system",
@@ -533,7 +544,5 @@ class Pipeline:
         """
         asyncio.run()을 통해 비동기 함수(pipe_async)를 동기처럼 동작시키는 래퍼.
         """
-   
-        #todo 상황에 맞는 파이프 라인 생성 및 질문에 적합한 pipeline 을 AI 가 선택하게 하고 수행 하도록 
-        
+
         return asyncio.run(self.pipe_async(user_message, model_id, messages, body))
