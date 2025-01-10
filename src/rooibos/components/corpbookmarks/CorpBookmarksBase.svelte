@@ -27,19 +27,23 @@
 	import { processFile } from '$lib/apis/retrieval';
 
 	import Spinner from '$lib/components/common/Spinner.svelte';
-	import Files from './KnowledgeBase/Files.svelte';
+	import Files from './CorpBookmarksBase/Files.svelte';
 	import AddFilesPlaceholder from '$lib/components/AddFilesPlaceholder.svelte';
 
-	import AddContentMenu from './KnowledgeBase/AddContentMenu.svelte';
-	import AddTextContentModal from './KnowledgeBase/AddTextContentModal.svelte';
+	import AddContentMenu from './CorpBookmarksBase/AddContentMenu.svelte';
+	import AddTextContentModal from './CorpBookmarksBase/AddTextContentModal.svelte';
 
-	import SyncConfirmDialog from '../../common/ConfirmDialog.svelte';
+	import SyncConfirmDialog from '$lib/components/common/ConfirmDialog.svelte';
 	import RichTextInput from '$lib/components/common/RichTextInput.svelte';
 	import EllipsisVertical from '$lib/components/icons/EllipsisVertical.svelte';
 	import Drawer from '$lib/components/common/Drawer.svelte';
 	import ChevronLeft from '$lib/components/icons/ChevronLeft.svelte';
 	import LockClosed from '$lib/components/icons/LockClosed.svelte';
-	import AccessControlModal from '../common/AccessControlModal.svelte';
+	import AccessControlModal from '$lib/components/workspace/common/AccessControlModal.svelte';
+	import { WEBUI_API_BASE_URL } from '$lib/constants';
+	import Bookmark from '$lib/components/icons/Bookmark.svelte';
+	import { Briefcase, MapPin, Users, Phone, Globe, Calendar, DollarSign } from 'lucide-svelte';
+
 
 	let largeScreen = true;
 
@@ -47,10 +51,31 @@
 	let showSidepanel = true;
 	let minSize = 0;
 
-	type Knowledge = {
+	type Bookmark = {
 		id: string;
-		name: string;
-		description: string;
+		company_id: string;
+		company_name: string;
+		roadAddress?: string;
+		address?: string;
+		category?: string[];
+		recent_revenue?: number;
+		recent_sales?: number;
+		recent_profit?: number;
+		recent_net_income?: number;
+		recent_total_assets?: number;
+		recent_total_liabilities?: number;
+		revenue_growth_rate?: number;
+		business_registration_number?: number;
+		industry?: string;
+		representative?: string;
+		birth_date?: string;
+		establishment_date?: string;
+		employee_count?: number;
+		phone_number?: string;
+		website?: string;
+		distance_from_user?: number;
+		created_at?: string;
+		updated_at?: string;
 		data: {
 			file_ids: string[];
 		};
@@ -58,7 +83,7 @@
 	};
 
 	let id = null;
-	let knowledge: Knowledge | null = null;
+	let bookmark: Bookmark | null = null;
 	let query = '';
 
 	let showAddTextContentModal = false;
@@ -68,8 +93,8 @@
 	let inputFiles = null;
 
 	let filteredItems = [];
-	$: if (knowledge && knowledge.files) {
-		fuse = new Fuse(knowledge.files, {
+	$: if (bookmark && bookmark.files) {
+		fuse = new Fuse(bookmark.files, {
 			keys: ['meta.name', 'meta.description']
 		});
 	}
@@ -79,14 +104,14 @@
 			? fuse.search(query).map((e) => {
 					return e.item;
 				})
-			: (knowledge?.files ?? []);
+			: (bookmark?.files ?? []);
 	}
 
 	let selectedFile = null;
 	let selectedFileId = null;
 
 	$: if (selectedFileId) {
-		const file = (knowledge?.files ?? []).find((file) => file.id === selectedFileId);
+		const file = (bookmark?.files ?? []).find((file) => file.id === selectedFileId);
 		if (file) {
 			file.data = file.data ?? { content: '' };
 			selectedFile = file;
@@ -131,7 +156,7 @@
 			return null;
 		}
 
-		knowledge.files = [...(knowledge.files ?? []), fileItem];
+		bookmark.files = [...(bookmark.files ?? []), fileItem];
 
 		// Check if the file is an audio file and transcribe/convert it to text file
 		if (['audio/mpeg', 'audio/wav', 'audio/ogg', 'audio/x-m4a'].includes(file['type'])) {
@@ -155,7 +180,7 @@
 
 			if (uploadedFile) {
 				console.log(uploadedFile);
-				knowledge.files = knowledge.files.map((item) => {
+				bookmark.files = bookmark.files.map((item) => {
 					if (item.itemId === tempItemId) {
 						item.id = uploadedFile.id;
 					}
@@ -337,13 +362,13 @@
 
 	// Helper function to maintain file paths within zip
 	const syncDirectoryHandler = async () => {
-		if ((knowledge?.files ?? []).length > 0) {
-			const res = await resetKnowledgeById(localStorage.token, id).catch((e) => {
+		if ((bookmark?.files ?? []).length > 0) {
+			const res = await resetbookmarkById(localStorage.token, id).catch((e) => {
 				toast.error(e);
 			});
 
 			if (res) {
-				knowledge = res;
+				bookmark = res;
 				toast.success($i18n.t('Knowledge reset successfully.'));
 
 				// Upload directory
@@ -363,11 +388,11 @@
 		);
 
 		if (updatedKnowledge) {
-			knowledge = updatedKnowledge;
+			bookmark = updatedKnowledge;
 			toast.success($i18n.t('File added successfully.'));
 		} else {
 			toast.error($i18n.t('Failed to add file.'));
-			knowledge.files = knowledge.files.filter((file) => file.id !== fileId);
+			bookmark.files = bookmark.files.filter((file) => file.id !== fileId);
 		}
 	};
 
@@ -381,7 +406,7 @@
 		});
 
 		if (updatedKnowledge) {
-			knowledge = updatedKnowledge;
+			bookmark = updatedKnowledge;
 			toast.success($i18n.t('File removed successfully.'));
 		}
 	};
@@ -403,7 +428,7 @@
 		});
 
 		if (res && updatedKnowledge) {
-			knowledge = updatedKnowledge;
+			bookmark = updatedKnowledge;
 			toast.success($i18n.t('File content updated successfully.'));
 		}
 	};
@@ -415,22 +440,22 @@
 		}
 
 		debounceTimeout = setTimeout(async () => {
-			if (knowledge.name.trim() === '' || knowledge.description.trim() === '') {
+			if (bookmark.name.trim() === '' || bookmark.description.trim() === '') {
 				toast.error($i18n.t('Please fill in all fields.'));
 				return;
 			}
 
 			const res = await updateKnowledgeById(localStorage.token, id, {
-				...knowledge,
-				name: knowledge.name,
-				description: knowledge.description,
-				access_control: knowledge.access_control
+				...bookmark,
+				name: bookmark.name,
+				description: bookmark.description,
+				access_control: bookmark.access_control
 			}).catch((e) => {
 				toast.error(e);
 			});
 
 			if (res) {
-				toast.success($i18n.t('Knowledge updated successfully'));
+				toast.success($i18n.t('bookmark updated successfully'));
 				_knowledge.set(await getKnowledgeBases(localStorage.token));
 			}
 		}, 1000);
@@ -517,16 +542,16 @@
 
 		id = $page.params.id;
 
-		const res = await getKnowledgeById(localStorage.token, id).catch((e) => {
-			toast.error(e);
-			return null;
-		});
+		const response = await fetch(`${WEBUI_API_BASE_URL}/rooibos/corpbookmarks/${id}`, {
+			method: 'GET',
+			headers: {
+				Accept: 'application/json',
+				'Content-Type': 'application/json'
+			}
+		})
 
-		if (res) {
-			knowledge = res;
-		} else {
-			goto('/workspace/knowledge');
-		}
+		const data = await response.json();
+		bookmark = data.data[0];
 
 		const dropZone = document.querySelector('body');
 		dropZone?.addEventListener('dragover', onDragOver);
@@ -609,61 +634,164 @@
 />
 
 <div class="flex flex-col w-full translate-y-1" id="collection-container">
-	{#if id && knowledge}
-		<AccessControlModal
+	{#if id && bookmark}
+		<!-- <AccessControlModal
 			bind:show={showAccessControlModal}
-			bind:accessControl={knowledge.access_control}
+			bind:accessControl={bookmark.access_control}
 			onChange={() => {
 				changeDebounceHandler();
 			}}
-		/>
+		/> -->
 		<div class="w-full mb-2.5">
-			<div class=" flex w-full">
-				<div class="flex-1">
-					<div class="flex items-center justify-between w-full px-0.5 mb-1">
-						<div class="w-full">
-							<input
-								type="text"
-								class="text-left w-full font-semibold text-2xl font-primary bg-transparent outline-none"
-								bind:value={knowledge.name}
-								placeholder="Knowledge Name"
-								on:input={() => {
-									changeDebounceHandler();
-								}}
-							/>
-						</div>
-
-						<div class="self-center flex-shrink-0">
-							<button
-								class="bg-gray-50 hover:bg-gray-100 text-black dark:bg-gray-850 dark:hover:bg-gray-800 dark:text-white transition px-2 py-1 rounded-full flex gap-1 items-center"
-								type="button"
-								on:click={() => {
-									showAccessControlModal = true;
-								}}
-							>
-								<LockClosed strokeWidth="2.5" className="size-3.5" />
-
-								<div class="text-sm font-medium flex-shrink-0">
-									{$i18n.t('Access')}
-								</div>
-							</button>
-						</div>
-					</div>
-
-					<div class="flex w-full px-1">
+			<!-- 상위 컨테이너를 flex-col로 설정하여 세로 정렬 -->
+			<div class="flex flex-col w-full px-6 py-4 overflow-y-auto space-y-6">
+				<div class="flex items-center justify-between w-full px-0.5 mb-1">
+					<div class="w-full">
 						<input
 							type="text"
-							class="text-left text-xs w-full text-gray-500 bg-transparent outline-none"
-							bind:value={knowledge.description}
-							placeholder="Knowledge Description"
-							on:input={() => {
-								changeDebounceHandler();
-							}}
+							class="text-left w-full font-semibold text-2xl font-primary bg-transparent outline-none"
+							bind:value={bookmark.company_name}
+							placeholder="Bookmark Company Name"
+							readonly
 						/>
 					</div>
+
+					<div class="self-center flex-shrink-0">
+						<button
+							class="bg-gray-50 hover:bg-gray-100 text-black dark:bg-gray-850 dark:hover:bg-gray-800 dark:text-white transition px-2 py-1 rounded-full flex gap-1 items-center"
+							type="button"
+							on:click={() => {
+								showAccessControlModal = true;
+							}}
+						>
+							<LockClosed strokeWidth="2.5" className="size-3.5" />
+
+							<div class="text-sm font-medium flex-shrink-0">
+								{$i18n.t('Access')}
+							</div>
+						</button>
+					</div>
 				</div>
+			  <!-- 기본 정보 섹션 -->
+			  <div class="space-y-2">
+				<h3 class="text-sm font-semibold text-gray-700 flex items-center gap-2">
+				  <MapPin size={16} class="text-blue-500" />
+				  기본 정보
+				</h3>
+				<div class="space-y-1">
+				  {#if bookmark.business_registration_number}
+					<p class="text-sm text-gray-600 flex items-center gap-2">
+					  <Briefcase size={16} class="text-green-500" />
+					  사업자 등록 번호: {bookmark.business_registration_number}
+					</p>
+				  {/if}
+			
+				  {#if bookmark.representative}
+					<p class="text-sm text-gray-600 flex items-center gap-2">
+					  <Users size={16} class="text-purple-500" />
+					  대표이사: {bookmark.representative}
+					  {#if bookmark.birth_date}
+						({bookmark.birth_date})
+					  {/if}
+					</p>
+				  {/if}
+			
+				  {#if bookmark.address}
+					<p class="text-sm text-gray-600 flex items-center gap-2">
+					  <MapPin size={16} class="text-red-500" />
+					  주소: {bookmark.address}
+					</p>
+				  {/if}
+			
+				  {#if bookmark.phone_number}
+					<p class="text-sm text-gray-600 flex items-center gap-2">
+					  <Phone size={16} class="text-indigo-500" />
+					  전화번호: {bookmark.phone_number}
+					</p>
+				  {/if}
+			
+				  {#if bookmark.website}
+					<p class="text-sm text-gray-600 flex items-center gap-2">
+					  <Globe size={16} class="text-yellow-500" />
+					  웹사이트:
+					  <a
+						href={
+						  bookmark.website.startsWith("http")
+							? bookmark.website
+							: `https://${bookmark.website}`
+						}
+						target="_blank"
+						rel="noopener noreferrer"
+						class="text-blue-500 underline"
+					  >
+						{bookmark.website.startsWith("http")
+						  ? bookmark.website
+						  : `https://${bookmark.website}`}
+					  </a>
+					</p>
+				  {/if}
+				</div>
+			  </div>
+			
+			  <!-- 업종 정보 섹션 -->
+			  {#if bookmark.industry}
+				<div class="space-y-2">
+				  <h3 class="text-sm font-semibold text-gray-700 flex items-center gap-2">
+					<Briefcase size={16} class="text-blue-500" />
+					업종 정보
+				  </h3>
+				  <p class="text-sm text-gray-600">{bookmark.industry}</p>
+				</div>
+			  {/if}
+			
+			  <!-- 회사 규모 섹션 -->
+			  <div class="space-y-2">
+				<h3 class="text-sm font-semibold text-gray-700 flex items-center gap-2">
+				  <Users size={16} class="text-green-500" />
+				  회사 규모
+				</h3>
+				<div class="space-y-1">
+				  {#if bookmark.establishment_date}
+					<p class="text-sm text-gray-600 flex items-center gap-2">
+					  <Calendar size={16} class="text-pink-500" />
+					  설립일: {bookmark.establishment_date}
+					</p>
+				  {/if}
+			
+				  {#if bookmark.employee_count !== undefined}
+					<p class="text-sm text-gray-600 flex items-center gap-2">
+					  <Users size={16} class="text-purple-500" />
+					  임직원 수: {bookmark.employee_count}명
+					</p>
+				  {/if}
+				</div>
+			  </div>
+			
+			  <!-- 재무 정보 섹션 -->
+			  <div class="space-y-2">
+				<h3 class="text-sm font-semibold text-gray-700 flex items-center gap-2">
+				  <DollarSign size={16} class="text-yellow-500" />
+				  재무 정보
+				</h3>
+				<div class="space-y-1">
+				  {#if bookmark.recent_sales !== undefined}
+					<p class="text-sm text-gray-600 flex items-center gap-2">
+					  <DollarSign size={16} class="text-green-500" />
+					  최근 매출액: {bookmark.recent_sales} 백만 원
+					</p>
+				  {/if}
+			
+				  {#if bookmark.recent_profit !== undefined}
+					<p class="text-sm text-gray-600 flex items-center gap-2">
+					  <DollarSign size={16} class="text-pink-500" />
+					  최근 순이익: {bookmark.recent_profit} 백만 원
+					</p>
+				  {/if}
+				</div>
+			  </div>
+			
 			</div>
-		</div>
+		  </div>
 
 		<div class="flex flex-row flex-1 h-full max-h-full pb-2.5 gap-3">
 			{#if largeScreen}

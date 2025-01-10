@@ -18,8 +18,8 @@ def extend_app(app: FastAPI):
         app (FastAPI): The main FastAPI application instance
     """
 
-    app.include_router(corpsearch.router, prefix="/api/v1/corpsearch", tags=["corpsearch"])
-    app.include_router(corpbookmarks.router, prefix="/api/v1/corpbookmarks", tags=["corpbookmarks"])
+    app.include_router(corpsearch.router, prefix="/api/v1/rooibos/corpsearch", tags=["corpsearch"])
+    app.include_router(corpbookmarks.router, prefix="/api/v1/rooibos/corpbookmarks", tags=["corpbookmarks"])
 
     # Initialize extended configurations
     init_extended_config(app)
