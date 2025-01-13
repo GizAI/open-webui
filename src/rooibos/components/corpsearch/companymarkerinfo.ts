@@ -195,21 +195,34 @@ export const compayMarkerInfo = (
         <div style="display: flex; gap: 10px; margin-top: 10px; align-items: center;">
           <button style="background: none; border: none; cursor: pointer;"
             onclick="(() => { window.handleFavoriteClick('${encodedResult}', '${encodeURIComponent(JSON.stringify(result))}') })()">
-            즐겨찾기
+            <img 
+              src="${result.id ? '/src/rooibos/components/icons/yellowStar.png' : '/src/rooibos/components/icons/star.png'}" 
+              alt="즐겨찾기" 
+              style="width: 20px; height: 20px;"
+            />
           </button>
           <button 
             style="background: none; border: none; cursor: pointer;"
             onclick="(() => { window.handleGptClick('${encodedResult}') })()"
           >
-            GPT 묻기
+            <img 
+              src="/src/rooibos/components/icons/gpt.ico" 
+              alt="GPT 묻기" 
+              style="width: 20px; height: 20px;"
+            />
           </button>
           <button style="background: none; border: none; cursor: pointer;"
             onclick="window.open('https://map.naver.com/v5/search/${encodeURIComponent(
               result.company_name
             )}', '_blank')">
-            네이버
+            <img 
+              src="/src/rooibos/components/icons/naver.svg" 
+              alt="네이버" 
+              style="width: 20px; height: 20px;"
+            />
           </button>
         </div>
+
         ${memosHtml}
       </div>
     `;

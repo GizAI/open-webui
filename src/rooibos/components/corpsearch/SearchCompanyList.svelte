@@ -5,6 +5,11 @@
     address: string;
     latitude: string;
     longitude: string;
+    industry: string;
+    representative: string;
+    establishment_date: string;
+    employee_count: string;
+    recent_sales: string;
   }
   import { showSidebar } from '$lib/stores';
   export let searchResults: SearchResult[] = [];
@@ -25,10 +30,27 @@
           type="button"
         >
           <div class="flex items-start justify-between">
-            <div>
+            <div class="flex-1">
+              <!-- 회사 정보 -->
               <div class="font-semibold text-gray-900">{result.company_name}</div>
-              <div class="text-sm text-gray-600 mt-1.5 leading-relaxed">{result.address}</div>
+              <div class="text-sm text-gray-600 mt-1.5">{result.address}</div>
+              {#if result.representative}
+                <div class="text-sm text-gray-500 mt-1">대표자: {result.representative}</div>
+              {/if}
+              {#if result.industry}
+                <div class="text-sm text-gray-500 mt-1">업종: {result.industry}</div>
+              {/if}
+              {#if result.establishment_date}
+                <div class="text-sm text-gray-500 mt-1">설립일: {result.establishment_date}</div>
+              {/if}
+              {#if result.employee_count}
+                <div class="text-sm text-gray-500 mt-1">직원 수: {result.employee_count}명</div>
+              {/if}
+              {#if result.recent_sales}
+                <div class="text-sm text-gray-500 mt-1">최근 매출: {result.recent_sales.toLocaleString()}백만원</div>
+              {/if}
             </div>
+            <!-- 기존 아이콘 -->
             <svg 
               xmlns="http://www.w3.org/2000/svg" 
               class="h-5 w-5 text-gray-400 ml-4 flex-shrink-0" 
@@ -68,8 +90,7 @@
     right: 0;
   }
 
-  /* 사이드바가 보일 때 적용될 스타일 */
   .sidebar-margin {
-    left: 210px;  /* 사이드바의 너비만큼 여백 설정 */
+    left: 210px;
   }
 </style>
