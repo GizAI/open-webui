@@ -1,24 +1,25 @@
 <script lang="ts">
   import { Sliders, Map, List, Building2, Users, TrendingUp, DollarSign, Scale, UserPlus, CalendarDays, Landmark, Ban, RotateCcw, Check, MapPin, Award, History } from 'lucide-svelte';
   import { filterGroups, filterActions } from './filterdata';
+  import SearchFilter from './SearchFilter.svelte';
+  import { showSidebar } from '$lib/stores';
   
   export let searchResults: any[] = [];
   export let onSearch: (searchValue: string, selectedFilters: any) => Promise<void>;
   export let searchValue: string;
   export let onSearchValueChange: (value: string) => void;
   export let isListIconVisible: boolean;
-
-  export const isFilterOpen: boolean = false;
-  export const activeFilterGroup: string | null = null;
-  export let toggleFilter: (groupId: string) => void;
+  export let selectedFilters: any = {};
+  export let onFilterChange: (groupId: string, optionId: string, checked: boolean | string) => void;
+  let isFilterOpen: boolean = false;
+  export let activeFilterGroup: string | null = null;
   export let onReset: () => void;
   export let onApply: () => void;
   export let onShowSearchListChange: (value: boolean) => void;
 
   async function handleSubmit(event: SubmitEvent) {
     event.preventDefault();
-    await onSearch(searchValue, {});
-    // input blur 처리
+    await onSearch(searchValue, selectedFilters);
     const inputEl = (event.target as HTMLFormElement).querySelector('input');
     inputEl?.blur();
   }
@@ -35,6 +36,12 @@
       onApply();
     }
   }
+
+  const toggleFilter = (groupId: string) => {
+    activeFilterGroup = groupId === activeFilterGroup ? null : groupId;
+    isFilterOpen = (groupId !== activeFilterGroup);
+    
+  };
 
   const iconMapping: Record<string, any> = {
     radius: MapPin,
@@ -54,7 +61,6 @@
   };
 </script>
 
-<!-- Tailwind 클래스 그대로 사용한다고 가정 -->
 <div class="absolute top-5 left-1/2 -translate-x-1/2 z-10 w-full max-w-md px-4 space-y-2">
   <form 
     on:submit|preventDefault={handleSubmit}
@@ -77,40 +83,38 @@
     </div>
   </form>
 
-  <!-- 지도/리스트 전환 버튼 + 필터 버튼 -->
-  <div class="absolute left-1/2 transform -translate-x-1/2  z-10 flex items-center gap-2">
+  <div class="absolute left-1/2 transform -translate-x-1/2 z-10 flex items-center gap-2">
     {#if searchResults.length > 0}
-    <!-- 지도/리스트 전환 버튼 -->
-    <button
-    type="button"
-    on:click={handleListIconClick}
-    aria-label={isListIconVisible ? "지도 보기" : "리스트 보기"}
-    class="text-gray-700 hover:text-blue-600 transition-colors p-1 rounded-full hover:bg-blue-50"
-  >
-    {#if isListIconVisible}
-      <Map class="h-6 w-6" />
-    {:else}
-      <List class="h-6 w-6" />
-    {/if}
-  </button>
+      <button
+        type="button"
+        on:click={handleListIconClick}
+        aria-label={isListIconVisible ? "지도 보기" : "리스트 보기"}
+        class="text-gray-700 hover:text-blue-600 transition-colors p-1 rounded-full hover:bg-blue-50"
+      >
+        {#if isListIconVisible}
+          <Map class="h-6 w-6" />
+        {:else}
+          <List class="h-6 w-6" />
+        {/if}
+      </button>
       
       <div class="flex items-start gap-2 w-full">
         {#each filterGroups as group}
-            <button
-              type="button"
-              class="p-2 rounded-full hover:bg-gray-100"
-              on:click={() => toggleFilter(group.id)}
-              aria-label={group.title}
-            >
-              {#if iconMapping[group.id]}
-                <svelte:component 
-                  this={iconMapping[group.id]} 
-                  class="h-5 w-5 {group.iconClass}" 
-                />
-              {:else}
-                <Sliders class="h-5 w-5 text-gray-500" />
-              {/if}
-            </button>
+          <button
+            type="button"
+            class="p-2 rounded-full hover:bg-gray-100"
+            on:click={() => toggleFilter(group.id)}
+            aria-label={group.title}
+          >
+            {#if iconMapping[group.id]}
+              <svelte:component 
+                this={iconMapping[group.id]} 
+                class="h-5 w-5 {group.iconClass}" 
+              />
+            {:else}
+              <Sliders class="h-5 w-5 text-gray-500" />
+            {/if}
+          </button>
         {/each}
 
         {#each filterActions as action}
@@ -121,7 +125,7 @@
             aria-label={action.label}
           >
             {#if iconMapping[action.id]}
-              <svelte:component this={iconMapping[action.id]} class="h-5 w-5 {action.iconClass}"  />
+              <svelte:component this={iconMapping[action.id]} class="h-5 w-5 {action.iconClass}" />
             {:else}
               <Sliders class="h-5 w-5" />
             {/if}
@@ -130,4 +134,15 @@
       </div>
     {/if}
   </div>
+  {#if activeFilterGroup}
+    <div >
+      <SearchFilter
+        {selectedFilters}
+        {onFilterChange}
+        {onReset}
+        {onApply}
+        activeGroup={activeFilterGroup}
+      />
+    </div>
+  {/if}
 </div>

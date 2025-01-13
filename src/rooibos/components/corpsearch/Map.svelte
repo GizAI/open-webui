@@ -76,95 +76,93 @@
   const userLocation = writable(null);
 
   const handleSearch = async (searchValue: string, filters: any) => {
-  if (!mapInstance) return;
-  console.log('Searching for:', searchValue, 'with filters:', filters);
+    if (!mapInstance) return;
+    console.log('Searching for:', searchValue, 'with filters:', filters);
 
-  try {
-    const queryParams = new URLSearchParams({
-      query: searchValue,
-      latitude: location ? location.lat.toString() : '',
-      longitude: location ? location.lng.toString() : '',
-      userLatitude: location?.lat?.toString() || '',
-      userLongitude: location?.lng?.toString() || '',
-      filters: JSON.stringify(filters),
-    });
-
-    const response = await fetch(`${WEBUI_API_BASE_URL}/rooibos/corpsearch?${queryParams.toString()}`, {
-      method: 'GET',
-    });
-
-    if (!response.ok) {
-      throw new Error('검색 요청 실패');
-    }
-
-    const data = await response.json();
-    searchResults = data.data;
-    showSearchList = true;
-
-    if (mapInstance?.companyMarkers) {
-      mapInstance.companyMarkers.forEach((marker) => marker.setMap(null));
-      mapInstance.companyMarkers = [];
-    }
-
-    if (mapInstance?.marker) {
-      mapInstance.marker.setMap(null);
-    }
-
-    if (searchResults.length === 1) {
-      const singleResult = searchResults[0];
-      const singlePoint = new naver.maps.LatLng(
-        parseFloat(singleResult.latitude),
-        parseFloat(singleResult.longitude)
-      );
-
-      mapInstance?.map.setCenter(singlePoint);
-      mapInstance?.map.setZoom(15);
-
-      const marker = new naver.maps.Marker({
-        position: singlePoint,
-        map: mapInstance.map,
-        title: singleResult.company_name,
+    try {
+      const queryParams = new URLSearchParams({
+        query: searchValue,
+        latitude: location ? location.lat.toString() : '',
+        longitude: location ? location.lng.toString() : '',
+        userLatitude: location?.lat?.toString() || '',
+        userLongitude: location?.lng?.toString() || '',
+        filters: JSON.stringify(filters),
       });
 
-      naver.maps.Event.addListener(marker, 'click', () => {
-        mapInstance?.infoWindow.setContent(compayMarkerInfo(singleResult));
-        mapInstance?.infoWindow.open(mapInstance.map, marker);
+      const response = await fetch(`${WEBUI_API_BASE_URL}/rooibos/corpsearch?${queryParams.toString()}`, {
+        method: 'GET',
       });
 
-      mapInstance.companyMarkers.push(marker);
+      if (!response.ok) {
+        throw new Error('검색 요청 실패');
+      }
 
-      mapInstance.infoWindow.setContent(compayMarkerInfo(singleResult));
-      mapInstance.infoWindow.open(mapInstance.map, marker);
-    } else {
-      searchResults.forEach((result) => {
-        const point = new naver.maps.LatLng(
-          parseFloat(result.latitude),
-          parseFloat(result.longitude)
+      const data = await response.json();
+      searchResults = data.data;
+      showSearchList = true;
+
+      if (mapInstance?.companyMarkers) {
+        mapInstance.companyMarkers.forEach((marker) => marker.setMap(null));
+        mapInstance.companyMarkers = [];
+      }
+
+      if (mapInstance?.marker) {
+        mapInstance.marker.setMap(null);
+      }
+
+      if (searchResults.length === 1) {
+        const singleResult = searchResults[0];
+        const singlePoint = new naver.maps.LatLng(
+          parseFloat(singleResult.latitude),
+          parseFloat(singleResult.longitude)
         );
 
-        if (mapInstance) {
-          const marker = new naver.maps.Marker({
-            position: point,
-            map: mapInstance.map,
-            title: result.company_name,
-          });
+        mapInstance?.map.setCenter(singlePoint);
+        mapInstance?.map.setZoom(15);
 
-          naver.maps.Event.addListener(marker, 'click', () => {
-            mapInstance?.infoWindow.close();
-            mapInstance?.infoWindow.setContent(compayMarkerInfo(result));
-            mapInstance?.infoWindow.open(mapInstance.map, marker);
-          });
-          mapInstance.companyMarkers.push(marker);
-        }
-      });
-    }    
-    activeFilterGroup = null;
-  } catch (error) {
-    console.error('검색 중 오류가 발생했습니다:', error);
-  }
-};
+        const marker = new naver.maps.Marker({
+          position: singlePoint,
+          map: mapInstance.map,
+          title: singleResult.company_name,
+        });
 
+        naver.maps.Event.addListener(marker, 'click', () => {
+          mapInstance?.infoWindow.setContent(compayMarkerInfo(singleResult));
+          mapInstance?.infoWindow.open(mapInstance.map, marker);
+        });
 
+        mapInstance.companyMarkers.push(marker);
+
+        mapInstance.infoWindow.setContent(compayMarkerInfo(singleResult));
+        mapInstance.infoWindow.open(mapInstance.map, marker);
+      } else {
+        searchResults.forEach((result) => {
+          const point = new naver.maps.LatLng(
+            parseFloat(result.latitude),
+            parseFloat(result.longitude)
+          );
+
+          if (mapInstance) {
+            const marker = new naver.maps.Marker({
+              position: point,
+              map: mapInstance.map,
+              title: result.company_name,
+            });
+
+            naver.maps.Event.addListener(marker, 'click', () => {
+              mapInstance?.infoWindow.close();
+              mapInstance?.infoWindow.setContent(compayMarkerInfo(result));
+              mapInstance?.infoWindow.open(mapInstance.map, marker);
+            });
+            mapInstance.companyMarkers.push(marker);
+          }
+        });
+      }    
+      activeFilterGroup = null;
+    } catch (error) {
+      console.error('검색 중 오류가 발생했습니다:', error);
+    }
+  };
 
   const handleReset = () => {
     selectedFilters = {};
@@ -175,7 +173,7 @@
   };
 
   const handleApply = () => {
-    if (!mapInstance) return;
+    handleSearch(searchValue, selectedFilters);
     
   };
 
@@ -304,7 +302,6 @@
   });
 
 
-  // 필터 변경 핸들러
   function onFilterChange(groupId: string, optionId: string, checked: boolean | string) {
     const group = filterGroups.find((g) => g.id === groupId);
     if (!group) return;
@@ -350,27 +347,6 @@
     return newFilters;
   }
 
-  // 필터 초기화 핸들러
-  function onReset() {
-    selectedFilters = {};
-  }
-
-  // 필터 적용 핸들러
-  function onApply() {
-    activeFilterGroup = null;
-  }
-
-  
-  const toggleFilter = (groupId: string) => {
-    if (mapInstance?.infoWindow) {
-      mapInstance.infoWindow.close();
-    }
-    activeFilterGroup = groupId === activeFilterGroup ? null : groupId;
-    isFilterOpen = (groupId !== activeFilterGroup);
-    handleSearchListChange(false);
-  };
-
-  
 
 </script>
 <div 
@@ -385,10 +361,10 @@
     onSearchValueChange={(value) => (searchValue = value)}
     onShowSearchListChange={handleSearchListChange}
     isListIconVisible={isListIconVisible}
-    isFilterOpen={isFilterOpen}
-    toggleFilter={toggleFilter}
     activeFilterGroup={null}
     searchResults={searchResults}
+    onFilterChange={onFilterChange}
+    selectedFilters={selectedFilters}
   />
 </div>
 
@@ -404,19 +380,7 @@
   </div>
 {/if}
 
-{#if activeFilterGroup}
-  <div 
-  class="search-filter-wrapper fixed bottom-0 left-1/2 transform -translate-x-1/2 w-1/2 bg-white border-t border-gray-300 rounded-t-lg shadow-lg p-4 z-[1000]"
-  class:sidebar-visible={$showSidebar}>
-    <SearchFilter
-      {selectedFilters}
-      {onFilterChange}
-      {onReset}
-      {onApply}
-      activeGroup={activeFilterGroup}
-    />
-  </div>
-{/if}
+
 
 {#if loading}
   <div class="absolute inset-0 flex items-center justify-center bg-white/80 z-10">
@@ -495,21 +459,16 @@
     z-index: 40;
     transition: all 0.3s ease;
     padding: 0 20px;
-    left: 0; /* 기본적으로 전체 화면 사용 */
+    left: 0;
   }
 
   .company-list-wrapper.sidebar-visible {
-    left: 250px !important; /* 사이드바가 보일 때 250px 만큼 띄우기 */
-  }
-
-  .search-filter-wrapper.sidebar-visible {
-    left: calc(50% + 125px);
+    left: 250px !important;
   }
 
   #map {
     position: relative;
   }
-
   
 </style>
 

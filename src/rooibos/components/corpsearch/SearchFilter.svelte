@@ -72,7 +72,6 @@
   >
     <div class="bg-white rounded-lg shadow-sm p-4">
       <div class="filter-group-title flex items-center space-x-2 mb-3"> 
-        <svelte:component this={group.icon} class="h-5 w-5 {group.iconClass}" />   
         <h3 class="font-semibold text-gray-800 text-sm">{group.title}</h3>
       </div>
 
