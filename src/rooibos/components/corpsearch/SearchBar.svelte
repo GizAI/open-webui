@@ -16,6 +16,7 @@
   export let onReset: () => void;
   export let onApply: () => void;
   export let onShowSearchListChange: (value: boolean) => void;
+  export let onFilterOpenChange: (value: boolean) => void;
 
   async function handleSubmit(event: SubmitEvent) {
     event.preventDefault();
@@ -40,8 +41,8 @@
 
   const toggleFilter = (groupId: string) => {
     activeFilterGroup = groupId === activeFilterGroup ? null : groupId;
-    isFilterOpen = true;
     onShowSearchListChange(false);
+    onFilterOpenChange(true);
   };
 
   const iconMapping: Record<string, any> = {

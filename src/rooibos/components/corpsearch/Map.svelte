@@ -210,7 +210,7 @@
     naver.maps.Event.addListener(map, 'click', () => {
       infoWindow.close();
       handleSearchListChange(false);
-      isFilterOpen = false;
+      handleFilterOpenChange(false)
     });
 
     document.addEventListener('keydown', (e) => {
@@ -349,6 +349,10 @@
     return newFilters;
   }
 
+  const handleFilterOpenChange = (value: boolean) => {
+    isFilterOpen = value;
+  };
+
 
 </script>
 <div 
@@ -368,6 +372,7 @@
     onFilterChange={onFilterChange}
     selectedFilters={selectedFilters}
     isFilterOpen={isFilterOpen}
+    onFilterOpenChange={handleFilterOpenChange}
   />
 </div>
 

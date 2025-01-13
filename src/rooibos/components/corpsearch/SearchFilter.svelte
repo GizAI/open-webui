@@ -45,14 +45,6 @@
 
   $: group = filterGroups.find((g) => g.id === activeGroup);
 
-  function handleAction(action: 'reset' | 'apply') {
-    if (action === 'reset') {
-      onReset();
-    } else if (action === 'apply') {
-      onApply();
-    }
-  }
-
   let ageValue = '';
 
   $: if (group?.id === 'gender_age') {
