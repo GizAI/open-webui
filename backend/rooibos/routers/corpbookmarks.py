@@ -27,10 +27,10 @@ def get_executable_query(sql_query: str, params: list) -> str:
         executable_query = executable_query.replace(placeholder, formatted_param)
     return executable_query
 
-@router.get("/")
-async def get_corpbookmarks():
+@router.get("/{user_id}")
+async def get_corpbookmarks(user_id: str):
     try:
-        params = []
+        params = [user_id]
         param_count = 1
 
         sql_query = """
@@ -92,7 +92,7 @@ async def get_corpbookmarks():
             AND me.position = '대표이사'    
         LEFT JOIN FinancialComparison 
             ON fc.id = FinancialComparison.financial_company_id   
-        WHERE f.user_id = '87cb7169-8c44-4e04-9944-76d6deb389c6'    
+        WHERE f.user_id = $1
         ORDER BY f.updated_at DESC
         """
 
@@ -121,7 +121,6 @@ async def get_corpbookmark_by_id(id: str):
     특정 북마크(ID)를 조회하는 API
     """
     try:
-        # 동일한 쿼리이지만 WHERE 조건에 f.id = :id 부분만 추가
         sql_query = """
         WITH FinancialComparison AS (
             SELECT 
@@ -181,8 +180,7 @@ async def get_corpbookmark_by_id(id: str):
             AND me.position = '대표이사'
         LEFT JOIN FinancialComparison 
             ON fc.id = FinancialComparison.financial_company_id
-        WHERE f.user_id = '87cb7169-8c44-4e04-9944-76d6deb389c6'
-          AND f.id = :id
+        WHERE f.id = :id
         ORDER BY f.updated_at DESC
         """
         with get_db() as db:
@@ -231,6 +229,45 @@ async def delete_corpbookmark(id: str):
         return {
             "success": False,
             "error": "Delete failed",
+            "message": str(e)
+        }
+    
+@router.post("/add")
+async def add_corpbookmark(request: Request):
+    """
+    즐겨찾기 추가 API
+    """
+    try:
+        body = await request.json()
+        user_id = body.get("userId")
+        company_id = body.get("companyId")
+        business_registration_number = body.get("business_registration_number")
+
+        if not user_id or not company_id:
+            raise HTTPException(status_code=400, detail="Invalid input. 'userId' and 'companyId' are required.")
+
+        sql_query = """
+        INSERT INTO corp_bookmark (user_id, company_id, business_registration_number, memo, created_at, updated_at)
+        VALUES (:user_id, :company_id, :business_registration_number, '', now(), now())
+        RETURNING id
+        """
+
+        with get_db() as db:
+            result = db.execute(text(sql_query), {"user_id": user_id, "company_id": company_id, "business_registration_number": business_registration_number})
+            bookmark_id = result.fetchone()[0]
+            db.commit()
+
+        return {
+            "success": True,
+            "data": {"id": bookmark_id},
+            "message": "Bookmark successfully added."
+        }
+
+    except Exception as e:
+        print("Add Bookmark API error:", e)
+        return {
+            "success": False,
+            "error": "Add failed",
             "message": str(e)
         }
 

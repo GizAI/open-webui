@@ -6,7 +6,7 @@
 	import { onMount, getContext } from 'svelte';
 	const i18n = getContext('i18n');
 
-	import { WEBUI_NAME} from '$lib/stores';
+	import { user, WEBUI_NAME} from '$lib/stores';
 
 	import { goto } from '$app/navigation';
 
@@ -15,6 +15,7 @@
 	import Badge from '$lib/components/common/Badge.svelte';
 	import Spinner from '$lib/components/common/Spinner.svelte';
 	import { WEBUI_API_BASE_URL } from '$lib/constants';
+	import { get } from 'svelte/store';
 
 
 	let loaded = false;
@@ -26,7 +27,7 @@
 
 	const deleteHandler = async (item: any) => {
 		try {
-        const response = await fetch(`${WEBUI_API_BASE_URL}/corpbookmarks/${item.id}/delete`, {
+        const response = await fetch(`${WEBUI_API_BASE_URL}/rooibos/corpbookmarks/${item.id}/delete`, {
             method: 'DELETE',
             headers: {
                 'Content-Type': 'application/json',
@@ -48,9 +49,10 @@
 	};
 
 	onMount(async () => {
-		const response = await fetch(`${WEBUI_API_BASE_URL}/rooibos/corpbookmarks`, {
-      		method: 'GET',
-    	});
+		const currentUser = get(user);
+		const response = await fetch(`${WEBUI_API_BASE_URL}/rooibos/corpbookmarks/${currentUser?.id}`, {
+        method: 'GET',
+    });
 		if (!response.ok) {
 			throw new Error('검색 요청 실패');
 		}

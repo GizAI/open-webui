@@ -1,4 +1,6 @@
 import { goto } from '$app/navigation';
+import { user } from '$lib/stores';
+import { WEBUI_API_BASE_URL } from '$lib/constants';
 import { companyDetails } from '$rooibos/stores';
 import { get } from 'svelte/store';
 
@@ -15,23 +17,28 @@ export const compayMarkerInfo = (
 
   const encodedResult = btoa(encodeURIComponent(JSON.stringify(result)));
 
-  window.handleFavoriteClick = async (encodedResult: string, resultString: string) => {  
+  window.handleFavoriteClick = async (encodedResult, resultString) => {
     try {
-  
       const companyData = JSON.parse(decodeURIComponent(atob(encodedResult)));
       const bookmarkCorp = JSON.parse(decodeURIComponent(resultString));
-  
+      const currentUser = get(user);
+      
       if (!bookmarkCorp.bookmark_id) {
-        const response = await fetch('/api/bookmarks', {
+        const response = await fetch(`${WEBUI_API_BASE_URL}/rooibos/corpbookmarks/add`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          // body: JSON.stringify({ userId: user.id, companyId: companyData.id }),
+          body: JSON.stringify({ userId: currentUser?.id, companyId: companyData.id, business_registration_number: companyData.business_registration_number }),
         });
+  
         const { data } = await response.json();
         bookmarkCorp.bookmark_id = data.id;
       } else {
-        await fetch(`/api/bookmarks/${bookmarkCorp.bookmark_id}`, { method: 'DELETE' });
-        bookmarkCorp.bookmark_id = null;
+        await fetch(`${WEBUI_API_BASE_URL}/rooibos/corpbookmarks/${bookmarkCorp.bookmark_id}/delete`, {
+          method: 'DELETE',
+          headers: {
+              'Content-Type': 'application/json',
+          },
+      });
       }
     } catch (error) {
       console.error("Error processing data:", error);
