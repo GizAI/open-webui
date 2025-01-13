@@ -1,3 +1,7 @@
+import { goto } from '$app/navigation';
+import { companyDetails } from '$rooibos/stores';
+import { get } from 'svelte/store';
+
 declare global {
   interface Window {
     handleGptClick: (data: any) => void;
@@ -10,16 +14,6 @@ export const compayMarkerInfo = (
 ): string => {
 
   const encodedResult = btoa(encodeURIComponent(JSON.stringify(result)));
-
-  window.handleGptClick = (encodedData: string) => {
-    try {
-      const data = JSON.parse(decodeURIComponent(atob(encodedData)));
-      // useMapStore.getState().setSelectedCompany(data);
-      window.location.href = "/chatbot";
-    } catch (error) {
-      console.error("Error processing data:", error);
-    }
-  };
 
   window.handleFavoriteClick = async (encodedResult: string, resultString: string) => {  
     try {
@@ -43,6 +37,17 @@ export const compayMarkerInfo = (
       console.error("Error processing data:", error);
     }
   };
+
+  window.handleGptClick = async (encodedData: string) => {
+    try {
+      const data = JSON.parse(decodeURIComponent(atob(encodedData)));
+  
+      companyDetails.set(data);
+      await goto('/');
+    } catch (error) {
+      console.error('Error processing data:', error);
+    }
+  };  
 
   const formatDistance = (distance: number): string => {
     return distance < 1000 ? `${distance}m` : `${(distance / 1000).toFixed(1)}km`;
@@ -183,17 +188,19 @@ export const compayMarkerInfo = (
         <div style="display: flex; gap: 10px; margin-top: 10px; align-items: center;">
           <button style="background: none; border: none; cursor: pointer;"
             onclick="(() => { window.handleFavoriteClick('${encodedResult}', '${encodeURIComponent(JSON.stringify(result))}') })()">
-            
+            즐겨찾기
           </button>
           <button 
             style="background: none; border: none; cursor: pointer;"
             onclick="(() => { window.handleGptClick('${encodedResult}') })()"
           >
+            GPT 묻기
           </button>
           <button style="background: none; border: none; cursor: pointer;"
             onclick="window.open('https://map.naver.com/v5/search/${encodeURIComponent(
               result.company_name
             )}', '_blank')">
+            네이버
           </button>
         </div>
         ${memosHtml}

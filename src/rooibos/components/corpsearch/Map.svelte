@@ -165,11 +165,7 @@
   };
 
   const handleReset = () => {
-    selectedFilters = {};
-    if (mapInstance?.companyMarkers) {
-      mapInstance.companyMarkers.forEach(marker => marker.setMap(null));
-      mapInstance.companyMarkers = [];
-    }
+    selectedFilters = {};    
   };
 
   const handleApply = () => {
