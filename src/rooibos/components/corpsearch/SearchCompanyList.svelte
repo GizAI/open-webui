@@ -26,9 +26,10 @@
 </script>
 
 <div 
-  class="fixed bottom-0 bg-gray-50 shadow-lg pl-2 pt-2 rounded-t-2xl overflow-y-auto z-40 transition-all duration-300"
+  class="fixed bottom-0 bg-gray-50 shadow-lg pl-2 pt-2 rounded-t-2xl overflow-y-auto z-40 transition-all duration-300
+         md:max-h-[calc(100vh-140px)] 
+         max-h-[calc(100vh+50px)]"
   class:sidebar-margin={$showSidebar}
-  style="max-height: calc(100vh - 140px);"
 >
   <ul class="p-4 space-y-2 overflow-y-auto">
     {#each searchResults as result}
