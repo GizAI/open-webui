@@ -374,13 +374,13 @@
 
 {#if searchResults.length > 0 && showSearchList}
   <div 
-  class="company-list-wrapper w-full"
-  class:sidebar-visible={$showSidebar}
-  >
-    <SearchCompanyList
-      searchResults={searchResults}
-      onResultClick={handleResultClick}
-    />
+    class="company-list-wrapper w-full"
+    class:sidebar-visible={$showSidebar}
+    >
+      <SearchCompanyList
+        searchResults={searchResults}
+        onResultClick={handleResultClick}
+      />
   </div>
 {/if}
 

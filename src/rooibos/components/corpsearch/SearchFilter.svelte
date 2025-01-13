@@ -29,6 +29,12 @@
   let maxHeight = '60vh';
 
   onMount(() => {
+    filterGroups.forEach((group) => {
+      if (group.defaultValue && !selectedFilters[group.id]) {
+        selectedFilters[group.id] = group.defaultValue;
+      }
+    });
+    
     function updateMaxHeight() {
       const windowHeight = window.innerHeight;
       const searchBarHeight = 64;
