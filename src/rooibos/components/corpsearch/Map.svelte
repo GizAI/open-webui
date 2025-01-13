@@ -78,7 +78,7 @@
   const handleSearch = async (searchValue: string, filters: any) => {
     if (!mapInstance) return;
     console.log('Searching for:', searchValue, 'with filters:', filters);
-
+    showSearchList = false
     try {
       const queryParams = new URLSearchParams({
         query: searchValue,
