@@ -6,13 +6,14 @@
     latitude: string;
     longitude: string;
   }
-
+  import { showSidebar } from '$lib/stores';
   export let searchResults: SearchResult[] = [];
   export let onResultClick: (result: SearchResult) => void;
 </script>
 
 <div 
-  class="fixed bottom-0 left-0 right-0 bg-gray-50 shadow-lg rounded-t-2xl overflow-y-auto z-40" 
+  class="fixed bottom-0 bg-gray-50 shadow-lg rounded-t-2xl overflow-y-auto z-40 transition-all duration-300"
+  class:sidebar-margin={$showSidebar}
   style="max-height: calc(100% - 140px);"
 >
   <ul class="p-4 space-y-3">
@@ -60,5 +61,15 @@
     list-style-type: none;
     margin: 0;
     padding: 0;
+  }
+
+  .fixed {
+    left: 0;
+    right: 0;
+  }
+
+  /* 사이드바가 보일 때 적용될 스타일 */
+  .sidebar-margin {
+    left: 210px;  /* 사이드바의 너비만큼 여백 설정 */
   }
 </style>

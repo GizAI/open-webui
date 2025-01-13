@@ -11,7 +11,7 @@
   export let isListIconVisible: boolean;
   export let selectedFilters: any = {};
   export let onFilterChange: (groupId: string, optionId: string, checked: boolean | string) => void;
-  let isFilterOpen: boolean = false;
+  export let isFilterOpen: boolean = false;
   export let activeFilterGroup: string | null = null;
   export let onReset: () => void;
   export let onApply: () => void;
@@ -26,6 +26,7 @@
   
   function handleListIconClick() {
     const newValue = !isListIconVisible;
+    isFilterOpen = false;
     onShowSearchListChange(newValue);
   }
 
@@ -39,8 +40,8 @@
 
   const toggleFilter = (groupId: string) => {
     activeFilterGroup = groupId === activeFilterGroup ? null : groupId;
-    isFilterOpen = (groupId !== activeFilterGroup);
-    
+    isFilterOpen = true;
+    onShowSearchListChange(false);
   };
 
   const iconMapping: Record<string, any> = {
@@ -134,8 +135,8 @@
       </div>
     {/if}
   </div>
-  {#if activeFilterGroup}
-    <div >
+  {#if isFilterOpen}
+    <div>
       <SearchFilter
         {selectedFilters}
         {onFilterChange}

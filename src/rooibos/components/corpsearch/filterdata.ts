@@ -11,7 +11,7 @@ import {
       icon: MapPin,
       iconClass: "text-red-500",
       isMulti: false,
-      defaultValue: '500',
+      defaultValue: '200',
       options: [
         { id: '200', label: '200m' },
         { id: '500', label: '500m' },

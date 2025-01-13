@@ -67,7 +67,7 @@
 
 {#if group}
   <div
-    class="space-y-4 p-3 bg-gray-50"
+    class="space-y-4 p-3 bg-gray-50 mt-10"
     style="max-height: {maxHeight}; overflow-y: auto;"
   >
     <div class="bg-white rounded-lg shadow-sm p-4">
