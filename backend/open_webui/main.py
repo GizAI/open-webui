@@ -770,16 +770,12 @@ app.include_router(
 )
 app.include_router(utils.router, prefix="/api/v1/utils", tags=["utils"])
 
-
-from open_webui.rooibos.routers import (
-    corpsearch,
-    corpbookmarks,
-)
-
-app.include_router(corpsearch.router, prefix="/api/v1/rooibos/corpsearch", tags=["corpsearch"])
-app.include_router(corpbookmarks.router, prefix="/api/v1/rooibos/corpbookmarks", tags=["corpbookmarks"])
-
-
+try:
+    from open_webui.rooibos.main_extension import extend_app
+    extend_app(app)
+except ImportError as e:
+    import traceback
+    log.error(traceback.format_exc())  
 
 ##################################
 #
