@@ -59,6 +59,8 @@ async def search(request: Request):
 
     loan = filters.get("loan")
 
+    print("====================================================")
+
     net_profit_data = filters.get("net_profit", {})
     net_profit_min = net_profit_data.get("min")
     net_profit_max = net_profit_data.get("max")
@@ -332,6 +334,7 @@ async def search(request: Request):
             result = db.execute(text(executable_query))
             companies = [row._mapping for row in result.fetchall()]
 
+        print(companies)
         return {
             "success": True,
             "data": companies,
