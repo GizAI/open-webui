@@ -5,6 +5,8 @@ import json
 from open_webui.internal.db import get_db
 from sqlalchemy import text
 
+import logging
+
 router = APIRouter()
 
 def format_parameter(param):
@@ -31,6 +33,8 @@ def get_executable_query(sql_query: str, params: list) -> str:
 @router.get("/")
 async def search(request: Request):
     print("====================================================")
+    logging.log("====================================================")
+    
     search_params = request.query_params
     id = search_params.get("id")
     query = search_params.get("query", "").strip()
@@ -61,6 +65,8 @@ async def search(request: Request):
     loan = filters.get("loan")
 
     print("====================================================")
+
+    
 
     net_profit_data = filters.get("net_profit", {})
     net_profit_min = net_profit_data.get("min")
