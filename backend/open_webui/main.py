@@ -1170,13 +1170,6 @@ async def healthcheck_with_db():
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 app.mount("/cache", StaticFiles(directory=CACHE_DIR), name="cache")
 
-try:
-    from open_webui.rooibos.main_extension import extend_app
-    extend_app(app)
-except ImportError as e:
-    import traceback
-    log.error(traceback.format_exc())  
-
 
 def swagger_ui_html(*args, **kwargs):
     return get_swagger_ui_html(
@@ -1189,6 +1182,13 @@ def swagger_ui_html(*args, **kwargs):
 
 
 applications.get_swagger_ui_html = swagger_ui_html
+
+try:
+    from open_webui.rooibos.main_extension import extend_app
+    extend_app(app)
+except ImportError as e:
+    import traceback
+    log.error(traceback.format_exc())  
 
 if os.path.exists(FRONTEND_BUILD_DIR):
     mimetypes.add_type("text/javascript", ".js")
