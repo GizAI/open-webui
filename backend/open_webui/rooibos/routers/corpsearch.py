@@ -32,6 +32,11 @@ def get_executable_query(sql_query: str, params: list) -> str:
         executable_query = executable_query.replace(placeholder, formatted_param)
     return executable_query
 
+@router.get("/test")
+async def test(request: Request):
+    return {"message": "Hello, World!"}
+
+
 @router.get("/")
 async def search(request: Request):
     log.info("1====================================================")
