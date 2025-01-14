@@ -52,6 +52,10 @@
 		const currentUser = get(user);
 		const response = await fetch(`${WEBUI_API_BASE_URL}/rooibos/corpbookmarks/${currentUser?.id}`, {
         method: 'GET',
+		headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${localStorage.token}`
+        },
     });
 		if (!response.ok) {
 			throw new Error('검색 요청 실패');

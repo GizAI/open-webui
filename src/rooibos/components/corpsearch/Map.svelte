@@ -9,6 +9,7 @@
 	import MenuLines from '$lib/components/icons/MenuLines.svelte';
   import { compayMarkerInfo } from './companymarkerinfo';
   import { filterGroups } from './filterdata';
+  import { mobile, user } from '$lib/stores';
 
   import {
 		showSidebar
@@ -88,9 +89,13 @@
         userLongitude: location?.lng?.toString() || '',
         filters: JSON.stringify(filters),
       });
-
+      
       const response = await fetch(`${WEBUI_API_BASE_URL}/rooibos/corpsearch?${queryParams.toString()}`, {
         method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${localStorage.token}`
+        },
       });
 
       if (!response.ok) {

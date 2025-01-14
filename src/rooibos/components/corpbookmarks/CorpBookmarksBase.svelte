@@ -47,7 +47,7 @@
 
 	let largeScreen = true;
 
-	let pane;
+	let pane: any;
 	let showSidepanel = true;
 	let minSize = 0;
 
@@ -82,7 +82,7 @@
 		files: any[];
 	};
 
-	let id = null;
+	let id: any = null;
 	let bookmark: Bookmark | null = null;
 	let query = '';
 
@@ -90,9 +90,9 @@
 	let showSyncConfirmModal = false;
 	let showAccessControlModal = false;
 
-	let inputFiles = null;
+	let inputFiles : any= null;
 
-	let filteredItems = [];
+	let filteredItems: any = [];
 	$: if (bookmark && bookmark.files) {
 		fuse = new Fuse(bookmark.files, {
 			keys: ['meta.name', 'meta.description']
@@ -107,8 +107,8 @@
 			: (bookmark?.files ?? []);
 	}
 
-	let selectedFile = null;
-	let selectedFileId = null;
+	let selectedFile: any = null;
+	let selectedFileId: any = null;
 
 	$: if (selectedFileId) {
 		const file = (bookmark?.files ?? []).find((file) => file.id === selectedFileId);
@@ -122,12 +122,12 @@
 		selectedFile = null;
 	}
 
-	let fuse = null;
-	let debounceTimeout = null;
-	let mediaQuery;
+	let fuse: any = null;
+	let debounceTimeout: any = null;
+	let mediaQuery: any;
 	let dragged = false;
 
-	const createFileFromText = (name, content) => {
+	const createFileFromText = (name: string, content: string) => {
 		const blob = new Blob([content], { type: 'text/plain' });
 		const file = blobToFile(blob, `${name}.txt`);
 
@@ -135,7 +135,7 @@
 		return file;
 	};
 
-	const uploadFileHandler = async (file) => {
+	const uploadFileHandler = async (file: any) => {
 		console.log(file);
 
 		const tempItemId = uuidv4();
@@ -546,7 +546,8 @@
 			method: 'GET',
 			headers: {
 				Accept: 'application/json',
-				'Content-Type': 'application/json'
+				'Content-Type': 'application/json',
+				Authorization: `Bearer ${localStorage.token}`
 			}
 		})
 
