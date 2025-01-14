@@ -770,12 +770,7 @@ app.include_router(
 )
 app.include_router(utils.router, prefix="/api/v1/utils", tags=["utils"])
 
-try:
-    from open_webui.rooibos.main_extension import extend_app
-    extend_app(app)
-except ImportError as e:
-    import traceback
-    log.error(traceback.format_exc())  
+
 
 ##################################
 #
@@ -1174,6 +1169,13 @@ async def healthcheck_with_db():
 
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 app.mount("/cache", StaticFiles(directory=CACHE_DIR), name="cache")
+
+try:
+    from open_webui.rooibos.main_extension import extend_app
+    extend_app(app)
+except ImportError as e:
+    import traceback
+    log.error(traceback.format_exc())  
 
 
 def swagger_ui_html(*args, **kwargs):
