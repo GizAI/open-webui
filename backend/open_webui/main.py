@@ -1193,10 +1193,11 @@ else:
         f"Frontend build directory not found at '{FRONTEND_BUILD_DIR}'. Serving API only."
     )
 
-try:
-    from open_webui.rooibos.main_extension import extend_app
-    app = extend_app(app)
-except ImportError as e:
-    import traceback
-    log.error(traceback.format_exc())  
-    
+
+from open_webui.rooibos.routers import (
+    corpsearch,
+    corpbookmarks,
+)
+
+app.include_router(corpsearch.router, prefix="/api/v1/rooibos/corpsearch", tags=["corpsearch"])
+app.include_router(corpbookmarks.router, prefix="/api/v1/rooibos/corpbookmarks", tags=["corpbookmarks"])
