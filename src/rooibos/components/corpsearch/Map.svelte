@@ -89,12 +89,12 @@
         userLongitude: location?.lng?.toString() || '',
         filters: JSON.stringify(filters),
       });
-
       
       
       const response = await fetch(`${WEBUI_API_BASE_URL}/rooibos/corpsearch?${queryParams.toString()}`, {
         method: 'GET',
         headers: {
+          Accept: 'application/json',
           'Content-Type': 'application/json',
           Authorization: `Bearer ${localStorage.token}`
         },
@@ -104,11 +104,7 @@
         throw new Error('검색 요청 실패');
       }
 
-      console.log('Response status:', response.status);
-      const responseText = await response.text();
-      console.log('Response text:', responseText);
-
-      const data = JSON.parse(responseText);
+      const data = await response.json();
       searchResults = data.data;
       showSearchList = true;
 
