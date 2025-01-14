@@ -75,9 +75,6 @@ from open_webui.routers import (
     utils,
 )
 
-from rooibos.routers import (
-    corpsearch, corpbookmarks)
-
 from open_webui.routers.retrieval import (
     get_embedding_function,
     get_ef,
@@ -305,12 +302,6 @@ from open_webui.utils.oauth import oauth_manager
 from open_webui.utils.security_headers import SecurityHeadersMiddleware
 
 from open_webui.tasks import stop_task, list_tasks  # Import from tasks.py
-
-import sys
-from pathlib import Path
-
-BASE_DIR = Path(__file__).resolve().parent.parent
-sys.path.append(str(BASE_DIR / "rooibos"))
 
 if SAFE_MODE:
     print("SAFE MODE ENABLED")
@@ -695,21 +686,6 @@ class RedirectMiddleware(BaseHTTPMiddleware):
 app.add_middleware(RedirectMiddleware)
 app.add_middleware(SecurityHeadersMiddleware)
 
-# Debugging middleware
-@app.middleware("http")
-async def log_requests(request: Request, call_next):
-    print(f"Incoming request: {request.method} {request.url.path}")
-    response = await call_next(request)
-    print(f"Response status: {response.status_code}")
-    return response
-
-# API specific middleware
-@app.middleware("http")
-async def api_middleware(request: Request, call_next):
-    if request.url.path.startswith("/api/"):
-        print(f"API request received: {request.url.path}")
-    response = await call_next(request)
-    return response
 
 @app.middleware("http")
 async def commit_session_after_request(request: Request, call_next):
@@ -792,9 +768,6 @@ app.include_router(
     evaluations.router, prefix="/api/v1/evaluations", tags=["evaluations"]
 )
 app.include_router(utils.router, prefix="/api/v1/utils", tags=["utils"])
-
-app.include_router(corpsearch.router, prefix="/api/v1/rooibos/corpsearch", tags=["corpsearch"])
-app.include_router(corpbookmarks.router, prefix="/api/v1/rooibos/corpbookmarks", tags=["corpbookmarks"])
 
 
 ##################################
@@ -1191,13 +1164,6 @@ async def healthcheck_with_db():
     Session.execute(text("SELECT 1;")).all()
     return {"status": True}
 
-try:
-    from rooibos.main_extension import extend_app
-    app = extend_app(app)
-except ImportError as e:
-    import traceback
-    log.error(traceback.format_exc()) 
-
 
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 app.mount("/cache", StaticFiles(directory=CACHE_DIR), name="cache")
@@ -1215,18 +1181,6 @@ def swagger_ui_html(*args, **kwargs):
 
 applications.get_swagger_ui_html = swagger_ui_html
 
-class CustomSPAStaticFiles(StaticFiles):
-    async def get_response(self, path: str, scope):
-        if path.startswith("api/"):
-            raise HTTPException(status_code=404)
-        try:
-            return await super().get_response(path, scope)
-        except (HTTPException, StarletteHTTPException) as ex:
-            if ex.status_code == 404:
-                return await super().get_response("index.html", scope)
-            raise ex
-
-
 if os.path.exists(FRONTEND_BUILD_DIR):
     mimetypes.add_type("text/javascript", ".js")
     app.mount(
@@ -1239,5 +1193,10 @@ else:
         f"Frontend build directory not found at '{FRONTEND_BUILD_DIR}'. Serving API only."
     )
 
- 
+try:
+    from rooibos.main_extension import extend_app
+    app = extend_app(app)
+except ImportError as e:
+    import traceback
+    log.error(traceback.format_exc())  
     
