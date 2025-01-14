@@ -770,6 +770,17 @@ app.include_router(
 )
 app.include_router(utils.router, prefix="/api/v1/utils", tags=["utils"])
 
+
+from open_webui.rooibos.routers import (
+    corpsearch,
+    corpbookmarks,
+)
+
+app.include_router(corpsearch.router, prefix="/api/v1/rooibos/corpsearch", tags=["corpsearch"])
+app.include_router(corpbookmarks.router, prefix="/api/v1/rooibos/corpbookmarks", tags=["corpbookmarks"])
+
+
+
 ##################################
 #
 # Chat Endpoints
@@ -1193,11 +1204,3 @@ else:
         f"Frontend build directory not found at '{FRONTEND_BUILD_DIR}'. Serving API only."
     )
 
-
-from open_webui.rooibos.routers import (
-    corpsearch,
-    corpbookmarks,
-)
-
-app.include_router(corpsearch.router, prefix="/api/v1/rooibos/corpsearch", tags=["corpsearch"])
-app.include_router(corpbookmarks.router, prefix="/api/v1/rooibos/corpbookmarks", tags=["corpbookmarks"])
