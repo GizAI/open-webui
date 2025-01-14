@@ -25,7 +25,7 @@ def extend_app(app: FastAPI):
     init_extended_config(app)
     
     # Add custom middlewares
-    app.add_middleware(CustomHeaderMiddleware)
+    # app.add_middleware(CustomHeaderMiddleware)
     
     # You can add more middleware here
     

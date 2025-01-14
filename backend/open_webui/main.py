@@ -75,6 +75,11 @@ from open_webui.routers import (
     utils,
 )
 
+from open_webui.rooibos.routers import (
+    corpsearch,
+    corpbookmarks,
+)
+
 from open_webui.routers.retrieval import (
     get_embedding_function,
     get_ef,
@@ -770,6 +775,10 @@ app.include_router(
 app.include_router(utils.router, prefix="/api/v1/utils", tags=["utils"])
 
 
+app.include_router(corpsearch.router, prefix="/api/v1/rooibos/corpsearch", tags=["corpsearch"])
+app.include_router(corpbookmarks.router, prefix="/api/v1/rooibos/corpbookmarks", tags=["corpbookmarks"])
+
+
 ##################################
 #
 # Chat Endpoints
@@ -1193,10 +1202,4 @@ else:
         f"Frontend build directory not found at '{FRONTEND_BUILD_DIR}'. Serving API only."
     )
 
-try:
-    from open_webui.rooibos.main_extension import extend_app
-    app = extend_app(app)
-except ImportError as e:
-    import traceback
-    log.error(traceback.format_exc())  
     
