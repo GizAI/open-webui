@@ -306,6 +306,12 @@ from open_webui.utils.security_headers import SecurityHeadersMiddleware
 
 from open_webui.tasks import stop_task, list_tasks  # Import from tasks.py
 
+import sys
+from pathlib import Path
+
+BASE_DIR = Path(__file__).resolve().parent.parent
+sys.path.append(str(BASE_DIR / "rooibos"))
+
 if SAFE_MODE:
     print("SAFE MODE ENABLED")
     Functions.deactivate_all_functions()
@@ -341,19 +347,6 @@ v{VERSION} - building the best open-source AI user interface.
 https://github.com/open-webui/open-webui
 """
 )
-
-# Custom SPA Static Files handler
-class CustomSPAStaticFiles(StaticFiles):
-    async def get_response(self, path: str, scope):
-        if path.startswith("api/"):
-            raise HTTPException(status_code=404)
-        try:
-            return await super().get_response(path, scope)
-        except (HTTPException, StarletteHTTPException) as ex:
-            if ex.status_code == 404:
-                return await super().get_response("index.html", scope)
-            raise ex
-
 
 
 @asynccontextmanager
@@ -1238,7 +1231,7 @@ if os.path.exists(FRONTEND_BUILD_DIR):
     mimetypes.add_type("text/javascript", ".js")
     app.mount(
         "/",
-        CustomSPAStaticFiles(directory=FRONTEND_BUILD_DIR, html=True),
+        SPAStaticFiles(directory=FRONTEND_BUILD_DIR, html=True),
         name="spa-static-files",
     )
 else:
