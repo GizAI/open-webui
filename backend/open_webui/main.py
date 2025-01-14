@@ -20,6 +20,7 @@ import aiohttp
 import requests
 
 
+
 from fastapi import (
     Depends,
     FastAPI,
@@ -1164,6 +1165,12 @@ async def healthcheck_with_db():
     Session.execute(text("SELECT 1;")).all()
     return {"status": True}
 
+try:
+    from rooibos.main_extension import extend_app
+    app = extend_app(app)
+except ImportError as e:
+    import traceback
+    log.error(traceback.format_exc())  
 
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 app.mount("/cache", StaticFiles(directory=CACHE_DIR), name="cache")
@@ -1193,10 +1200,5 @@ else:
         f"Frontend build directory not found at '{FRONTEND_BUILD_DIR}'. Serving API only."
     )
 
-try:
-    from rooibos.main_extension import extend_app
-    app = extend_app(app)
-except ImportError as e:
-    import traceback
-    log.error(traceback.format_exc())  
+
     
