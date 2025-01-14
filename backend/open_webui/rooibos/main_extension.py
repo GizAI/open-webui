@@ -2,8 +2,9 @@ from fastapi import FastAPI
 from starlette.middleware.base import BaseHTTPMiddleware
 from open_webui.rooibos.config_extension import init_extended_config
 from open_webui.rooibos.routers import (
-    corpsearch, corpbookmarks)
-
+    corpsearch,
+    corpbookmarks,
+)
 class CustomHeaderMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request, call_next):
         response = await call_next(request)

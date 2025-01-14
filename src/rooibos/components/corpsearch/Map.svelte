@@ -91,7 +91,7 @@
       });
       
       
-      const response = await fetch(`${WEBUI_API_BASE_URL}/rooibos/corpsearch?${queryParams.toString()}`, {
+      const response = await fetch(`${WEBUI_API_BASE_URL}/rooibos/corpsearch/?${queryParams.toString()}`, {
         method: 'GET',
         headers: {
           Accept: 'application/json',
