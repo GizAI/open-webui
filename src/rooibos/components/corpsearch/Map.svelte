@@ -90,9 +90,11 @@
         filters: JSON.stringify(filters),
       });
       
+      
       const response = await fetch(`${WEBUI_API_BASE_URL}/rooibos/corpsearch?${queryParams.toString()}`, {
         method: 'GET',
         headers: {
+          Accept: 'application/json',
           'Content-Type': 'application/json',
           Authorization: `Bearer ${localStorage.token}`
         },
@@ -408,8 +410,8 @@
 {/if}
 
 <div id="map" class="w-full h-full relative">
-  <div class="absolute top-2 left-2 bg-transparent rounded-full shadow-lg z-50 p-2">
-    <div class="{$showSidebar ? 'md:hidden' : ''} self-center flex flex-none items-center">
+  <div class="absolute top-2 left-2 bg-white md:bg-transparent rounded-full shadow-lg z-50 p-2">
+    <div class="{$showSidebar ? 'hidden' : ''} self-center flex flex-none items-center">
       <button
         id="sidebar-toggle-button"
         class="cursor-pointer p-1.5 flex rounded-xl hover:bg-gray-100 dark:hover:bg-gray-850 transition"
@@ -418,7 +420,7 @@
         }}
         aria-label="Toggle Sidebar"
       >
-        <div class=" m-auto self-center">
+        <div class="m-auto self-center">
           <MenuLines />
         </div>
       </button>
@@ -459,6 +461,9 @@
 
   .search-bar-wrapper.sidebar-visible {
     left: calc(50% + 125px);
+    @media (max-width: 768px) {
+      display: none;
+    }
   }
 
   .company-list-wrapper {
