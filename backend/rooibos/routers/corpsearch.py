@@ -1,11 +1,13 @@
 from fastapi import APIRouter, Request, HTTPException
 from typing import Optional
 import json
+import logging
 
 from open_webui.internal.db import get_db
 from sqlalchemy import text
-
-import logging
+from open_webui.env import SRC_LOG_LEVELS
+log = logging.getLogger(__name__)
+log.setLevel(SRC_LOG_LEVELS["COMFYUI"])
 
 router = APIRouter()
 
@@ -32,7 +34,7 @@ def get_executable_query(sql_query: str, params: list) -> str:
 
 @router.get("/")
 async def search(request: Request):
-    print("====================================================")
+    log.info("1====================================================")
     search_params = request.query_params
     id = search_params.get("id")
     query = search_params.get("query", "").strip()
@@ -49,7 +51,7 @@ async def search(request: Request):
     employee_count_data = filters.get("employee_count", {})
     employee_count_min = employee_count_data.get("min")
     employee_count_max = employee_count_data.get("max")
-
+    log.info("2====================================================")
     certification = filters.get("certification", [])
 
     establishment_year = filters.get("establishment_year", {}).get("year")
@@ -60,11 +62,7 @@ async def search(request: Request):
     gender = "남" if gender_raw == "male" else ("여" if gender_raw == "female" else None)
     gender_age = filters.get("gender_age", {}).get("age")
 
-    loan = filters.get("loan")
-
-    print("====================================================")
-
-    
+    loan = filters.get("loan")    
 
     net_profit_data = filters.get("net_profit", {})
     net_profit_min = net_profit_data.get("min")
@@ -339,7 +337,7 @@ async def search(request: Request):
             result = db.execute(text(executable_query))
             companies = [row._mapping for row in result.fetchall()]
 
-        print(companies)
+        log.info(companies)
         return {
             "success": True,
             "data": companies,
