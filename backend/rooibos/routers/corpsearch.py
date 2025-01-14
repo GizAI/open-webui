@@ -30,6 +30,7 @@ def get_executable_query(sql_query: str, params: list) -> str:
 
 @router.get("/")
 async def search(request: Request):
+    print("====================================================")
     search_params = request.query_params
     id = search_params.get("id")
     query = search_params.get("query", "").strip()
