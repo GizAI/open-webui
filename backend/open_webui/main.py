@@ -1184,7 +1184,7 @@ def swagger_ui_html(*args, **kwargs):
 applications.get_swagger_ui_html = swagger_ui_html
 
 try:
-    from open_webui.rooibos.main_extension import extend_app
+    from rooibos.main_extension import extend_app
     extend_app(app)
 except ImportError as e:
     import traceback
