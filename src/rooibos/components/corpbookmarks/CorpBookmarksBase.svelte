@@ -42,7 +42,7 @@
 	import AccessControlModal from '$lib/components/workspace/common/AccessControlModal.svelte';
 	import { WEBUI_API_BASE_URL } from '$lib/constants';
 	import Bookmark from '$lib/components/icons/Bookmark.svelte';
-	import { Briefcase, MapPin, Users, Phone, Globe, Calendar, DollarSign } from 'lucide-svelte';
+	import { Briefcase, MapPin, Users, Phone, Globe, Calendar, DollarSign, List } from 'lucide-svelte';
 
 
 	let largeScreen = true;
@@ -76,9 +76,6 @@
 		distance_from_user?: number;
 		created_at?: string;
 		updated_at?: string;
-		data: {
-			file_ids: string[];
-		};
 		files: any[];
 	};
 
@@ -97,14 +94,6 @@
 		fuse = new Fuse(bookmark.files, {
 			keys: ['meta.name', 'meta.description']
 		});
-	}
-
-	$: if (fuse) {
-		filteredItems = query
-			? fuse.search(query).map((e) => {
-					return e.item;
-				})
-			: (bookmark?.files ?? []);
 	}
 
 	let selectedFile: any = null;
@@ -379,24 +368,26 @@
 		}
 	};
 
-	const addFileHandler = async (fileId) => {
-		const updatedKnowledge = await addFileToKnowledgeById(localStorage.token, id, fileId).catch(
-			(e) => {
-				toast.error(e);
-				return null;
-			}
-		);
+	const addFileHandler = async (fileId: string) => {
+		const res = await fetch(`${WEBUI_API_BASE_URL}/rooibos/corpbookmarks/${id}/file/add`, {
+			method: 'POST',
+			headers: {
+				Accept: 'application/json',
+				'Content-Type': 'application/json'
+			},
+			body: JSON.stringify({
+				file_id: fileId
+			})
+		})
 
-		if (updatedKnowledge) {
-			bookmark = updatedKnowledge;
+		if (res.ok) {
 			toast.success($i18n.t('File added successfully.'));
 		} else {
 			toast.error($i18n.t('Failed to add file.'));
-			bookmark.files = bookmark.files.filter((file) => file.id !== fileId);
 		}
 	};
 
-	const deleteFileHandler = async (fileId) => {
+	const deleteFileHandler = async (fileId: string) => {
 		const updatedKnowledge = await removeFileFromKnowledgeById(
 			localStorage.token,
 			id,
@@ -553,6 +544,8 @@
 
 		const data = await response.json();
 		bookmark = data.data[0];
+
+		filteredItems = bookmark?.files ?? [];
 
 		const dropZone = document.querySelector('body');
 		dropZone?.addEventListener('dragover', onDragOver);
