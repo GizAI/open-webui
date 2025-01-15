@@ -143,18 +143,24 @@ async def get_corpbookmark_by_id(id: str):
             f.updated_at,
             f.company_id,
             f.memo,
-            jsonb_agg(jsonb_build_object(
-                'id', fi.id,
-                'user_id', fi.user_id,
-                'filename', fi.filename,
-                'meta', fi.meta,
-                'created_at', fi.created_at,
-                'hash', fi.hash,
-                'data', fi."data",
-                'updated_at', fi.updated_at,
-                'path', fi."path",
-                'access_control', fi.access_control
-            )) FILTER (WHERE f.data IS NOT NULL) AS files,
+            jsonb_agg(DISTINCT 
+                CASE 
+                    WHEN f.data IS NOT NULL 
+                    THEN jsonb_build_object(
+                        'id', fi.id,
+                        'user_id', fi.user_id,
+                        'filename', fi.filename,
+                        'meta', fi.meta,
+                        'created_at', fi.created_at,
+                        'hash', fi.hash,
+                        'data', fi."data",
+                        'updated_at', fi.updated_at,
+                        'path', fi."path",
+                        'access_control', fi.access_control
+                    )
+                    ELSE NULL 
+                END
+            ) FILTER (WHERE f.data IS NOT NULL) AS files,
             ci.company_name,
             ci.id AS company_id,
             ci.business_registration_number,
@@ -316,13 +322,7 @@ async def add_file_to_bookmark_by_id(request: Request, id: str):
         RETURNING data
         """
 
-        file_query = """
-        SELECT 
-            fi.id, fi.user_id, fi.filename, fi.meta, fi.created_at, 
-            fi.hash, fi.data, fi.updated_at, fi.path, fi.access_control
-        FROM file fi
-        WHERE fi.id = ANY(:file_ids)
-        """
+        
 
         with get_db() as db:
             result = db.execute(text(check_query), {"id": id})
@@ -342,14 +342,12 @@ async def add_file_to_bookmark_by_id(request: Request, id: str):
                 {"id": id, "new_data": json.dumps(new_data)}
             )            
             db.commit()
-            
-            with get_db() as db:
-                result = db.execute(text(file_query),{"file_ids": new_data["file_ids"]})
-                file_details = [row._mapping for row in result.fetchall()]
-            
+
+            corp_bookmark_data = await get_corpbookmark_by_id(id)
+                        
         return {
             "success": True,
-            "data": file_details,
+            "data": corp_bookmark_data["data"],
             "message": "File successfully added to bookmark."
         }
 

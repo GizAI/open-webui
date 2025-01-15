@@ -111,6 +111,7 @@
 		selectedFile = null;
 	}
 
+
 	let fuse: any = null;
 	let debounceTimeout: any = null;
 	let mediaQuery: any;
@@ -385,7 +386,8 @@
 
 		if (res.ok) {
 			const data = await res.json();
-			filteredItems = data.data;
+			bookmark = data.data[0];
+			filteredItems = data.data[0].files;
 			toast.success($i18n.t('File added successfully.'));
 		} else {
 			toast.error($i18n.t('Failed to add file.'));
@@ -977,8 +979,6 @@
 										selectedFileId = selectedFileId === e.detail ? null : e.detail;
 									}}
 									on:delete={(e) => {
-										console.log(e.detail);
-
 										selectedFileId = null;
 										deleteFileHandler(e.detail);
 									}}
