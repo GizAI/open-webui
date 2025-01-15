@@ -20,16 +20,17 @@
     distance_from_user?: number;
     bookmark_id?: string | null;
   }
-  import { showSidebar } from '$lib/stores';
+  import { showSidebar, mobile } from '$lib/stores';
   export let searchResults: SearchResult[] = [];
   export let onResultClick: (result: SearchResult) => void;
 </script>
 
 <div 
   class="fixed bottom-0 bg-gray-50 shadow-lg pl-2 pt-2 rounded-t-2xl overflow-y-auto z-40 transition-all duration-300
-         md:max-h-[calc(100vh-140px)] 
-         max-h-[calc(100vh+50px)]"
+  md:max-h-[calc(100vh-140px)] 
+  max-h-[calc(100vh+50px)]"
   class:sidebar-margin={$showSidebar}
+  class:mobile-layout={$mobile}
 >
   <ul class="p-4 space-y-2 overflow-y-auto">
     {#each searchResults as result}
@@ -49,13 +50,13 @@
               {#if result.industry}
                 <div class="text-sm text-gray-500 mt-1">업종: {result.industry}</div>
               {/if}
-              {#if result.establishment_date}
+              {#if result.establishment_date && !$mobile}
                 <div class="text-sm text-gray-500 mt-1">설립일: {result.establishment_date}</div>
               {/if}
-              {#if result.employee_count}
+              {#if result.employee_count && !$mobile}
                 <div class="text-sm text-gray-500 mt-1">직원 수: {result.employee_count}명</div>
               {/if}
-              {#if result.recent_sales}
+              {#if result.recent_sales && !$mobile}
                 <div class="text-sm text-gray-500 mt-1">최근 매출: {result.recent_sales.toLocaleString()}백만원</div>
               {/if}
             </div>
@@ -103,5 +104,10 @@
     left: 210px;
   }
 
-
+  .mobile-layout {
+    height: 70vh;
+    max-height: 70vh;
+    border-top-left-radius: 16px;
+    border-top-right-radius: 16px;
+  }
 </style>

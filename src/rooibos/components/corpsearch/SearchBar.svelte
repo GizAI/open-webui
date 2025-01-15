@@ -2,7 +2,7 @@
   import { Sliders, Map, List, Building2, Users, TrendingUp, DollarSign, Scale, UserPlus, CalendarDays, Landmark, Ban, RotateCcw, Check, MapPin, Award, History } from 'lucide-svelte';
   import { filterGroups, filterActions } from './filterdata';
   import SearchFilter from './SearchFilter.svelte';
-  import { showSidebar } from '$lib/stores';
+  import { mobile } from '$lib/stores';
   
   export let searchResults: any[] = [];
   export let onSearch: (searchValue: string, selectedFilters: any) => Promise<void>;
@@ -85,7 +85,7 @@
     </div>
   </form>
 
-  <div class="absolute left-1/2 transform -translate-x-1/2 z-10 flex items-center gap-2">
+  <div class="absolute left-1/2 transform -translate-x-1/2 z-10 flex items-center gap-2 {$mobile ? 'w-11/12' : ''}">
     {#if searchResults.length > 0}
       <button
         type="button"
@@ -100,7 +100,7 @@
         {/if}
       </button>
       
-      <div class="flex items-start gap-2 w-full">
+      <div class="flex items-start gap-2 w-full {$mobile ? 'grid grid-cols-7' : ''}">  
         {#each filterGroups as group}
           <button
             type="button"
@@ -137,7 +137,9 @@
     {/if}
   </div>
   {#if isFilterOpen}
-    <div>
+  <div
+  style="margin-top: {mobile ? '80px' : '10px'}"
+>
       <SearchFilter
         {selectedFilters}
         {onFilterChange}

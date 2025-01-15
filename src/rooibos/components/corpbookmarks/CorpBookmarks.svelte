@@ -27,7 +27,7 @@
 
 	const deleteHandler = async (item: any) => {
 		try {
-        const response = await fetch(`${WEBUI_API_BASE_URL}/rooibos/corpbookmarks/${item.id}/delete`, {
+        const response = await fetch(`${WEBUI_API_BASE_URL}/rooibos/corpbookmarks/${item.id}/delete/`, {
             method: 'DELETE',
             headers: {
                 'Content-Type': 'application/json',
@@ -50,7 +50,7 @@
 
 	onMount(async () => {
 		const currentUser = get(user);
-		const response = await fetch(`${WEBUI_API_BASE_URL}/rooibos/corpbookmarks/${currentUser?.id}`, {
+		const response = await fetch(`${WEBUI_API_BASE_URL}/rooibos/corpbookmarks/${currentUser?.id}/`, {
         method: 'GET',
 		headers: {
           'Content-Type': 'application/json',

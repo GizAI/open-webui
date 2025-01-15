@@ -24,19 +24,23 @@ export const compayMarkerInfo = (
       const currentUser = get(user);
       
       if (!bookmarkCorp.bookmark_id) {
-        const response = await fetch(`${WEBUI_API_BASE_URL}/rooibos/corpbookmarks/add`, {
+        const response = await fetch(`${WEBUI_API_BASE_URL}/rooibos/corpbookmarks/add/`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${localStorage.token}`
+          },
           body: JSON.stringify({ userId: currentUser?.id, companyId: companyData.id, business_registration_number: companyData.business_registration_number }),
         });
   
         const { data } = await response.json();
         bookmarkCorp.bookmark_id = data.id;
       } else {
-        await fetch(`${WEBUI_API_BASE_URL}/rooibos/corpbookmarks/${bookmarkCorp.bookmark_id}/delete`, {
+        await fetch(`${WEBUI_API_BASE_URL}/rooibos/corpbookmarks/${bookmarkCorp.bookmark_id}/delete/`, {
           method: 'DELETE',
           headers: {
-              'Content-Type': 'application/json',
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${localStorage.token}`
           },
       });
       }

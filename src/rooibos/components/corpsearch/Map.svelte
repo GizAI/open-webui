@@ -9,13 +9,9 @@
 	import MenuLines from '$lib/components/icons/MenuLines.svelte';
   import { compayMarkerInfo } from './companymarkerinfo';
   import { filterGroups } from './filterdata';
-  import { mobile, user } from '$lib/stores';
-
-  import {
-		showSidebar
-	} from '$lib/stores';
+  import { mobile } from '$lib/stores';
+  import { showSidebar } from '$lib/stores';
 	import SearchCompanyList from './SearchCompanyList.svelte';
-	import SearchFilter from './SearchFilter.svelte';
 	import { WEBUI_API_BASE_URL } from '$lib/constants';
 
   type MapInstance = {
@@ -379,7 +375,7 @@
   />
 </div>
 
-{#if searchResults.length > 0 && showSearchList}
+{#if searchResults.length > 0 && showSearchList && !($mobile && $showSidebar)}
   <div 
     class="company-list-wrapper w-full"
     class:sidebar-visible={$showSidebar}
@@ -410,7 +406,7 @@
 {/if}
 
 <div id="map" class="w-full h-full relative">
-  <div class="absolute top-2 left-2 bg-white md:bg-transparent rounded-full shadow-lg z-50 p-2">
+  <div class="absolute top-2 left-2 md:bg-transparent rounded-full z-50 {$mobile ? '' : 'shadow-lg p-2'}">
     <div class="{$showSidebar ? 'hidden' : ''} self-center flex flex-none items-center">
       <button
         id="sidebar-toggle-button"
