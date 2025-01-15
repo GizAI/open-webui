@@ -154,7 +154,7 @@ async def get_corpbookmark_by_id(id: str):
                 'updated_at', fi.updated_at,
                 'path', fi."path",
                 'access_control', fi.access_control
-            )) AS files,
+            )) FILTER (WHERE f.data IS NOT NULL) AS files,
             ci.company_name,
             ci.id AS company_id,
             ci.business_registration_number,
@@ -194,7 +194,7 @@ async def get_corpbookmark_by_id(id: str):
         LEFT JOIN file fi
             ON fi.id::text = ANY(ARRAY(
                 SELECT jsonb_array_elements_text(f.data::jsonb->'file_ids')
-            ))    
+            ))     
         WHERE f.id = :id
         GROUP BY 
             f.id, f.created_at, f.updated_at, f.company_id, f.memo,
