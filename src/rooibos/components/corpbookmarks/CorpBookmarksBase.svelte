@@ -388,16 +388,19 @@
 	};
 
 	const deleteFileHandler = async (fileId: string) => {
-		const updatedKnowledge = await removeFileFromKnowledgeById(
-			localStorage.token,
-			id,
-			fileId
-		).catch((e) => {
-			toast.error(e);
-		});
+		const res = await fetch(`${WEBUI_API_BASE_URL}/rooibos/corpbookmarks/${id}/file/remove`, {
+			method: 'POST',
+			headers: {
+				Accept: 'application/json',
+				'Content-Type': 'application/json'
+			},
+			body: JSON.stringify({
+				file_id: fileId
+			})
+		})
 
-		if (updatedKnowledge) {
-			bookmark = updatedKnowledge;
+		if (res.ok) {
+			filteredItems = filteredItems.filter(item => item.id !== fileId);
 			toast.success($i18n.t('File removed successfully.'));
 		}
 	};

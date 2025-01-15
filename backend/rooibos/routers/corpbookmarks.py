@@ -350,6 +350,76 @@ async def add_file_to_bookmark_by_id(request: Request, id: str):
             "message": str(e)
         }
 
+@router.post("/{id}/file/remove")
+async def remove_file_from_bookmark_by_id(request: Request, id: str):
+    try:
+        body = await request.json()
+        file_id = body.get("file_id")
+
+        if not file_id:
+            raise HTTPException(status_code=400, detail="Invalid input. 'file_id' is required.")
+
+        check_query = """
+        SELECT data FROM corp_bookmark WHERE id = :id
+        """
+
+        update_query = """
+        UPDATE corp_bookmark
+        SET 
+            data = :new_data,
+            updated_at = now()
+        WHERE id = :id
+        RETURNING data
+        """
+
+        with get_db() as db:
+            result = db.execute(text(check_query), {"id": id})
+            current_row = result.fetchone()
+
+            if current_row and current_row[0]:
+                current_data = current_row[0]
+                file_ids = current_data.get("file_ids", [])
+
+                # file_id 제거
+                if file_id in file_ids:
+                    file_ids.remove(file_id)
+                else:
+                    raise HTTPException(status_code=404, detail="File ID not found in bookmark.")
+
+                # file_ids가 비어 있으면 null로 설정
+                if file_ids:
+                    new_data = {"file_ids": file_ids}
+                else:
+                    new_data = None  # data를 null로 설정
+            else:
+                raise HTTPException(status_code=404, detail="Bookmark not found.")
+
+            result = db.execute(
+                text(update_query),
+                {"id": id, "new_data": json.dumps(new_data) if new_data else None}
+            )
+            updated_data = result.fetchone()[0]
+            db.commit()
+
+        return {
+            "success": True,
+            "data": updated_data,
+            "message": "File successfully removed from bookmark."
+        }
+
+    except Exception as e:
+        print("Remove File from Bookmark API error:", e)
+        return {
+            "success": False,
+            "error": "Remove failed",
+            "message": str(e)
+        }
+
+
+
+
+
+
 
 
 
