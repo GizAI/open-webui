@@ -138,8 +138,8 @@
   </div>
   {#if isFilterOpen}
   <div
-  style="margin-top: {mobile ? '80px' : '10px'}"
->
+    style="{$mobile ? 'margin-top: 80px' : ''}"
+  >
       <SearchFilter
         {selectedFilters}
         {onFilterChange}
