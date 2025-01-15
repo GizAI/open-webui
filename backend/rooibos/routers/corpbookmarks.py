@@ -436,6 +436,57 @@ async def remove_file_from_bookmark_by_id(request: Request, id: str):
         }
 
 
+@router.post("/{id}/file/reset")
+async def file_reset_corpbookmark_by_id(id: str):
+    try:
+        # corp_bookmark의 data 컬럼 초기화
+        check_query = """
+        SELECT data FROM corp_bookmark WHERE id = :id
+        """
+        update_query = """
+        UPDATE corp_bookmark
+        SET 
+            data = NULL,
+            updated_at = now()
+        WHERE id = :id
+        RETURNING data
+        """
+        delete_file_query = """
+        DELETE FROM file WHERE id = :file_id
+        """
+
+        with get_db() as db:
+            result = db.execute(text(check_query), {"id": id})
+            current_row = result.fetchone()
+            db.commit()
+
+            if current_row and current_row[0]:
+                current_data = current_row[0]
+                file_ids = current_data.get("file_ids", [])
+
+                for file_id in file_ids:
+                    # 파일 삭제 쿼리 실행
+                    db.execute(text(delete_file_query), {"file_id": file_id})
+
+                # corp_bookmark의 data 컬럼을 None으로 업데이트
+                db.execute(text(update_query), {"id": id})
+                db.commit()
+            else:
+                raise HTTPException(status_code=404, detail="Bookmark not found.")
+
+        return {
+            "success": True,
+            "message": f"All files reset and removed for bookmark {id}."
+        }
+
+    except Exception as e:
+        print("File Reset API error:", e)
+        return {
+            "success": False,
+            "error": "Reset failed",
+            "message": str(e)
+        }
+
 
 
 

@@ -352,13 +352,16 @@
 	// Helper function to maintain file paths within zip
 	const syncDirectoryHandler = async () => {
 		if ((bookmark?.files ?? []).length > 0) {
-			const res = await resetbookmarkById(localStorage.token, id).catch((e) => {
-				toast.error(e);
-			});
+			const res = await fetch(`${WEBUI_API_BASE_URL}/rooibos/corpbookmarks/${id}/file/reset`, {
+				method: 'POST',
+				headers: {
+					Accept: 'application/json',
+					'Content-Type': 'application/json'
+				}
+			})
 
 			if (res) {
-				bookmark = res;
-				toast.success($i18n.t('Knowledge reset successfully.'));
+				toast.success($i18n.t('Bookmark reset successfully.'));
 
 				// Upload directory
 				uploadDirectoryHandler();
@@ -593,7 +596,7 @@
 <SyncConfirmDialog
 	bind:show={showSyncConfirmModal}
 	message={$i18n.t(
-		'This will reset the knowledge base and sync all files. Do you wish to continue?'
+		'This will reset the bookmark base and sync all files. Do you wish to continue?'
 	)}
 	on:confirm={() => {
 		syncDirectoryHandler();
