@@ -420,16 +420,19 @@
 			toast.error(e);
 		});
 
-		const updatedKnowledge = await updateFileFromKnowledgeById(
-			localStorage.token,
-			id,
-			fileId
-		).catch((e) => {
-			toast.error(e);
-		});
+		// const ressponse = await fetch(`${WEBUI_API_BASE_URL}/rooibos/corpbookmarks/${id}/file/update`, {
+		// 	method: 'POST',
+		// 	headers: {
+		// 		Accept: 'application/json',
+		// 		'Content-Type': 'application/json'
+		// 	},
+		// 	body: JSON.stringify({
+		// 		file_id: fileId
+		// 	})
+		// })
 
-		if (res && updatedKnowledge) {
-			bookmark = updatedKnowledge;
+		if (res) {
+			// bookmark = updatedKnowledge;
 			toast.success($i18n.t('File content updated successfully.'));
 		}
 	};
