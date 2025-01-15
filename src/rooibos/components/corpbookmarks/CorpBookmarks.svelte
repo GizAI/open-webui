@@ -107,7 +107,7 @@
 						<div class=" font-semibold line-clamp-1 h-fit">{bookmark.company_name}</div>
 
 						<div class=" text-xs overflow-hidden text-ellipsis line-clamp-1">
-							{bookmark.memo}
+							{bookmark.address}
 						</div>
 					</div>
 				</div>

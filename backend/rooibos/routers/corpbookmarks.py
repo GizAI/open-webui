@@ -57,7 +57,6 @@ async def get_corpbookmarks(user_id: str):
             f.created_at,
             f.updated_at,
             f.company_id,
-            f.memo,
             ci.company_name,
             ci.id AS company_id,
             ci.business_registration_number,
@@ -142,7 +141,6 @@ async def get_corpbookmark_by_id(id: str):
             f.created_at,
             f.updated_at,
             f.company_id,
-            f.memo,
             jsonb_agg(DISTINCT 
                 CASE 
                     WHEN f.data IS NOT NULL 
@@ -203,7 +201,7 @@ async def get_corpbookmark_by_id(id: str):
             ))     
         WHERE f.id = :id
         GROUP BY 
-            f.id, f.created_at, f.updated_at, f.company_id, f.memo,
+            f.id, f.created_at, f.updated_at, f.company_id,
             ci.company_name, ci.id, ci.business_registration_number,
             ci.representative, ci.postal_code, ci.address, ci.phone_number,
             ci.fax_number, ci.website, ci.email, ci.company_type,
@@ -276,8 +274,8 @@ async def add_corpbookmark(request: Request):
             raise HTTPException(status_code=400, detail="Invalid input. 'userId' and 'companyId' are required.")
 
         sql_query = """
-        INSERT INTO corp_bookmark (user_id, company_id, business_registration_number, memo, created_at, updated_at)
-        VALUES (:user_id, :company_id, :business_registration_number, '', now(), now())
+        INSERT INTO corp_bookmark (user_id, company_id, business_registration_number, created_at, updated_at)
+        VALUES (:user_id, :company_id, :business_registration_number, now(), now())
         RETURNING id
         """
 

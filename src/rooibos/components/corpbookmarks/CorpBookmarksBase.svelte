@@ -2,29 +2,17 @@
 	import Fuse from 'fuse.js';
 	import { toast } from 'svelte-sonner';
 	import { v4 as uuidv4 } from 'uuid';
-	import { PaneGroup, Pane, PaneResizer } from 'paneforge';
 
 	import { onMount, getContext, onDestroy, tick } from 'svelte';
 	const i18n = getContext('i18n');
 
-	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
-	import { mobile, showSidebar, knowledge as _knowledge } from '$lib/stores';
+	import { showSidebar, knowledge as _knowledge } from '$lib/stores';
 
 	import { updateFileDataContentById, uploadFile } from '$lib/apis/files';
-	import {
-		addFileToKnowledgeById,
-		getKnowledgeById,
-		getKnowledgeBases,
-		removeFileFromKnowledgeById,
-		resetKnowledgeById,
-		updateFileFromKnowledgeById,
-		updateKnowledgeById
-	} from '$lib/apis/knowledge';
 
 	import { transcribeAudio } from '$lib/apis/audio';
 	import { blobToFile } from '$lib/utils';
-	import { processFile } from '$lib/apis/retrieval';
 
 	import Spinner from '$lib/components/common/Spinner.svelte';
 	import Files from './CorpBookmarksBase/Files.svelte';
@@ -35,13 +23,11 @@
 
 	import SyncConfirmDialog from '$lib/components/common/ConfirmDialog.svelte';
 	import RichTextInput from '$lib/components/common/RichTextInput.svelte';
-	import EllipsisVertical from '$lib/components/icons/EllipsisVertical.svelte';
 	import Drawer from '$lib/components/common/Drawer.svelte';
 	import ChevronLeft from '$lib/components/icons/ChevronLeft.svelte';
 	import LockClosed from '$lib/components/icons/LockClosed.svelte';
 	import AccessControlModal from '$lib/components/workspace/common/AccessControlModal.svelte';
 	import { WEBUI_API_BASE_URL } from '$lib/constants';
-	import Bookmark from '$lib/components/icons/Bookmark.svelte';
 	import { Briefcase, MapPin, Users, Phone, Globe, Calendar, DollarSign, List } from 'lucide-svelte';
 
 
@@ -111,7 +97,6 @@
 		selectedFile = null;
 	}
 
-
 	let fuse: any = null;
 	let debounceTimeout: any = null;
 	let mediaQuery: any;
@@ -126,8 +111,6 @@
 	};
 
 	const uploadFileHandler = async (file: any) => {
-		console.log(file);
-
 		const tempItemId = uuidv4();
 		const fileItem = {
 			type: 'file',
@@ -169,13 +152,11 @@
 			});
 
 			if (uploadedFile) {
-				console.log(uploadedFile);
 				bookmark.files = bookmark.files.map((item) => {
 					if (item.itemId === tempItemId) {
 						item.id = uploadedFile.id;
 					}
 
-					// Remove temporary item id
 					delete item.itemId;
 					return item;
 				});
@@ -189,15 +170,12 @@
 	};
 
 	const uploadDirectoryHandler = async () => {
-		// Check if File System Access API is supported
 		const isFileSystemAccessSupported = 'showDirectoryPicker' in window;
 
 		try {
 			if (isFileSystemAccessSupported) {
-				// Modern browsers (Chrome, Edge) implementation
 				await handleModernBrowserUpload();
 			} else {
-				// Firefox fallback
 				await handleFirefoxUpload();
 			}
 		} catch (error) {
@@ -205,33 +183,27 @@
 		}
 	};
 
-	// Helper function to check if a path contains hidden folders
-	const hasHiddenFolder = (path) => {
-		return path.split('/').some((part) => part.startsWith('.'));
+	const hasHiddenFolder = (path: any) => {
+		return path.split('/').some((part: any) => part.startsWith('.'));
 	};
 
-	// Modern browsers implementation using File System Access API
 	const handleModernBrowserUpload = async () => {
 		const dirHandle = await window.showDirectoryPicker();
 		let totalFiles = 0;
 		let uploadedFiles = 0;
 
-		// Function to update the UI with the progress
 		const updateProgress = () => {
 			const percentage = (uploadedFiles / totalFiles) * 100;
 			toast.info(`Upload Progress: ${uploadedFiles}/${totalFiles} (${percentage.toFixed(2)}%)`);
 		};
 
-		// Recursive function to count all files excluding hidden ones
-		async function countFiles(dirHandle) {
+		async function countFiles(dirHandle: any) {
 			for await (const entry of dirHandle.values()) {
-				// Skip hidden files and directories
 				if (entry.name.startsWith('.')) continue;
 
 				if (entry.kind === 'file') {
 					totalFiles++;
 				} else if (entry.kind === 'directory') {
-					// Only process non-hidden directories
 					if (!entry.name.startsWith('.')) {
 						await countFiles(entry);
 					}
@@ -239,15 +211,12 @@
 			}
 		}
 
-		// Recursive function to process directories excluding hidden files and folders
-		async function processDirectory(dirHandle, path = '') {
+		async function processDirectory(dirHandle: any, path = '') {
 			for await (const entry of dirHandle.values()) {
-				// Skip hidden files and directories
 				if (entry.name.startsWith('.')) continue;
 
 				const entryPath = path ? `${path}/${entry.name}` : entry.name;
 
-				// Skip if the path contains any hidden folders
 				if (hasHiddenFolder(entryPath)) continue;
 
 				if (entry.kind === 'file') {
@@ -258,7 +227,6 @@
 					uploadedFiles++;
 					updateProgress();
 				} else if (entry.kind === 'directory') {
-					// Only process non-hidden directories
 					if (!entry.name.startsWith('.')) {
 						await processDirectory(entry, entryPath);
 					}
@@ -276,10 +244,8 @@
 		}
 	};
 
-	// Firefox fallback implementation using traditional file input
 	const handleFirefoxUpload = async () => {
 		return new Promise((resolve, reject) => {
-			// Create hidden file input
 			const input = document.createElement('input');
 			input.type = 'file';
 			input.webkitdirectory = true;
@@ -287,19 +253,16 @@
 			input.multiple = true;
 			input.style.display = 'none';
 
-			// Add input to DOM temporarily
 			document.body.appendChild(input);
 
 			input.onchange = async () => {
 				try {
 					const files = Array.from(input.files)
-						// Filter out files from hidden folders
 						.filter((file) => !hasHiddenFolder(file.webkitRelativePath));
 
 					let totalFiles = files.length;
 					let uploadedFiles = 0;
 
-					// Function to update the UI with the progress
 					const updateProgress = () => {
 						const percentage = (uploadedFiles / totalFiles) * 100;
 						toast.info(
@@ -309,9 +272,7 @@
 
 					updateProgress();
 
-					// Process all files
 					for (const file of files) {
-						// Skip hidden files (additional check)
 						if (!file.name.startsWith('.')) {
 							const relativePath = file.webkitRelativePath || file.name;
 							const fileWithPath = new File([file], relativePath, { type: file.type });
@@ -322,7 +283,6 @@
 						}
 					}
 
-					// Clean up
 					document.body.removeChild(input);
 					resolve();
 				} catch (error) {
@@ -335,13 +295,11 @@
 				reject(error);
 			};
 
-			// Trigger file picker
 			input.click();
 		});
 	};
 
-	// Error handler
-	const handleUploadError = (error) => {
+	const handleUploadError = (error: any) => {
 		if (error.name === 'AbortError') {
 			toast.info('Directory selection was cancelled');
 		} else {
@@ -416,56 +374,43 @@
 		const fileId = selectedFile.id;
 		const content = selectedFile.data.content;
 
-		const res = updateFileDataContentById(localStorage.token, fileId, content).catch((e) => {
+		const res = await updateFileDataContentById(localStorage.token, fileId, content).catch((e) => {
 			toast.error(e);
 		});
 
-		// const ressponse = await fetch(`${WEBUI_API_BASE_URL}/rooibos/corpbookmarks/${id}/file/update`, {
-		// 	method: 'POST',
-		// 	headers: {
-		// 		Accept: 'application/json',
-		// 		'Content-Type': 'application/json'
-		// 	},
-		// 	body: JSON.stringify({
-		// 		file_id: fileId
-		// 	})
-		// })
-
 		if (res) {
-			// bookmark = updatedKnowledge;
 			toast.success($i18n.t('File content updated successfully.'));
 		}
 	};
 
 	const changeDebounceHandler = () => {
-		console.log('debounce');
 		if (debounceTimeout) {
 			clearTimeout(debounceTimeout);
 		}
 
 		debounceTimeout = setTimeout(async () => {
-			if (bookmark.name.trim() === '' || bookmark.description.trim() === '') {
+			if (bookmark?.company_name.trim() === '' || bookmark.description.trim() === '') {
 				toast.error($i18n.t('Please fill in all fields.'));
 				return;
 			}
 
-			const res = await updateKnowledgeById(localStorage.token, id, {
-				...bookmark,
-				name: bookmark.name,
-				description: bookmark.description,
-				access_control: bookmark.access_control
-			}).catch((e) => {
-				toast.error(e);
-			});
+			// const res = await updateKnowledgeById(localStorage.token, id, {
+			// 	...bookmark,
+			// 	name: bookmark?.company_name,
+			// 	description: bookmark?.description,
+			// 	access_control: bookmark.access_control
+			// }).catch((e) => {
+			// 	toast.error(e);
+			// });
 
-			if (res) {
-				toast.success($i18n.t('bookmark updated successfully'));
-				_knowledge.set(await getKnowledgeBases(localStorage.token));
-			}
+			// if (res) {
+			// 	toast.success($i18n.t('bookmark updated successfully'));
+			// 	_knowledge.set(await getKnowledgeBases(localStorage.token));
+			// }
 		}, 1000);
 	};
 
-	const handleMediaQuery = async (e) => {
+	const handleMediaQuery = async (e: any) => {
 		if (e.matches) {
 			largeScreen = true;
 		} else {
@@ -473,7 +418,7 @@
 		}
 	};
 
-	const onDragOver = (e) => {
+	const onDragOver = (e: any) => {
 		e.preventDefault();
 
 		// Check if a file is being draggedOver.
@@ -488,7 +433,7 @@
 		dragged = false;
 	};
 
-	const onDrop = async (e) => {
+	const onDrop = async (e: any) => {
 		e.preventDefault();
 		dragged = false;
 
@@ -517,16 +462,13 @@
 		// Select the container element you want to observe
 		const container = document.getElementById('collection-container');
 
-		// initialize the minSize based on the container width
 		minSize = !largeScreen ? 100 : Math.floor((300 / container.clientWidth) * 100);
 
-		// Create a new ResizeObserver instance
 		const resizeObserver = new ResizeObserver((entries) => {
 			for (let entry of entries) {
 				const width = entry.contentRect.width;
-				// calculate the percentage of 300
 				const percentage = (300 / width) * 100;
-				// set the minSize to the percentage, must be an integer
+
 				minSize = !largeScreen ? 100 : Math.floor(percentage);
 
 				if (showSidepanel) {
@@ -537,7 +479,6 @@
 			}
 		});
 
-		// Start observing the container's size changes
 		resizeObserver.observe(container);
 
 		if (pane) {
@@ -642,13 +583,13 @@
 
 <div class="flex flex-col w-full translate-y-1" id="collection-container">
 	{#if id && bookmark}
-		<!-- <AccessControlModal
+		<AccessControlModal
 			bind:show={showAccessControlModal}
 			bind:accessControl={bookmark.access_control}
 			onChange={() => {
 				changeDebounceHandler();
 			}}
-		/> -->
+		/>
 		<div class="w-full mb-2.5">
 			<!-- 상위 컨테이너를 flex-col로 설정하여 세로 정렬 -->
 			<div class="flex flex-col w-full px-6 py-4 overflow-y-auto space-y-6">
