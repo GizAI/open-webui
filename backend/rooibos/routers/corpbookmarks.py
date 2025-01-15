@@ -4,6 +4,8 @@ from typing import Optional
 from open_webui.internal.db import get_db
 from sqlalchemy import text
 
+import json
+
 router = APIRouter()
 
 def format_parameter(param):
@@ -141,6 +143,18 @@ async def get_corpbookmark_by_id(id: str):
             f.updated_at,
             f.company_id,
             f.memo,
+            jsonb_agg(jsonb_build_object(
+                'id', fi.id,
+                'user_id', fi.user_id,
+                'filename', fi.filename,
+                'meta', fi.meta,
+                'created_at', fi.created_at,
+                'hash', fi.hash,
+                'data', fi."data",
+                'updated_at', fi.updated_at,
+                'path', fi."path",
+                'access_control', fi.access_control
+            )) AS files,
             ci.company_name,
             ci.id AS company_id,
             ci.business_registration_number,
@@ -177,7 +191,22 @@ async def get_corpbookmark_by_id(id: str):
             AND me.position = '대표이사'
         LEFT JOIN FinancialComparison 
             ON fc.id = FinancialComparison.financial_company_id
+        LEFT JOIN file fi
+            ON fi.id::text = ANY(ARRAY(
+                SELECT jsonb_array_elements_text(f.data::jsonb->'file_ids')
+            ))    
         WHERE f.id = :id
+        GROUP BY 
+            f.id, f.created_at, f.updated_at, f.company_id, f.memo,
+            ci.company_name, ci.id, ci.business_registration_number,
+            ci.representative, ci.postal_code, ci.address, ci.phone_number,
+            ci.fax_number, ci.website, ci.email, ci.company_type,
+            ci.establishment_date, ci.employee_count, ci.latitude, 
+            ci.longitude, ci.industry, ci.recent_sales, ci.recent_profit, 
+            me.executive_name, me.birth_date, fc.industry, 
+            FinancialComparison.revenue, FinancialComparison.net_income,
+            FinancialComparison.total_assets, FinancialComparison.total_liabilities,
+            FinancialComparison.revenue_growth_rate
         ORDER BY f.updated_at DESC
         """
         with get_db() as db:
@@ -231,9 +260,6 @@ async def delete_corpbookmark(id: str):
     
 @router.post("/add")
 async def add_corpbookmark(request: Request):
-    """
-    즐겨찾기 추가 API
-    """
     try:
         body = await request.json()
         user_id = body.get("userId")
@@ -268,4 +294,63 @@ async def add_corpbookmark(request: Request):
             "message": str(e)
         }
 
+@router.post("/{id}/file/add")
+async def add_file_to_bookmark_by_id(request: Request, id: str):
+    try:
+        body = await request.json()
+        file_id = body.get("file_id")
 
+        if not file_id:
+            raise HTTPException(status_code=400, detail="Invalid input. 'file_id' is required.")
+
+        check_query = """
+        SELECT data FROM corp_bookmark WHERE id = :id
+        """
+
+        update_query = """
+        UPDATE corp_bookmark
+        SET 
+            data = :new_data,
+            updated_at = now()
+        WHERE id = :id
+        RETURNING data
+        """
+
+        with get_db() as db:
+            result = db.execute(text(check_query), {"id": id})
+            current_row = result.fetchone()
+
+            if current_row and current_row[0]:
+                current_data = current_row[0]
+                file_ids = current_data.get("file_ids", [])
+                if file_id not in file_ids:
+                    file_ids.append(file_id)
+                new_data = {"file_ids": file_ids}
+            else:
+                new_data = {"file_ids": [file_id]}
+
+            result = db.execute(
+                text(update_query),
+                {"id": id, "new_data": json.dumps(new_data)}
+            )
+            updated_data = result.fetchone()[0]
+            db.commit()
+
+        return {
+            "success": True,
+            "data": updated_data,
+            "message": "File successfully added to bookmark."
+        }
+
+    except Exception as e:
+        print("Add File to Bookmark API error:", e)
+        return {
+            "success": False,
+            "error": "Add failed",
+            "message": str(e)
+        }
+
+
+
+
+    
