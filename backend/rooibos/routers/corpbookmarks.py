@@ -242,7 +242,7 @@ async def delete_corpbookmark(id: str):
         """
         print(text(sql_query), {"id": id})
         with get_db() as db:
-            result = db.execute(text(sql_query), {"id": id})
+            db.execute(text(sql_query), {"id": id})
             db.commit() 
 
         return {
@@ -342,8 +342,6 @@ async def add_file_to_bookmark_by_id(request: Request, id: str):
                 {"id": id, "new_data": json.dumps(new_data)}
             )            
             db.commit()
-
-            # Fetch file details for the updated file_ids
             
             with get_db() as db:
                 result = db.execute(text(file_query),{"file_ids": new_data["file_ids"]})
@@ -386,6 +384,10 @@ async def remove_file_from_bookmark_by_id(request: Request, id: str):
         RETURNING data
         """
 
+        delete_file_query = """
+        DELETE FROM file WHERE id = :file_id
+        """
+
         with get_db() as db:
             result = db.execute(text(check_query), {"id": id})
             current_row = result.fetchone()
@@ -394,17 +396,15 @@ async def remove_file_from_bookmark_by_id(request: Request, id: str):
                 current_data = current_row[0]
                 file_ids = current_data.get("file_ids", [])
 
-                # file_id 제거
                 if file_id in file_ids:
                     file_ids.remove(file_id)
                 else:
                     raise HTTPException(status_code=404, detail="File ID not found in bookmark.")
 
-                # file_ids가 비어 있으면 null로 설정
                 if file_ids:
                     new_data = {"file_ids": file_ids}
                 else:
-                    new_data = None  # data를 null로 설정
+                    new_data = None
             else:
                 raise HTTPException(status_code=404, detail="Bookmark not found.")
 
@@ -413,12 +413,18 @@ async def remove_file_from_bookmark_by_id(request: Request, id: str):
                 {"id": id, "new_data": json.dumps(new_data) if new_data else None}
             )
             updated_data = result.fetchone()[0]
+
+            db.execute(
+                text(delete_file_query),
+                {"file_id": file_id}
+            )
+
             db.commit()
 
         return {
             "success": True,
             "data": updated_data,
-            "message": "File successfully removed from bookmark."
+            "message": "File successfully removed from bookmark and deleted."
         }
 
     except Exception as e:
