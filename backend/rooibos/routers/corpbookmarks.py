@@ -27,7 +27,7 @@ def get_executable_query(sql_query: str, params: list) -> str:
         executable_query = executable_query.replace(placeholder, formatted_param)
     return executable_query
 
-@router.get("/{user_id}")
+@router.get("/user/{user_id}")
 async def get_corpbookmarks(user_id: str):
     try:
         params = [user_id]
@@ -116,10 +116,7 @@ async def get_corpbookmarks(user_id: str):
         }
     
 @router.get("/{id}")
-async def get_corpbookmark_by_id(id: str):
-    """
-    특정 북마크(ID)를 조회하는 API
-    """
+async def get_corpbookmark_by_id(id: str):    
     try:
         sql_query = """
         WITH FinancialComparison AS (

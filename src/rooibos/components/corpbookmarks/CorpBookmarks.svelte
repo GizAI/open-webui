@@ -50,7 +50,7 @@
 
 	onMount(async () => {
 		const currentUser = get(user);
-		const response = await fetch(`${WEBUI_API_BASE_URL}/rooibos/corpbookmarks/${currentUser?.id}`, {
+		const response = await fetch(`${WEBUI_API_BASE_URL}/rooibos/corpbookmarks/user/${currentUser?.id}`, {
         method: 'GET',
 		headers: {
           'Content-Type': 'application/json',
