@@ -542,7 +542,7 @@
 
 		id = $page.params.id;
 
-		const response = await fetch(`${WEBUI_API_BASE_URL}/rooibos/corpbookmarks/${id}/`, {
+		const response = await fetch(`${WEBUI_API_BASE_URL}/rooibos/corpbookmarks/${id}`, {
 			method: 'GET',
 			headers: {
 				Accept: 'application/json',
