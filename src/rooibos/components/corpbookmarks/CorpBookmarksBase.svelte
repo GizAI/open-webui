@@ -381,6 +381,8 @@
 		})
 
 		if (res.ok) {
+			const data = await res.json();
+			filteredItems = data.data;
 			toast.success($i18n.t('File added successfully.'));
 		} else {
 			toast.error($i18n.t('Failed to add file.'));

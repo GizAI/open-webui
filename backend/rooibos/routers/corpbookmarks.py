@@ -316,6 +316,14 @@ async def add_file_to_bookmark_by_id(request: Request, id: str):
         RETURNING data
         """
 
+        file_query = """
+        SELECT 
+            fi.id, fi.user_id, fi.filename, fi.meta, fi.created_at, 
+            fi.hash, fi.data, fi.updated_at, fi.path, fi.access_control
+        FROM file fi
+        WHERE fi.id = ANY(:file_ids)
+        """
+
         with get_db() as db:
             result = db.execute(text(check_query), {"id": id})
             current_row = result.fetchone()
@@ -332,13 +340,18 @@ async def add_file_to_bookmark_by_id(request: Request, id: str):
             result = db.execute(
                 text(update_query),
                 {"id": id, "new_data": json.dumps(new_data)}
-            )
-            updated_data = result.fetchone()[0]
+            )            
             db.commit()
 
+            # Fetch file details for the updated file_ids
+            
+            with get_db() as db:
+                result = db.execute(text(file_query),{"file_ids": new_data["file_ids"]})
+                file_details = [row._mapping for row in result.fetchall()]
+            
         return {
             "success": True,
-            "data": updated_data,
+            "data": file_details,
             "message": "File successfully added to bookmark."
         }
 
@@ -349,6 +362,7 @@ async def add_file_to_bookmark_by_id(request: Request, id: str):
             "error": "Add failed",
             "message": str(e)
         }
+
 
 @router.post("/{id}/file/remove")
 async def remove_file_from_bookmark_by_id(request: Request, id: str):
