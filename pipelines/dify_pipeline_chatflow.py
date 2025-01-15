@@ -1,25 +1,36 @@
+import os
 from typing import List, Union, Generator, Iterator, Optional
 from pprint import pprint
 import requests
 import json
 import warnings
+from pydantic import BaseModel, Field
 
 # Uncomment to disable SSL verification warnings if needed.
 # warnings.filterwarnings('ignore', message='Unverified HTTPS request')
 
 
 class Pipeline:
+    class Valves(BaseModel):     
+        DIFY_API_URL: str = ""
+        DIFY_API_KEY: str = ""
+       
     def __init__(self):
-        self.name = "Dify Agent Pipeline"
-        self.api_url = (
-            "http://45.132.75.98:8082/v1/chat-messages"  # Set correct hostname
+        self.name = "Dify Agent Pipeline(Chatflow)"
+        self.valves = self.Valves()
+        
+        self.valves = self.Valves(
+            **{"DIFY_API_URL": os.getenv("DIFY_API_URL", "http://45.132.75.98:8082/v1/chat-messages"),
+               "DIFY_API_KEY": os.getenv("DIFY_API_URL", "app-aLGVqEGXm2PsTmfmKAHyw3Px")}
         )
-        self.api_key = (
-            "app-aLGVqEGXm2PsTmfmKAHyw3Px"  # Insert your actual API key here.v
-        )
+
+
         self.api_request_stream = True  # Dify support stream
         self.verify_ssl = True
         self.debug = False
+        print(self.valves.DIFY_API_URL)
+        print(self.valves.DIFY_API_KEY)
+        
 
     async def on_startup(self):
         # This function is called when the server is started.
@@ -66,7 +77,7 @@ class Pipeline:
 
         # Prepare headers and data for the API request
         headers = {
-            "Authorization": f"Bearer {self.api_key}",
+            "Authorization": f"Bearer {self.valves.DIFY_API_KEY}",
             "Content-Type": "application/json",
         }
         data = {
@@ -79,7 +90,7 @@ class Pipeline:
 
         try:
             response = requests.post(
-                self.api_url,
+                self.valves.DIFY_API_URL,
                 headers=headers,
                 json=data,
                 stream=self.api_request_stream,
