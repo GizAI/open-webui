@@ -200,7 +200,7 @@ export const compayMarkerInfo = (
           <button style="background: none; border: none; cursor: pointer;"
             onclick="(() => { window.handleFavoriteClick('${encodedResult}', '${encodeURIComponent(JSON.stringify(result))}') })()">
             <img 
-              src="${result.id ? '/src/rooibos/components/icons/yellowStar.png' : '/src/rooibos/components/icons/star.png'}" 
+              src="${result.id ? '/rooibos/yellowStar.png' : '/rooibos/star.png'}" 
               alt="즐겨찾기" 
               style="width: 20px; height: 20px;"
             />
@@ -210,7 +210,7 @@ export const compayMarkerInfo = (
             onclick="(() => { window.handleGptClick('${encodedResult}') })()"
           >
             <img 
-              src="/src/rooibos/components/icons/gpt.ico" 
+              src="/rooibos/gpt.ico" 
               alt="GPT 묻기" 
               style="width: 20px; height: 20px;"
             />
@@ -220,7 +220,7 @@ export const compayMarkerInfo = (
               result.company_name
             )}', '_blank')">
             <img 
-              src="/src/rooibos/components/icons/naver.svg" 
+              src="/rooibos/naver.svg" 
               alt="네이버" 
               style="width: 20px; height: 20px;"
             />
