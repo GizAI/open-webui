@@ -4,13 +4,13 @@
 
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { writable } from 'svelte/store';
+  import { get, writable } from 'svelte/store';
   import SearchBar from './SearchBar.svelte';
 	import MenuLines from '$lib/components/icons/MenuLines.svelte';
   import { compayMarkerInfo } from './companymarkerinfo';
   import { filterGroups } from './filterdata';
   import { mobile } from '$lib/stores';
-  import { showSidebar } from '$lib/stores';
+  import { showSidebar, user } from '$lib/stores';
 	import SearchCompanyList from './SearchCompanyList.svelte';
 	import { WEBUI_API_BASE_URL } from '$lib/constants';
 
@@ -134,8 +134,10 @@
     console.log('Searching for:', searchValue, 'with filters:', filters);
     showSearchList = false
     try {
+      const currentUser = get(user);
       const queryParams = new URLSearchParams({
         query: searchValue,
+        user_id: currentUser?.id ? currentUser.id : '',
         latitude: location ? location.lat.toString() : '',
         longitude: location ? location.lng.toString() : '',
         userLatitude: location?.lat?.toString() || '',
@@ -417,7 +419,7 @@
 
 
 </script>
-{#if showSearchBar}
+<!-- {#if showSearchBar && $mobile} -->
   <div 
       class="search-bar-wrapper w-full"
       class:sidebar-visible={$showSidebar}
@@ -438,7 +440,7 @@
       onFilterOpenChange={handleFilterOpenChange}
     />
   </div>
-{/if}
+<!-- {/if} -->
 
 {#if searchResults.length > 1 && showSearchList && !($mobile && $showSidebar)}
   <div 

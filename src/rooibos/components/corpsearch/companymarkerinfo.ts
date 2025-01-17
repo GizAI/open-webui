@@ -20,29 +20,44 @@ export const compayMarkerInfo = (
   window.handleFavoriteClick = async (encodedResult, resultString) => {
     try {
       const companyData = JSON.parse(decodeURIComponent(atob(encodedResult)));
-      const bookmarkCorp = JSON.parse(decodeURIComponent(resultString));
-      const currentUser = get(user);
+      const bookmarkCorpKey = decodeURIComponent(resultString);
+      const bookmarkCorp = window.bookmarkCorpStore?.[bookmarkCorpKey] || JSON.parse(bookmarkCorpKey);
       
-      if (!bookmarkCorp.bookmark_id) {
-        const response = await fetch(`${WEBUI_API_BASE_URL}/rooibos/corpbookmarks/add`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${localStorage.token}`
-          },
-          body: JSON.stringify({ userId: currentUser?.id, companyId: companyData.smtp_id, business_registration_number: companyData.business_registration_number }),
-        });
-  
-        const { data } = await response.json();
-        bookmarkCorp.bookmark_id = data.id;
-      } else {
+      if (!window.bookmarkCorpStore) {
+        window.bookmarkCorpStore = {};
+      }
+      window.bookmarkCorpStore[bookmarkCorpKey] = bookmarkCorp;
+
+      const currentUser = get(user);
+      const starButton = (event?.currentTarget as HTMLElement)?.querySelector('img');
+
+      if (starButton && starButton.src.includes('yellow')) {
+        starButton.src = '/rooibos/star.png';
+        
         await fetch(`${WEBUI_API_BASE_URL}/rooibos/corpbookmarks/${bookmarkCorp.bookmark_id}/delete`, {
           method: 'DELETE',
           headers: {
             'Content-Type': 'application/json',
             Authorization: `Bearer ${localStorage.token}`
           },
-      });
+        });
+      } else {
+        if(starButton) starButton.src = '/rooibos/yellowStar.png';
+
+        const response = await fetch(`${WEBUI_API_BASE_URL}/rooibos/corpbookmarks/add`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${localStorage.token}`
+          },
+          body: JSON.stringify({ 
+            userId: currentUser?.id, 
+            companyId: companyData.smtp_id, 
+            business_registration_number: companyData.business_registration_number 
+          }),
+        });    
+        const { data } = await response.json();
+        bookmarkCorp.bookmark_id = data.id;     
       }
     } catch (error) {
       console.error("Error processing data:", error);
@@ -218,7 +233,7 @@ export const compayMarkerInfo = (
           <button style="background: none; border: none; cursor: pointer;"
             onclick="(() => { window.handleFavoriteClick('${encodedResult}', '${encodeURIComponent(JSON.stringify(result))}') })()">
             <img 
-              src="${result.id ? '/rooibos/yellowStar.png' : '/rooibos/star.png'}" 
+              src="${result.bookmark_id ? '/rooibos/yellowStar.png' : '/rooibos/star.png'}" 
               alt="즐겨찾기" 
               style="width: 20px; height: 20px;"
             />

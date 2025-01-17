@@ -36,12 +36,12 @@ def get_executable_query(sql_query: str, params: list) -> str:
 async def test(request: Request):
     return {"message": "Hello, World!"}
 
-
 @router.get("/")
 async def search(request: Request):
     search_params = request.query_params
     id = search_params.get("id")
     query = search_params.get("query", "").strip()
+    user_id = search_params.get("user_id")
     latitude = search_params.get("latitude")
     longitude = search_params.get("longitude")
     user_latitude = float(search_params.get("userLatitude", 0))
@@ -176,8 +176,10 @@ async def search(request: Request):
                 mci.venture_valid_from,
                 mci.venture_valid_until,
                 mci.confirming_authority,
-                mci.new_reconfirmation_code
-        """
+                mci.new_reconfirmation_code,
+                cb.id as bookmark_id
+        """        
+
         if not id:
             if latitude and longitude:
                 sql_query += f"""
@@ -212,8 +214,13 @@ async def search(request: Request):
             params.extend([user_latitude, user_longitude])
             param_count += 2
 
-        sql_query += """
+        params.append(user_id)
+        user_id_param = param_count
+        param_count += 1
+
+        sql_query += f"""
         FROM master_company_info mci
+        LEFT JOIN corp_bookmark cb ON cb.company_id = mci.smtp_id AND cb.user_id = ${user_id_param}
         WHERE mci.latitude IS NOT NULL
         """
 
