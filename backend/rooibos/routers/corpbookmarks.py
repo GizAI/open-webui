@@ -36,65 +36,19 @@ async def get_corpbookmarks(user_id: str):
         param_count = 1
 
         sql_query = """
-        WITH FinancialComparison AS (
-            SELECT 
-                mfd.financial_company_id,
-                mfd.revenue,
-                mfd.net_income,
-                mfd.total_assets,
-                mfd.total_liabilities,
-                CASE
-                    WHEN LAG(mfd.revenue) OVER (PARTITION BY mfd.financial_company_id ORDER BY mfd.year) IS NOT NULL
-                    THEN (mfd.revenue - LAG(mfd.revenue) OVER (PARTITION BY mfd.financial_company_id ORDER BY mfd.year)) 
-                        / NULLIF(LAG(mfd.revenue) OVER (PARTITION BY mfd.financial_company_id ORDER BY mfd.year), 0) * 100
-                    ELSE 0
-                END AS revenue_growth_rate
-            FROM smtp_financial_data mfd
-            WHERE mfd.year = '2023'
-        )
-        SELECT DISTINCT
-            f.id,
-            f.created_at,
-            f.updated_at,
-            f.company_id,
-            ci.company_name,
-            ci.id AS company_id,
-            ci.business_registration_number,
-            ci.representative,
-            ci.postal_code,
-            ci.address,
-            ci.representative,
-            ci.phone_number,
-            ci.fax_number,
-            ci.website,
-            ci.email,
-            ci.company_type,
-            ci.establishment_date,
-            ci.employee_count,
-            ci.latitude,
-            ci.longitude,
-            ci.industry,
-            ci.recent_sales,
-            ci.recent_profit,
-            me.executive_name,
-            me.birth_date,
-            fc.industry,
-            FinancialComparison.revenue AS recent_revenue,
-            FinancialComparison.net_income AS recent_net_income,
-            FinancialComparison.total_assets AS recent_total_assets,
-            FinancialComparison.total_liabilities AS recent_total_liabilities,
-            FinancialComparison.revenue_growth_rate
-        FROM corp_bookmark f
-        INNER JOIN smtp_company_info ci ON f.company_id = ci.id
-        LEFT JOIN smtp_financial_company fc 
-            ON ci.company_name = fc.company_name
-        LEFT JOIN smtp_executives me
-            ON ci.business_registration_number = me.business_registration_number
-            AND me.position = '대표이사'    
-        LEFT JOIN FinancialComparison 
-            ON fc.id = FinancialComparison.financial_company_id   
-        WHERE f.user_id = $1
-        ORDER BY f.updated_at DESC
+            SELECT DISTINCT
+                f.id,
+                f.created_at,
+                f.updated_at,
+                f.company_id,
+                mci.smtp_id,
+                mci.company_name,
+                mci.address
+            FROM corp_bookmark f
+            INNER JOIN master_company_info mci
+                ON f.company_id = mci.smtp_id
+            WHERE f.user_id = $1
+            ORDER BY f.updated_at DESC
         """
 
         favorites = get_executable_query(sql_query, params)
@@ -115,27 +69,103 @@ async def get_corpbookmarks(user_id: str):
             "error": "Search failed",
             "message": str(e)
         }
+
+@router.get("/{id}/financialData")
+async def get_corp_financialData(id: str):
+    try:
+        params = [id]
+        param_count = 1
+
+        sql_query = """
+            SELECT 
+                sfd.financial_company_id,
+                sfd.year,
+                sfd.revenue,
+                sfd.net_income,
+                sfd.operating_income,
+                sfd.total_assets,
+                sfd.total_liabilities,
+                sfd.total_equity,
+                sfd.capital_stock,
+                sfd.corporate_tax,
+                sfd.current_assets,
+                sfd.quick_assets,
+                sfd.inventory,
+                sfd.non_current_assets,
+                sfd.investment_assets,
+                sfd.tangible_assets,
+                sfd.intangible_assets,
+                sfd.current_liabilities,
+                sfd.non_current_liabilities,
+                sfd.retained_earnings,
+                sfd.profit,
+                sfd.sales_cost,
+                sfd.sales_profit,
+                sfd.sga,
+                sfd.other_income,
+                sfd.other_expenses,
+                sfd.pre_tax_income
+            FROM master_company_info mci
+            LEFT JOIN smtp_financial_company sfc 
+                ON mci.company_name = sfc.company_name
+            LEFT JOIN smtp_financial_data sfd 
+                ON sfc.id = sfd.financial_company_id
+            WHERE mci.smtp_id = $1
+            GROUP BY 
+                sfd.financial_company_id,
+                sfd.year,
+                sfd.revenue,
+                sfd.net_income,
+                sfd.operating_income,
+                sfd.total_assets,
+                sfd.total_liabilities,
+                sfd.total_equity,
+                sfd.capital_stock,
+                sfd.corporate_tax,
+                sfd.current_assets,
+                sfd.quick_assets,
+                sfd.inventory,
+                sfd.non_current_assets,
+                sfd.investment_assets,
+                sfd.tangible_assets,
+                sfd.intangible_assets,
+                sfd.current_liabilities,
+                sfd.non_current_liabilities,
+                sfd.retained_earnings,
+                sfd.profit,
+                sfd.sales_cost,
+                sfd.sales_profit,
+                sfd.sga,
+                sfd.other_income,
+                sfd.other_expenses,
+                sfd.pre_tax_income
+            ORDER BY sfd.year DESC
+        """
+
+        query = get_executable_query(sql_query, params)
+
+        with get_db() as db:
+            result = db.execute(text(query))
+            financial_data = [row._mapping for row in result.fetchall()]
+
+        return {
+            "success": True,
+            "data": financial_data,
+            "total": len(financial_data),
+        }
+    except Exception as e:
+        print("Financial Data API error:", e)
+        return {
+            "success": False,
+            "error": "Failed to fetch financial data",
+            "message": str(e)
+        }
+
     
 @router.get("/{id}")
 async def get_corpbookmark_by_id(id: str):    
     try:
-        sql_query = """
-        WITH FinancialComparison AS (
-            SELECT 
-                mfd.financial_company_id,
-                mfd.revenue,
-                mfd.net_income,
-                mfd.total_assets,
-                mfd.total_liabilities,
-                CASE
-                    WHEN LAG(mfd.revenue) OVER (PARTITION BY mfd.financial_company_id ORDER BY mfd.year) IS NOT NULL
-                    THEN (mfd.revenue - LAG(mfd.revenue) OVER (PARTITION BY mfd.financial_company_id ORDER BY mfd.year)) 
-                         / NULLIF(LAG(mfd.revenue) OVER (PARTITION BY mfd.financial_company_id ORDER BY mfd.year), 0) * 100
-                    ELSE 0
-                END AS revenue_growth_rate
-            FROM smtp_financial_data mfd
-            WHERE mfd.year = '2023'
-        )
+        sql_query = """        
         SELECT DISTINCT
             f.id,
             f.created_at,
@@ -159,42 +189,87 @@ async def get_corpbookmark_by_id(id: str):
                     ELSE NULL 
                 END
             ) FILTER (WHERE f.data IS NOT NULL) AS files,
-            ci.company_name,
-            ci.id AS company_id,
-            ci.business_registration_number,
-            ci.representative,
-            ci.postal_code,
-            ci.address,
-            ci.representative,
-            ci.phone_number,
-            ci.fax_number,
-            ci.website,
-            ci.email,
-            ci.company_type,
-            ci.establishment_date,
-            ci.employee_count,
-            ci.latitude,
-            ci.longitude,
-            ci.industry,
-            ci.recent_sales,
-            ci.recent_profit,
+            mci.smtp_id,
+            mci.company_name,
+            mci.representative,
+            mci.postal_code,
+            mci.address,
+            mci.phone_number,
+            mci.fax_number,
+            mci.website,
+            mci.email,
+            mci.company_type,
+            mci.establishment_date,
+            mci.founding_date,
+            mci.employee_count,
+            mci.industry_code1,
+            mci.industry_code2,
+            mci.industry,
+            mci.main_product,
+            mci.main_bank,
+            mci.main_branch,
+            mci.group_name,
+            mci.stock_code,
+            mci.business_registration_number,
+            mci.corporate_number,
+            mci.english_name,
+            mci.trade_name,
+            mci.fiscal_month,
+            mci.sales_year,
+            mci.recent_sales,
+            mci.profit_year,
+            mci.recent_profit,
+            mci.operating_profit_year,
+            mci.recent_operating_profit,
+            mci.asset_year,
+            mci.recent_total_assets,
+            mci.debt_year,
+            mci.recent_total_debt,
+            mci.equity_year,
+            mci.recent_total_equity,
+            mci.capital_year,
+            mci.recent_capital,
+            mci.region1,
+            mci.region2,
+            mci.industry_major,
+            mci.industry_middle,
+            mci.industry_small,
+            mci.latitude,
+            mci.longitude,
+            mci.certificate_expiry_date,
+            mci.sme_type,
+            mci.cri_company_size,
+            mci.lab_name,
+            mci.first_approval_date,
+            mci.lab_location,
+            mci.research_field,
+            mci.division,
+            mci.birth_year,
+            mci.foundation_year,
+            mci.family_shareholder_yn,
+            mci.external_shareholder_yn,
+            mci.financial_statement_year,
+            mci.employees,
+            mci.total_assets,
+            mci.total_equity,
+            mci.sales_amount,
+            mci.net_income,
+            mci.venture_confirmation_type,
+            mci.svcl_region,
+            mci.venture_valid_from,
+            mci.venture_valid_until,
+            mci.confirming_authority,
+            mci.new_reconfirmation_code,
             me.executive_name,
             me.birth_date,
-            fc.industry,
-            FinancialComparison.revenue AS recent_revenue,
-            FinancialComparison.net_income AS recent_net_income,
-            FinancialComparison.total_assets AS recent_total_assets,
-            FinancialComparison.total_liabilities AS recent_total_liabilities,
-            FinancialComparison.revenue_growth_rate
+            fc.industry
         FROM corp_bookmark f
-        INNER JOIN smtp_company_info ci ON f.company_id = ci.id
+        INNER JOIN master_company_info mci ON f.company_id = mci.smtp_id
         LEFT JOIN smtp_financial_company fc 
-            ON ci.company_name = fc.company_name
+            ON mci.company_name = fc.company_name
         LEFT JOIN smtp_executives me
-            ON ci.business_registration_number = me.business_registration_number
+            ON mci.business_registration_number = me.business_registration_number
             AND me.position = '대표이사'
-        LEFT JOIN FinancialComparison 
-            ON fc.id = FinancialComparison.financial_company_id
         LEFT JOIN file fi
             ON fi.id::text = ANY(ARRAY(
                 SELECT jsonb_array_elements_text(f.data::jsonb->'file_ids')
@@ -202,15 +277,22 @@ async def get_corpbookmark_by_id(id: str):
         WHERE f.id = :id
         GROUP BY 
             f.id, f.created_at, f.updated_at, f.company_id,
-            ci.company_name, ci.id, ci.business_registration_number,
-            ci.representative, ci.postal_code, ci.address, ci.phone_number,
-            ci.fax_number, ci.website, ci.email, ci.company_type,
-            ci.establishment_date, ci.employee_count, ci.latitude, 
-            ci.longitude, ci.industry, ci.recent_sales, ci.recent_profit, 
-            me.executive_name, me.birth_date, fc.industry, 
-            FinancialComparison.revenue, FinancialComparison.net_income,
-            FinancialComparison.total_assets, FinancialComparison.total_liabilities,
-            FinancialComparison.revenue_growth_rate
+            mci.smtp_id, mci.company_name, mci.representative, mci.postal_code, mci.address,
+            mci.phone_number, mci.fax_number, mci.website, mci.email, mci.company_type,
+            mci.establishment_date, mci.founding_date, mci.employee_count, mci.industry_code1,
+            mci.industry_code2, mci.industry, mci.main_product, mci.main_bank, mci.main_branch,
+            mci.group_name, mci.stock_code, mci.business_registration_number, mci.corporate_number,
+            mci.english_name, mci.trade_name, mci.fiscal_month, mci.sales_year, mci.recent_sales,
+            mci.profit_year, mci.recent_profit, mci.operating_profit_year, mci.recent_operating_profit,
+            mci.asset_year, mci.recent_total_assets, mci.debt_year, mci.recent_total_debt, mci.equity_year,
+            mci.recent_total_equity, mci.capital_year, mci.recent_capital, mci.region1, mci.region2,
+            mci.industry_major, mci.industry_middle, mci.industry_small, mci.latitude, mci.longitude,
+            mci.certificate_expiry_date, mci.sme_type, mci.cri_company_size, mci.lab_name, mci.first_approval_date,
+            mci.lab_location, mci.research_field, mci.division, mci.birth_year, mci.foundation_year,
+            mci.family_shareholder_yn, mci.external_shareholder_yn, mci.financial_statement_year, mci.employees,
+            mci.total_assets, mci.total_equity, mci.sales_amount, mci.net_income, mci.venture_confirmation_type,
+            mci.svcl_region, mci.venture_valid_from, mci.venture_valid_until, mci.confirming_authority, mci.new_reconfirmation_code, 
+            me.executive_name, me.birth_date, fc.industry
         ORDER BY f.updated_at DESC
         """
         with get_db() as db:

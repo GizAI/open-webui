@@ -51,12 +51,13 @@
 	onMount(async () => {
 		const currentUser = get(user);
 		const response = await fetch(`${WEBUI_API_BASE_URL}/rooibos/corpbookmarks/user/${currentUser?.id}`, {
-        method: 'GET',
-		headers: {
-          'Content-Type': 'application/json',
-          authorization: `Bearer ${localStorage.token}`
-        },
-    });
+			method: 'GET',
+			headers: {
+			'Content-Type': 'application/json',
+			authorization: `Bearer ${localStorage.token}`
+			},
+		});
+		
 		if (!response.ok) {
 			throw new Error('검색 요청 실패');
 		}
@@ -87,7 +88,7 @@
 			<button
 				class=" flex space-x-4 cursor-pointer text-left w-full px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-850 transition rounded-xl"
 				on:click={() => {
-					goto(`/rooibos/corpbookmarks/${bookmark.id}`);
+					goto(`/rooibos/corpbookmarks/${bookmark.id}?company_id=${bookmark.company_id}`);
 				}}
 			>
 				<div class=" w-full">
