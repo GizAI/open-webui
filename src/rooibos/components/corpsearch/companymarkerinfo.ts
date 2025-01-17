@@ -1,7 +1,7 @@
 import { goto } from '$app/navigation';
 import { user } from '$lib/stores';
 import { WEBUI_API_BASE_URL } from '$lib/constants';
-import { companyDetails } from '$rooibos/stores';
+import { selectedCompanyInfo } from '$rooibos/stores';
 import { get } from 'svelte/store';
 
 declare global {
@@ -53,7 +53,7 @@ export const compayMarkerInfo = (
     try {
       const data = JSON.parse(decodeURIComponent(atob(encodedData)));
   
-      companyDetails.set(data);
+      selectedCompanyInfo.set(data);
       await goto('/');
     } catch (error) {
       console.error('Error processing data:', error);

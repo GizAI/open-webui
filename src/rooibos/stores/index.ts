@@ -1,8 +1,9 @@
 import { type Writable, writable } from 'svelte/store';
 
-export const companyDetails: Writable<CompanySettings> = writable({});
+export const selectedCompanyInfo: Writable<CompanySettings> = writable({});
 
 type CompanySettings = {
+    smtp_id?: string;
     company_name?: string;
     address?: string;
     latitude?: string;
@@ -11,17 +12,71 @@ type CompanySettings = {
     category?: string[];
     business_registration_number?: string;
     representative?: string;
-    birthDate?: string;
+    birth_date?: string;
     industry?: string;
-    establishmentDate?: string;
+    establishment_date?: string;
     employee_count?: number;
     recent_sales?: number;
     recent_revenue?: number;
     recent_profit?: number;
     website?: string;
     distance_from_user?: number;
-    bookmark_id?: string | null;
-
-	
+    bookmark_id?: string | null;    
+    fax_number?: string;
+    email?: string;
+    company_type?: string;
+    founding_date?: string;
+    industry_code1?: string;
+    industry_code2?: string;
+    main_product?: string;
+    main_bank?: string;
+    main_branch?: string;
+    group_name?: string;
+    stock_code?: string;
+    corporate_number?: string;
+    english_name?: string;
+    trade_name?: string;
+    fiscal_month?: string;
+    sales_year?: string;
+    profit_year?: string;
+    operating_profit_year?: string;
+    recent_operating_profit?: number;
+    asset_year?: string;
+    recent_total_assets?: number;
+    debt_year?: string;
+    recent_total_debt?: number;
+    equity_year?: string;
+    recent_total_equity?: number;
+    capital_year?: string;
+    recent_capital?: number;
+    region1?: string;
+    region2?: string;
+    industry_major?: string;
+    industry_middle?: string;
+    industry_small?: string;
+    certificate_expiry_date?: string;
+    sme_type?: string;
+    cri_company_size?: string;
+    lab_name?: string;
+    first_approval_date?: string;
+    lab_location?: string;
+    research_field?: string;
+    division?: string;
+    birth_year?: string;
+    foundation_year?: string;
+    family_shareholder_yn?: string;
+    external_shareholder_yn?: string;
+    financial_statement_year?: string;
+    employees?: number;
+    total_assets?: number;
+    total_equity?: number;
+    sales_amount?: number;
+    net_income?: number;
+    venture_confirmation_type?: string;
+    svcl_region?: string;
+    venture_valid_from?: string;
+    venture_valid_until?: string;
+    confirming_authority?: string;
+    new_reconfirmation_code?: string;
 };
 

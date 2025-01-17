@@ -4,7 +4,7 @@
 	import { toast } from 'svelte-sonner';
 	import Selector from './ModelSelector/Selector.svelte';
 	import Tooltip from '../common/Tooltip.svelte';
-	import {companyDetails} from '$rooibos/stores'
+	import {selectedCompanyInfo} from '$rooibos/stores'
 
 	import { updateUserSettings } from '$lib/apis/users';
 	const i18n = getContext('i18n');
@@ -80,8 +80,8 @@
 						</button>
 					</Tooltip>
 				</div>
-				{#if $companyDetails.company_name != null}
-				<div class="min-w-[200px] whitespace-nowrap font-bold">{$companyDetails.company_name}</div>
+				{#if $selectedCompanyInfo.company_name != null}
+				<div class="min-w-[200px] whitespace-nowrap font-bold">{$selectedCompanyInfo.company_name}</div>
 				{/if}
 			{:else}
 				<div
