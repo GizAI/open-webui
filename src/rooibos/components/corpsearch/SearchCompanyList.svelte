@@ -1,12 +1,12 @@
 <script lang="ts">
   interface SearchResult {
+    smtp_id: string;
     company_name: string;
     address: string;
     latitude: string;
     longitude: string;
     phone_number?: string;
     category?: string[];
-    // memos?: MemoData[];
     business_registration_number?: string;
     representative?: string;
     birth_date?: string;
@@ -18,7 +18,63 @@
     recent_profit?: number;
     website?: string;
     distance_from_user?: number;
-    bookmark_id?: string | null;
+    bookmark_id?: string | null;    
+    fax_number?: string;
+    email?: string;
+    company_type?: string;
+    founding_date?: string;
+    industry_code1?: string;
+    industry_code2?: string;
+    main_product?: string;
+    main_bank?: string;
+    main_branch?: string;
+    group_name?: string;
+    stock_code?: string;
+    corporate_number?: string;
+    english_name?: string;
+    trade_name?: string;
+    fiscal_month?: string;
+    sales_year?: string;
+    profit_year?: string;
+    operating_profit_year?: string;
+    recent_operating_profit?: number;
+    asset_year?: string;
+    recent_total_assets?: number;
+    debt_year?: string;
+    recent_total_debt?: number;
+    equity_year?: string;
+    recent_total_equity?: number;
+    capital_year?: string;
+    recent_capital?: number;
+    region1?: string;
+    region2?: string;
+    industry_major?: string;
+    industry_middle?: string;
+    industry_small?: string;
+    certificate_expiry_date?: string;
+    sme_type?: string;
+    cri_company_size?: string;
+    lab_name?: string;
+    first_approval_date?: string;
+    lab_location?: string;
+    research_field?: string;
+    division?: string;
+    birth_year?: string;
+    foundation_year?: string;
+    family_shareholder_yn?: string;
+    external_shareholder_yn?: string;
+    financial_statement_year?: string;
+    employees?: number;
+    total_assets?: number;
+    total_equity?: number;
+    sales_amount?: number;
+    net_income?: number;
+    venture_confirmation_type?: string;
+    svcl_region?: string;
+    venture_valid_from?: string;
+    venture_valid_until?: string;
+    confirming_authority?: string;
+    new_reconfirmation_code?: string;
   }
   import { showSidebar, mobile } from '$lib/stores';
   export let searchResults: SearchResult[] = [];
@@ -42,7 +98,7 @@
         >
           <div class="flex items-start justify-between">
             <div class="flex-1">
-              <div class="font-semibold text-gray-900">{result.company_name}</div>
+              <div class="font-semibold text-gray-900">{result.company_name} ({result.business_registration_number})</div>
               <div class="text-sm text-gray-600 mt-1.5">{result.address}</div>
               {#if result.representative}
                 <div class="text-sm text-gray-500 mt-1">대표자: {result.representative}</div>
@@ -50,14 +106,23 @@
               {#if result.industry}
                 <div class="text-sm text-gray-500 mt-1">업종: {result.industry}</div>
               {/if}
-              {#if result.establishment_date && !$mobile}
-                <div class="text-sm text-gray-500 mt-1">설립일: {result.establishment_date}</div>
+              {#if result.phone_number}
+                <div class="text-sm text-gray-500 mt-1">전화번호: {result.phone_number}</div>
               {/if}
-              {#if result.employee_count && !$mobile}
-                <div class="text-sm text-gray-500 mt-1">직원 수: {result.employee_count}명</div>
+              {#if result.main_product}
+                <div class="text-sm text-gray-500 mt-1">주요 상품: {result.main_product}</div>
               {/if}
-              {#if result.recent_sales && !$mobile}
-                <div class="text-sm text-gray-500 mt-1">최근 매출: {result.recent_sales.toLocaleString()}백만원</div>
+              {#if result.total_assets}
+                <div class="text-sm text-gray-500 mt-1">총 자산: {result.total_assets.toLocaleString()}역</div>
+              {/if}
+              {#if result.total_equity}
+                <div class="text-sm text-gray-500 mt-1">총 자본: {result.total_equity.toLocaleString()}억</div>
+              {/if}
+              {#if result.sales_amount}
+                <div class="text-sm text-gray-500 mt-1">매출: {result.sales_amount.toLocaleString()}억</div>
+              {/if}
+              {#if result.net_income}
+                <div class="text-sm text-gray-500 mt-1">당기 순이익: {result.net_income.toLocaleString()}억</div>
               {/if}
             </div>
             <svg 

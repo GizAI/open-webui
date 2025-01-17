@@ -56,6 +56,7 @@
 	import ChannelModal from './Sidebar/ChannelModal.svelte';
 	import ChannelItem from './Sidebar/ChannelItem.svelte';
 	import PencilSquare from '../icons/PencilSquare.svelte';
+	import { selectedCompanyInfo } from '$rooibos/stores';
 
 	const BREAKPOINT = 768;
 
@@ -479,6 +480,7 @@
 				draggable="false"
 				on:click={async () => {
 					selectedChatId = null;
+					selectedCompanyInfo.set({})
 					await goto('/');
 					const newChatButton = document.getElementById('new-chat-button');
 					setTimeout(() => {

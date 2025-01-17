@@ -4,13 +4,13 @@
 
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { writable } from 'svelte/store';
+  import { get, writable } from 'svelte/store';
   import SearchBar from './SearchBar.svelte';
 	import MenuLines from '$lib/components/icons/MenuLines.svelte';
   import { compayMarkerInfo } from './companymarkerinfo';
   import { filterGroups } from './filterdata';
   import { mobile } from '$lib/stores';
-  import { showSidebar } from '$lib/stores';
+  import { showSidebar, user } from '$lib/stores';
 	import SearchCompanyList from './SearchCompanyList.svelte';
 	import { WEBUI_API_BASE_URL } from '$lib/constants';
 
@@ -27,13 +27,13 @@
   };
 
   type SearchResult = {
+    smtp_id: string;
     company_name: string;
     address: string;
     latitude: string;
     longitude: string;
     phone_number?: string;
     category?: string[];
-    // memos?: MemoData[];
     business_registration_number?: string;
     representative?: string;
     birth_date?: string;
@@ -45,8 +45,64 @@
     recent_profit?: number;
     website?: string;
     distance_from_user?: number;
-    bookmark_id?: string | null;
-  };
+    bookmark_id?: string | null;    
+    fax_number?: string;
+    email?: string;
+    company_type?: string;
+    founding_date?: string;
+    industry_code1?: string;
+    industry_code2?: string;
+    main_product?: string;
+    main_bank?: string;
+    main_branch?: string;
+    group_name?: string;
+    stock_code?: string;
+    corporate_number?: string;
+    english_name?: string;
+    trade_name?: string;
+    fiscal_month?: string;
+    sales_year?: string;
+    profit_year?: string;
+    operating_profit_year?: string;
+    recent_operating_profit?: number;
+    asset_year?: string;
+    recent_total_assets?: number;
+    debt_year?: string;
+    recent_total_debt?: number;
+    equity_year?: string;
+    recent_total_equity?: number;
+    capital_year?: string;
+    recent_capital?: number;
+    region1?: string;
+    region2?: string;
+    industry_major?: string;
+    industry_middle?: string;
+    industry_small?: string;
+    certificate_expiry_date?: string;
+    sme_type?: string;
+    cri_company_size?: string;
+    lab_name?: string;
+    first_approval_date?: string;
+    lab_location?: string;
+    research_field?: string;
+    division?: string;
+    birth_year?: string;
+    foundation_year?: string;
+    family_shareholder_yn?: string;
+    external_shareholder_yn?: string;
+    financial_statement_year?: string;
+    employees?: number;
+    total_assets?: number;
+    total_equity?: number;
+    sales_amount?: number;
+    net_income?: number;
+    venture_confirmation_type?: string;
+    svcl_region?: string;
+    venture_valid_from?: string;
+    venture_valid_until?: string;
+    confirming_authority?: string;
+    new_reconfirmation_code?: string;
+};
 
   type Filters = {
     radius?: string;
@@ -67,6 +123,7 @@
   let script: HTMLScriptElement;
   let searchValue: string = '';
   let showSearchList = false;
+  let showSearchBar = true;
   let isListIconVisible = true;
   let activeFilterGroup: string | null = null;
   let isFilterOpen = false;
@@ -75,10 +132,16 @@
   const handleSearch = async (searchValue: string, filters: any) => {
     if (!mapInstance) return;
     console.log('Searching for:', searchValue, 'with filters:', filters);
-    showSearchList = false
+    
+    showSearchList = false;
+    activeFilterGroup = null;
+    isFilterOpen = false;
+    
     try {
+      const currentUser = get(user);
       const queryParams = new URLSearchParams({
         query: searchValue,
+        user_id: currentUser?.id ? currentUser.id : '',
         latitude: location ? location.lat.toString() : '',
         longitude: location ? location.lng.toString() : '',
         userLatitude: location?.lat?.toString() || '',
@@ -111,7 +174,7 @@
 
       if (mapInstance?.marker) {
         mapInstance.marker.setMap(null);
-      }
+      }  
 
       if (searchResults.length === 1) {
         const singleResult = searchResults[0];
@@ -132,12 +195,14 @@
         naver.maps.Event.addListener(marker, 'click', () => {
           mapInstance?.infoWindow.setContent(compayMarkerInfo(singleResult));
           mapInstance?.infoWindow.open(mapInstance.map, marker);
+          showSearchBar = false;
         });
 
         mapInstance.companyMarkers.push(marker);
 
         mapInstance.infoWindow.setContent(compayMarkerInfo(singleResult));
         mapInstance.infoWindow.open(mapInstance.map, marker);
+        showSearchBar = false;
       } else {
         searchResults.forEach((result) => {
           const point = new naver.maps.LatLng(
@@ -156,12 +221,12 @@
               mapInstance?.infoWindow.close();
               mapInstance?.infoWindow.setContent(compayMarkerInfo(result));
               mapInstance?.infoWindow.open(mapInstance.map, marker);
+              showSearchBar = false;
             });
             mapInstance.companyMarkers.push(marker);
           }
         });
-      }    
-      activeFilterGroup = null;
+      }
     } catch (error) {
       console.error('검색 중 오류가 발생했습니다:', error);
     }
@@ -210,11 +275,13 @@
       infoWindow.close();
       handleSearchListChange(false);
       handleFilterOpenChange(false)
+      showSearchBar = true;
     });
 
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
         infoWindow.close();
+        showSearchBar = true;
       }
     });
 
@@ -251,6 +318,7 @@
 
     if (marker) {
         mapInstance.infoWindow.open(mapInstance.map, marker);
+        showSearchBar = false;
     }
 
     showSearchList = false;
@@ -342,6 +410,13 @@
       if (newFilters[key] === null) {
         delete newFilters[key];
       }
+
+      if (typeof newFilters[key] === 'object' && newFilters[key] !== null) {
+        const values = Object.values(newFilters[key]);
+        if (values.every(val => val === '' || val === null)) {
+          delete newFilters[key];
+        }
+      }
     });
   
     selectedFilters = newFilters;
@@ -354,28 +429,30 @@
 
 
 </script>
-<div 
-    class="search-bar-wrapper w-full"
-    class:sidebar-visible={$showSidebar}
-  >
-  <SearchBar
-    onSearch={handleSearch}
-    onReset={handleReset}
-    onApply={handleApply}
-    searchValue={searchValue}
-    onSearchValueChange={(value) => (searchValue = value)}
-    onShowSearchListChange={handleSearchListChange}
-    isListIconVisible={isListIconVisible}
-    activeFilterGroup={null}
-    searchResults={searchResults}
-    onFilterChange={onFilterChange}
-    selectedFilters={selectedFilters}
-    isFilterOpen={isFilterOpen}
-    onFilterOpenChange={handleFilterOpenChange}
-  />
-</div>
+<!-- {#if showSearchBar && $mobile} -->
+  <div 
+      class="search-bar-wrapper w-full"
+      class:sidebar-visible={$showSidebar}
+    >
+    <SearchBar
+      onSearch={handleSearch}
+      onReset={handleReset}
+      onApply={handleApply}
+      searchValue={searchValue}
+      onSearchValueChange={(value) => (searchValue = value)}
+      onShowSearchListChange={handleSearchListChange}
+      isListIconVisible={isListIconVisible}
+      activeFilterGroup={null}
+      searchResults={searchResults}
+      onFilterChange={onFilterChange}
+      selectedFilters={selectedFilters}
+      isFilterOpen={isFilterOpen}
+      onFilterOpenChange={handleFilterOpenChange}
+    />
+  </div>
+<!-- {/if} -->
 
-{#if searchResults.length > 0 && showSearchList && !($mobile && $showSidebar)}
+{#if searchResults.length > 1 && showSearchList && !($mobile && $showSidebar)}
   <div 
     class="company-list-wrapper w-full"
     class:sidebar-visible={$showSidebar}

@@ -86,7 +86,7 @@
   </form>
 
   <div class="absolute left-1/2 transform -translate-x-1/2 z-10 flex items-center gap-2 {$mobile ? 'w-11/12' : ''}">
-    {#if searchResults.length > 0}
+    {#if searchResults.length > 0 }
       <button
         type="button"
         on:click={handleListIconClick}
@@ -99,42 +99,42 @@
           <List class="h-6 w-6" />
         {/if}
       </button>
+    {/if}  
       
-      <div class="flex items-start gap-2 w-full {$mobile ? 'grid grid-cols-7' : ''}">  
-        {#each filterGroups as group}
-          <button
-            type="button"
-            class="p-2 rounded-full hover:bg-gray-100"
-            on:click={() => toggleFilter(group.id)}
-            aria-label={group.title}
-          >
-            {#if iconMapping[group.id]}
-              <svelte:component 
-                this={iconMapping[group.id]} 
-                class="h-5 w-5 {group.iconClass}" 
-              />
-            {:else}
-              <Sliders class="h-5 w-5 text-gray-500" />
-            {/if}
-          </button>
-        {/each}
+    <div class="flex items-start gap-2 w-full {$mobile ? 'grid grid-cols-7' : ''}">  
+      {#each filterGroups as group}
+        <button
+          type="button"
+          class="p-2 rounded-full hover:bg-gray-100"
+          on:click={() => toggleFilter(group.id)}
+          aria-label={group.title}
+        >
+          {#if iconMapping[group.id]}
+            <svelte:component 
+              this={iconMapping[group.id]} 
+              class="h-5 w-5 {group.iconClass}" 
+            />
+          {:else}
+            <Sliders class="h-5 w-5 text-gray-500" />
+          {/if}
+        </button>
+      {/each}
 
-        {#each filterActions as action}
-          <button
-            type="button"
-            class="p-2 rounded-full hover:bg-gray-100"
-            on:click={() => handleAction(action.action)}
-            aria-label={action.label}
-          >
-            {#if iconMapping[action.id]}
-              <svelte:component this={iconMapping[action.id]} class="h-5 w-5 {action.iconClass}" />
-            {:else}
-              <Sliders class="h-5 w-5" />
-            {/if}
-          </button>
-        {/each}
-      </div>
-    {/if}
+      {#each filterActions as action}
+        <button
+          type="button"
+          class="p-2 rounded-full hover:bg-gray-100"
+          on:click={() => handleAction(action.action)}
+          aria-label={action.label}
+        >
+          {#if iconMapping[action.id]}
+            <svelte:component this={iconMapping[action.id]} class="h-5 w-5 {action.iconClass}" />
+          {:else}
+            <Sliders class="h-5 w-5" />
+          {/if}
+        </button>
+      {/each}
+    </div>
   </div>
   {#if isFilterOpen}
   <div
