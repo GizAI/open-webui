@@ -132,7 +132,11 @@
   const handleSearch = async (searchValue: string, filters: any) => {
     if (!mapInstance) return;
     console.log('Searching for:', searchValue, 'with filters:', filters);
-    showSearchList = false
+    
+    showSearchList = false;
+    activeFilterGroup = null;
+    isFilterOpen = false;
+    
     try {
       const currentUser = get(user);
       const queryParams = new URLSearchParams({
@@ -222,8 +226,7 @@
             mapInstance.companyMarkers.push(marker);
           }
         });
-      }    
-      activeFilterGroup = null;
+      }
     } catch (error) {
       console.error('검색 중 오류가 발생했습니다:', error);
     }
