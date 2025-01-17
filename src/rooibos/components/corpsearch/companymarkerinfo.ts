@@ -30,7 +30,7 @@ export const compayMarkerInfo = (
             'Content-Type': 'application/json',
             Authorization: `Bearer ${localStorage.token}`
           },
-          body: JSON.stringify({ userId: currentUser?.id, companyId: companyData.id, business_registration_number: companyData.business_registration_number }),
+          body: JSON.stringify({ userId: currentUser?.id, companyId: companyData.smtp_id, business_registration_number: companyData.business_registration_number }),
         });
   
         const { data } = await response.json();
@@ -63,22 +63,6 @@ export const compayMarkerInfo = (
   const formatDistance = (distance: number): string => {
     return distance < 1000 ? `${distance}m` : `${(distance / 1000).toFixed(1)}km`;
   };
-
-  let memosHtml = "";
-  if (result.memos && result.memos.length > 0) {
-    memosHtml = `
-      <div style="margin-top: 10px;">
-        <h4 style="font-size: 14px; font-weight: bold;">나의 메모</h4>
-        <ul style="list-style: disc; padding-left: 20px; max-height: 100px; overflow-y: auto;">
-          ${result.memos.map((memo: any) => `
-            <li style="font-size: 12px; margin-bottom: 5px;">
-              ${memo.memo}
-            </li>
-          `).join('')}
-        </ul>
-      </div>
-    `;
-  }
 
   return `
       <div style="padding: 16px; max-width: 300px; word-wrap: break-word; font-family: Arial, sans-serif; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
@@ -131,51 +115,85 @@ export const compayMarkerInfo = (
             업종: ${result.industry}
           </p>` :
           ""}
-
-        <div style="display: flex; gap: 20px; margin: 5px 0;">
-          ${result.establishment_date ?
-            `<p style="font-size: 13px; margin: 0; display: flex; align-items: center; gap: 5px;">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#EC4899" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                <line x1="16" y1="2" x2="16" y2="6"></line>
-                <line x1="8" y1="2" x2="8" y2="6"></line>
-                <line x1="3" y1="10" x2="21" y2="10"></line>
+        
+          ${result.group_name ?
+            `<p style="font-size: 13px; margin: 5px 0; display: flex; align-items: center; gap: 5px;">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0EA5E9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 3v18h18"></path>
+                <path d="M18.7 8l-5.1 5.2-2.8-2.7L7 14.3"></path>
               </svg>
-              설립일: ${String(result.establishment_date).replace(/(\d{4})(\d{2})(\d{2})/, '$1.$2.$3')}
+              그룹명: ${result.group_name}
             </p>` :
-            ""
-          }
-          ${result.employee_count ?
-            `<p style="font-size: 13px; margin: 0; display: flex; align-items: center; gap: 5px;">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9333EA" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                <circle cx="9" cy="7" r="4"></circle>
-                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+            ""}
+  
+          ${result.main_product ?
+            `<p style="font-size: 13px; margin: 5px 0; display: flex; align-items: center; gap: 5px;">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
               </svg>
-              임직원: ${result.employee_count}명</p>` :
-            ""
-          }
-        </div>
+              주요 상품: ${result.main_product}
+            </p>` :
+            ""}
 
-        <div style="display: flex; gap: 20px; margin: 0;">
-          ${result.recent_sales || result.recent_revenue ?
-            `<p style="font-size: 13px; margin: 0; display: flex; align-items: center; gap: 5px;">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#22C55E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <line x1="12" y1="1" x2="12" y2="23"></line>
-                <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
-              </svg>
-              매출액: ${result.recent_sales || result.recent_revenue}백만</p>` :
-            ""}
-          ${result.recent_profit ?
-            `<p style="font-size: 13px; margin: 0; display: flex; align-items: center; gap: 5px;">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#EC4899" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <line x1="12" y1="1" x2="12" y2="23"></line>
-                <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
-              </svg>
-              순이익: ${result.recent_profit}백만</p>` :
-            ""}
-        </div>
+          <div style="display: flex; gap: 20px; margin: 5px 0;">
+            ${result.establishment_date ?
+              `<p style="font-size: 13px; margin: 0; display: flex; align-items: center; gap: 5px;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#EC4899" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                  <line x1="16" y1="2" x2="16" y2="6"></line>
+                  <line x1="8" y1="2" x2="8" y2="6"></line>
+                  <line x1="3" y1="10" x2="21" y2="10"></line>
+                </svg>
+                설립일: ${String(result.establishment_date).replace(/(\d{4})(\d{2})(\d{2})/, '$1.$2.$3')}
+              </p>` :
+              ""
+            }
+            ${result.employee_count ?
+              `<p style="font-size: 13px; margin: 0; display: flex; align-items: center; gap: 5px;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9333EA" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                  <circle cx="9" cy="7" r="4"></circle>
+                  <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                  <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                </svg>
+                임직원: ${result.employee_count}명</p>` :
+              ""
+            }
+          </div>
+
+          <div style="display: flex; gap: 20px; margin: 5px 0;">
+            ${result.total_assets ?
+              `<p style="font-size: 13px; margin: 0; display: flex; align-items: center; gap: 5px;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8B5CF6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
+                  <line x1="1" y1="10" x2="23" y2="10"></line>
+                </svg>
+                총자산: ${result.total_assets}억</p>` :
+              ""
+            }
+
+            ${result.recent_total_equity ?
+              `<p style="font-size: 13px; margin: 0; display: flex; align-items: center; gap: 5px;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <line x1="12" y1="1" x2="12" y2="23"></line>
+                  <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                </svg>
+                총자본: ${result.recent_total_equity}억</p>` :
+              ""
+            }
+          </div>
+  
+          <div style="display: flex; gap: 20px; margin: 5px 0;">
+            ${result.net_income ?
+              `<p style="font-size: 13px; margin: 0; display: flex; align-items: center; gap: 5px;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <line x1="12" y1="1" x2="12" y2="23"></line>
+                  <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                </svg>
+                당기순이익: ${result.net_income}억</p>` :
+              ""
+            }
+          </div>  
 
         ${result.website ?
           `<p style="font-size: 13px; margin: 5px 0; display: flex; align-items: center; gap: 5px;">
@@ -226,8 +244,7 @@ export const compayMarkerInfo = (
             />
           </button>
         </div>
-
-        ${memosHtml}
       </div>
+
     `;
 };

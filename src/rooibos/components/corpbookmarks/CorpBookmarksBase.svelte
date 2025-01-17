@@ -82,6 +82,14 @@
 		});
 	}
 
+	$: if (fuse) {
+		filteredItems = query
+			? fuse.search(query).map((e: any) => {
+					return e.item;
+				})
+			: (bookmark?.files ?? []);
+	}
+
 	let selectedFile: any = null;
 	let selectedFileId: any = null;
 
@@ -604,7 +612,7 @@
 						/>
 					</div>
 
-					<div class="self-center flex-shrink-0">
+					<!-- <div class="self-center flex-shrink-0">
 						<button
 							class="bg-gray-50 hover:bg-gray-100 text-black dark:bg-gray-850 dark:hover:bg-gray-800 dark:text-white transition px-2 py-1 rounded-full flex gap-1 items-center"
 							type="button"
@@ -618,7 +626,7 @@
 								{$i18n.t('Access')}
 							</div>
 						</button>
-					</div>
+					</div> -->
 				</div>
 			  <!-- 기본 정보 섹션 -->
 			  <div class="space-y-2">

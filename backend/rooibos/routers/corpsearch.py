@@ -39,7 +39,6 @@ async def test(request: Request):
 
 @router.get("/")
 async def search(request: Request):
-    log.info("1====================================================")
     search_params = request.query_params
     id = search_params.get("id")
     query = search_params.get("query", "").strip()
@@ -56,7 +55,7 @@ async def search(request: Request):
     employee_count_data = filters.get("employee_count", {})
     employee_count_min = employee_count_data.get("min")
     employee_count_max = employee_count_data.get("max")
-    log.info("2====================================================")
+    
     certification = filters.get("certification", [])
 
     establishment_year = filters.get("establishment_year", {}).get("year")
@@ -105,50 +104,79 @@ async def search(request: Request):
         params = []
         param_count = 1
 
-        sql_query = """
-        WITH FinancialComparison AS (
-            SELECT 
-                mfd.financial_company_id,
-                mfd.revenue,
-                mfd.net_income,
-                mfd.total_assets,
-                mfd.total_liabilities,
-                mfd.retained_earnings,
-                CASE
-                    WHEN LAG(mfd.revenue) OVER (PARTITION BY mfd.financial_company_id ORDER BY mfd.year) IS NOT NULL
-                    THEN (mfd.revenue - LAG(mfd.revenue) OVER (PARTITION BY mfd.financial_company_id ORDER BY mfd.year)) 
-                        / NULLIF(LAG(mfd.revenue) OVER (PARTITION BY mfd.financial_company_id ORDER BY mfd.year), 0) * 100
-                    ELSE 0
-                END AS revenue_growth_rate
-            FROM smtp_financial_data mfd
-            WHERE mfd.year = '2023'
-        )
-        SELECT DISTINCT
-            ci.company_name,
-            ci.id,
-            ci.business_registration_number,
-            ci.representative,
-            ci.postal_code,
-            ci.address,
-            ci.phone_number,
-            ci.fax_number,
-            ci.website,
-            ci.email,
-            ci.company_type,
-            ci.establishment_date,
-            ci.employee_count,
-            ci.latitude,
-            ci.longitude,
-            ci.industry,
-            ci.recent_sales,
-            ci.recent_profit,
-            me.executive_name,
-            me.birth_date,
-            FinancialComparison.revenue AS recent_revenue,
-            FinancialComparison.net_income AS recent_net_income,
-            FinancialComparison.total_assets AS recent_total_assets,
-            FinancialComparison.total_liabilities AS recent_total_liabilities,
-            FinancialComparison.revenue_growth_rate
+        sql_query = """        
+            SELECT DISTINCT
+                mci.smtp_id,
+                mci.company_name,
+                mci.representative,
+                mci.postal_code,
+                mci.address,
+                mci.phone_number,
+                mci.fax_number,
+                mci.website,
+                mci.email,
+                mci.company_type,
+                mci.establishment_date,
+                mci.founding_date,
+                mci.employee_count,
+                mci.industry_code1,
+                mci.industry_code2,
+                mci.industry,
+                mci.main_product,
+                mci.main_bank,
+                mci.main_branch,
+                mci.group_name,
+                mci.stock_code,
+                mci.business_registration_number,
+                mci.corporate_number,
+                mci.english_name,
+                mci.trade_name,
+                mci.fiscal_month,
+                mci.sales_year,
+                mci.recent_sales,
+                mci.profit_year,
+                mci.recent_profit,
+                mci.operating_profit_year,
+                mci.recent_operating_profit,
+                mci.asset_year,
+                mci.recent_total_assets,
+                mci.debt_year,
+                mci.recent_total_debt,
+                mci.equity_year,
+                mci.recent_total_equity,
+                mci.capital_year,
+                mci.recent_capital,
+                mci.region1,
+                mci.region2,
+                mci.industry_major,
+                mci.industry_middle,
+                mci.industry_small,
+                mci.latitude,
+                mci.longitude,
+                mci.certificate_expiry_date,
+                mci.sme_type,
+                mci.cri_company_size,
+                mci.lab_name,
+                mci.first_approval_date,
+                mci.lab_location,
+                mci.research_field,
+                mci.division,
+                mci.birth_year,
+                mci.foundation_year,
+                mci.family_shareholder_yn,
+                mci.external_shareholder_yn,
+                mci.financial_statement_year,
+                mci.employees,
+                mci.total_assets,
+                mci.total_equity,
+                mci.sales_amount,
+                mci.net_income,
+                mci.venture_confirmation_type,
+                mci.svcl_region,
+                mci.venture_valid_from,
+                mci.venture_valid_until,
+                mci.confirming_authority,
+                mci.new_reconfirmation_code
         """
         if not id:
             if latitude and longitude:
@@ -157,10 +185,10 @@ async def search(request: Request):
                         (
                             6371 * acos(
                                 cos(radians(${param_count})) *
-                                cos(radians(ci.latitude)) *
-                                cos(radians(ci.longitude) - radians(${param_count + 1})) +
+                                cos(radians(mci.latitude)) *
+                                cos(radians(mci.longitude) - radians(${param_count + 1})) +
                                 sin(radians(${param_count})) *
-                                sin(radians(ci.latitude))
+                                sin(radians(mci.latitude))
                             )
                         ) * 1000
                     ) AS distance_from_location
@@ -173,10 +201,10 @@ async def search(request: Request):
                     (
                         6371 * acos(
                             cos(radians(${param_count})) *
-                            cos(radians(ci.latitude)) *
-                            cos(radians(ci.longitude) - radians(${param_count + 1})) +
+                            cos(radians(mci.latitude)) *
+                            cos(radians(mci.longitude) - radians(${param_count + 1})) +
                             sin(radians(${param_count})) *
-                            sin(radians(ci.latitude))
+                            sin(radians(mci.latitude))
                         )
                     ) * 1000
                 ) AS distance_from_user
@@ -185,18 +213,12 @@ async def search(request: Request):
             param_count += 2
 
         sql_query += """
-        FROM smtp_company_info ci
-        LEFT JOIN smtp_financial_company fc 
-            ON ci.company_name = fc.company_name
-        LEFT JOIN smtp_executives me
-            ON ci.business_registration_number = me.business_registration_number
-            AND me.position = '대표이사'
-        LEFT JOIN FinancialComparison 
-            ON fc.id = FinancialComparison.financial_company_id
-        WHERE ci.latitude IS NOT NULL
+        FROM master_company_info mci
+        WHERE mci.latitude IS NOT NULL
         """
+
         if id:
-            sql_query += f" AND ci.id = ${param_count}"
+            sql_query += f" AND mci.smtp_id = ${param_count}"
             params.append(float(id))
             param_count += 1
         else:
@@ -207,10 +229,10 @@ async def search(request: Request):
                             (
                                 6371 * acos(
                                     cos(radians(${param_count})) *
-                                    cos(radians(ci.latitude)) *
-                                    cos(radians(ci.longitude) - radians(${param_count + 1})) +
+                                    cos(radians(mci.latitude)) *
+                                    cos(radians(mci.longitude) - radians(${param_count + 1})) +
                                     sin(radians(${param_count})) *
-                                    sin(radians(ci.latitude))
+                                    sin(radians(mci.latitude))
                                 )
                             ) * 1000
                         ) <= ${param_count + 2}
@@ -224,10 +246,10 @@ async def search(request: Request):
                                 (
                                     6371 * acos(
                                         cos(radians(${param_count})) *
-                                        cos(radians(ci.latitude)) *
-                                        cos(radians(ci.longitude) - radians(${param_count + 1})) +
+                                        cos(radians(mci.latitude)) *
+                                        cos(radians(mci.longitude) - radians(${param_count + 1})) +
                                         sin(radians(${param_count})) *
-                                        sin(radians(ci.latitude))
+                                        sin(radians(mci.latitude))
                                     )
                                 ) * 1000
                             ) <= ${param_count + 2}
@@ -238,9 +260,9 @@ async def search(request: Request):
             if query:
                 sql_query += f"""
                     AND (
-                        ci.company_name ILIKE ${param_count}
-                        OR ci.representative ILIKE ${param_count}
-                        OR ci.address ILIKE ${param_count}
+                        mci.company_name ILIKE ${param_count}
+                        OR mci.representative ILIKE ${param_count}
+                        OR mci.address ILIKE ${param_count}
                     )
                 """
                 params.append(f"%{query}%")
@@ -258,22 +280,22 @@ async def search(request: Request):
             param_count += 1
 
         if profit_min is not None:
-            sql_query += f" AND (ci.recent_profit)::numeric >= ${param_count}"
+            sql_query += f" AND (mci.recent_profit)::numeric >= ${param_count}"
             params.append(profit_min)
             param_count += 1
 
         if profit_max is not None:
-            sql_query += f" AND (ci.recent_profit)::numeric <= ${param_count}"
+            sql_query += f" AND (mci.recent_profit)::numeric <= ${param_count}"
             params.append(profit_max)
             param_count += 1
 
         if employee_count_min is not None:
-            sql_query += f" AND ci.employee_count >= ${param_count}"
+            sql_query += f" AND mci.employee_count >= ${param_count}"
             params.append(employee_count_min)
             param_count += 1
 
         if employee_count_max is not None:
-            sql_query += f" AND ci.employee_count <= ${param_count}"
+            sql_query += f" AND mci.employee_count <= ${param_count}"
             params.append(employee_count_max)
             param_count += 1
 
@@ -298,17 +320,17 @@ async def search(request: Request):
             param_count += 1
 
         if establishment_year is not None:
-            sql_query += f" AND EXTRACT(YEAR FROM ci.establishment_date) = ${param_count}"
+            sql_query += f" AND EXTRACT(YEAR FROM mci.establishment_date) = ${param_count}"
             params.append(establishment_year)
             param_count += 1
 
         if certification:
-            sql_query += f" AND ci.certifications @> ${param_count}::jsonb"
+            sql_query += f" AND mci.certifications @> ${param_count}::jsonb"
             params.append(json.dumps(certification))
             param_count += 1
 
         if excluded_industries:
-            sql_query += f" AND ci.industry != ALL(${param_count}::text[])"
+            sql_query += f" AND mci.industry != ALL(${param_count}::text[])"
             array_value = "{" + ",".join(excluded_industries) + "}"
             params.append(array_value)
             param_count += 1
@@ -324,7 +346,7 @@ async def search(request: Request):
             param_count += 1
 
         if loan is not None:
-            sql_query += f" AND ci.loan = ${param_count}"
+            sql_query += f" AND mci.loan = ${param_count}"
             params.append(loan)
             param_count += 1
 
@@ -337,6 +359,9 @@ async def search(request: Request):
         sql_query += " LIMIT 100"
 
         executable_query = get_executable_query(sql_query, params)
+
+        log.info("Executing SQL Query:")
+        log.info(executable_query)
 
         with get_db() as db:
             result = db.execute(text(executable_query))
