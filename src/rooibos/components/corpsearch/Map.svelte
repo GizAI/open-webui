@@ -123,6 +123,7 @@
   let script: HTMLScriptElement;
   let searchValue: string = '';
   let showSearchList = false;
+  let showSearchBar = true;
   let isListIconVisible = true;
   let activeFilterGroup: string | null = null;
   let isFilterOpen = false;
@@ -188,12 +189,14 @@
         naver.maps.Event.addListener(marker, 'click', () => {
           mapInstance?.infoWindow.setContent(compayMarkerInfo(singleResult));
           mapInstance?.infoWindow.open(mapInstance.map, marker);
+          showSearchBar = false;
         });
 
         mapInstance.companyMarkers.push(marker);
 
         mapInstance.infoWindow.setContent(compayMarkerInfo(singleResult));
         mapInstance.infoWindow.open(mapInstance.map, marker);
+        showSearchBar = false;
       } else {
         searchResults.forEach((result) => {
           const point = new naver.maps.LatLng(
@@ -212,6 +215,7 @@
               mapInstance?.infoWindow.close();
               mapInstance?.infoWindow.setContent(compayMarkerInfo(result));
               mapInstance?.infoWindow.open(mapInstance.map, marker);
+              showSearchBar = false;
             });
             mapInstance.companyMarkers.push(marker);
           }
@@ -266,11 +270,13 @@
       infoWindow.close();
       handleSearchListChange(false);
       handleFilterOpenChange(false)
+      showSearchBar = true;
     });
 
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
         infoWindow.close();
+        showSearchBar = true;
       }
     });
 
@@ -307,6 +313,7 @@
 
     if (marker) {
         mapInstance.infoWindow.open(mapInstance.map, marker);
+        showSearchBar = false;
     }
 
     showSearchList = false;
@@ -410,28 +417,30 @@
 
 
 </script>
-<div 
-    class="search-bar-wrapper w-full"
-    class:sidebar-visible={$showSidebar}
-  >
-  <SearchBar
-    onSearch={handleSearch}
-    onReset={handleReset}
-    onApply={handleApply}
-    searchValue={searchValue}
-    onSearchValueChange={(value) => (searchValue = value)}
-    onShowSearchListChange={handleSearchListChange}
-    isListIconVisible={isListIconVisible}
-    activeFilterGroup={null}
-    searchResults={searchResults}
-    onFilterChange={onFilterChange}
-    selectedFilters={selectedFilters}
-    isFilterOpen={isFilterOpen}
-    onFilterOpenChange={handleFilterOpenChange}
-  />
-</div>
+{#if showSearchBar}
+  <div 
+      class="search-bar-wrapper w-full"
+      class:sidebar-visible={$showSidebar}
+    >
+    <SearchBar
+      onSearch={handleSearch}
+      onReset={handleReset}
+      onApply={handleApply}
+      searchValue={searchValue}
+      onSearchValueChange={(value) => (searchValue = value)}
+      onShowSearchListChange={handleSearchListChange}
+      isListIconVisible={isListIconVisible}
+      activeFilterGroup={null}
+      searchResults={searchResults}
+      onFilterChange={onFilterChange}
+      selectedFilters={selectedFilters}
+      isFilterOpen={isFilterOpen}
+      onFilterOpenChange={handleFilterOpenChange}
+    />
+  </div>
+{/if}
 
-{#if searchResults.length > 0 && showSearchList && !($mobile && $showSidebar)}
+{#if searchResults.length > 1 && showSearchList && !($mobile && $showSidebar)}
   <div 
     class="company-list-wrapper w-full"
     class:sidebar-visible={$showSidebar}
