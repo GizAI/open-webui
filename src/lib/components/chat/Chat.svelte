@@ -285,10 +285,6 @@
 						if (continueButton) {
 							continueButton.click();
 						}
-					} else if (data.action === 'submit_prompt') {				
-						if (data.prompt) {
-							submitPrompt(data.prompt); 
-						}
 					}
 				} else if (type === 'confirmation') {
 					eventCallback = cb;
