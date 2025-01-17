@@ -119,7 +119,7 @@
                 <div class="text-sm text-gray-500 mt-1">총 자본: {result.total_equity.toLocaleString()}억</div>
               {/if}
               {#if result.sales_amount}
-                <div class="text-sm text-gray-500 mt-1">최근 매출: {result.sales_amount.toLocaleString()}억</div>
+                <div class="text-sm text-gray-500 mt-1">매출: {result.sales_amount.toLocaleString()}억</div>
               {/if}
               {#if result.net_income}
                 <div class="text-sm text-gray-500 mt-1">당기 순이익: {result.net_income.toLocaleString()}억</div>

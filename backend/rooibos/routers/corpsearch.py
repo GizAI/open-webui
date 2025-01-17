@@ -105,6 +105,23 @@ async def search(request: Request):
         param_count = 1
 
         sql_query = """        
+            WITH FinancialComparison AS (
+                SELECT 
+                    mfd.financial_company_id,
+                    mfd.revenue,
+                    mfd.net_income,
+                    mfd.total_assets,
+                    mfd.total_liabilities,
+                    mfd.retained_earnings,
+                    CASE
+                        WHEN LAG(mfd.revenue) OVER (PARTITION BY mfd.financial_company_id ORDER BY mfd.year) IS NOT NULL
+                        THEN (mfd.revenue - LAG(mfd.revenue) OVER (PARTITION BY mfd.financial_company_id ORDER BY mfd.year)) 
+                            / NULLIF(LAG(mfd.revenue) OVER (PARTITION BY mfd.financial_company_id ORDER BY mfd.year), 0) * 100
+                        ELSE 0
+                    END AS revenue_growth_rate
+                FROM smtp_financial_data mfd
+                WHERE mfd.year = '2023'
+            )
             SELECT DISTINCT
                 mci.smtp_id,
                 mci.company_name,
@@ -221,6 +238,9 @@ async def search(request: Request):
         sql_query += f"""
         FROM master_company_info mci
         LEFT JOIN corp_bookmark cb ON cb.company_id = mci.smtp_id AND cb.user_id = ${user_id_param}
+        LEFT JOIN smtp_executives me
+            ON mci.business_registration_number = me.business_registration_number
+            AND me.position = '대표이사'
         WHERE mci.latitude IS NOT NULL
         """
 
@@ -277,12 +297,12 @@ async def search(request: Request):
 
         # 기존 필터 조건들
         if sales_min is not None:
-            sql_query += f" AND (FinancialComparison.revenue)::numeric >= ${param_count}"
+            sql_query += f" AND (mci.sales_amount)::numeric >= ${param_count}"
             params.append(sales_min)
             param_count += 1
 
         if sales_max is not None:
-            sql_query += f" AND (FinancialComparison.revenue)::numeric <= ${param_count}"
+            sql_query += f" AND (mci.sales_amount)::numeric <= ${param_count}"
             params.append(sales_max)
             param_count += 1
 
@@ -307,12 +327,12 @@ async def search(request: Request):
             param_count += 1
 
         if net_profit_min is not None:
-            sql_query += f" AND (FinancialComparison.net_income)::numeric >= ${param_count}"
+            sql_query += f" AND (mci.net_income)::numeric >= ${param_count}"
             params.append(net_profit_min)
             param_count += 1
 
         if net_profit_max is not None:
-            sql_query += f" AND (FinancialComparison.net_income)::numeric <= ${param_count}"
+            sql_query += f" AND (mci.net_income)::numeric <= ${param_count}"
             params.append(net_profit_max)
             param_count += 1
 
@@ -327,7 +347,7 @@ async def search(request: Request):
             param_count += 1
 
         if establishment_year is not None:
-            sql_query += f" AND EXTRACT(YEAR FROM mci.establishment_date) = ${param_count}"
+            sql_query += f" AND SUBSTRING(mci.establishment_date, 1, 4)::INTEGER >= ${param_count}"
             params.append(establishment_year)
             param_count += 1
 
@@ -348,7 +368,7 @@ async def search(request: Request):
             param_count += 1
 
         if gender_age is not None:
-            sql_query += f" AND EXTRACT(YEAR FROM AGE(to_date(me.birth_date, 'YYYY-MM-DD'))) >= ${param_count}"
+            sql_query += f" AND EXTRACT(YEAR FROM AGE(to_date(mci.birth_date, 'YYYY-MM-DD'))) >= ${param_count}"
             params.append(gender_age)
             param_count += 1
 
