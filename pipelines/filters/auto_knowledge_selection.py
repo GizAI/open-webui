@@ -20,7 +20,6 @@ from open_webui.utils.chat import generate_chat_completion  # 경량 옵션 사�
 from open_webui.utils.misc import get_last_user_message
 
 from open_webui.models.knowledge import Knowledges
-
 from open_webui.models.files import Files
 
 
@@ -37,15 +36,16 @@ class Filter:
         self,
         body: dict,
         __event_emitter__: Callable[[Any], Awaitable[None]],
-        __request__: Any,  # 버전 0.5에서 새로 추가된 요구 사항
+        __request__: Any, 
         __user__: Optional[dict] = None,
         __model__: Optional[dict] = None,
     ) -> dict:
         messages = body["messages"]
         user_message = get_last_user_message(messages)
 
-        print("+++++++++++++++++++++++++++++++ start +++++++++++++++++++++++++++++++")
-        print(body.get("files"))
+        print("+++++++++++++++++++++++++++++++ start body +++++++++++++++++++++++++++++++")
+        print(body)
+        print("+++++++++++++++++++++++++++++++ start body +++++++++++++++++++++++++++++++")
 
         if self.valves.status:
             await __event_emitter__(
@@ -62,7 +62,6 @@ class Filter:
             __user__.get("id"), "read"
         )
 
-
         knowledge_bases_list = "\n".join(
             [
                 f"- ID: {getattr(knowledge_base, 'id', 'Unknown')}\n - 지식베이스이름: {getattr(knowledge_base, 'name', 'Unknown')}\n - 설명: {getattr(knowledge_base, 'description', 'Unknown')}\n"
@@ -74,7 +73,8 @@ class Filter:
                         사용 가능한 지식 목록:
                         {knowledge_bases_list}
                         위 모델 중에서 사용자의 요구사항에 가장 적합한 지식을 선택해주세요.
-                        답변은 꼭 JSON 형식으로  "id" : 지식ID  , "name" : 지식 이름  형식으로 선택한 모델 ID 와 이름만 반환하세요 다른 설명은 하지 마세요"""
+                        답변은 꼭 JSON 형식으로  "id" : 지식ID  , "name" : 지식 이름  형식으로 선택한 모델 ID 와 이름만 반환하세요 다른 설명은 하지 마세요
+                        적합한 지식이 없거나 연관성이 없는 경우는 꼭 시작을 선택 할 필요 없습니다. 그럴경우 None 을 반환하세요"""
         prompt = (
             "History:\n"
             + "\n".join(
@@ -94,6 +94,8 @@ class Filter:
             "stream": False,
         }
 
+        selected_knowledge_base = None  # Initialize to None
+
         try:
             user = Users.get_user_by_id(__user__["id"])
             # 직접 후속 함수 사용으로 업데이트
@@ -102,81 +104,73 @@ class Filter:
                 request=__request__, form_data=payload, user=user
             )
 
-
             content = response["choices"][0]["message"]["content"]
 
             # 함수 응답 파싱
             if content is not None:
-                print(f"content: {content}")
-
+                
                 # 1. 코드 블록 제거
                 content = content.replace("```json", "").replace("```", "").strip()
                 # 2. 싱글 쿼테이션 → 더블 쿼테이션
                 content = content.replace("'", '"')
 
-                # 3. 배열 JSON 추출 시도
+                # 3. 객체 JSON 추출 시도
                 pattern = r"\{.*?\}"  # 객체 형태의 JSON 검출용 정규식으로 수정
                 match = re.search(pattern, content, flags=re.DOTALL)
                 if match:
                     content = match.group(0)
+                else:
+                    content = None  # If no match found, set content to None
 
-                try:
-                    result = json.loads(content)
-                except json.JSONDecodeError as e:
-                    print(f"JSONDecodeError: {e}")
-                    result = None
+                if content is not None:
+                    try:
+                        result = json.loads(content)
+                    except json.JSONDecodeError as e:
+                        print(f"JSONDecodeError: {e}")
+                        result = None
 
-                selected_knowledge_base = result.get("id") if isinstance(result, dict) else None
-                selected_knowledge_base_info = Knowledges.get_knowledge_by_id(selected_knowledge_base) if selected_knowledge_base else None
+                    selected_knowledge_base = result.get("id") if isinstance(result, dict) else None
 
-                print(f"selected_knowledge_base_info: {selected_knowledge_base_info}")
-                print(f"selected_knowledge_base_info.data: {selected_knowledge_base_info.data}")
+            # If content is None or JSON parsing failed, selected_knowledge_base remains None
 
-                # 딕셔너리 키로 접근
+            selected_knowledge_base_info = Knowledges.get_knowledge_by_id(selected_knowledge_base) if selected_knowledge_base else None
+
+            # 딕셔너리 키로 접근
+            if selected_knowledge_base_info:
                 knowledge_file_ids = selected_knowledge_base_info.data['file_ids']
-                print(f"knowledge_file_ids: {knowledge_file_ids}")
 
                 # 파일 메타데이터 가져오기
                 knowledge_files = Files.get_file_metadatas_by_ids(knowledge_file_ids)
 
+                # KnowledgeModel 객체를 dict로 변환하여 JSON 직렬화 가능하게 함
+                knowledge_dict = selected_knowledge_base_info.model_dump()
+                # 'files' 속성 추가: FileMetadataResponse 객체를 dict로 변환
+                knowledge_dict['files'] = [file.model_dump() for file in knowledge_files]
+                knowledge_dict['type'] = 'collection'
 
-                print(f"knowledge_files: {knowledge_files}")
-                
+                body["files"] = body.get("files", []) + [knowledge_dict]
 
-              
-
-                # 수정된 조건: selected_knowledge_base의 존재 여부로 체크
-                if selected_knowledge_base:
-                    # KnowledgeModel 객체를 dict로 변환하여 JSON 직렬화 가능하게 함
-                    knowledge_dict = selected_knowledge_base_info.model_dump()
-                      # 'files' 속성 추가: FileMetadataResponse 객체를 dict로 변환
-                    knowledge_dict['files'] = [file.model_dump() for file in knowledge_files]
-                    knowledge_dict['type'] = 'collection'
-
-                    # body["files"]에 추가
-                    body["files"] = [knowledge_dict]
-
-                    if self.valves.status:
-                        await __event_emitter__(
-                            {
-                                "type": "status",
-                                "data": {
-                                    "description": f"일치하는 지식 베이스 찾음: {selected_knowledge_base_info.name}",
-                                    "done": True,
-                                },
-                            }
-                        )
-                else:
-                    if self.valves.status:
-                        await __event_emitter__(
-                            {
-                                "type": "status",
-                                "data": {
-                                    "description": "일치하는 지식 베이스를 찾지 못했습니다.",
-                                    "done": True,
-                                },
-                            }
-                        )
+                if self.valves.status:
+                    await __event_emitter__(
+                        {
+                            "type": "status",
+                            "data": {
+                                "description": f"일치하는 지식 베이스 찾음: {selected_knowledge_base_info.name}",
+                                "done": True,
+                            },
+                        }
+                    )
+            else:
+                if self.valves.status:
+                    await __event_emitter__(
+                        {
+                            "type": "status",
+                            "data": {
+                                "description": "일치하는 지식 베이스를 찾지 못했습니다.",
+                                "done": True,
+                            },
+                        }
+                    )
         except Exception as e:
             print(e)
             if self.valves.status:
@@ -190,7 +184,19 @@ class Filter:
                     }
                 )
             pass
+   
 
-        print("+++++++++++++++++++++++++++++++ done +++++++++++++++++++++++++++++++")
-        print(body.get("files"))
+
+        context_message = {
+            "role": "system", 
+            "content": "You are ChatGPT, a large language model trained by OpenAI. Please ensure that all your responses are presented in a clear and organized manner using bullet points, numbered lists, headings, and other formatting tools to enhance readability and user-friendliness."
+        }
+        body.setdefault("messages", []).insert(0, context_message)
+
+             
+        print("+++++++++++++++++++++++++++++++ end body +++++++++++++++++++++++++++++++")
+        print(body)
+        print("+++++++++++++++++++++++++++++++ end body +++++++++++++++++++++++++++++++")
+
+        
         return body
