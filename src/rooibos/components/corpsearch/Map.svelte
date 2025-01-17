@@ -174,7 +174,7 @@
 
       if (mapInstance?.marker) {
         mapInstance.marker.setMap(null);
-      }
+      }  
 
       if (searchResults.length === 1) {
         const singleResult = searchResults[0];
@@ -409,6 +409,13 @@
       }
       if (newFilters[key] === null) {
         delete newFilters[key];
+      }
+
+      if (typeof newFilters[key] === 'object' && newFilters[key] !== null) {
+        const values = Object.values(newFilters[key]);
+        if (values.every(val => val === '' || val === null)) {
+          delete newFilters[key];
+        }
       }
     });
   
