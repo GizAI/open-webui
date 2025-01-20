@@ -41,9 +41,13 @@ class Filter:
         messages = body["messages"]
         user_message = get_last_user_message(messages)
 
-        print("+++++++++++++++++++++++++++++++ start body +++++++++++++++++++++++++++++++")
+        print(
+            "+++++++++++++++++++++++++++++++ start body +++++++++++++++++++++++++++++++"
+        )
         print(body)
-        print("+++++++++++++++++++++++++++++++ start body +++++++++++++++++++++++++++++++")
+        print(
+            "+++++++++++++++++++++++++++++++ start body +++++++++++++++++++++++++++++++"
+        )
 
         all_knowledge_bases = Knowledges.get_knowledge_bases_by_user_id(
             __user__.get("id"), "read"
@@ -89,26 +93,37 @@ If there is no suitable or relevant knowledge base, do not select any. In such c
         __model__: Optional[dict] = None,
     ) -> dict:
         try:
-            search_result = None  
-            
+            search_result = None
+
             user_data = __user__.copy()
-            user_data.update({
-                "profile_image_url": "",
-                "last_active_at": 0,
-                "updated_at": 0,
-                "created_at": 0
-            })
+            user_data.update(
+                {
+                    "profile_image_url": "",
+                    "last_active_at": 0,
+                    "updated_at": 0,
+                    "created_at": 0,
+                }
+            )
 
             user_object = UserModel(**user_data)
 
             if not body.get("features", {}).get("web_search", False):
-                search_result = await chat_web_search_handler(__request__, body, {"__event_emitter__": __event_emitter__}, user_object)
+                search_result = await chat_web_search_handler(
+                    __request__,
+                    body,
+                    {"__event_emitter__": __event_emitter__},
+                    user_object,
+                )
 
             if search_result is not None:
-                print("+++++++++++++++++++++++++++++++ search_result +++++++++++++++++++++++++++++++")
+                print(
+                    "+++++++++++++++++++++++++++++++ search_result +++++++++++++++++++++++++++++++"
+                )
                 print(search_result)
-                print("+++++++++++++++++++++++++++++++ search_result +++++++++++++++++++++++++++++++")
-              
+                print(
+                    "+++++++++++++++++++++++++++++++ search_result +++++++++++++++++++++++++++++++"
+                )
+
             else:
                 print("No search result was retrieved.")
 
@@ -147,18 +162,26 @@ If there is no suitable or relevant knowledge base, do not select any. In such c
                 if content:
                     try:
                         result = json.loads(content)
-                        selected_knowledge_base = result.get("id") if isinstance(result, dict) else None
+                        selected_knowledge_base = (
+                            result.get("id") if isinstance(result, dict) else None
+                        )
                     except json.JSONDecodeError as e:
                         print(f"JSONDecodeError: {e}")
 
-            selected_knowledge_base_info = Knowledges.get_knowledge_by_id(selected_knowledge_base) if selected_knowledge_base else None
+            selected_knowledge_base_info = (
+                Knowledges.get_knowledge_by_id(selected_knowledge_base)
+                if selected_knowledge_base
+                else None
+            )
 
             if selected_knowledge_base_info:
-                knowledge_file_ids = selected_knowledge_base_info.data['file_ids']
+                knowledge_file_ids = selected_knowledge_base_info.data["file_ids"]
                 knowledge_files = Files.get_file_metadatas_by_ids(knowledge_file_ids)
                 knowledge_dict = selected_knowledge_base_info.model_dump()
-                knowledge_dict['files'] = [file.model_dump() for file in knowledge_files]
-                knowledge_dict['type'] = 'collection'
+                knowledge_dict["files"] = [
+                    file.model_dump() for file in knowledge_files
+                ]
+                knowledge_dict["type"] = "collection"
 
                 body["files"] = body.get("files", []) + [knowledge_dict]
 
@@ -166,14 +189,14 @@ If there is no suitable or relevant knowledge base, do not select any. In such c
                     __event_emitter__,
                     level="status",
                     message=f"Matching knowledge base found: {selected_knowledge_base_info.name}",
-                    done=True
+                    done=True,
                 )
             else:
                 await self.emit_status(
                     __event_emitter__,
                     level="status",
                     message="No matching knowledge base found.",
-                    done=True
+                    done=True,
                 )
         except Exception as e:
             print(e)
@@ -181,30 +204,32 @@ If there is no suitable or relevant knowledge base, do not select any. In such c
                 __event_emitter__,
                 level="status",
                 message=f"Error occurred while processing the request: {e}",
-                done=True
+                done=True,
             )
 
         context_message = {
-            "role": "system", 
+            "role": "system",
             "content": (
                 "You are ChatGPT, a large language model trained by OpenAI. "
                 "Please ensure that all your responses are presented in a clear and organized manner using bullet points, numbered lists, headings, and other formatting tools to enhance readability and user-friendliness. "
                 "Additionally, please respond in the language used by the user in their input."
-            )
+            ),
         }
         body.setdefault("messages", []).insert(0, context_message)
 
-        print("+++++++++++++++++++++++++++++++ end body +++++++++++++++++++++++++++++++")
-        print(body)
-        print("+++++++++++++++++++++++++++++++ end body +++++++++++++++++++++++++++++++")
-
         return body
 
-    def outlet(self, body: dict) -> None:
-        print(f"outlet called: {body}")
-
-    async def on_start(self):
-        print("Function started")
-
-    async def on_stop(self):
-        print("Function stopped")
+    async def outlet(
+        self,
+        body: dict,
+        __event_emitter__: Callable[[Any], Awaitable[None]],
+        __request__: Any,
+        __user__: Optional[dict] = None,
+        __model__: Optional[dict] = None,
+    ) -> Optional[dict]:
+        try:
+            print("outlet called")
+            return body
+        except Exception as e:
+            print(f"Error occurred: {e}")
+            return None
