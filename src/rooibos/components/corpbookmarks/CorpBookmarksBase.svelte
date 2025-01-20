@@ -28,7 +28,8 @@
 	import LockClosed from '$lib/components/icons/LockClosed.svelte';
 	import AccessControlModal from '$lib/components/workspace/common/AccessControlModal.svelte';
 	import { WEBUI_API_BASE_URL } from '$lib/constants';
-	import { Briefcase, MapPin, Users, Phone, Globe, Calendar, DollarSign, List, Award } from 'lucide-svelte';
+	import { Briefcase, MapPin, Users, Phone, Globe, Calendar, DollarSign, List, Award, Building2, FlaskConical, CalendarCheck, Microscope } from 'lucide-svelte';
+	import BookOpen from '$lib/components/icons/BookOpen.svelte';
 
 
 	let largeScreen = true;
@@ -100,6 +101,7 @@
 		venture_valid_until?: string;
 		confirming_authority?: string;
 		new_reconfirmation_code?: string;
+		postal_code?: string;
 	};
 
 	type FinancialData = {
@@ -754,6 +756,11 @@
 					  <Briefcase size={16} class="text-green-500" />
 					  사업자 등록 번호: {bookmark.business_registration_number}
 					</p>
+				  {/if}				  {#if bookmark.corporate_number}
+					<p class="text-sm text-gray-600 flex items-center gap-2">
+						<Briefcase size={16} class="text-orange-500" />
+						법인등록번호: {bookmark.corporate_number}
+					</p>
 				  {/if}
 			
 				  {#if bookmark.representative}
@@ -779,6 +786,33 @@
 					  전화번호: {bookmark.phone_number}
 					</p>
 				  {/if}
+
+				  {#if bookmark.establishment_date}
+					<p class="text-sm text-gray-600 flex items-center gap-2">
+					  <Calendar size={16} class="text-pink-500" />
+					  설립일: {bookmark.establishment_date}
+					</p>
+				  {/if}
+			
+				  {#if bookmark.employee_count !== undefined}
+					<p class="text-sm text-gray-600 flex items-center gap-2">
+					  <Users size={16} class="text-purple-500" />
+					  임직원 수: {bookmark.employee_count}명
+					</p>
+				  {/if}
+
+				  {#if bookmark.fiscal_month}
+					<p class="text-sm text-gray-600 flex items-center gap-2">
+						<Calendar size={16} class="text-purple-500" />
+						결산월: {bookmark.fiscal_month}월
+					</p>
+				  {/if}
+				  {#if bookmark.main_bank}
+					<p class="text-sm text-gray-600 flex items-center gap-2">
+						<DollarSign size={16} class="text-green-500" />
+						주거래은행: {bookmark.main_bank}
+					</p>
+				  {/if}	
 			
 				  {#if bookmark.website}
 					<p class="text-sm text-gray-600 flex items-center gap-2">
@@ -818,29 +852,65 @@
 				  {/if}
 				</div>
 			  {/if}
-			
-			  <!-- 회사 규모 섹션 -->
-			  <div class="space-y-2">
-				<h3 class="text-sm font-semibold text-gray-700 flex items-center gap-2">
-				  <Users size={16} class="text-green-500" />
-				  회사 규모
-				</h3>
-				<div class="space-y-1">
-				  {#if bookmark.establishment_date}
-					<p class="text-sm text-gray-600 flex items-center gap-2">
-					  <Calendar size={16} class="text-pink-500" />
-					  설립일: {bookmark.establishment_date}
-					</p>
-				  {/if}
-			
-				  {#if bookmark.employee_count !== undefined}
-					<p class="text-sm text-gray-600 flex items-center gap-2">
-					  <Users size={16} class="text-purple-500" />
-					  임직원 수: {bookmark.employee_count}명
-					</p>
-				  {/if}
+
+			  {#if bookmark.family_shareholder_yn || bookmark.external_shareholder_yn}
+				<div class="space-y-2">
+					<h3 class="text-sm font-semibold text-gray-700 flex items-center gap-2">
+					<Users size={16} class="text-yellow-500" />
+					주주 정보
+					</h3>
+					<div class="space-y-1">
+					{#if bookmark.family_shareholder_yn}
+						<p class="text-sm text-gray-600 flex items-center gap-2">
+						<Users size={16} class="text-purple-500" />
+						가족주주: {bookmark.family_shareholder_yn === 'Y' ? '있음' : '없음'}
+						</p>
+					{/if}
+					{#if bookmark.external_shareholder_yn}
+						<p class="text-sm text-gray-600 flex items-center gap-2">
+						<Users size={16} class="text-blue-500" />
+						외부주주: {bookmark.external_shareholder_yn === 'Y' ? '있음' : '없음'}
+						</p>
+					{/if}
+					</div>
 				</div>
-			  </div>
+				{/if}
+
+			  <!-- 연구소 정보 섹션 추가 -->
+			  {#if bookmark.lab_name || bookmark.research_field}
+			  <div class="space-y-2">
+				  <h3 class="text-sm font-semibold text-gray-700 flex items-center gap-2">
+					  <Microscope size={16} class="text-indigo-500" />
+					  연구소 정보
+				  </h3>
+				  <div class="space-y-1">
+					  {#if bookmark.lab_name}
+						  <p class="text-sm text-gray-600 flex items-center gap-2">
+							  <Building2 size={16} class="text-blue-500" />
+							  연구소명: {bookmark.lab_name}
+						  </p>
+					  {/if}
+					  {#if bookmark.research_field}
+						  <p class="text-sm text-gray-600 flex items-center gap-2">
+							  <FlaskConical size={16} class="text-green-500" />
+							  연구분야: {bookmark.research_field}
+						  </p>
+					  {/if}
+					  {#if bookmark.first_approval_date}
+						  <p class="text-sm text-gray-600 flex items-center gap-2">
+							  <CalendarCheck size={16} class="text-orange-500" />
+							  최초인정일: {bookmark.first_approval_date}
+						  </p>
+					  {/if}
+					  {#if bookmark.lab_location}
+						  <p class="text-sm text-gray-600 flex items-center gap-2">
+							  <MapPin size={16} class="text-red-500" />
+							  연구소 위치: {bookmark.lab_location}
+						  </p>
+					  {/if}
+				  	</div>
+			  	</div>
+		  		{/if}
 
 			  <!-- 인증 정보 섹션 -->
               <div class="space-y-2">
@@ -869,6 +939,21 @@
                       인증 만료일: {bookmark.certificate_expiry_date}
                     </p>
                   {/if}
+
+				  {#if bookmark.venture_valid_from || bookmark.venture_valid_until || bookmark.confirming_authority || bookmark.new_reconfirmation_code}
+					<p class="text-sm text-gray-600 flex items-center gap-2">
+						<CalendarCheck size={16} class="text-blue-500" />
+						벤처 유효기간: {bookmark.venture_valid_from} ~ {bookmark.venture_valid_until}
+					</p>
+					<p class="text-sm text-gray-600 flex items-center gap-2">
+						<Building2 size={16} class="text-indigo-500" />
+						확인기관: {bookmark.confirming_authority}
+					</p>
+					<p class="text-sm text-gray-600 flex items-center gap-2">
+						<List size={16} class="text-emerald-500" />
+						재확인코드: {bookmark.new_reconfirmation_code}
+					</p>
+					{/if}
                 </div>
               </div>
 			</div>
@@ -878,16 +963,17 @@
 				<table class="min-w-full text-sm">
 				<thead>
 					<tr class="border-b border-gray-200">
-					<th class="text-left px-4 py-2 font-medium text-gray-600">
-						재무지표
-						<button
-							class="ml-2 inline-flex items-center px-2 py-1 bg-gray-200 text-gray-700
-									rounded-md hover:bg-gray-300 text-xs"
-							on:click={() => (showAllMetrics = !showAllMetrics)}
-						>
-						{#if showAllMetrics} 접기 {:else} 더보기 {/if}
-						</button>
-					</th>
+						<th class="text-left px-4 py-2 font-medium text-gray-600">
+							재무정보
+							<span class="text-xs text-gray-500 ml-2">단위: 백만원</span>
+							<button
+								class="ml-2 inline-flex items-center px-2 py-1 bg-gray-200 text-gray-700
+										rounded-md hover:bg-gray-300 text-xs"
+								on:click={() => (showAllMetrics = !showAllMetrics)}
+							>
+								{#if showAllMetrics} 접기 {:else} 더보기 {/if}
+							</button>
+						</th>
 					{#each years as year}
 						<th class="text-right px-4 py-2 font-medium text-gray-600">
 						{year}년
