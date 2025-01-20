@@ -169,7 +169,7 @@ Do not provide any additional explanations.
 
         # 2) knowledge_plan GPT 호출
         plan_payload = {
-            "model": 'gpt-4o',
+            "model": "gpt-4o",
             "messages": [
                 {
                     "role": "system",
@@ -209,7 +209,6 @@ Do not provide any additional explanations.
                     }
                 ],
                 "model": "gpt-4o",
-
             }
             # chat_web_search_handler가 내부적으로 body["messages"]에 검색 결과를 append한다고 가정
             await chat_web_search_handler(
@@ -352,31 +351,27 @@ Do not provide any additional explanations.
                         done=True,
                     )
                 else:
-                    # TOC 각각을 병렬로 처리하여(gather) 지식베이스/웹검색 후 최종 GPT 호출
-                    tasks = []
+                    # ====== 변경된 부분: 병렬 처리 대신 순차 처리 ======
+                    results = []
                     for section in toc:
-                        tasks.append(
-                            asyncio.create_task(
-                                self._process_toc_section(
-                                    section=section,
-                                    user_message=user_message,
-                                    user=user,
-                                    __request__=__request__,
-                                    __event_emitter__=__event_emitter__,
-                                    __user__=__user__,
-                                )
-                            )
+                        result = await self._process_toc_section(
+                            section=section,
+                            user_message=user_message,
+                            user=user,
+                            __request__=__request__,
+                            __event_emitter__=__event_emitter__,
+                            __user__=__user__,
                         )
+                        results.append(result)
+                    # =====================================================
 
-                    # 모든 섹션의 분석 결과를 병렬로 받아서 순서대로 합침
-                    results = await asyncio.gather(*tasks)
                     final_merged_text = "\n".join(results)
 
                     # 처리 완료 상태 전송
                     await self.emit_status(
                         __event_emitter__,
                         level="status",
-                        message="Report mode: sections have been processed in parallel (with knowledge_plan).",
+                        message="Report mode: sections have been processed sequentially (with knowledge_plan).",
                         done=True,
                     )
 
