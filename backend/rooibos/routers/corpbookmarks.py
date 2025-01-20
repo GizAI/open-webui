@@ -106,9 +106,9 @@ async def get_corp_financialData(id: str):
                 sfd.other_expenses,
                 sfd.pre_tax_income
             FROM master_company_info mci
-            LEFT JOIN smtp_financial_company sfc 
+            JOIN smtp_financial_company sfc 
                 ON mci.company_name = sfc.company_name
-            LEFT JOIN smtp_financial_data sfd 
+            JOIN smtp_financial_data sfd 
                 ON sfc.id = sfd.financial_company_id
             WHERE mci.smtp_id = $1
             GROUP BY 
