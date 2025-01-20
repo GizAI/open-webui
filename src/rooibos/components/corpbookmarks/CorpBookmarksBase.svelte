@@ -790,7 +790,7 @@
 				  {#if bookmark.establishment_date}
 					<p class="text-sm text-gray-600 flex items-center gap-2">
 					  <Calendar size={16} class="text-pink-500" />
-					  설립일: {bookmark.establishment_date}
+					  설립일: {String(bookmark.establishment_date).replace(/(\d{4})(\d{2})(\d{2})/, '$1-$2-$3')}
 					</p>
 				  {/if}
 			
@@ -913,6 +913,7 @@
 		  		{/if}
 
 			  <!-- 인증 정보 섹션 -->
+			  {#if bookmark.venture_confirmation_type || bookmark.confirming_authority}
               <div class="space-y-2">
                 <h3 class="text-sm font-semibold text-gray-700 flex items-center gap-2">
                   <Award size={16} class="text-purple-500" />
@@ -954,72 +955,73 @@
 						재확인코드: {bookmark.new_reconfirmation_code}
 					</p>
 					{/if}
-                </div>
-              </div>
+                	</div>
+				</div>
+				{/if}
 			</div>
 			  
 			{#if financialData && Array.isArray(financialData) && financialData.length > 0}
 			<div class="px-6 py-4 overflow-x-auto">
 				<table class="min-w-full text-sm">
-				<thead>
-					<tr class="border-b border-gray-200">
-						<th class="text-left px-4 py-2 font-medium text-gray-600">
-							재무정보
-							<span class="text-xs text-gray-500 ml-2">단위: 백만원</span>
-							<button
-								class="ml-2 inline-flex items-center px-2 py-1 bg-gray-200 text-gray-700
-										rounded-md hover:bg-gray-300 text-xs"
-								on:click={() => (showAllMetrics = !showAllMetrics)}
-							>
-								{#if showAllMetrics} 접기 {:else} 더보기 {/if}
-							</button>
-						</th>
-					{#each years as year}
-						<th class="text-right px-4 py-2 font-medium text-gray-600">
-						{year}년
-						</th>
-					{/each}
-					</tr>
-				</thead>
-				<tbody class="text-gray-600">
-					{#if showAllMetrics}
-						{#each metrics as metric}
-							<tr class="border-b border-gray-100 hover:bg-gray-50">
-							<td class="px-4 py-2 font-medium">{metric.name}</td>
-							{#each years as year}
-								{@const data = financialData.find(d => d.year == year)}
-								<td class="text-right px-4 py-2">
-								{#if data && data[metric.key] != null}
-									<span class={data[metric.key] < 0 ? 'text-red-500' : ''}>
-									{new Intl.NumberFormat('ko-KR').format(data[metric.key])}
-									</span>
-								{:else}
-									-
-								{/if}
-								</td>
-							{/each}
-							</tr>
+					<thead>
+						<tr class="border-b border-gray-200">
+							<th class="text-left px-4 py-2 font-medium text-gray-600">
+								재무정보
+								<span class="text-xs text-gray-500 ml-2">단위: 백만원</span>
+								<button
+									class="ml-2 inline-flex items-center px-2 py-1 bg-gray-200 text-gray-700
+											rounded-md hover:bg-gray-300 text-xs"
+									on:click={() => (showAllMetrics = !showAllMetrics)}
+								>
+									{#if showAllMetrics} 접기 {:else} 더보기 {/if}
+								</button>
+							</th>
+						{#each years as year}
+							<th class="text-right px-4 py-2 font-medium text-gray-600">
+							{year}년
+							</th>
 						{/each}
-					{:else}
-						{#each metrics.slice(0, 7) as metric}
-							<tr class="border-b border-gray-100 hover:bg-gray-50">
-							<td class="px-4 py-2 font-medium">{metric.name}</td>
-							{#each years as year}
-								{@const data = financialData.find(d => d.year == year)}
-								<td class="text-right px-4 py-2">
-								{#if data && data[metric.key] != null}
-									<span class={data[metric.key] < 0 ? 'text-red-500' : ''}>
-									{new Intl.NumberFormat('ko-KR').format(data[metric.key])}
-									</span>
-								{:else}
-									-
-								{/if}
-								</td>
+						</tr>
+					</thead>
+					<tbody class="text-gray-600">
+						{#if showAllMetrics}
+							{#each metrics as metric}
+								<tr class="border-b border-gray-100 hover:bg-gray-50">
+								<td class="px-4 py-2 font-medium">{metric.name}</td>
+								{#each years as year}
+									{@const data = financialData.find(d => d.year == year)}
+									<td class="text-right px-4 py-2">
+									{#if data && data[metric.key] != null}
+										<span class={data[metric.key] < 0 ? 'text-red-500' : ''}>
+										{new Intl.NumberFormat('ko-KR').format(data[metric.key])}
+										</span>
+									{:else}
+										-
+									{/if}
+									</td>
+								{/each}
+								</tr>
 							{/each}
-							</tr>
-						{/each}
-					{/if}
-				</tbody>
+						{:else}
+							{#each metrics.slice(0, 7) as metric}
+								<tr class="border-b border-gray-100 hover:bg-gray-50">
+								<td class="px-4 py-2 font-medium">{metric.name}</td>
+								{#each years as year}
+									{@const data = financialData.find(d => d.year == year)}
+									<td class="text-right px-4 py-2">
+									{#if data && data[metric.key] != null}
+										<span class={data[metric.key] < 0 ? 'text-red-500' : ''}>
+										{new Intl.NumberFormat('ko-KR').format(data[metric.key])}
+										</span>
+									{:else}
+										-
+									{/if}
+									</td>
+								{/each}
+								</tr>
+							{/each}
+						{/if}
+					</tbody>
 				</table>
 			</div>
 			{/if}
