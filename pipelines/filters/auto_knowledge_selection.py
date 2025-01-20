@@ -37,18 +37,15 @@ class Filter:
                 }
             )
 
-    async def plan(self, body: dict, __user__: Optional[dict]) -> Optional[dict]:
+    async def answer_plan(self, body: dict, __user__: Optional[dict]) -> Optional[dict]:
+
+        pass
+
+    async def knowledge_plan(
+        self, body: dict, __user__: Optional[dict]
+    ) -> Optional[dict]:
         messages = body["messages"]
         user_message = get_last_user_message(messages)
-
-        print(
-            "+++++++++++++++++++++++++++++++ start body +++++++++++++++++++++++++++++++"
-        )
-        print(body)
-        print(
-            "+++++++++++++++++++++++++++++++ start body +++++++++++++++++++++++++++++++"
-        )
-
         all_knowledge_bases = Knowledges.get_knowledge_bases_by_user_id(
             __user__.get("id"), "read"
         )
@@ -61,11 +58,16 @@ class Filter:
         )
 
         system_prompt = f"""Based on the user's prompt, please find the knowledge base that the user desires.
-Available knowledge bases:
-{knowledge_bases_list}
-Please select the most suitable knowledge base from the above list that best fits the user's requirements.
-Ensure that your response is in JSON format with only the \"id\" : KnowledgeID and \"name\" : Knowledge Name fields. Do not provide any additional explanations.
-If there is no suitable or relevant knowledge base, do not select any. In such cases, return None."""
+    Available knowledge bases:
+    {knowledge_bases_list}
+    Please select the most suitable knowledge base from the above list that best fits the user's requirements.
+
+    Additionally, analyze the user's prompt to determine if a web search is required to reflect the latest information. 
+    Return your response in JSON format with the following fields:
+    - "id": KnowledgeID (or null if no suitable knowledge base is found)
+    - "name": Knowledge Name (or null if no suitable knowledge base is found)
+    - "web_search_enabled": True if a web search is required, False otherwise.
+    Do not provide any additional explanations."""
 
         prompt = (
             "History:\n"
@@ -81,7 +83,7 @@ If there is no suitable or relevant knowledge base, do not select any. In such c
         return {
             "system_prompt": system_prompt,
             "prompt": prompt,
-            "model": body["model"],
+            "model": "gpt-4o",
         }
 
     async def inlet(
@@ -93,7 +95,6 @@ If there is no suitable or relevant knowledge base, do not select any. In such c
         __model__: Optional[dict] = None,
     ) -> dict:
         try:
-            search_result = None
 
             user_data = __user__.copy()
             user_data.update(
@@ -105,29 +106,7 @@ If there is no suitable or relevant knowledge base, do not select any. In such c
                 }
             )
 
-            user_object = UserModel(**user_data)
-
-            if not body.get("features", {}).get("web_search", False):
-                search_result = await chat_web_search_handler(
-                    __request__,
-                    body,
-                    {"__event_emitter__": __event_emitter__},
-                    user_object,
-                )
-
-            if search_result is not None:
-                print(
-                    "+++++++++++++++++++++++++++++++ search_result +++++++++++++++++++++++++++++++"
-                )
-                print(search_result)
-                print(
-                    "+++++++++++++++++++++++++++++++ search_result +++++++++++++++++++++++++++++++"
-                )
-
-            else:
-                print("No search result was retrieved.")
-
-            plan_result = await self.plan(body, __user__)
+            plan_result = await self.knowledge_plan(body, __user__)
 
             if plan_result is None:
                 raise ValueError("Plan result is None")
@@ -162,9 +141,25 @@ If there is no suitable or relevant knowledge base, do not select any. In such c
                 if content:
                     try:
                         result = json.loads(content)
+                        print(f"result: {result}")
                         selected_knowledge_base = (
                             result.get("id") if isinstance(result, dict) else None
                         )
+
+                        user_object = UserModel(**user_data)
+
+                        if result.get("web_search_enabled"):
+                            print("Web search required.")
+                            await chat_web_search_handler(
+                                __request__,
+                                body,
+                                {"__event_emitter__": __event_emitter__},
+                                user_object,
+                            )
+
+                        else:
+                            print("No web search required.")
+
                     except json.JSONDecodeError as e:
                         print(f"JSONDecodeError: {e}")
 
@@ -215,6 +210,7 @@ If there is no suitable or relevant knowledge base, do not select any. In such c
                 "Additionally, please respond in the language used by the user in their input."
             ),
         }
+
         body.setdefault("messages", []).insert(0, context_message)
 
         return body
