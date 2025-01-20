@@ -329,8 +329,20 @@
       location.lng = userLocation.lng;
       const currentLocation = new naver.maps.LatLng(userLocation.lat, userLocation.lng);
       mapInstance.map.setCenter(currentLocation);
-      mapInstance.map.setZoom(15);      
-    }  
+      mapInstance.map.setZoom(15);
+      mapInstance.infoWindow.close();
+      showSearchBar = true;
+      
+      if (mapInstance.marker) {
+        mapInstance.marker.setPosition(currentLocation);
+        mapInstance.marker.setMap(mapInstance.map);
+      } else {
+        mapInstance.marker = new naver.maps.Marker({
+          position: currentLocation,
+          map: mapInstance.map,
+        });
+      }
+    }    
   };
 
   const handleResultClick = (result: SearchResult) => {
