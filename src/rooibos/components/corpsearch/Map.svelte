@@ -26,6 +26,11 @@
     lng: number;
   };
 
+  type UserLocation = {
+    lat: number;
+    lng: number;
+  };
+
   type SearchResult = {
     smtp_id: string;
     company_name: string;
@@ -127,9 +132,10 @@
   let isListIconVisible = true;
   let activeFilterGroup: string | null = null;
   let isFilterOpen = false;
-  const userLocation = writable(null);
+  let singleClickMarker: any = null;
+  let userLocation:UserLocation | null = null;
 
-  const handleSearch = async (searchValue: string, filters: any) => {
+  const handleSearch = async (searchValue: string, filters: any, ) => {
     if (!mapInstance) return;
     console.log('Searching for:', searchValue, 'with filters:', filters);
 
@@ -138,12 +144,14 @@
     isFilterOpen = false;
 
     try {
+        const lat = userLocation?.lat ?? location?.lat ?? 0; 
+        const lng = userLocation?.lng ?? location?.lng ?? 0;        
         const currentUser = get(user);
         const queryParams = new URLSearchParams({
             query: searchValue,
             user_id: currentUser?.id ? currentUser.id : '',
-            latitude: location ? location.lat.toString() : '',
-            longitude: location ? location.lng.toString() : '',
+            latitude: lat.toString(),
+            longitude: lng.toString(),
             userLatitude: location?.lat?.toString() || '',
             userLongitude: location?.lng?.toString() || '',
             filters: JSON.stringify(filters),
@@ -165,6 +173,8 @@
         const data = await response.json();
         searchResults = data.data;
         showSearchList = true;
+
+        userLocation = null
 
         if (mapInstance?.companyMarkers) {
             mapInstance.companyMarkers.forEach((marker) => marker.setMap(null));
@@ -211,7 +221,7 @@
             );
 
             mapInstance?.map.setCenter(firstPoint);
-            mapInstance?.map.setZoom(13);
+            mapInstance.map.setZoom(15);
 
             searchResults.forEach((result) => {
                 const point = new naver.maps.LatLng(
@@ -246,7 +256,6 @@
         console.error('검색 중 오류가 발생했습니다:', error);
     }
   };
-
 
   const handleReset = () => {
     selectedFilters = {};    
@@ -287,11 +296,47 @@
       pixelOffset: new naver.maps.Point(20, -20),
     });
 
-    naver.maps.Event.addListener(map, 'click', () => {
+    naver.maps.Event.addListener(map, 'click', (e: any) => {
       infoWindow.close();
       handleSearchListChange(false);
-      handleFilterOpenChange(false)
+      handleFilterOpenChange(false);
       showSearchBar = true;
+
+      // 기존 클릭 마커가 있었다면 지도에서 제거
+      if (singleClickMarker) {
+        singleClickMarker.setMap(null);
+      }
+
+      const clickedLat = e.coord._lat;
+      const clickedLng = e.coord._lng;
+
+      // 빨간 마커 생성
+      const newMarker = new naver.maps.Marker({
+        position: new naver.maps.LatLng(clickedLat, clickedLng),
+        map: map,
+        icon: {
+          // 빨간색 아이콘(HTTPS 권장)
+          url: 'https://ssl.pstatic.net/static/maps/mantle/1x/pin_spot2_red.png',
+          size: new naver.maps.Size(22, 35),
+          origin: new naver.maps.Point(0, 0),
+          anchor: new naver.maps.Point(11, 35),
+        },
+      });
+
+      // 새로 만든 마커를 전역 변수에 저장해둬야, 다음 클릭 때 제거 가능
+      singleClickMarker = newMarker;
+
+      // 마커 클릭 시 위도/경도 검색 등 필요 로직 실행
+      naver.maps.Event.addListener(newMarker, 'click', () => {
+        if (userLocation === null) {
+          userLocation = { lat: clickedLat, lng: clickedLng };
+        } else {
+          userLocation.lat = clickedLat;
+          userLocation.lng = clickedLng;
+        }
+        singleClickMarker.setMap(null);
+        handleSearch(searchValue, selectedFilters);
+      });
     });
 
     document.addEventListener('keydown', (e) => {
