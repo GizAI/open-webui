@@ -1,15 +1,35 @@
 from fastapi import APIRouter, Request, HTTPException
 from typing import Optional
-import json
-import logging
-
 from open_webui.internal.db import get_db
 from sqlalchemy import text
 from open_webui.env import SRC_LOG_LEVELS
+
+import json
+import logging
+import requests
+
 log = logging.getLogger(__name__)
 log.setLevel(SRC_LOG_LEVELS["COMFYUI"])
 
 router = APIRouter()
+
+import requests
+
+def get_coordinates(query: str):
+    url = "https://naveropenapi.apigw.ntruss.com/map-geocode/v2/geocode"
+    headers = {
+        "X-NCP-APIGW-API-KEY-ID": "t80s8o2xsl",
+        "X-NCP-APIGW-API-KEY": "a9l3a5gkSDaxXryTsSVmMezstBHzfZPX8aC1s65b",
+    }
+    params = {"query": query}
+    response = requests.get(url, headers=headers, params=params)
+    data = response.json()
+
+    if data.get("addresses"):
+        address = data["addresses"][0]
+        return {"latitude": address["y"], "longitude": address["x"], "address": address["roadAddress"]}
+    else:
+        return {"error": "주소로 검색된 결과가 없습니다."}
 
 def format_parameter(param):
     if param is None:
@@ -39,11 +59,18 @@ async def test(request: Request):
 @router.get("/")
 async def search(request: Request):
     search_params = request.query_params
-    id = search_params.get("id")
+    id = search_params.get("id")    
     query = search_params.get("query", "").strip()
     user_id = search_params.get("user_id")
     latitude = search_params.get("latitude")
     longitude = search_params.get("longitude")
+
+    if query:
+        result = get_coordinates(query)
+        if result:
+            latitude = result['latitude']
+            longitude = result['longitude']
+
     user_latitude = float(search_params.get("userLatitude", 0))
     user_longitude = float(search_params.get("userLongitude", 0))
     
@@ -64,7 +91,7 @@ async def search(request: Request):
 
     gender_raw = filters.get("gender")
     gender = "남" if gender_raw == "male" else ("여" if gender_raw == "female" else None)
-    gender_age = filters.get("gender_age", {}).get("age")
+    gender_age = filters.get("gender_age")
 
     loan = filters.get("loan")    
 
@@ -249,42 +276,24 @@ async def search(request: Request):
             params.append(float(id))
             param_count += 1
         else:
-            if not query:
-                if latitude and longitude:
-                    sql_query += f"""
-                        AND ROUND(
-                            (
-                                6371 * acos(
-                                    cos(radians(${param_count})) *
-                                    cos(radians(mci.latitude)) *
-                                    cos(radians(mci.longitude) - radians(${param_count + 1})) +
-                                    sin(radians(${param_count})) *
-                                    sin(radians(mci.latitude))
-                                )
-                            ) * 1000
-                        ) <= ${param_count + 2}
-                    """
-                    params.extend([float(latitude), float(longitude), distance])
-                    param_count += 3
-                else:
-                    if distance:
-                        sql_query += f"""
-                            AND ROUND(
-                                (
-                                    6371 * acos(
-                                        cos(radians(${param_count})) *
-                                        cos(radians(mci.latitude)) *
-                                        cos(radians(mci.longitude) - radians(${param_count + 1})) +
-                                        sin(radians(${param_count})) *
-                                        sin(radians(mci.latitude))
-                                    )
-                                ) * 1000
-                            ) <= ${param_count + 2}
-                        """
-                        params.extend([user_latitude, user_longitude, distance])
-                        param_count += 3
+            if latitude and longitude:
+                sql_query += f"""
+                AND ROUND(
+                    (
+                        6371 * acos(
+                            cos(radians(${param_count})) *
+                            cos(radians(mci.latitude)) *
+                            cos(radians(mci.longitude) - radians(${param_count + 1})) +
+                            sin(radians(${param_count})) *
+                            sin(radians(mci.latitude))
+                        )
+                    ) * 1000
+                ) <= ${param_count + 2}
+                """
+                params.extend([float(latitude), float(longitude), distance])
+                param_count += 3
 
-            if query:
+            else:
                 sql_query += f"""
                     AND (
                         mci.company_name ILIKE ${param_count}
@@ -352,12 +361,21 @@ async def search(request: Request):
             param_count += 1
 
         if certification:
-            sql_query += f" AND mci.certifications @> ${param_count}::jsonb"
-            params.append(json.dumps(certification))
-            param_count += 1
+            conditions = []
+            if 'innobiz' in certification:
+                conditions.append(f"mci.sme_type = '기술혁신'")
+            if 'mainbiz' in certification:
+                conditions.append(f"mci.sme_type = '경영혁신'")
+            if 'research_institute' in certification:
+                conditions.append(f"mci.division = '연구소'")
+            if 'venture' in certification:
+                conditions.append(f"mci.confirming_authority = '벤처기업확인기관'")
+            
+            if conditions:
+                sql_query += " AND (" + " AND ".join(conditions) + ")"             
 
         if excluded_industries:
-            sql_query += f" AND mci.industry != ALL(${param_count}::text[])"
+            sql_query += f" AND mci.industry_code1 != ALL(${param_count}::text[])"
             array_value = "{" + ",".join(excluded_industries) + "}"
             params.append(array_value)
             param_count += 1
@@ -368,7 +386,7 @@ async def search(request: Request):
             param_count += 1
 
         if gender_age is not None:
-            sql_query += f" AND EXTRACT(YEAR FROM AGE(to_date(mci.birth_date, 'YYYY-MM-DD'))) >= ${param_count}"
+            sql_query += f" AND (EXTRACT(YEAR FROM CURRENT_DATE) - mci.birth_year) >= ${param_count}"
             params.append(gender_age)
             param_count += 1
 
@@ -383,18 +401,18 @@ async def search(request: Request):
             else:
                 sql_query += " ORDER BY distance_from_user ASC"
 
-        sql_query += " LIMIT 100"
+        sql_query += " LIMIT 1000"
 
         executable_query = get_executable_query(sql_query, params)
 
+        executable_query = '\n'.join(line for line in executable_query.splitlines() if line.strip())
         log.info("Executing SQL Query:")
         log.info(executable_query)
 
         with get_db() as db:
             result = db.execute(text(executable_query))
             companies = [row._mapping for row in result.fetchall()]
-
-        log.info(companies)
+        
         return {
             "success": True,
             "data": companies,

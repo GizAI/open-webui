@@ -28,7 +28,7 @@
 	import LockClosed from '$lib/components/icons/LockClosed.svelte';
 	import AccessControlModal from '$lib/components/workspace/common/AccessControlModal.svelte';
 	import { WEBUI_API_BASE_URL } from '$lib/constants';
-	import { Briefcase, MapPin, Users, Phone, Globe, Calendar, DollarSign, List, Award, Building2, FlaskConical, CalendarCheck, Microscope } from 'lucide-svelte';
+	import { Briefcase, MapPin, Users, Phone, Globe, Calendar, DollarSign, List, Award, Building2, FlaskConical, CalendarCheck, Microscope, ClipboardList } from 'lucide-svelte';
 	import BookOpen from '$lib/components/icons/BookOpen.svelte';
 
 
@@ -779,6 +779,13 @@
 					  주소: {bookmark.address}
 					</p>
 				  {/if}
+
+				  {#if bookmark.cri_company_size}
+					<p class="text-sm text-gray-600 flex items-center gap-2">
+					  <Phone size={16} class="text-indigo-500" />
+					  기업규모: {bookmark.cri_company_size}
+					</p>
+				  {/if}
 			
 				  {#if bookmark.phone_number}
 					<p class="text-sm text-gray-600 flex items-center gap-2">
@@ -794,7 +801,7 @@
 					</p>
 				  {/if}
 			
-				  {#if bookmark.employee_count !== undefined}
+				  {#if bookmark.employee_count}
 					<p class="text-sm text-gray-600 flex items-center gap-2">
 					  <Users size={16} class="text-purple-500" />
 					  임직원 수: {bookmark.employee_count}명
@@ -877,43 +884,50 @@
 				{/if}
 
 			  <!-- 연구소 정보 섹션 추가 -->
-			  {#if bookmark.lab_name || bookmark.research_field}
-			  <div class="space-y-2">
-				  <h3 class="text-sm font-semibold text-gray-700 flex items-center gap-2">
-					  <Microscope size={16} class="text-indigo-500" />
-					  연구소 정보
-				  </h3>
-				  <div class="space-y-1">
-					  {#if bookmark.lab_name}
-						  <p class="text-sm text-gray-600 flex items-center gap-2">
-							  <Building2 size={16} class="text-blue-500" />
-							  연구소명: {bookmark.lab_name}
-						  </p>
-					  {/if}
-					  {#if bookmark.research_field}
-						  <p class="text-sm text-gray-600 flex items-center gap-2">
-							  <FlaskConical size={16} class="text-green-500" />
-							  연구분야: {bookmark.research_field}
-						  </p>
-					  {/if}
-					  {#if bookmark.first_approval_date}
-						  <p class="text-sm text-gray-600 flex items-center gap-2">
-							  <CalendarCheck size={16} class="text-orange-500" />
-							  최초인정일: {bookmark.first_approval_date}
-						  </p>
-					  {/if}
-					  {#if bookmark.lab_location}
-						  <p class="text-sm text-gray-600 flex items-center gap-2">
-							  <MapPin size={16} class="text-red-500" />
-							  연구소 위치: {bookmark.lab_location}
-						  </p>
-					  {/if}
-				  	</div>
-			  	</div>
-		  		{/if}
+			  {#if bookmark.lab_name || bookmark.research_field || bookmark.division}
+				<div class="space-y-2">
+					<h3 class="text-sm font-semibold text-gray-700 flex items-center gap-2">
+					<Microscope size={16} class="text-indigo-500" />
+					연구소 정보
+					</h3>
+					<div class="space-y-1">
+					{#if bookmark.lab_name}
+						<p class="text-sm text-gray-600 flex items-center gap-2">
+						<Building2 size={16} class="text-blue-500" />
+						연구소명: {bookmark.lab_name}
+						</p>
+					{/if}
+					{#if bookmark.research_field}
+						<p class="text-sm text-gray-600 flex items-center gap-2">
+						<FlaskConical size={16} class="text-green-500" />
+						연구분야: {bookmark.research_field}
+						</p>
+					{/if}
+					{#if bookmark.first_approval_date}
+						<p class="text-sm text-gray-600 flex items-center gap-2">
+						<CalendarCheck size={16} class="text-orange-500" />
+						최초인정일: {bookmark.first_approval_date}
+						</p>
+					{/if}
+					{#if bookmark.lab_location}
+						<p class="text-sm text-gray-600 flex items-center gap-2">
+						<MapPin size={16} class="text-red-500" />
+						연구소 위치: {bookmark.lab_location}
+						</p>
+					{/if}
+					{#if bookmark.division}
+						<p class="text-sm text-gray-600 flex items-center gap-2">
+						<ClipboardList size={16} class="text-purple-500" />
+						연구소 구분: {bookmark.division}
+						</p>
+					{/if}
+					</div>
+				</div>
+				{/if}
+
 
 			  <!-- 인증 정보 섹션 -->
-			  {#if bookmark.venture_confirmation_type || bookmark.confirming_authority}
+			  {#if bookmark.venture_confirmation_type || bookmark.research_field}
               <div class="space-y-2">
                 <h3 class="text-sm font-semibold text-gray-700 flex items-center gap-2">
                   <Award size={16} class="text-purple-500" />
@@ -923,14 +937,7 @@
                   {#if bookmark.sme_type}
                     <p class="text-sm text-gray-600 flex items-center gap-2">
                       <Award size={16} class="text-yellow-500" />
-                      중소기업 유형: {bookmark.sme_type}
-                    </p>
-                  {/if}
-
-                  {#if bookmark.venture_confirmation_type}
-                    <p class="text-sm text-gray-600 flex items-center gap-2">
-                      <Award size={16} class="text-green-500" />
-                      벤처기업 인증: {bookmark.venture_confirmation_type}
+                      인증 유형: {bookmark.sme_type}
                     </p>
                   {/if}
 
@@ -938,6 +945,13 @@
                     <p class="text-sm text-gray-600 flex items-center gap-2">
                       <Calendar size={16} class="text-orange-500" />
                       인증 만료일: {bookmark.certificate_expiry_date}
+                    </p>
+                  {/if}
+
+				  {#if bookmark.venture_confirmation_type}
+                    <p class="text-sm text-gray-600 flex items-center gap-2">
+                      <Award size={16} class="text-green-500" />
+                      벤처기업 인증: {bookmark.venture_confirmation_type}
                     </p>
                   {/if}
 

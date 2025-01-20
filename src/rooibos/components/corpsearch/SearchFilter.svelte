@@ -84,7 +84,7 @@
                 class="w-20 px-2 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all" 
                 on:input={(e) => onFilterChange(group.id, 'gender_age', e.currentTarget?.value || '')}
               />
-              <span class="text-sm text-gray-600 ml-1">세</span>
+              <span class="text-sm text-gray-600 ml-1">세 이상</span>
             </div>
           </div>
 

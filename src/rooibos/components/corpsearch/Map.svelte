@@ -401,6 +401,8 @@
       groupId === 'gender' || groupId === 'loan'
     ) {
       newFilters[groupId] = checked ? optionId : "";
+    }else if (groupId === 'gender_age' && typeof checked === 'string') {
+        newFilters[groupId] = checked  
     } else if (typeof checked === 'string') {
       newFilters[groupId] = {
         ...(selectedFilters[groupId] as any),
