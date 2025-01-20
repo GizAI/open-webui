@@ -1,0 +1,237 @@
+from pydantic import BaseModel, Field
+from typing import Callable, Awaitable, Any, Optional
+import json
+import re
+
+from open_webui.models.users import Users
+from open_webui.utils.chat import generate_chat_completion
+from open_webui.utils.misc import get_last_user_message
+from open_webui.models.knowledge import Knowledges
+from open_webui.models.files import Files
+from open_webui.utils.middleware import chat_web_search_handler
+from open_webui.models.users import UserModel
+
+
+class Filter:
+    class Valves(BaseModel):
+        status: bool = Field(default=True)
+
+    def __init__(self):
+        self.valves = self.Valves()
+
+    async def emit_status(
+        self,
+        __event_emitter__: Callable[[dict], Awaitable[None]],
+        level: str,
+        message: str,
+        done: bool,
+    ):
+        if self.valves.status:
+            await __event_emitter__(
+                {
+                    "type": level,
+                    "data": {
+                        "description": message,
+                        "done": done,
+                    },
+                }
+            )
+
+    async def answer_plan(self, body: dict, __user__: Optional[dict]) -> Optional[dict]:
+        messages = body["messages"]
+        user_message = get_last_user_message(messages)
+        system_prompt = (
+            "Analyze the user's prompt to determine if a detailed report-style response is necessary. If a report-style response is required, follow these steps: "
+            "1. Begin by drafting a table of contents for the report and present it to the user for approval. "
+            "2. Once the user approves the table of contents by responding with 'OK,' proceed to write the report sequentially, chapter by chapter. "
+            "3. Ensure each chapter contains at least 2,000 words and provides a comprehensive analysis. "
+            "4. Conclude each chapter with the prompt 'Would you like to continue to the next chapter?' to seek the user's approval before proceeding. "
+            "This ensures the response is professional, detailed, and aligns with the user's expectations."
+        )
+
+        return {
+            "system_prompt": system_prompt,
+            "prompt": user_message,
+            "model": "gpt-4o",
+        }
+
+    async def knowledge_plan(
+        self, body: dict, __user__: Optional[dict]
+    ) -> Optional[dict]:
+        messages = body["messages"]
+        user_message = get_last_user_message(messages)
+        all_knowledge_bases = Knowledges.get_knowledge_bases_by_user_id(
+            __user__.get("id"), "read"
+        )
+
+        knowledge_bases_list = "\n".join(
+            [
+                f"- ID: {getattr(knowledge_base, 'id', 'Unknown')}\n - Knowledge Base Name: {getattr(knowledge_base, 'name', 'Unknown')}\n - Description: {getattr(knowledge_base, 'description', 'Unknown')}\n"
+                for knowledge_base in all_knowledge_bases
+            ]
+        )
+
+        system_prompt = f"""Based on the user's prompt, please find the knowledge base that the user desires.
+    Available knowledge bases:
+    {knowledge_bases_list}
+    Please select the most suitable knowledge base from the above list that best fits the user's requirements.
+
+    Additionally, analyze the user's prompt to determine if a web search is required to reflect the latest information. 
+    Return your response in JSON format with the following fields:
+    - "id": KnowledgeID (or null if no suitable knowledge base is found)
+    - "name": Knowledge Name (or null if no suitable knowledge base is found)
+    - "web_search_enabled": True if a web search is required, False otherwise.
+    Do not provide any additional explanations."""
+
+        return {
+            "system_prompt": system_prompt,
+            "prompt": user_message,
+            "model": "gpt-4o",
+        }
+
+    async def inlet(
+        self,
+        body: dict,
+        __event_emitter__: Callable[[Any], Awaitable[None]],
+        __request__: Any,
+        __user__: Optional[dict] = None,
+        __model__: Optional[dict] = None,
+    ) -> dict:
+        try:
+
+            user_data = __user__.copy()
+            user_data.update(
+                {
+                    "profile_image_url": "",
+                    "last_active_at": 0,
+                    "updated_at": 0,
+                    "created_at": 0,
+                }
+            )
+
+            knowledge_plan_result = await self.knowledge_plan(body, __user__)
+
+            if knowledge_plan_result is None:
+                raise ValueError("Plan result is None")
+
+            payload = {
+                "model": knowledge_plan_result["model"],
+                "messages": [
+                    {
+                        "role": "system",
+                        "content": knowledge_plan_result["system_prompt"],
+                    },
+                    {"role": "user", "content": knowledge_plan_result["prompt"]},
+                ],
+                "stream": False,
+            }
+
+            selected_knowledge_base = None
+            user = Users.get_user_by_id(__user__["id"])
+
+            response = await generate_chat_completion(
+                request=__request__, form_data=payload, user=user
+            )
+
+            content = response["choices"][0]["message"]["content"]
+
+            if content:
+                content = content.replace("```json", "").replace("```", "").strip()
+                content = content.replace("'", '"')
+                match = re.search(r"\{.*?\}", content, flags=re.DOTALL)
+                if match:
+                    content = match.group(0)
+                else:
+                    content = None
+
+                if content:
+                    try:
+                        result = json.loads(content)
+                        print(f"result: {result}")
+                        selected_knowledge_base = (
+                            result.get("id") if isinstance(result, dict) else None
+                        )
+
+                        user_object = UserModel(**user_data)
+
+                        if result.get("web_search_enabled"):
+                            print("Web search required.")
+                            await chat_web_search_handler(
+                                __request__,
+                                body,
+                                {"__event_emitter__": __event_emitter__},
+                                user_object,
+                            )
+
+                        else:
+                            print("No web search required.")
+
+                    except json.JSONDecodeError as e:
+                        print(f"JSONDecodeError: {e}")
+
+            selected_knowledge_base_info = (
+                Knowledges.get_knowledge_by_id(selected_knowledge_base)
+                if selected_knowledge_base
+                else None
+            )
+
+            if selected_knowledge_base_info:
+                knowledge_file_ids = selected_knowledge_base_info.data["file_ids"]
+                knowledge_files = Files.get_file_metadatas_by_ids(knowledge_file_ids)
+                knowledge_dict = selected_knowledge_base_info.model_dump()
+                knowledge_dict["files"] = [
+                    file.model_dump() for file in knowledge_files
+                ]
+                knowledge_dict["type"] = "collection"
+
+                body["files"] = body.get("files", []) + [knowledge_dict]
+
+                await self.emit_status(
+                    __event_emitter__,
+                    level="status",
+                    message=f"Matching knowledge base found: {selected_knowledge_base_info.name}",
+                    done=True,
+                )
+            else:
+                await self.emit_status(
+                    __event_emitter__,
+                    level="status",
+                    message="No matching knowledge base found.",
+                    done=True,
+                )
+        except Exception as e:
+            print(e)
+            await self.emit_status(
+                __event_emitter__,
+                level="status",
+                message=f"Error occurred while processing the request: {e}",
+                done=True,
+            )
+
+        context_message = {
+            "role": "system",
+            "content": (
+                "You are ChatGPT, a large language model trained by OpenAI. "
+                "Please ensure that all your responses are presented in a clear and organized manner using bullet points, numbered lists, headings, and other formatting tools to enhance readability and user-friendliness. "
+                "Additionally, please respond in the language used by the user in their input. "
+            ),
+        }
+
+        body.setdefault("messages", []).insert(0, context_message)
+
+        return body
+
+    async def outlet(
+        self,
+        body: dict,
+        __event_emitter__: Callable[[Any], Awaitable[None]],
+        __request__: Any,
+        __user__: Optional[dict] = None,
+        __model__: Optional[dict] = None,
+    ) -> Optional[dict]:
+        try:
+            print("outlet called")
+            return body
+        except Exception as e:
+            print(f"Error occurred: {e}")
+            return None
