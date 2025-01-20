@@ -19,6 +19,24 @@ class Filter:
     def __init__(self):
         self.valves = self.Valves()
 
+    async def emit_status(
+        self,
+        __event_emitter__: Callable[[dict], Awaitable[None]],
+        level: str,
+        message: str,
+        done: bool,
+    ):
+        if self.valves.status:
+            await __event_emitter__(
+                {
+                    "type": level,
+                    "data": {
+                        "description": message,
+                        "done": done,
+                    },
+                }
+            )
+
     async def plan(self, body: dict, __user__: Optional[dict]) -> Optional[dict]:
         messages = body["messages"]
         user_message = get_last_user_message(messages)
@@ -71,8 +89,6 @@ If there is no suitable or relevant knowledge base, do not select any. In such c
         __model__: Optional[dict] = None,
     ) -> dict:
         try:
-
-            
             search_result = None  
             
             user_data = __user__.copy()
@@ -93,7 +109,6 @@ If there is no suitable or relevant knowledge base, do not select any. In such c
                 print(search_result)
                 print("+++++++++++++++++++++++++++++++ search_result +++++++++++++++++++++++++++++++")
               
-               
             else:
                 print("No search result was retrieved.")
 
@@ -147,39 +162,27 @@ If there is no suitable or relevant knowledge base, do not select any. In such c
 
                 body["files"] = body.get("files", []) + [knowledge_dict]
 
-                if self.valves.status:
-                    await __event_emitter__(
-                        {
-                            "type": "status",
-                            "data": {
-                                "description": f"Matching knowledge base found: {selected_knowledge_base_info.name}",
-                                "done": True,
-                            },
-                        }
-                    )
+                await self.emit_status(
+                    __event_emitter__,
+                    level="status",
+                    message=f"Matching knowledge base found: {selected_knowledge_base_info.name}",
+                    done=True
+                )
             else:
-                if self.valves.status:
-                    await __event_emitter__(
-                        {
-                            "type": "status",
-                            "data": {
-                                "description": "No matching knowledge base found.",
-                                "done": True,
-                            },
-                        }
-                    )
+                await self.emit_status(
+                    __event_emitter__,
+                    level="status",
+                    message="No matching knowledge base found.",
+                    done=True
+                )
         except Exception as e:
             print(e)
-            if self.valves.status:
-                await __event_emitter__(
-                    {
-                        "type": "status",
-                        "data": {
-                            "description": f"Error occurred while processing the request: {e}",
-                            "done": True,
-                        },
-                    }
-                )
+            await self.emit_status(
+                __event_emitter__,
+                level="status",
+                message=f"Error occurred while processing the request: {e}",
+                done=True
+            )
 
         context_message = {
             "role": "system", 
@@ -196,3 +199,12 @@ If there is no suitable or relevant knowledge base, do not select any. In such c
         print("+++++++++++++++++++++++++++++++ end body +++++++++++++++++++++++++++++++")
 
         return body
+
+    def outlet(self, body: dict) -> None:
+        print(f"outlet called: {body}")
+
+    async def on_start(self):
+        print("Function started")
+
+    async def on_stop(self):
+        print("Function stopped")
