@@ -37,21 +37,38 @@ class Filter:
                 }
             )
 
-    async def answer_plan(self, body: dict, __user__: Optional[dict]) -> Optional[dict]:
+    async def answer_plan(self, body: dict) -> Optional[dict]:
         messages = body["messages"]
         user_message = get_last_user_message(messages)
         system_prompt = (
-            "Analyze the user's prompt to determine if a detailed report-style response is necessary. If a report-style response is required, follow these steps: "
-            "1. Begin by drafting a table of contents for the report and present it to the user for approval. "
-            "2. Once the user approves the table of contents by responding with 'OK,' proceed to write the report sequentially, chapter by chapter. "
-            "3. Ensure each chapter contains at least 2,000 words and provides a comprehensive analysis. "
-            "4. Conclude each chapter with the prompt 'Would you like to continue to the next chapter?' to seek the user's approval before proceeding. "
-            "This ensures the response is professional, detailed, and aligns with the user's expectations."
+            "Analyze the user's prompt to determine if a detailed report-style response is necessary. "
+            "Return your response in JSON format with the following structure:\n"
+            "{\n"
+            '  "report_mode": boolean (true if detailed report is needed, false otherwise),\n'
+            '  "contents": array of strings (table of contents if report_mode is true, null if false)\n'
+            "}\n"
+            "If this is the first message and a report-style conversation is already ongoing, return:\n"
+            "{\n"
+            '  "report_mode": false,\n'
+            '  "contents": null\n'
+            "}\n"
+            "Do not provide any additional explanations."
+        )
+
+        prompt = (
+            "History:\n"
+            + "\n".join(
+                [
+                    f"{message['role'].upper()}: \"\"\"{message['content']}\"\"\""
+                    for message in messages[::-1][:4]
+                ]
+            )
+            + f"\nQuery: {user_message}"
         )
 
         return {
             "system_prompt": system_prompt,
-            "prompt": user_message,
+            "prompt": prompt,
             "model": "gpt-4o",
         }
 
@@ -99,15 +116,35 @@ class Filter:
     ) -> dict:
         try:
 
-            user_data = __user__.copy()
-            user_data.update(
-                {
-                    "profile_image_url": "",
-                    "last_active_at": 0,
-                    "updated_at": 0,
-                    "created_at": 0,
-                }
+            answer_plan_result = await self.answer_plan(body)
+            payload = {
+                "model": answer_plan_result["model"],
+                "messages": [
+                    {
+                        "role": "system",
+                        "content": answer_plan_result["system_prompt"],
+                    },
+                    {"role": "user", "content": answer_plan_result["prompt"]},
+                ],
+                "stream": False,
+            }
+
+            user = Users.get_user_by_id(__user__["id"])
+
+            # Generate chat completion for the answer_plan
+            response = await generate_chat_completion(
+                request=__request__,  # Replace with the appropriate request object
+                form_data=payload,
+                user=user,
             )
+
+            content = response["choices"][0]["message"]["content"]
+
+            # Parse the JSON response for answer_plan
+            answer_result = await self.parse_json_response(content)
+
+            # Print the parsed result of answer_plan
+            print(f"Answer Plan Result: {answer_result}")
 
             knowledge_plan_result = await self.knowledge_plan(body, __user__)
 
@@ -152,6 +189,15 @@ class Filter:
                             result.get("id") if isinstance(result, dict) else None
                         )
 
+                        user_data = __user__.copy()
+                        user_data.update(
+                            {
+                                "profile_image_url": "",
+                                "last_active_at": 0,
+                                "updated_at": 0,
+                                "created_at": 0,
+                            }
+                        )
                         user_object = UserModel(**user_data)
 
                         if result.get("web_search_enabled"):

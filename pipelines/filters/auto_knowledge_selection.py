@@ -37,10 +37,6 @@ class Filter:
                 }
             )
 
-    async def answer_plan(self, body: dict, __user__: Optional[dict]) -> Optional[dict]:
-
-        pass
-
     async def knowledge_plan(
         self, body: dict, __user__: Optional[dict]
     ) -> Optional[dict]:
