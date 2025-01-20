@@ -1,6 +1,6 @@
 <script context="module" lang="ts">
   declare var naver: any;
-</script>  
+</script>   
 
 <script lang="ts">
   import { onMount } from 'svelte';
