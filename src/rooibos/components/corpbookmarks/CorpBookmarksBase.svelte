@@ -28,7 +28,7 @@
 	import LockClosed from '$lib/components/icons/LockClosed.svelte';
 	import AccessControlModal from '$lib/components/workspace/common/AccessControlModal.svelte';
 	import { WEBUI_API_BASE_URL } from '$lib/constants';
-	import { Briefcase, MapPin, Users, Phone, Globe, Calendar, DollarSign, List } from 'lucide-svelte';
+	import { Briefcase, MapPin, Users, Phone, Globe, Calendar, DollarSign, List, Award } from 'lucide-svelte';
 
 
 	let largeScreen = true;
@@ -44,13 +44,6 @@
 		roadAddress?: string;
 		address?: string;
 		category?: string[];
-		recent_revenue?: number;
-		recent_sales?: number;
-		recent_profit?: number;
-		recent_net_income?: number;
-		recent_total_assets?: number;
-		recent_total_liabilities?: number;
-		revenue_growth_rate?: number;
 		business_registration_number?: number;
 		industry?: string;
 		representative?: string;
@@ -63,10 +56,85 @@
 		created_at?: string;
 		updated_at?: string;
 		files: any[];
+		smtp_id: string;
+		latitude: string;
+		longitude: string;
+		bookmark_id?: string | null;    
+		fax_number?: string;
+		email?: string;
+		company_type?: string;
+		founding_date?: string;
+		industry_code1?: string;
+		industry_code2?: string;
+		main_product?: string;
+		main_bank?: string;
+		main_branch?: string;
+		group_name?: string;
+		stock_code?: string;
+		corporate_number?: string;
+		english_name?: string;
+		trade_name?: string;
+		fiscal_month?: string;
+		region1?: string;
+		region2?: string;
+		industry_major?: string;
+		industry_middle?: string;
+		industry_small?: string;
+		certificate_expiry_date?: string;
+		sme_type?: string;
+		cri_company_size?: string;
+		lab_name?: string;
+		first_approval_date?: string;
+		lab_location?: string;
+		research_field?: string;
+		division?: string;
+		birth_year?: string;
+		foundation_year?: string;
+		family_shareholder_yn?: string;
+		external_shareholder_yn?: string;
+		financial_statement_year?: string;
+		employees?: number;
+		venture_confirmation_type?: string;
+		svcl_region?: string;
+		venture_valid_from?: string;
+		venture_valid_until?: string;
+		confirming_authority?: string;
+		new_reconfirmation_code?: string;
+	};
+
+	type FinancialData = {
+		financial_company_id: string;
+		year: string;
+		revenue?: number;
+		net_income?: number;
+		operating_income?: number;
+		total_assets?: number;
+		total_liabilities?: number;
+		total_equity?: number;
+		capital_stock?: number;
+		corporate_tax?: number;
+		current_assets?: number;
+		quick_assets?: number;
+		inventory?: number;
+		non_current_assets?: number;
+		investment_assets?: number;
+		tangible_assets?: number;
+		intangible_assets?: number;
+		current_liabilities?: number;
+		non_current_liabilities?: number;
+		retained_earnings?: number;
+		profit?: number;
+		sales_cost?: number;
+		sales_profit?: number;
+		sga?: number;
+		other_income?: number;
+		other_expenses?: number;
+		pre_tax_income?: number;
 	};
 
 	let id: any = null;
 	let bookmark: Bookmark | null = null;
+	let financialData: FinancialData | null = null;
 	let query = '';
 
 	let showAddTextContentModal = false;
@@ -504,8 +572,21 @@
 			}
 		})
 
+		const company_id = $page.url.searchParams.get("company_id")
+		const financialResponse = await fetch(`${WEBUI_API_BASE_URL}/rooibos/corpbookmarks/${company_id}/financialData`, {
+			method: 'GET',
+			headers: {
+				Accept: 'application/json',
+				'Content-Type': 'application/json',
+				authorization: `Bearer ${localStorage.token}`
+			}
+		})
+
 		const data = await response.json();
 		bookmark = data.data[0];
+
+		const filnancial = await financialResponse.json();
+		financialData = filnancial.data;
 
 		filteredItems = bookmark?.files ?? [];
 
@@ -522,6 +603,38 @@
 		dropZone?.removeEventListener('drop', onDrop);
 		dropZone?.removeEventListener('dragleave', onDragLeave);
 	});
+
+	const metrics = [
+		{ name: '매출액', key: 'revenue' },
+		{ name: '당기순이익', key: 'net_income' },
+		{ name: '영업이익', key: 'operating_income' },
+		{ name: '총자산', key: 'total_assets' },
+		{ name: '총부채', key: 'total_liabilities' },
+		{ name: '총자본', key: 'total_equity' },
+		{ name: '자본금', key: 'capital_stock' },
+		{ name: '법인세', key: 'corporate_tax' },
+		{ name: '유동자산', key: 'current_assets' },
+		{ name: '당좌자산', key: 'quick_assets' },
+		{ name: '재고자산', key: 'inventory' },
+		{ name: '비유동자산', key: 'non_current_assets' },
+		{ name: '투자자산', key: 'investment_assets' },
+		{ name: '유형자산', key: 'tangible_assets' },
+		{ name: '무형자산', key: 'intangible_assets' },
+		{ name: '유동부채', key: 'current_liabilities' },
+		{ name: '비유동부채', key: 'non_current_liabilities' },
+		{ name: '이익잉여금', key: 'retained_earnings' },
+		{ name: '이익', key: 'profit' },
+		{ name: '매출원가', key: 'sales_cost' },
+		{ name: '매출총이익', key: 'sales_profit' },
+		{ name: '판매관리비', key: 'sga' },
+		{ name: '기타수익', key: 'other_income' },
+		{ name: '기타비용', key: 'other_expenses' },
+		{ name: '세전이익', key: 'pre_tax_income' }
+	];
+
+	const years = ['2023', '2022', '2021'];
+	let showAllMetrics = false;
+	
 </script>
 
 {#if dragged}
@@ -628,6 +741,7 @@
 						</button>
 					</div> -->
 				</div>
+
 			  <!-- 기본 정보 섹션 -->
 			  <div class="space-y-2">
 				<h3 class="text-sm font-semibold text-gray-700 flex items-center gap-2">
@@ -646,8 +760,8 @@
 					<p class="text-sm text-gray-600 flex items-center gap-2">
 					  <Users size={16} class="text-purple-500" />
 					  대표이사: {bookmark.representative}
-					  {#if bookmark.birth_date}
-						({bookmark.birth_date})
+					  {#if bookmark.birth_year}
+						({bookmark.birth_year})
 					  {/if}
 					</p>
 				  {/if}
@@ -696,7 +810,12 @@
 					<Briefcase size={16} class="text-blue-500" />
 					업종 정보
 				  </h3>
-				  <p class="text-sm text-gray-600">{bookmark.industry}</p>
+				  {#if bookmark.industry_major}
+					<p class="text-sm text-gray-600">업종: {bookmark.industry}</p>
+				  {/if}
+				  {#if bookmark.main_product}
+					<p class="text-sm text-gray-600">주요상품: {bookmark.main_product}</p>
+				  {/if}
 				</div>
 			  {/if}
 			
@@ -722,32 +841,103 @@
 				  {/if}
 				</div>
 			  </div>
-			
-			  <!-- 재무 정보 섹션 -->
-			  <div class="space-y-2">
-				<h3 class="text-sm font-semibold text-gray-700 flex items-center gap-2">
-				  <DollarSign size={16} class="text-yellow-500" />
-				  재무 정보
-				</h3>
-				<div class="space-y-1">
-				  {#if bookmark.recent_sales !== undefined}
-					<p class="text-sm text-gray-600 flex items-center gap-2">
-					  <DollarSign size={16} class="text-green-500" />
-					  최근 매출액: {bookmark.recent_sales} 백만 원
-					</p>
-				  {/if}
-			
-				  {#if bookmark.recent_profit !== undefined}
-					<p class="text-sm text-gray-600 flex items-center gap-2">
-					  <DollarSign size={16} class="text-pink-500" />
-					  최근 순이익: {bookmark.recent_profit} 백만 원
-					</p>
-				  {/if}
-				</div>
-			  </div>
-			
+
+			  <!-- 인증 정보 섹션 -->
+              <div class="space-y-2">
+                <h3 class="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                  <Award size={16} class="text-purple-500" />
+                  인증 정보
+                </h3>
+                <div class="space-y-1">
+                  {#if bookmark.sme_type}
+                    <p class="text-sm text-gray-600 flex items-center gap-2">
+                      <Award size={16} class="text-yellow-500" />
+                      중소기업 유형: {bookmark.sme_type}
+                    </p>
+                  {/if}
+
+                  {#if bookmark.venture_confirmation_type}
+                    <p class="text-sm text-gray-600 flex items-center gap-2">
+                      <Award size={16} class="text-green-500" />
+                      벤처기업 인증: {bookmark.venture_confirmation_type}
+                    </p>
+                  {/if}
+
+                  {#if bookmark.certificate_expiry_date}
+                    <p class="text-sm text-gray-600 flex items-center gap-2">
+                      <Calendar size={16} class="text-orange-500" />
+                      인증 만료일: {bookmark.certificate_expiry_date}
+                    </p>
+                  {/if}
+                </div>
+              </div>
 			</div>
-		  </div>
+			  
+			{#if financialData && Array.isArray(financialData)}
+			<div class="px-6 py-4 overflow-x-auto">
+				<table class="min-w-full text-sm">
+				<thead>
+					<tr class="border-b border-gray-200">
+					<th class="text-left px-4 py-2 font-medium text-gray-600">
+						재무지표
+						<button
+						class="ml-2 inline-flex items-center px-2 py-1 bg-gray-200 text-gray-700
+								rounded-md hover:bg-gray-300 text-xs"
+						on:click={() => (showAllMetrics = !showAllMetrics)}
+						>
+						{#if showAllMetrics} 접기 {:else} 더보기 {/if}
+						</button>
+					</th>
+					{#each years as year}
+						<th class="text-right px-4 py-2 font-medium text-gray-600">
+						{year}년
+						</th>
+					{/each}
+					</tr>
+				</thead>
+				<tbody class="text-gray-600">
+					{#if showAllMetrics}
+					{#each metrics as metric}
+						<tr class="border-b border-gray-100 hover:bg-gray-50">
+						<td class="px-4 py-2 font-medium">{metric.name}</td>
+						{#each years as year}
+							{@const data = financialData.find(d => d.year == year)}
+							<td class="text-right px-4 py-2">
+							{#if data && data[metric.key] != null}
+								<span class={data[metric.key] < 0 ? 'text-red-500' : ''}>
+								{new Intl.NumberFormat('ko-KR').format(data[metric.key])}
+								</span>
+							{:else}
+								-
+							{/if}
+							</td>
+						{/each}
+						</tr>
+					{/each}
+					{:else}
+					{#each metrics.slice(0, 7) as metric}
+						<tr class="border-b border-gray-100 hover:bg-gray-50">
+						<td class="px-4 py-2 font-medium">{metric.name}</td>
+						{#each years as year}
+							{@const data = financialData.find(d => d.year == year)}
+							<td class="text-right px-4 py-2">
+							{#if data && data[metric.key] != null}
+								<span class={data[metric.key] < 0 ? 'text-red-500' : ''}>
+								{new Intl.NumberFormat('ko-KR').format(data[metric.key])}
+								</span>
+							{:else}
+								-
+							{/if}
+							</td>
+						{/each}
+						</tr>
+					{/each}
+					{/if}
+				</tbody>
+				</table>
+			</div>
+			{/if}
+		</div>
 
 		<div class="flex flex-row flex-1 h-full max-h-full pb-2.5 gap-3">
 			{#if largeScreen}
