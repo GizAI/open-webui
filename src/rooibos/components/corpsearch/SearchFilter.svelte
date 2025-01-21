@@ -65,8 +65,6 @@
 
 {#if group}
   <div
-    class="space-y-4 p-3 bg-gray-50 mt-10"
-    style="max-height: {maxHeight}; overflow-y: auto;"
   >
     <div class="bg-white rounded-lg shadow-sm p-4">
       <div class="filter-group-title flex items-center space-x-2 mb-3"> 

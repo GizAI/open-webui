@@ -305,19 +305,9 @@ async def search(request: Request):
                         OR mci.representative ILIKE ${param_count}
                         OR mci.address ILIKE ${param_count}
                     )
-                    AND ROUND(
-                        (
-                            6371 * acos(
-                                cos(radians(${param_count + 1})) *
-                                cos(radians(mci.latitude)) *
-                                cos(radians(mci.longitude) - radians(${param_count + 2})) +
-                                sin(radians(${param_count + 1})) *
-                                sin(radians(mci.latitude))
-                            )
-                        ) * 1000
-                    ) <= ${param_count + 3}
+                    
                 """
-                params.extend([f"%{query}%", float(latitude), float(longitude), distance])
+                params.extend([f"%{query}%"])
                 param_count += 4
 
         # 기존 필터 조건들

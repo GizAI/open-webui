@@ -151,12 +151,5 @@ export const filterActions = [
       icon: RotateCcw,
       iconClass: "text-gray-500",
       action: 'reset',
-    },
-    {
-      id: 'apply',
-      label: '적용',
-      icon: Check,
-      iconClass: "text-green-500",
-      action: 'apply',
-    },
+    }
 ];
