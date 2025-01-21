@@ -3,6 +3,7 @@ from typing import Optional
 from open_webui.internal.db import get_db
 from sqlalchemy import text
 from open_webui.env import SRC_LOG_LEVELS
+from rooibos.config_extension import NAVER_MAP_CLIENT_ID, NAVER_MAP_CLIENT_SECRET, NAVER_ID, NAVER_CLIENT_SECRET
 
 import json
 import logging
@@ -15,21 +16,71 @@ router = APIRouter()
 
 import requests
 
+import requests
+
+import requests
+
+import requests
+
 def get_coordinates(query: str):
-    url = "https://naveropenapi.apigw.ntruss.com/map-geocode/v2/geocode"
-    headers = {
-        "X-NCP-APIGW-API-KEY-ID": "t80s8o2xsl",
-        "X-NCP-APIGW-API-KEY": "a9l3a5gkSDaxXryTsSVmMezstBHzfZPX8aC1s65b",
+    # 첫 번째 API: 장소 검색 API
+    local_search_url = "https://openapi.naver.com/v1/search/local.json"
+    local_search_headers = {
+        "X-Naver-Client-Id": str(NAVER_ID).strip(),  # 발급받은 Client ID
+        "X-Naver-Client-Secret": str(NAVER_CLIENT_SECRET).strip(),  # 발급받은 Client Secret
     }
-    params = {"query": query}
-    response = requests.get(url, headers=headers, params=params)
+    local_search_params = {"query": query, "display": 1}
+
+    # 첫 번째 API 호출
+    response = requests.get(local_search_url, headers=local_search_headers, params=local_search_params)
+    if response.status_code != 200:
+        return {"error": f"장소 검색 API 오류: {response.status_code}"}
     data = response.json()
 
-    if data.get("addresses"):
-        address = data["addresses"][0]
-        return {"latitude": address["y"], "longitude": address["x"], "address": address["roadAddress"]}
-    else:
+    # 검색 결과 처리
+    if not data.get("items"):
+        return {"error": "검색어에 대한 결과가 없습니다."}
+    item = data["items"][0]
+    address = item.get("address")
+    if not address:
+        return {"error": "주소 정보가 없습니다."}
+
+    # 두 번째 API: 주소 → 위도/경도 변환 API
+    geocode_url = "https://naveropenapi.apigw.ntruss.com/map-geocode/v2/geocode"
+    geocode_headers = {
+        "X-NCP-APIGW-API-KEY-ID": str(NAVER_MAP_CLIENT_ID).strip(),  # 발급받은 Map Client ID
+        "X-NCP-APIGW-API-KEY": str(NAVER_MAP_CLIENT_SECRET).strip(),  # 발급받은 Map Client Secret
+    }
+    geocode_params = {"query": address}
+
+    # 두 번째 API 호출
+    response = requests.get(geocode_url, headers=geocode_headers, params=geocode_params)
+    if response.status_code != 200:
+        return {"error": f"주소 변환 API 오류: {response.status_code}"}
+    geocode_data = response.json()
+
+    # 변환 결과 처리
+    if not geocode_data.get("addresses"):
         return {"error": "주소로 검색된 결과가 없습니다."}
+    address_info = geocode_data["addresses"][0]
+
+    # 최종 반환
+    return {
+        "name": item["title"].replace("<b>", "").replace("</b>", ""),  # HTML 태그 제거
+        "address": address,
+        "latitude": address_info["y"],
+        "longitude": address_info["x"],
+    }
+
+# 테스트 실행
+result = get_coordinates("홍대입구")
+print(result)
+
+
+
+
+
+
 
 def format_parameter(param):
     if param is None:
@@ -52,10 +103,6 @@ def get_executable_query(sql_query: str, params: list) -> str:
         executable_query = executable_query.replace(placeholder, formatted_param)
     return executable_query
 
-@router.get("/test")
-async def test(request: Request):
-    return {"message": "Hello, World!"}
-
 @router.get("/")
 async def search(request: Request):
     search_params = request.query_params
@@ -67,10 +114,12 @@ async def search(request: Request):
 
     if query:
         result = get_coordinates(query)
-        if result:
+        if result.get('latitude'):
             latitude = result['latitude']
             longitude = result['longitude']
-
+    else:
+        result = None        
+    
     user_latitude = float(search_params.get("userLatitude", 0))
     user_longitude = float(search_params.get("userLongitude", 0))
     
@@ -276,7 +325,7 @@ async def search(request: Request):
             params.append(float(id))
             param_count += 1
         else:
-            if latitude and longitude:
+            if result and latitude and longitude:
                 sql_query += f"""
                 AND ROUND(
                     (
@@ -300,9 +349,20 @@ async def search(request: Request):
                         OR mci.representative ILIKE ${param_count}
                         OR mci.address ILIKE ${param_count}
                     )
+                    AND ROUND(
+                        (
+                            6371 * acos(
+                                cos(radians(${param_count + 1})) *
+                                cos(radians(mci.latitude)) *
+                                cos(radians(mci.longitude) - radians(${param_count + 2})) +
+                                sin(radians(${param_count + 1})) *
+                                sin(radians(mci.latitude))
+                            )
+                        ) * 1000
+                    ) <= ${param_count + 3}
                 """
-                params.append(f"%{query}%")
-                param_count += 1
+                params.extend([f"%{query}%", float(latitude), float(longitude), distance])
+                param_count += 4
 
         # 기존 필터 조건들
         if sales_min is not None:
