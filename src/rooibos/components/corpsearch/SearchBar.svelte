@@ -40,9 +40,14 @@
   }
 
   const toggleFilter = (groupId: string) => {
-    activeFilterGroup = groupId === activeFilterGroup ? null : groupId;
-    onShowSearchListChange(false);
-    onFilterOpenChange(true);
+    if (activeFilterGroup === groupId && isFilterOpen) {
+      activeFilterGroup = null;
+      onFilterOpenChange(false);
+    } else {
+      activeFilterGroup = groupId;
+      onShowSearchListChange(false);
+      onFilterOpenChange(true);
+    }
   };
 
   const iconMapping: Record<string, any> = {

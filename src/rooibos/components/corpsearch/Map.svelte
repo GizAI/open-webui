@@ -142,6 +142,7 @@
     showSearchList = false;
     activeFilterGroup = null;
     isFilterOpen = false;
+    isListIconVisible = true;
 
     try {
         const currentUser = get(user);
@@ -297,7 +298,6 @@
       handleSearchListChange(false);
       handleFilterOpenChange(false);
       showSearchBar = true;
-
     });
 
     naver.maps.Event.addListener(map, 'dragend', (e: any) => {      

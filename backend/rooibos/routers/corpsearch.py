@@ -23,21 +23,18 @@ import requests
 import requests
 
 def get_coordinates(query: str):
-    # 첫 번째 API: 장소 검색 API
     local_search_url = "https://openapi.naver.com/v1/search/local.json"
     local_search_headers = {
-        "X-Naver-Client-Id": str(NAVER_ID).strip(),  # 발급받은 Client ID
-        "X-Naver-Client-Secret": str(NAVER_CLIENT_SECRET).strip(),  # 발급받은 Client Secret
+        "X-Naver-Client-Id": str(NAVER_ID).strip(),
+        "X-Naver-Client-Secret": str(NAVER_CLIENT_SECRET).strip(),
     }
     local_search_params = {"query": query, "display": 1}
 
-    # 첫 번째 API 호출
     response = requests.get(local_search_url, headers=local_search_headers, params=local_search_params)
     if response.status_code != 200:
         return {"error": f"장소 검색 API 오류: {response.status_code}"}
     data = response.json()
 
-    # 검색 결과 처리
     if not data.get("items"):
         return {"error": "검색어에 대한 결과가 없습니다."}
     item = data["items"][0]
@@ -45,42 +42,28 @@ def get_coordinates(query: str):
     if not address:
         return {"error": "주소 정보가 없습니다."}
 
-    # 두 번째 API: 주소 → 위도/경도 변환 API
     geocode_url = "https://naveropenapi.apigw.ntruss.com/map-geocode/v2/geocode"
     geocode_headers = {
-        "X-NCP-APIGW-API-KEY-ID": str(NAVER_MAP_CLIENT_ID).strip(),  # 발급받은 Map Client ID
-        "X-NCP-APIGW-API-KEY": str(NAVER_MAP_CLIENT_SECRET).strip(),  # 발급받은 Map Client Secret
+        "X-NCP-APIGW-API-KEY-ID": str(NAVER_MAP_CLIENT_ID).strip(),
+        "X-NCP-APIGW-API-KEY": str(NAVER_MAP_CLIENT_SECRET).strip(),
     }
     geocode_params = {"query": address}
 
-    # 두 번째 API 호출
     response = requests.get(geocode_url, headers=geocode_headers, params=geocode_params)
     if response.status_code != 200:
         return {"error": f"주소 변환 API 오류: {response.status_code}"}
     geocode_data = response.json()
 
-    # 변환 결과 처리
     if not geocode_data.get("addresses"):
         return {"error": "주소로 검색된 결과가 없습니다."}
     address_info = geocode_data["addresses"][0]
 
-    # 최종 반환
     return {
-        "name": item["title"].replace("<b>", "").replace("</b>", ""),  # HTML 태그 제거
+        "name": item["title"].replace("<b>", "").replace("</b>", ""),
         "address": address,
         "latitude": address_info["y"],
         "longitude": address_info["x"],
     }
-
-# 테스트 실행
-result = get_coordinates("홍대입구")
-print(result)
-
-
-
-
-
-
 
 def format_parameter(param):
     if param is None:
