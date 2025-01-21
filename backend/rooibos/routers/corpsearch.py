@@ -23,47 +23,20 @@ import requests
 import requests
 
 def get_coordinates(query: str):
-    local_search_url = "https://openapi.naver.com/v1/search/local.json"
-    local_search_headers = {
-        "X-Naver-Client-Id": str(NAVER_ID).strip(),
-        "X-Naver-Client-Secret": str(NAVER_CLIENT_SECRET).strip(),
-    }
-    local_search_params = {"query": query, "display": 1}
-
-    response = requests.get(local_search_url, headers=local_search_headers, params=local_search_params)
-    if response.status_code != 200:
-        return {"error": f"장소 검색 API 오류: {response.status_code}"}
-    data = response.json()
-
-    if not data.get("items"):
-        return {"error": "검색어에 대한 결과가 없습니다."}
-    item = data["items"][0]
-    address = item.get("address")
-    if not address:
-        return {"error": "주소 정보가 없습니다."}
-
-    geocode_url = "https://naveropenapi.apigw.ntruss.com/map-geocode/v2/geocode"
-    geocode_headers = {
+    url = "https://naveropenapi.apigw.ntruss.com/map-geocode/v2/geocode"
+    headers = {
         "X-NCP-APIGW-API-KEY-ID": str(NAVER_MAP_CLIENT_ID).strip(),
         "X-NCP-APIGW-API-KEY": str(NAVER_MAP_CLIENT_SECRET).strip(),
     }
-    geocode_params = {"query": address}
+    params = {"query": query}
+    response = requests.get(url, headers=headers, params=params)
+    data = response.json()
 
-    response = requests.get(geocode_url, headers=geocode_headers, params=geocode_params)
-    if response.status_code != 200:
-        return {"error": f"주소 변환 API 오류: {response.status_code}"}
-    geocode_data = response.json()
-
-    if not geocode_data.get("addresses"):
+    if data.get("addresses"):
+        address = data["addresses"][0]
+        return {"latitude": address["y"], "longitude": address["x"], "address": address["roadAddress"]}
+    else:
         return {"error": "주소로 검색된 결과가 없습니다."}
-    address_info = geocode_data["addresses"][0]
-
-    return {
-        "name": item["title"].replace("<b>", "").replace("</b>", ""),
-        "address": address,
-        "latitude": address_info["y"],
-        "longitude": address_info["x"],
-    }
 
 def format_parameter(param):
     if param is None:
@@ -308,7 +281,7 @@ async def search(request: Request):
             params.append(float(id))
             param_count += 1
         else:
-            if result and latitude and longitude:
+            if result and not result.get("error") and latitude and longitude:
                 sql_query += f"""
                 AND ROUND(
                     (
