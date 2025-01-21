@@ -310,130 +310,131 @@ async def search(request: Request):
                 params.extend([f"%{query}%"])
                 param_count += 4
 
-        # 기존 필터 조건들
-        if sales_min is not None:
-            sql_query += f" AND (mci.sales_amount)::numeric >= ${param_count}"
-            params.append(sales_min)
-            param_count += 1
+        if not query:
+            # 기존 필터 조건들
+            if sales_min is not None:
+                sql_query += f" AND (mci.sales_amount)::numeric >= ${param_count}"
+                params.append(sales_min)
+                param_count += 1
 
-        if sales_max is not None:
-            sql_query += f" AND (mci.sales_amount)::numeric <= ${param_count}"
-            params.append(sales_max)
-            param_count += 1
+            if sales_max is not None:
+                sql_query += f" AND (mci.sales_amount)::numeric <= ${param_count}"
+                params.append(sales_max)
+                param_count += 1
 
-        if profit_min is not None:
-            sql_query += f" AND (mci.recent_profit)::numeric >= ${param_count}"
-            params.append(profit_min)
-            param_count += 1
+            if profit_min is not None:
+                sql_query += f" AND (mci.recent_profit)::numeric >= ${param_count}"
+                params.append(profit_min)
+                param_count += 1
 
-        if profit_max is not None:
-            sql_query += f" AND (mci.recent_profit)::numeric <= ${param_count}"
-            params.append(profit_max)
-            param_count += 1
+            if profit_max is not None:
+                sql_query += f" AND (mci.recent_profit)::numeric <= ${param_count}"
+                params.append(profit_max)
+                param_count += 1
 
-        if employee_count_min is not None:
-            sql_query += f" AND mci.employee_count >= ${param_count}"
-            params.append(employee_count_min)
-            param_count += 1
+            if employee_count_min is not None:
+                sql_query += f" AND mci.employee_count >= ${param_count}"
+                params.append(employee_count_min)
+                param_count += 1
 
-        if employee_count_max is not None:
-            sql_query += f" AND mci.employee_count <= ${param_count}"
-            params.append(employee_count_max)
-            param_count += 1
+            if employee_count_max is not None:
+                sql_query += f" AND mci.employee_count <= ${param_count}"
+                params.append(employee_count_max)
+                param_count += 1
 
-        if net_profit_min is not None:
-            sql_query += f" AND (mci.net_income)::numeric >= ${param_count}"
-            params.append(net_profit_min)
-            param_count += 1
+            if net_profit_min is not None:
+                sql_query += f" AND (mci.net_income)::numeric >= ${param_count}"
+                params.append(net_profit_min)
+                param_count += 1
 
-        if net_profit_max is not None:
-            sql_query += f" AND (mci.net_income)::numeric <= ${param_count}"
-            params.append(net_profit_max)
-            param_count += 1
+            if net_profit_max is not None:
+                sql_query += f" AND (mci.net_income)::numeric <= ${param_count}"
+                params.append(net_profit_max)
+                param_count += 1
 
-        if unallocated_profit_min is not None:
-            sql_query += f" AND (FinancialComparison.retained_earnings)::numeric >= ${param_count}"
-            params.append(unallocated_profit_min)
-            param_count += 1
+            if unallocated_profit_min is not None:
+                sql_query += f" AND (FinancialComparison.retained_earnings)::numeric >= ${param_count}"
+                params.append(unallocated_profit_min)
+                param_count += 1
 
-        if unallocated_profit_max is not None:
-            sql_query += f" AND (FinancialComparison.retained_earnings)::numeric <= ${param_count}"
-            params.append(unallocated_profit_max)
-            param_count += 1
+            if unallocated_profit_max is not None:
+                sql_query += f" AND (FinancialComparison.retained_earnings)::numeric <= ${param_count}"
+                params.append(unallocated_profit_max)
+                param_count += 1
 
-        if establishment_year is not None:
-            sql_query += f" AND SUBSTRING(mci.establishment_date, 1, 4)::INTEGER >= ${param_count}"
-            params.append(establishment_year)
-            param_count += 1
+            if establishment_year is not None:
+                sql_query += f" AND SUBSTRING(mci.establishment_date, 1, 4)::INTEGER >= ${param_count}"
+                params.append(establishment_year)
+                param_count += 1
 
-        if certification:
-            conditions = []
-            if 'innobiz' in certification:
-                conditions.append(f"mci.sme_type = '기술혁신'")
-            if 'mainbiz' in certification:
-                conditions.append(f"mci.sme_type = '경영혁신'")
-            if 'research_institute' in certification:
-                conditions.append(f"mci.division = '연구소'")
-            if 'venture' in certification:
-                conditions.append(f"mci.confirming_authority = '벤처기업확인기관'")
+            if certification:
+                conditions = []
+                if 'innobiz' in certification:
+                    conditions.append(f"mci.sme_type = '기술혁신'")
+                if 'mainbiz' in certification:
+                    conditions.append(f"mci.sme_type = '경영혁신'")
+                if 'research_institute' in certification:
+                    conditions.append(f"mci.division = '연구소'")
+                if 'venture' in certification:
+                    conditions.append(f"mci.confirming_authority = '벤처기업확인기관'")
+                
+                if conditions:
+                    sql_query += " AND (" + " AND ".join(conditions) + ")"             
+
+            if excluded_industries:
+                sql_query += f" AND mci.industry_code1 != ALL(${param_count}::text[])"
+                array_value = "{" + ",".join(excluded_industries) + "}"
+                params.append(array_value)
+                param_count += 1
+
+            if gender:
+                sql_query += f" AND me.gender = ${param_count}"
+                params.append(gender)
+                param_count += 1
+
+            if gender_age is not None:
+                sql_query += f" AND (EXTRACT(YEAR FROM CURRENT_DATE) - mci.birth_year) >= ${param_count}"
+                params.append(gender_age)
+                param_count += 1
+
+            if loan is not None:
+                sql_query += f" AND mci.loan = ${param_count}"
+                params.append(loan)
+                param_count += 1
+
+            if not id:
+                if latitude and longitude:
+                    sql_query += " ORDER BY distance_from_location ASC"
+                else:
+                    sql_query += " ORDER BY distance_from_user ASC"
+
+            sql_query += " LIMIT 1000"
+
+            executable_query = get_executable_query(sql_query, params)
+
+            executable_query = '\n'.join(line for line in executable_query.splitlines() if line.strip())
+            log.info("Executing SQL Query:")
+            log.info(executable_query)
+
+            with get_db() as db:
+                result = db.execute(text(executable_query))
+                companies = [row._mapping for row in result.fetchall()]
             
-            if conditions:
-                sql_query += " AND (" + " AND ".join(conditions) + ")"             
-
-        if excluded_industries:
-            sql_query += f" AND mci.industry_code1 != ALL(${param_count}::text[])"
-            array_value = "{" + ",".join(excluded_industries) + "}"
-            params.append(array_value)
-            param_count += 1
-
-        if gender:
-            sql_query += f" AND me.gender = ${param_count}"
-            params.append(gender)
-            param_count += 1
-
-        if gender_age is not None:
-            sql_query += f" AND (EXTRACT(YEAR FROM CURRENT_DATE) - mci.birth_year) >= ${param_count}"
-            params.append(gender_age)
-            param_count += 1
-
-        if loan is not None:
-            sql_query += f" AND mci.loan = ${param_count}"
-            params.append(loan)
-            param_count += 1
-
-        if not id:
-            if latitude and longitude:
-                sql_query += " ORDER BY distance_from_location ASC"
-            else:
-                sql_query += " ORDER BY distance_from_user ASC"
-
-        sql_query += " LIMIT 1000"
-
-        executable_query = get_executable_query(sql_query, params)
-
-        executable_query = '\n'.join(line for line in executable_query.splitlines() if line.strip())
-        log.info("Executing SQL Query:")
-        log.info(executable_query)
-
-        with get_db() as db:
-            result = db.execute(text(executable_query))
-            companies = [row._mapping for row in result.fetchall()]
-        
-        return {
-            "success": True,
-            "data": companies,
-            "total": len(companies),
-            "query": id or {
-                "search": query,
-                "filters": {
-                    "latitude": latitude,
-                    "longitude": longitude,
-                    "userLatitude": user_latitude,
-                    "userLongitude": user_longitude,
-                    "distance": distance,
+            return {
+                "success": True,
+                "data": companies,
+                "total": len(companies),
+                "query": id or {
+                    "search": query,
+                    "filters": {
+                        "latitude": latitude,
+                        "longitude": longitude,
+                        "userLatitude": user_latitude,
+                        "userLongitude": user_longitude,
+                        "distance": distance,
+                    },
                 },
-            },
-        }
+            }
 
     except Exception as e:
         raise HTTPException(
