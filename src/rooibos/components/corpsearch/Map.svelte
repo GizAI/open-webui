@@ -4,9 +4,8 @@
 
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { get, writable } from 'svelte/store';
+  import { get } from 'svelte/store';
   import SearchBar from './SearchBar.svelte';
-	import MenuLines from '$lib/components/icons/MenuLines.svelte';
   import { compayMarkerInfo } from './companymarkerinfo';
   import { filterGroups } from './filterdata';
   import { mobile } from '$lib/stores';
@@ -131,11 +130,10 @@
   let isListIconVisible = true;
   let activeFilterGroup: string | null = null;
   let isFilterOpen = false;
-  let singleClickMarker: any = null;
   let userLocation:UserLocation | null = null;
+  let showCompanyInfo = false;
 
   const handleSearch = async (searchValue: string, filters: any, ) => {
-    if (!mapInstance) return;
     console.log('Searching for:', searchValue, 'with filters:', filters);
 
     showSearchList = false;
@@ -172,6 +170,8 @@
         searchResults = data.data;
         showSearchList = true;
 
+        if (!mapInstance) return;
+
         if (mapInstance?.companyMarkers) {
             mapInstance.companyMarkers.forEach((marker) => marker.setMap(null));
             mapInstance.companyMarkers = [];
@@ -181,66 +181,50 @@
             mapInstance.marker.setMap(null);
         }
 
-        if (searchResults.length === 1) {
-            const singleResult = searchResults[0];
-            const singlePoint = new naver.maps.LatLng(
-                parseFloat(singleResult.latitude),
-                parseFloat(singleResult.longitude)
-            );
+        const firstResult = searchResults[0];
+        const firstPoint = new naver.maps.LatLng(
+            parseFloat(firstResult.latitude),
+            parseFloat(firstResult.longitude)
+        );
 
-            mapInstance?.map.setCenter(singlePoint);
-            mapInstance?.map.setZoom(15);
+        mapInstance?.map.setCenter(firstPoint);
+        mapInstance.map.setZoom(17);
 
-            const marker = new naver.maps.Marker({
-                position: singlePoint,
-                map: mapInstance.map,
-                title: singleResult.company_name,
-            });
+        searchResults.forEach((result) => {
+          const point = new naver.maps.LatLng(
+              parseFloat(result.latitude),
+              parseFloat(result.longitude)
+          );
 
-            naver.maps.Event.addListener(marker, 'click', () => {
-                mapInstance?.infoWindow.setContent(compayMarkerInfo(singleResult));
-                mapInstance?.infoWindow.open(mapInstance.map, marker);
-            });
+          if (mapInstance) {
+              const marker = new naver.maps.Marker({
+                  position: point,
+                  map: mapInstance.map,
+                  title: result.company_name,
+                  icon: {
+                    content: `
+                        <div style="
+                            padding: 5px;
+                            background: white;
+                            border: 1px solid #888;
+                            border-radius: 4px;
+                            text-align: center;
+                            min-width: 100px;
+                            font-size: 12px;
+                        ">
+                            ${result.company_name}
+                        </div>
+                    `,
+                    anchor: new naver.maps.Point(50, 0)
+                  }
+              });
 
-            mapInstance.companyMarkers.push(marker);
-
-            mapInstance.infoWindow.setContent(compayMarkerInfo(singleResult));
-            mapInstance.infoWindow.open(mapInstance.map, marker);
-            
-        } else if (searchResults.length > 0) {
-            // 첫 번째 검색 결과의 위치로 이동
-            const firstResult = searchResults[0];
-            const firstPoint = new naver.maps.LatLng(
-                parseFloat(firstResult.latitude),
-                parseFloat(firstResult.longitude)
-            );
-
-            mapInstance?.map.setCenter(firstPoint);
-            mapInstance.map.setZoom(15);
-
-            searchResults.forEach((result) => {
-                const point = new naver.maps.LatLng(
-                    parseFloat(result.latitude),
-                    parseFloat(result.longitude)
-                );
-
-                if (mapInstance) {
-                    const marker = new naver.maps.Marker({
-                        position: point,
-                        map: mapInstance.map,
-                        title: result.company_name,
-                    });
-
-                    naver.maps.Event.addListener(marker, 'click', () => {
-                        mapInstance?.infoWindow.close();
-                        mapInstance?.infoWindow.setContent(compayMarkerInfo(result));
-                        mapInstance?.infoWindow.open(mapInstance.map, marker);
-                    });
-                    mapInstance.companyMarkers.push(marker);
-                }
-            });
-            
-        }
+              naver.maps.Event.addListener(marker, 'click', () => {
+                showCompanyInfo = true;
+              });
+              mapInstance.companyMarkers.push(marker);
+          }
+        });
     } catch (error) {
         console.error('검색 중 오류가 발생했습니다:', error);
     }
@@ -258,15 +242,15 @@
   const initializeMap = (position: any) => {
     const mapContainer = document.getElementById('map');
 
+    handleSearch("", selectedFilters);
+
     if (!mapContainer) {
       console.error('Map container not found');
       return;
     }
-
-
     const mapOptions = {
       center: new naver.maps.LatLng(position.lat, position.lng),
-      zoom: 15,
+      zoom: 17,
     };
 
     const map = new naver.maps.Map(mapContainer, mapOptions);
@@ -275,36 +259,25 @@
       map: map,
       
     });
-
-    const infoWindow = new naver.maps.InfoWindow({
-      content: '',
-      maxWidth: 300,
-      backgroundColor: '#fff',
-      borderColor: '#5B92E4',
-      borderWidth: 2,
-      anchorSize: new naver.maps.Size(20, 10),
-      pixelOffset: new naver.maps.Point(20, -20),
-    });
     
-    mapInstance = { map, marker, infoWindow, companyMarkers: [] };
+    mapInstance = { map, marker, infoWindow: null, companyMarkers: [] };
     loading = false;
 
     naver.maps.Event.addListener(map, 'click', (e: any) => {
-      infoWindow.close();
-      handleSearchListChange(false);
-      handleFilterOpenChange(false);
+      if(location) {
+        location.lat = e.coord._lat;
+        location.lng = e.coord._lng;
+        showCompanyInfo = false;
+        // handleSearch('', selectedFilters);
+      }
     });
 
     naver.maps.Event.addListener(map, 'dragend', (e: any) => {      
       if(location) {
-        location.lat = e.coord._lat;
-        location.lng = e.coord._lng;
-      }
-    });
-
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') {
-        infoWindow.close();
+        const center = map.getCenter();
+        location.lat = center.lat();
+        location.lng = center.lng();
+        handleSearch('', selectedFilters);
       }
     });
   };
@@ -320,8 +293,6 @@
       location.lng = userLocation.lng;
       const currentLocation = new naver.maps.LatLng(userLocation.lat, userLocation.lng);
       mapInstance.map.setCenter(currentLocation);
-      mapInstance.map.setZoom(15);
-      mapInstance.infoWindow.close();
       
       if (mapInstance.marker) {
         mapInstance.marker.setPosition(currentLocation);
@@ -332,7 +303,8 @@
           map: mapInstance.map,
         });
       }
-    }    
+      handleSearch("", selectedFilters);
+    }      
   };
 
   const handleResultClick = (result: SearchResult) => {
@@ -357,13 +329,11 @@
     }
 
     showSearchList = false;
-    isListIconVisible = !isListIconVisible;
     handleSearchListChange(false);
   };
 
   const handleSearchListChange = (newValue: boolean) => {
       showSearchList = newValue;
-      isListIconVisible = newValue;
       isFilterOpen = false;
   };
 
@@ -465,10 +435,6 @@
     return newFilters;
   }
 
-  const handleFilterOpenChange = (value: boolean) => {
-    isFilterOpen = value;
-  };
-
 
 </script>
 {#if !($showSidebar && $mobile)}
@@ -482,17 +448,15 @@
       onApply={handleApply}
       searchValue={searchValue}
       onShowSearchListChange={handleSearchListChange}
-      isListIconVisible={isListIconVisible}
       activeFilterGroup={null}
       onFilterChange={onFilterChange}
       selectedFilters={selectedFilters}
       isFilterOpen={isFilterOpen}
-      onFilterOpenChange={handleFilterOpenChange}
     />
   </div>
 {/if}
 
-{#if false && searchResults.length > 1 && showSearchList && !($mobile && $showSidebar)}
+{#if showCompanyInfo}
   <div 
     class="company-list-wrapper w-full"
     class:sidebar-visible={$showSidebar}
