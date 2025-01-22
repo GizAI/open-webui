@@ -8,14 +8,12 @@
 
   export let onSearch: (searchValue: string, selectedFilters: any) => Promise<void>;
   export let searchValue: string;
-  export let isListIconVisible: boolean;
   export let selectedFilters: any = {};
   export let isFilterOpen: boolean = false;
   export let activeFilterGroup: string | null = null;
   export let onReset: () => void;
   export let onApply: () => void;
   export let onShowSearchListChange: (value: boolean) => void;
-  export let onFilterOpenChange: (value: boolean) => void;
   export let onFilterChange: (groupId: string, optionId: string, checked: boolean | string) => void;
 
   async function handleSubmit(event: SubmitEvent) {
@@ -23,13 +21,7 @@
     await onSearch(searchValue, selectedFilters);
     const inputEl = (event.target as HTMLFormElement).querySelector('input');
     inputEl?.blur();
-  }
-  
-  function handleListIconClick() {
-    const newValue = !isListIconVisible;
-    isFilterOpen = false;
-    onShowSearchListChange(newValue);
-  }
+  }  
 
   function handleAction(action: 'reset' | 'apply') {
     if (action === 'reset') {
@@ -42,30 +34,12 @@
   const toggleFilter = (groupId: string) => {
     if (activeFilterGroup === groupId && isFilterOpen) {
       activeFilterGroup = null;
-      onFilterOpenChange(false);
     } else {
       activeFilterGroup = groupId;
       onShowSearchListChange(false);
-      onFilterOpenChange(true);
     }
   };
 
-  const iconMapping: Record<string, any> = {
-    radius: MapPin,
-    certification: Award,
-    employee_count: Users,
-    sales: TrendingUp,
-    profit: DollarSign,
-    net_profit: Scale,
-    gender: UserPlus,
-    gender_age: History,
-    unallocated_profit: Landmark,
-    establishment_year: CalendarDays,
-    loan: Building2,
-    excluded_industries: Ban,
-    reset: RotateCcw,
-    apply: Check
-  };
 </script>
 
 <div class="bg-gray-50 overflow-y: auto;">
@@ -84,10 +58,8 @@
         </div>
       </button>
     </div>
-    <!-- 기업찾기 라벨 -->
     <div class="text-xl font-semibold text-gray-800 px-2">기업찾기</div>
 
-    <!-- 검색 아이콘 -->
     <button
       type="button"
       class="text-blue-600 hover:text-blue-800 px-4 ml-auto"

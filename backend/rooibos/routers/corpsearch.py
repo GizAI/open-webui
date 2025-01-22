@@ -268,20 +268,20 @@ async def search(request: Request):
         param_count += 1
 
         sql_query += f"""
-        FROM master_company_info mci
-        LEFT JOIN corp_bookmark cb ON cb.company_id = mci.smtp_id AND cb.user_id = ${user_id_param}
-        LEFT JOIN smtp_executives me
-            ON mci.business_registration_number = me.business_registration_number
-            AND me.position = '대표이사'
-        WHERE mci.latitude IS NOT NULL
-        """
+            FROM master_company_info mci
+            LEFT JOIN corp_bookmark cb ON cb.company_id = mci.smtp_id AND cb.user_id = ${user_id_param}
+            LEFT JOIN smtp_executives me
+                ON mci.business_registration_number = me.business_registration_number
+                AND me.position = '대표이사'
+            WHERE mci.latitude IS NOT NULL
+            """
 
         if id:
             sql_query += f" AND mci.smtp_id = ${param_count}"
             params.append(float(id))
             param_count += 1
         else:
-            if result and not result.get("error") and latitude and longitude:
+            if not query:
                 sql_query += f"""
                 AND ROUND(
                     (
@@ -311,7 +311,6 @@ async def search(request: Request):
                 param_count += 4
 
         if not query:
-            # 기존 필터 조건들
             if sales_min is not None:
                 sql_query += f" AND (mci.sales_amount)::numeric >= ${param_count}"
                 params.append(sales_min)
