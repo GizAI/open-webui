@@ -1,15 +1,42 @@
 from fastapi import APIRouter, Request, HTTPException
 from typing import Optional
-import json
-import logging
-
 from open_webui.internal.db import get_db
 from sqlalchemy import text
 from open_webui.env import SRC_LOG_LEVELS
+from rooibos.config_extension import NAVER_MAP_CLIENT_ID, NAVER_MAP_CLIENT_SECRET, NAVER_ID, NAVER_CLIENT_SECRET
+
+import json
+import logging
+import requests
+
 log = logging.getLogger(__name__)
 log.setLevel(SRC_LOG_LEVELS["COMFYUI"])
 
 router = APIRouter()
+
+import requests
+
+import requests
+
+import requests
+
+import requests
+
+def get_coordinates(query: str):
+    url = "https://naveropenapi.apigw.ntruss.com/map-geocode/v2/geocode"
+    headers = {
+        "X-NCP-APIGW-API-KEY-ID": str(NAVER_MAP_CLIENT_ID).strip(),
+        "X-NCP-APIGW-API-KEY": str(NAVER_MAP_CLIENT_SECRET).strip(),
+    }
+    params = {"query": query}
+    response = requests.get(url, headers=headers, params=params)
+    data = response.json()
+
+    if data.get("addresses"):
+        address = data["addresses"][0]
+        return {"latitude": address["y"], "longitude": address["x"], "address": address["roadAddress"]}
+    else:
+        return {"error": "주소로 검색된 결과가 없습니다."}
 
 def format_parameter(param):
     if param is None:
@@ -32,18 +59,23 @@ def get_executable_query(sql_query: str, params: list) -> str:
         executable_query = executable_query.replace(placeholder, formatted_param)
     return executable_query
 
-@router.get("/test")
-async def test(request: Request):
-    return {"message": "Hello, World!"}
-
 @router.get("/")
 async def search(request: Request):
     search_params = request.query_params
-    id = search_params.get("id")
+    id = search_params.get("id")    
     query = search_params.get("query", "").strip()
     user_id = search_params.get("user_id")
     latitude = search_params.get("latitude")
     longitude = search_params.get("longitude")
+
+    if query:
+        result = get_coordinates(query)
+        if result.get('latitude'):
+            latitude = result['latitude']
+            longitude = result['longitude']
+    else:
+        result = None        
+    
     user_latitude = float(search_params.get("userLatitude", 0))
     user_longitude = float(search_params.get("userLongitude", 0))
     
@@ -64,7 +96,7 @@ async def search(request: Request):
 
     gender_raw = filters.get("gender")
     gender = "남" if gender_raw == "male" else ("여" if gender_raw == "female" else None)
-    gender_age = filters.get("gender_age", {}).get("age")
+    gender_age = filters.get("gender_age")
 
     loan = filters.get("loan")    
 
@@ -249,167 +281,160 @@ async def search(request: Request):
             params.append(float(id))
             param_count += 1
         else:
-            if not query:
-                if latitude and longitude:
-                    sql_query += f"""
-                        AND ROUND(
-                            (
-                                6371 * acos(
-                                    cos(radians(${param_count})) *
-                                    cos(radians(mci.latitude)) *
-                                    cos(radians(mci.longitude) - radians(${param_count + 1})) +
-                                    sin(radians(${param_count})) *
-                                    sin(radians(mci.latitude))
-                                )
-                            ) * 1000
-                        ) <= ${param_count + 2}
-                    """
-                    params.extend([float(latitude), float(longitude), distance])
-                    param_count += 3
-                else:
-                    if distance:
-                        sql_query += f"""
-                            AND ROUND(
-                                (
-                                    6371 * acos(
-                                        cos(radians(${param_count})) *
-                                        cos(radians(mci.latitude)) *
-                                        cos(radians(mci.longitude) - radians(${param_count + 1})) +
-                                        sin(radians(${param_count})) *
-                                        sin(radians(mci.latitude))
-                                    )
-                                ) * 1000
-                            ) <= ${param_count + 2}
-                        """
-                        params.extend([user_latitude, user_longitude, distance])
-                        param_count += 3
+            if result and not result.get("error") and latitude and longitude:
+                sql_query += f"""
+                AND ROUND(
+                    (
+                        6371 * acos(
+                            cos(radians(${param_count})) *
+                            cos(radians(mci.latitude)) *
+                            cos(radians(mci.longitude) - radians(${param_count + 1})) +
+                            sin(radians(${param_count})) *
+                            sin(radians(mci.latitude))
+                        )
+                    ) * 1000
+                ) <= ${param_count + 2}
+                """
+                params.extend([float(latitude), float(longitude), distance])
+                param_count += 3
 
-            if query:
+            else:
                 sql_query += f"""
                     AND (
                         mci.company_name ILIKE ${param_count}
                         OR mci.representative ILIKE ${param_count}
                         OR mci.address ILIKE ${param_count}
                     )
+                    
                 """
-                params.append(f"%{query}%")
+                params.extend([f"%{query}%"])
+                param_count += 4
+
+        if not query:
+            # 기존 필터 조건들
+            if sales_min is not None:
+                sql_query += f" AND (mci.sales_amount)::numeric >= ${param_count}"
+                params.append(sales_min)
                 param_count += 1
 
-        # 기존 필터 조건들
-        if sales_min is not None:
-            sql_query += f" AND (mci.sales_amount)::numeric >= ${param_count}"
-            params.append(sales_min)
-            param_count += 1
+            if sales_max is not None:
+                sql_query += f" AND (mci.sales_amount)::numeric <= ${param_count}"
+                params.append(sales_max)
+                param_count += 1
 
-        if sales_max is not None:
-            sql_query += f" AND (mci.sales_amount)::numeric <= ${param_count}"
-            params.append(sales_max)
-            param_count += 1
+            if profit_min is not None:
+                sql_query += f" AND (mci.recent_profit)::numeric >= ${param_count}"
+                params.append(profit_min)
+                param_count += 1
 
-        if profit_min is not None:
-            sql_query += f" AND (mci.recent_profit)::numeric >= ${param_count}"
-            params.append(profit_min)
-            param_count += 1
+            if profit_max is not None:
+                sql_query += f" AND (mci.recent_profit)::numeric <= ${param_count}"
+                params.append(profit_max)
+                param_count += 1
 
-        if profit_max is not None:
-            sql_query += f" AND (mci.recent_profit)::numeric <= ${param_count}"
-            params.append(profit_max)
-            param_count += 1
+            if employee_count_min is not None:
+                sql_query += f" AND mci.employee_count >= ${param_count}"
+                params.append(employee_count_min)
+                param_count += 1
 
-        if employee_count_min is not None:
-            sql_query += f" AND mci.employee_count >= ${param_count}"
-            params.append(employee_count_min)
-            param_count += 1
+            if employee_count_max is not None:
+                sql_query += f" AND mci.employee_count <= ${param_count}"
+                params.append(employee_count_max)
+                param_count += 1
 
-        if employee_count_max is not None:
-            sql_query += f" AND mci.employee_count <= ${param_count}"
-            params.append(employee_count_max)
-            param_count += 1
+            if net_profit_min is not None:
+                sql_query += f" AND (mci.net_income)::numeric >= ${param_count}"
+                params.append(net_profit_min)
+                param_count += 1
 
-        if net_profit_min is not None:
-            sql_query += f" AND (mci.net_income)::numeric >= ${param_count}"
-            params.append(net_profit_min)
-            param_count += 1
+            if net_profit_max is not None:
+                sql_query += f" AND (mci.net_income)::numeric <= ${param_count}"
+                params.append(net_profit_max)
+                param_count += 1
 
-        if net_profit_max is not None:
-            sql_query += f" AND (mci.net_income)::numeric <= ${param_count}"
-            params.append(net_profit_max)
-            param_count += 1
+            if unallocated_profit_min is not None:
+                sql_query += f" AND (FinancialComparison.retained_earnings)::numeric >= ${param_count}"
+                params.append(unallocated_profit_min)
+                param_count += 1
 
-        if unallocated_profit_min is not None:
-            sql_query += f" AND (FinancialComparison.retained_earnings)::numeric >= ${param_count}"
-            params.append(unallocated_profit_min)
-            param_count += 1
+            if unallocated_profit_max is not None:
+                sql_query += f" AND (FinancialComparison.retained_earnings)::numeric <= ${param_count}"
+                params.append(unallocated_profit_max)
+                param_count += 1
 
-        if unallocated_profit_max is not None:
-            sql_query += f" AND (FinancialComparison.retained_earnings)::numeric <= ${param_count}"
-            params.append(unallocated_profit_max)
-            param_count += 1
+            if establishment_year is not None:
+                sql_query += f" AND SUBSTRING(mci.establishment_date, 1, 4)::INTEGER >= ${param_count}"
+                params.append(establishment_year)
+                param_count += 1
 
-        if establishment_year is not None:
-            sql_query += f" AND SUBSTRING(mci.establishment_date, 1, 4)::INTEGER >= ${param_count}"
-            params.append(establishment_year)
-            param_count += 1
+            if certification:
+                conditions = []
+                if 'innobiz' in certification:
+                    conditions.append(f"mci.sme_type = '기술혁신'")
+                if 'mainbiz' in certification:
+                    conditions.append(f"mci.sme_type = '경영혁신'")
+                if 'research_institute' in certification:
+                    conditions.append(f"mci.division = '연구소'")
+                if 'venture' in certification:
+                    conditions.append(f"mci.confirming_authority = '벤처기업확인기관'")
+                
+                if conditions:
+                    sql_query += " AND (" + " AND ".join(conditions) + ")"             
 
-        if certification:
-            sql_query += f" AND mci.certifications @> ${param_count}::jsonb"
-            params.append(json.dumps(certification))
-            param_count += 1
+            if excluded_industries:
+                sql_query += f" AND mci.industry_code1 != ALL(${param_count}::text[])"
+                array_value = "{" + ",".join(excluded_industries) + "}"
+                params.append(array_value)
+                param_count += 1
 
-        if excluded_industries:
-            sql_query += f" AND mci.industry != ALL(${param_count}::text[])"
-            array_value = "{" + ",".join(excluded_industries) + "}"
-            params.append(array_value)
-            param_count += 1
+            if gender:
+                sql_query += f" AND me.gender = ${param_count}"
+                params.append(gender)
+                param_count += 1
 
-        if gender:
-            sql_query += f" AND me.gender = ${param_count}"
-            params.append(gender)
-            param_count += 1
+            if gender_age is not None:
+                sql_query += f" AND (EXTRACT(YEAR FROM CURRENT_DATE) - mci.birth_year) >= ${param_count}"
+                params.append(gender_age)
+                param_count += 1
 
-        if gender_age is not None:
-            sql_query += f" AND EXTRACT(YEAR FROM AGE(to_date(mci.birth_date, 'YYYY-MM-DD'))) >= ${param_count}"
-            params.append(gender_age)
-            param_count += 1
+            if loan is not None:
+                sql_query += f" AND mci.loan = ${param_count}"
+                params.append(loan)
+                param_count += 1
 
-        if loan is not None:
-            sql_query += f" AND mci.loan = ${param_count}"
-            params.append(loan)
-            param_count += 1
+            if not id:
+                if latitude and longitude:
+                    sql_query += " ORDER BY distance_from_location ASC"
+                else:
+                    sql_query += " ORDER BY distance_from_user ASC"
 
-        if not id:
-            if latitude and longitude:
-                sql_query += " ORDER BY distance_from_location ASC"
-            else:
-                sql_query += " ORDER BY distance_from_user ASC"
+            sql_query += " LIMIT 1000"
 
-        sql_query += " LIMIT 100"
+            executable_query = get_executable_query(sql_query, params)
 
-        executable_query = get_executable_query(sql_query, params)
+            executable_query = '\n'.join(line for line in executable_query.splitlines() if line.strip())
+            log.info("Executing SQL Query:")
+            log.info(executable_query)
 
-        log.info("Executing SQL Query:")
-        log.info(executable_query)
-
-        with get_db() as db:
-            result = db.execute(text(executable_query))
-            companies = [row._mapping for row in result.fetchall()]
-
-        log.info(companies)
-        return {
-            "success": True,
-            "data": companies,
-            "total": len(companies),
-            "query": id or {
-                "search": query,
-                "filters": {
-                    "latitude": latitude,
-                    "longitude": longitude,
-                    "userLatitude": user_latitude,
-                    "userLongitude": user_longitude,
-                    "distance": distance,
+            with get_db() as db:
+                result = db.execute(text(executable_query))
+                companies = [row._mapping for row in result.fetchall()]
+            
+            return {
+                "success": True,
+                "data": companies,
+                "total": len(companies),
+                "query": id or {
+                    "search": query,
+                    "filters": {
+                        "latitude": latitude,
+                        "longitude": longitude,
+                        "userLatitude": user_latitude,
+                        "userLongitude": user_longitude,
+                        "distance": distance,
+                    },
                 },
-            },
-        }
+            }
 
     except Exception as e:
         raise HTTPException(

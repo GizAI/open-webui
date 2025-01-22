@@ -28,7 +28,7 @@
 	import LockClosed from '$lib/components/icons/LockClosed.svelte';
 	import AccessControlModal from '$lib/components/workspace/common/AccessControlModal.svelte';
 	import { WEBUI_API_BASE_URL } from '$lib/constants';
-	import { Briefcase, MapPin, Users, Phone, Globe, Calendar, DollarSign, List, Award, Building2, FlaskConical, CalendarCheck, Microscope } from 'lucide-svelte';
+	import { Briefcase, MapPin, Users, Phone, Globe, Calendar, DollarSign, List, Award, Building2, FlaskConical, CalendarCheck, Microscope, ClipboardList } from 'lucide-svelte';
 	import BookOpen from '$lib/components/icons/BookOpen.svelte';
 
 
@@ -779,6 +779,13 @@
 					  주소: {bookmark.address}
 					</p>
 				  {/if}
+
+				  {#if bookmark.cri_company_size}
+					<p class="text-sm text-gray-600 flex items-center gap-2">
+					  <Phone size={16} class="text-indigo-500" />
+					  기업규모: {bookmark.cri_company_size}
+					</p>
+				  {/if}
 			
 				  {#if bookmark.phone_number}
 					<p class="text-sm text-gray-600 flex items-center gap-2">
@@ -794,7 +801,7 @@
 					</p>
 				  {/if}
 			
-				  {#if bookmark.employee_count !== undefined}
+				  {#if bookmark.employee_count}
 					<p class="text-sm text-gray-600 flex items-center gap-2">
 					  <Users size={16} class="text-purple-500" />
 					  임직원 수: {bookmark.employee_count}명
@@ -877,43 +884,50 @@
 				{/if}
 
 			  <!-- 연구소 정보 섹션 추가 -->
-			  {#if bookmark.lab_name || bookmark.research_field}
-			  <div class="space-y-2">
-				  <h3 class="text-sm font-semibold text-gray-700 flex items-center gap-2">
-					  <Microscope size={16} class="text-indigo-500" />
-					  연구소 정보
-				  </h3>
-				  <div class="space-y-1">
-					  {#if bookmark.lab_name}
-						  <p class="text-sm text-gray-600 flex items-center gap-2">
-							  <Building2 size={16} class="text-blue-500" />
-							  연구소명: {bookmark.lab_name}
-						  </p>
-					  {/if}
-					  {#if bookmark.research_field}
-						  <p class="text-sm text-gray-600 flex items-center gap-2">
-							  <FlaskConical size={16} class="text-green-500" />
-							  연구분야: {bookmark.research_field}
-						  </p>
-					  {/if}
-					  {#if bookmark.first_approval_date}
-						  <p class="text-sm text-gray-600 flex items-center gap-2">
-							  <CalendarCheck size={16} class="text-orange-500" />
-							  최초인정일: {bookmark.first_approval_date}
-						  </p>
-					  {/if}
-					  {#if bookmark.lab_location}
-						  <p class="text-sm text-gray-600 flex items-center gap-2">
-							  <MapPin size={16} class="text-red-500" />
-							  연구소 위치: {bookmark.lab_location}
-						  </p>
-					  {/if}
-				  	</div>
-			  	</div>
-		  		{/if}
+			  {#if bookmark.lab_name || bookmark.research_field || bookmark.division}
+				<div class="space-y-2">
+					<h3 class="text-sm font-semibold text-gray-700 flex items-center gap-2">
+					<Microscope size={16} class="text-indigo-500" />
+					연구소 정보
+					</h3>
+					<div class="space-y-1">
+					{#if bookmark.lab_name}
+						<p class="text-sm text-gray-600 flex items-center gap-2">
+						<Building2 size={16} class="text-blue-500" />
+						연구소명: {bookmark.lab_name}
+						</p>
+					{/if}
+					{#if bookmark.research_field}
+						<p class="text-sm text-gray-600 flex items-center gap-2">
+						<FlaskConical size={16} class="text-green-500" />
+						연구분야: {bookmark.research_field}
+						</p>
+					{/if}
+					{#if bookmark.first_approval_date}
+						<p class="text-sm text-gray-600 flex items-center gap-2">
+						<CalendarCheck size={16} class="text-orange-500" />
+						최초인정일: {bookmark.first_approval_date}
+						</p>
+					{/if}
+					{#if bookmark.lab_location}
+						<p class="text-sm text-gray-600 flex items-center gap-2">
+						<MapPin size={16} class="text-red-500" />
+						연구소 위치: {bookmark.lab_location}
+						</p>
+					{/if}
+					{#if bookmark.division}
+						<p class="text-sm text-gray-600 flex items-center gap-2">
+						<ClipboardList size={16} class="text-purple-500" />
+						연구소 구분: {bookmark.division}
+						</p>
+					{/if}
+					</div>
+				</div>
+				{/if}
+
 
 			  <!-- 인증 정보 섹션 -->
-			  {#if bookmark.venture_confirmation_type || bookmark.confirming_authority}
+			  {#if bookmark.venture_confirmation_type || bookmark.research_field}
               <div class="space-y-2">
                 <h3 class="text-sm font-semibold text-gray-700 flex items-center gap-2">
                   <Award size={16} class="text-purple-500" />
@@ -923,14 +937,7 @@
                   {#if bookmark.sme_type}
                     <p class="text-sm text-gray-600 flex items-center gap-2">
                       <Award size={16} class="text-yellow-500" />
-                      중소기업 유형: {bookmark.sme_type}
-                    </p>
-                  {/if}
-
-                  {#if bookmark.venture_confirmation_type}
-                    <p class="text-sm text-gray-600 flex items-center gap-2">
-                      <Award size={16} class="text-green-500" />
-                      벤처기업 인증: {bookmark.venture_confirmation_type}
+                      인증 유형: {bookmark.sme_type}
                     </p>
                   {/if}
 
@@ -938,6 +945,13 @@
                     <p class="text-sm text-gray-600 flex items-center gap-2">
                       <Calendar size={16} class="text-orange-500" />
                       인증 만료일: {bookmark.certificate_expiry_date}
+                    </p>
+                  {/if}
+
+				  {#if bookmark.venture_confirmation_type}
+                    <p class="text-sm text-gray-600 flex items-center gap-2">
+                      <Award size={16} class="text-green-500" />
+                      벤처기업 인증: {bookmark.venture_confirmation_type}
                     </p>
                   {/if}
 
@@ -961,66 +975,65 @@
 			</div>
 			  
 			{#if financialData && Array.isArray(financialData) && financialData.length > 0}
-			<div class="px-6 py-4 overflow-x-auto">
-				<table class="min-w-full text-sm">
+			<div class="px-4 py-4 w-full">
+				<table class="w-full text-sm">
 					<thead>
-						<tr class="border-b border-gray-200">
-							<th class="text-left px-4 py-2 font-medium text-gray-600">
-								재무정보
-								<span class="text-xs text-gray-500 ml-2">단위: 백만원</span>
-								<button
-									class="ml-2 inline-flex items-center px-2 py-1 bg-gray-200 text-gray-700
-											rounded-md hover:bg-gray-300 text-xs"
-									on:click={() => (showAllMetrics = !showAllMetrics)}
-								>
-									{#if showAllMetrics} 접기 {:else} 더보기 {/if}
-								</button>
-							</th>
+					<tr class="border-b border-gray-200">
+						<th class="sm:block text-left px-2 font-medium text-gray-600">
+						<div class="sm:inline-block">재무정보</div>
+						<div class="sm:inline-block sm:ml-2 text-xs text-gray-500">단위: 백만원</div>
+						<button
+							class="mt-1 sm:mt-0 sm:ml-2 inline-flex items-center px-2 py-1 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 text-xs"
+							on:click={() => (showAllMetrics = !showAllMetrics)}
+						>
+							{#if showAllMetrics} 접기 {:else} 더보기 {/if}
+						</button>
+						</th>
 						{#each years as year}
-							<th class="text-right px-4 py-2 font-medium text-gray-600">
+						<th class="w-1/5 text-right px-2 py-2 font-medium text-gray-600 whitespace-nowrap">
 							{year}년
-							</th>
+						</th>
 						{/each}
-						</tr>
+					</tr>
 					</thead>
 					<tbody class="text-gray-600">
-						{#if showAllMetrics}
-							{#each metrics as metric}
-								<tr class="border-b border-gray-100 hover:bg-gray-50">
-								<td class="px-4 py-2 font-medium">{metric.name}</td>
-								{#each years as year}
-									{@const data = financialData.find(d => d.year == year)}
-									<td class="text-right px-4 py-2">
-									{#if data && data[metric.key] != null}
-										<span class={data[metric.key] < 0 ? 'text-red-500' : ''}>
-										{new Intl.NumberFormat('ko-KR').format(data[metric.key])}
-										</span>
-									{:else}
-										-
-									{/if}
-									</td>
-								{/each}
-								</tr>
+					{#if showAllMetrics}
+						{#each metrics as metric}
+						<tr class="border-b border-gray-100 hover:bg-gray-50">
+							<td class="w-1/3 px-2 py-2 font-medium">{metric.name}</td>
+							{#each years as year}
+							{@const data = financialData.find(d => d.year == year)}
+							<td class="w-1/5 text-right px-2 py-2">
+								{#if data && data[metric.key] != null}
+								<span class={`${data[metric.key] < 0 ? 'text-red-500' : ''} whitespace-nowrap`}>
+									{new Intl.NumberFormat('ko-KR').format(data[metric.key])}
+								</span>
+								{:else}
+								-
+								{/if}
+							</td>
 							{/each}
-						{:else}
-							{#each metrics.slice(0, 7) as metric}
-								<tr class="border-b border-gray-100 hover:bg-gray-50">
-								<td class="px-4 py-2 font-medium">{metric.name}</td>
-								{#each years as year}
-									{@const data = financialData.find(d => d.year == year)}
-									<td class="text-right px-4 py-2">
-									{#if data && data[metric.key] != null}
-										<span class={data[metric.key] < 0 ? 'text-red-500' : ''}>
-										{new Intl.NumberFormat('ko-KR').format(data[metric.key])}
-										</span>
-									{:else}
-										-
-									{/if}
-									</td>
-								{/each}
-								</tr>
+						</tr>
+						{/each}
+					{:else}
+						{#each metrics.slice(0, 7) as metric}
+						<tr class="border-b border-gray-100 hover:bg-gray-50">
+							<td class="w-1/3 px-2 py-2 font-medium">{metric.name}</td>
+							{#each years as year}
+							{@const data = financialData.find(d => d.year == year)}
+							<td class="w-1/5 text-right px-2 py-2">
+								{#if data && data[metric.key] != null}
+								<span class={`${data[metric.key] < 0 ? 'text-red-500' : ''} whitespace-nowrap`}>
+									{new Intl.NumberFormat('ko-KR').format(data[metric.key])}
+								</span>
+								{:else}
+								-
+								{/if}
+							</td>
 							{/each}
-						{/if}
+						</tr>
+						{/each}
+					{/if}
 					</tbody>
 				</table>
 			</div>

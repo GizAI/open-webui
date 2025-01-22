@@ -30,8 +30,8 @@ import {
         { id: 'venture', label: '벤처 인증' },
         { id: 'innobiz', label: '이노비즈 인증' },
         { id: 'mainbiz', label: '메인비즈 인증' },
-        { id: 'patent', label: '특허 보유' },
-        { id: 'new_technology', label: '신기술' },
+        // { id: 'patent', label: '특허 보유' },
+        // { id: 'new_technology', label: '신기술' },
       ],
     },
     {
@@ -151,12 +151,5 @@ export const filterActions = [
       icon: RotateCcw,
       iconClass: "text-gray-500",
       action: 'reset',
-    },
-    {
-      id: 'apply',
-      label: '적용',
-      icon: Check,
-      iconClass: "text-green-500",
-      action: 'apply',
-    },
+    }
 ];

@@ -65,8 +65,6 @@
 
 {#if group}
   <div
-    class="space-y-4 p-3 bg-gray-50 mt-10"
-    style="max-height: {maxHeight}; overflow-y: auto;"
   >
     <div class="bg-white rounded-lg shadow-sm p-4">
       <div class="filter-group-title flex items-center space-x-2 mb-3"> 
@@ -84,7 +82,7 @@
                 class="w-20 px-2 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all" 
                 on:input={(e) => onFilterChange(group.id, 'gender_age', e.currentTarget?.value || '')}
               />
-              <span class="text-sm text-gray-600 ml-1">세</span>
+              <span class="text-sm text-gray-600 ml-1">세 이상</span>
             </div>
           </div>
 
