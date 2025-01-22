@@ -147,17 +147,47 @@
 	const years = ['2023', '2022', '2021'];
 	let showAllMetrics = false;
 
-	let selectedSection: string | null = null;
-  let sectionRefs: { [key: string]: HTMLElement } = {};
+	const hasBasicInfo = (info: CompanyInfo) => {
+		return !!(info.business_registration_number || info.corporate_number || 
+				info.representative || info.address || info.cri_company_size || 
+				info.phone_number || info.establishment_date || info.employee_count || 
+				info.fiscal_month || info.main_bank || info.website);
+	};
 
-	const sections = [
-		{ id: 'basic', title: '기본', icon: MapPin },
-		{ id: 'industry', title: '업종', icon: Briefcase },
-		{ id: 'shareholders', title: '주주', icon: Users },
-		{ id: 'lab', title: '연구소', icon: Microscope },
-		{ id: 'certification', title: '인증', icon: Award },
-		{ id: 'financial', title: '재무', icon: DollarSign },
-	];
+	const hasIndustryInfo = (info: CompanyInfo) => {
+		return !!(info.industry || info.main_product);
+	};
+
+	const hasLabInfo = (info: CompanyInfo) => {
+		return !!(info.lab_name || info.research_field || info.division || 
+				info.first_approval_date || info.lab_location);
+	};
+
+	const hasCertificationInfo = (info: CompanyInfo) => {
+		return !!(info.venture_confirmation_type || info.sme_type || 
+				info.certificate_expiry_date || info.venture_valid_from);
+	};
+
+	const hasShareholderInfo = (info: CompanyInfo) => {
+		return !!(info.family_shareholder_yn || info.external_shareholder_yn);
+	};
+
+	const hasFinancialInfo = () => {
+		return !!(financialData && Array.isArray(financialData) && financialData.length > 0);
+	};
+
+	// 동적으로 사용 가능한 섹션 생성
+	let availableSections = [
+		{ id: 'basic', title: '기본', icon: MapPin, visible: hasBasicInfo(companyInfo) },
+		{ id: 'industry', title: '업종', icon: Briefcase, visible: hasIndustryInfo(companyInfo) },
+		{ id: 'lab', title: '연구소', icon: Microscope, visible: hasLabInfo(companyInfo) },
+		{ id: 'certification', title: '인증', icon: Award, visible: hasCertificationInfo(companyInfo) },
+		{ id: 'shareholders', title: '주주', icon: Users, visible: hasShareholderInfo(companyInfo) },
+		{ id: 'financial', title: '재무', icon: DollarSign, visible: hasFinancialInfo() }
+	].filter(section => section.visible);
+
+	let selectedSection: string | null = availableSections.length > 0 ? availableSections[0].id : null;
+	let sectionRefs: { [key: string]: HTMLElement } = {};
 
 	const scrollToSection = (sectionId: string) => {
 		selectedSection = sectionId;
@@ -184,8 +214,9 @@
 				<hr class="border-t border-gray-100 mt-2"> <!-- mt-2로 간격 축소 -->
 
 				<!-- 섹션 네비게이션 -->
-				<div class="flex overflow-x-auto space-x-2"> <!-- space-x-2 추가로 버튼 간 간격 조정 -->
-					{#each sections as section}
+				{#if availableSections.length > 0}
+				<div class="flex overflow-x-auto space-x-2">
+					{#each availableSections as section}
 					<button
 						class="flex items-center px-2 text-sm whitespace-nowrap font-medium
 						{selectedSection === section.id ? 'text-blue-700 font-bold' : 'text-gray-600'}
@@ -197,6 +228,7 @@
 					{/each}
 				</div>
 				<hr class="border-t border-gray-100 mt-2 mb-2">
+				{/if}
 
 			  <!-- 기본 정보 섹션 -->
 			  <div class="space-y-2">

@@ -297,6 +297,7 @@
               });
 
               naver.maps.Event.addListener(marker, 'click', () => {
+                handleFilterOpenChange(false);
                 companyInfo = result
                 showCompanyInfo = true;
               });
@@ -347,6 +348,7 @@
         location.lng = e.coord._lng;
         showCompanyInfo = false;
       }
+      isFilterOpen = false;
     });
 
     naver.maps.Event.addListener(map, 'dragend', (e: any) => {      
@@ -354,7 +356,9 @@
         const center = map.getCenter();
         location.lat = center.lat();
         location.lng = center.lng();
-        handleSearch('', selectedFilters);
+        if(!showCompanyInfo) {
+          handleSearch('', selectedFilters);
+        }
       }
     });
   };
@@ -411,7 +415,7 @@
 
   const handleSearchListChange = (newValue: boolean) => {
       showSearchList = newValue;
-      isFilterOpen = false;
+      isFilterOpen = newValue;
   };
 
   onMount(() => {
@@ -516,6 +520,10 @@
     showCompanyInfo = false
   }
 
+  const handleFilterOpenChange = (value: boolean) => {
+    isFilterOpen = value;
+  };
+
 </script>
 {#if !($showSidebar && $mobile)}
   <div 
@@ -531,7 +539,6 @@
       activeFilterGroup={null}
       onFilterChange={onFilterChange}
       selectedFilters={selectedFilters}
-      isFilterOpen={isFilterOpen}
     />
   </div>
 {/if}
@@ -615,7 +622,7 @@
   
   .company-list-wrapper {
     position: fixed;
-    top: 60px; /* SearchBar 높이에 맞춤 */
+    top: 70px; /* SearchBar 높이에 맞춤 */
     right: 0;
     width: 30%;
     height: calc(100vh - 60px); /* 전체 높이에서 SearchBar 높이 제외 */
