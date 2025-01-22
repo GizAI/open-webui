@@ -336,6 +336,7 @@ async def chat_completion_tools_handler(
     return body, {"sources": sources}
 
 
+
 async def chat_web_search_handler(
     request: Request, form_data: dict, extra_params: dict, user
 ):
@@ -399,89 +400,88 @@ async def chat_web_search_handler(
         )
         return
 
-    searchQuery = queries[0]
+    
+    for searchQuery in queries:
+        await event_emitter(
+            {
+                "type": "status",
+                "data": {
+                    "action": "web_search",
+                    "description": f'Searching "{searchQuery}"',
+                    "query": searchQuery,
+                    "done": False,
+                },
+            }
+        )
 
-    await event_emitter(
-        {
-            "type": "status",
-            "data": {
-                "action": "web_search",
-                "description": 'Searching "{{searchQuery}}"',
-                "query": searchQuery,
-                "done": False,
-            },
-        }
-    )
-
-    try:
-
-        # Offload process_web_search to a separate thread
-        loop = asyncio.get_running_loop()
-        with ThreadPoolExecutor() as executor:
-            results = await loop.run_in_executor(
-                executor,
-                lambda: process_web_search(
-                    request,
-                    SearchForm(
-                        **{
-                            "query": searchQuery,
-                        }
+        try:
+            # Offload process_web_search to a separate thread
+            loop = asyncio.get_running_loop()
+            with ThreadPoolExecutor() as executor:
+                results = await loop.run_in_executor(
+                    executor,
+                    lambda: process_web_search(
+                        request,
+                        SearchForm(
+                            **{
+                                "query": searchQuery,
+                            }
+                        ),
+                        user,
                     ),
-                    user,
-                ),
-            )
+                )
 
-        if results:
-            await event_emitter(
-                {
-                    "type": "status",
-                    "data": {
-                        "action": "web_search",
-                        "description": "Searched {{count}} sites",
-                        "query": searchQuery,
+            if results:
+                await event_emitter(
+                    {
+                        "type": "status",
+                        "data": {
+                            "action": "web_search",
+                            "description": f'Searched {len(results["filenames"])} sites for "{searchQuery}"',
+                            "query": searchQuery,
+                            "urls": results["filenames"],
+                            "done": True,
+                        },
+                    }
+                )
+
+                files = form_data.get("files", [])
+                files.append(
+                    {
+                        "collection_name": results["collection_name"],
+                        "name": searchQuery,
+                        "type": "web_search_results",
                         "urls": results["filenames"],
-                        "done": True,
-                    },
-                }
-            )
-
-            files = form_data.get("files", [])
-            files.append(
-                {
-                    "collection_name": results["collection_name"],
-                    "name": searchQuery,
-                    "type": "web_search_results",
-                    "urls": results["filenames"],
-                }
-            )
-            form_data["files"] = files
-        else:
+                    }
+                )
+                form_data["files"] = files
+            else:
+                await event_emitter(
+                    {
+                        "type": "status",
+                        "data": {
+                            "action": "web_search",
+                            "description": f'No search results found for "{searchQuery}"',
+                            "query": searchQuery,
+                            "done": True,
+                            "error": True,
+                        },
+                    }
+                )
+        except Exception as e:
+            log.exception(e)
             await event_emitter(
                 {
                     "type": "status",
                     "data": {
                         "action": "web_search",
-                        "description": "No search results found",
+                        "description": f'Error searching "{searchQuery}"',
                         "query": searchQuery,
                         "done": True,
                         "error": True,
                     },
                 }
             )
-    except Exception as e:
-        log.exception(e)
-        await event_emitter(
-            {
-                "type": "status",
-                "data": {
-                    "action": "web_search",
-                    "description": 'Error searching "{{searchQuery}}"',
-                    "query": searchQuery,
-                    "done": True,
-                    "error": True,
-                },
-            }
-        )
 
     return form_data
 
