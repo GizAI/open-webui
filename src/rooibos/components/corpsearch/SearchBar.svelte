@@ -40,22 +40,6 @@
     }
   };
 
-  const iconMapping: Record<string, any> = {
-    radius: MapPin,
-    certification: Award,
-    employee_count: Users,
-    sales: TrendingUp,
-    profit: DollarSign,
-    net_profit: Scale,
-    gender: UserPlus,
-    gender_age: History,
-    unallocated_profit: Landmark,
-    establishment_year: CalendarDays,
-    loan: Building2,
-    excluded_industries: Ban,
-    reset: RotateCcw,
-    apply: Check
-  };
 </script>
 
 <div class="bg-gray-50 overflow-y: auto;">

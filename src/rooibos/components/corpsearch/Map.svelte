@@ -12,6 +12,7 @@
   import { showSidebar, user } from '$lib/stores';
 	import SearchCompanyList from './SearchCompanyList.svelte';
 	import { WEBUI_API_BASE_URL } from '$lib/constants';
+	import CorpInfo from '../corpinfo/CorpInfo.svelte';
 
   type MapInstance = {
     map: any;
@@ -117,6 +118,73 @@
     [key: string]: any; // Allow additional keys
   };
 
+  
+	interface CompanyInfo {
+		id: string;
+		company_id: string;
+		company_name: string;
+		roadAddress?: string;
+		address?: string;
+		category?: string[];
+		business_registration_number?: number;
+		industry?: string;
+		representative?: string;
+		birth_date?: string;
+		establishment_date?: string;
+		employee_count?: number;
+		phone_number?: string;
+		website?: string;
+		distance_from_user?: number;
+		created_at?: string;
+		updated_at?: string;
+		files: any[];
+		smtp_id: string;
+		latitude: string;
+		longitude: string;
+		bookmark_id?: string | null;    
+		fax_number?: string;
+		email?: string;
+		company_type?: string;
+		founding_date?: string;
+		industry_code1?: string;
+		industry_code2?: string;
+		main_product?: string;
+		main_bank?: string;
+		main_branch?: string;
+		group_name?: string;
+		stock_code?: string;
+		corporate_number?: string;
+		english_name?: string;
+		trade_name?: string;
+		fiscal_month?: string;
+		region1?: string;
+		region2?: string;
+		industry_major?: string;
+		industry_middle?: string;
+		industry_small?: string;
+		certificate_expiry_date?: string;
+		sme_type?: string;
+		cri_company_size?: string;
+		lab_name?: string;
+		first_approval_date?: string;
+		lab_location?: string;
+		research_field?: string;
+		division?: string;
+		birth_year?: string;
+		foundation_year?: string;
+		family_shareholder_yn?: string;
+		external_shareholder_yn?: string;
+		financial_statement_year?: string;
+		employees?: number;
+		venture_confirmation_type?: string;
+		svcl_region?: string;
+		venture_valid_from?: string;
+		venture_valid_until?: string;
+		confirming_authority?: string;
+		new_reconfirmation_code?: string;
+		postal_code?: string;
+	};
+
   let selectedFilters: Filters = {}; // Define selectedFilters with the Filters type
 
   let mapInstance: MapInstance | null = null;
@@ -132,6 +200,15 @@
   let isFilterOpen = false;
   let userLocation:UserLocation | null = null;
   let showCompanyInfo = false;
+  let companyInfo: CompanyInfo = {
+    id: '',
+    company_id: '',
+    company_name: '',
+    files: [],
+    smtp_id: '',
+    latitude: '',
+    longitude: ''
+  };
 
   const handleSearch = async (searchValue: string, filters: any, ) => {
     console.log('Searching for:', searchValue, 'with filters:', filters);
@@ -220,6 +297,7 @@
               });
 
               naver.maps.Event.addListener(marker, 'click', () => {
+                companyInfo = result
                 showCompanyInfo = true;
               });
               mapInstance.companyMarkers.push(marker);
@@ -268,7 +346,6 @@
         location.lat = e.coord._lat;
         location.lng = e.coord._lng;
         showCompanyInfo = false;
-        // handleSearch('', selectedFilters);
       }
     });
 
@@ -456,15 +533,12 @@
   </div>
 {/if}
 
-{#if showCompanyInfo}
+{#if showCompanyInfo && companyInfo}
   <div 
-    class="company-list-wrapper w-full"
+    class="company-list-wrapper {showCompanyInfo ? 'active' : ''}"
     class:sidebar-visible={$showSidebar}
     >
-      <SearchCompanyList
-        searchResults={searchResults}
-        onResultClick={handleResultClick}
-      />
+      <CorpInfo companyInfo={companyInfo}/>
   </div>
 {/if}
 
@@ -534,19 +608,31 @@
 }
 
 
-  .company-list-wrapper {
-    position: absolute;
-    top: 80px;
-    right: 0;
-    z-index: 40;
-    transition: all 0.3s ease;
-    padding: 0 20px;
-    left: 0;
-  }
+.company-list-wrapper {
+  position: fixed; /* fixed로 설정하여 항상 화면 우측에 고정 */
+  top: 80px; /* searchbar 바로 아래 위치 */
+  right: 0; /* 화면 우측에 붙이기 */
+  width: 40%; /* 우측 영역 너비 */
+  height: calc(100% - 80px); /* searchbar 아래부터 전체 높이 */
+  z-index: 1000; /* 다른 요소 위로 나오도록 높은 z-index 설정 */
+  background: white; /* 하얀 배경 */
+  box-shadow: -2px 0 5px rgba(0, 0, 0, 0.1); /* 그림자 효과 추가 */
+  overflow-y: auto; /* 내용 스크롤 가능 */
+  transition: transform 0.3s ease; /* 부드러운 전환 효과 */
+  transform: translateX(100%); /* 기본적으로 화면에서 숨김 */
+}
 
-  .company-list-wrapper.sidebar-visible {
-    left: 250px !important;
+.company-list-wrapper.active {
+  transform: translateX(0); /* 활성화 상태에서 화면에 표시 */
+}
+
+@media (max-width: 768px) {
+  .company-list-wrapper {
+    width: 100%; /* 모바일에서는 전체 화면 너비 사용 */
   }
+}
+
+
 
   #map {
     position: relative;
