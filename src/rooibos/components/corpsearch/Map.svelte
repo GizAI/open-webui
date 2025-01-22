@@ -586,56 +586,58 @@
   </svg>
 </button>
 
+<!-- SearchBar.svelte 스타일 수정 -->
 <style>
-.search-bar-wrapper {
-  position: absolute;
-  left: 0;
-  right: 0;
-  width: 100%;
-  z-index: 50;
-  transition: all 0.3s ease;
-  box-sizing: border-box;
-}
-
-.search-bar-wrapper.sidebar-visible {
-  left: 210px;
-  width: calc(100% - 210px);
-  padding-left: 0;
-}
-
-/* 768px 이하 모바일 화면에서는 left를 다시 0으로 */
-@media (max-width: 768px) {
-  .search-bar-wrapper.sidebar-visible {
-    left: 250px !important;
-  }
-}
-
-
-
-.company-list-wrapper {
-  position: fixed;
-  top: 100px; /* SearchBar 높이 + 여유 공간 */
-  right: 0;
-  width: 30%;
-  height: calc(100vh - 100px); /* 전체 높이에서 상단 여백 제외 */
-  z-index: 40;  /* SearchBar보다 낮은 z-index */
-  background: white;
-  box-shadow: -2px 0 5px rgba(0, 0, 0, 0.1);
-  overflow-y: hidden;
-  transition: transform 0.3s ease;
-  transform: translateX(100%);
-}
-
-.company-list-wrapper.active {
-  transform: translateX(0);
-}
-
-@media (max-width: 768px) {
-  .company-list-wrapper {
+  .search-bar-wrapper {
+    position: fixed; /* absolute에서 fixed로 변경 */
+    top: 0;
+    left: 0;
+    right: 0;
     width: 100%;
+    z-index: 50;
+    transition: all 0.3s ease;
+    box-sizing: border-box;
+    background-color: white; /* 배경색 추가 */
+    border-bottom: 1px solid #e5e7eb; /* 구분선 추가 */
   }
-}
-
+  
+  .search-bar-wrapper.sidebar-visible {
+    left: 220px;
+    width: calc(100% - 220px);
+  }
+  
+  @media (max-width: 768px) {
+    .search-bar-wrapper.sidebar-visible {
+      left: 0;
+      width: 100%;
+    }
+  }
+  
+  .company-list-wrapper {
+    position: fixed;
+    top: 60px; /* SearchBar 높이에 맞춤 */
+    right: 0;
+    width: 30%;
+    height: calc(100vh - 60px); /* 전체 높이에서 SearchBar 높이 제외 */
+    z-index: 40;
+    background: white;
+    box-shadow: -2px 0 5px rgba(0, 0, 0, 0.1);
+    overflow-y: auto; /* hidden에서 auto로 변경 */
+    transition: transform 0.3s ease;
+    transform: translateX(100%);
+    border-left: 1px solid #e5e7eb; /* 좌측 구분선 추가 */
+  }
+  
+  .company-list-wrapper.active {
+    transform: translateX(0);
+  }
+  
+  @media (max-width: 768px) {
+    .company-list-wrapper {
+      width: 100%;
+      border-left: none;
+    }
+  }
 
 
   #map {
