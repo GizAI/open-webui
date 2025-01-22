@@ -74,12 +74,13 @@ class Filter:
             __user__.get("id"), "read"
         )
 
-        knowledge_bases_list = "\n".join(
+        knowledge_bases_list = "\n\n".join(
             [
-                f"- ID: {getattr(knowledge_base, 'id', 'Unknown')}\n"
-                f"  - Knowledge Base Name: {getattr(knowledge_base, 'name', 'Unknown')}\n"
-                f"  - Description: {getattr(knowledge_base, 'description', 'Unknown')}\n"
-                for knowledge_base in all_knowledge_bases
+                f"--- Knowledge Base {index + 1} ---\n"
+                f"ID: {getattr(knowledge_base, 'id', 'Unknown')}\n"
+                f"Name: {getattr(knowledge_base, 'name', 'Unknown')}\n"
+                f"Description: {getattr(knowledge_base, 'description', 'Unknown')}"
+                for index, knowledge_base in enumerate(all_knowledge_bases)
             ]
         )
 
@@ -127,7 +128,23 @@ Return the result in the following JSON format (no extra keys, no explanations):
         user_message = get_last_user_message(messages)
 
         system_prompt = """You are a system that determines if a web search is needed for the user's query.
-If real-time or up-to-date information is essential (e.g., news, current events, etc.), set "web_search_enabled" to true. Otherwise, set it to false.
+
+Consider the following when making your decision:
+1. If the query relates to real-time or up-to-date information, including recurring events 
+   (e.g., a presidential inauguration, annual shareholder meetings, quarterly earnings reports, 
+   product launches, or company announcements), enable a web search to ensure the most recent 
+   occurrence is addressed.
+
+2. If the query is not about historical facts, assume most questions benefit from incorporating 
+   the latest information available through a web search.
+
+3. Particularly for questions regarding business or economic topics—such as company or 
+   industry trends, corporate information, related public figures, government policies, 
+   taxes, new technologies, and other fast-changing subjects—web search is strongly recommended 
+   to ensure accuracy and freshness of data.
+
+4. Strive to make human-like judgments to ensure your decision aligns with the user's intent 
+   and the context of the question.
 
 Return the result in the following JSON format:
 {
@@ -226,9 +243,13 @@ Return the result in the following JSON format:
                 ws_result.get("web_search_enabled") if ws_result else False
             )
 
-            # 웹 검색 로직
+            if isinstance(web_search_enabled, str):
+                web_search_enabled = web_search_enabled.lower() == "true"
+
             if web_search_enabled:
                 print("Web search required.")
+                print("body : =================================")
+                print(body)
                 await chat_web_search_handler(
                     __request__,
                     body,
