@@ -99,6 +99,7 @@
 		pre_tax_income?: number;
 	};
 
+	export let onClose: () => void;
 	export let companyInfo: CompanyInfo = {
 		id: '',
 		company_id: '',
@@ -145,25 +146,58 @@
 
 	const years = ['2023', '2022', '2021'];
 	let showAllMetrics = false;
+
+	let selectedSection: string | null = null;
+  let sectionRefs: { [key: string]: HTMLElement } = {};
+
+	const sections = [
+		{ id: 'basic', title: '기본', icon: MapPin },
+		{ id: 'industry', title: '업종', icon: Briefcase },
+		{ id: 'shareholders', title: '주주', icon: Users },
+		{ id: 'lab', title: '연구소', icon: Microscope },
+		{ id: 'certification', title: '인증', icon: Award },
+		{ id: 'financial', title: '재무', icon: DollarSign },
+	];
+
+	const scrollToSection = (sectionId: string) => {
+		selectedSection = sectionId;
+		const element = sectionRefs[sectionId];
+		if (element) {
+		element.scrollIntoView({ behavior: 'smooth' });
+		}
+	};
 	
 </script>
 
 <div class="flex flex-col w-full translate-y-1 bg-gray-50" >
 	{#if companyInfo}		
 		<div class="w-full mb-2.5">
-			<!-- 상위 컨테이너를 flex-col로 설정하여 세로 정렬 -->
 			<div class="flex flex-col w-full px-6 py-4 overflow-y-auto space-y-6">
 				<div class="flex items-center justify-between w-full px-0.5 mb-1">
-					<div class="w-full">
-						<input
-							type="text"
-							class="text-left w-full font-semibold text-2xl font-primary bg-transparent outline-none"
-							bind:value={companyInfo.company_name}
-							placeholder="Bookmark Company Name"
-							readonly
-						/>
-					</div>
+					<h1 class="text-2xl font-semibold">{companyInfo.company_name}</h1>
+					<button class="p-2 hover:bg-gray-100 rounded-full"
+						on:click={onClose}>
+						<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+						</svg>
+					</button>
 				</div>
+				<hr class="border-t border-gray-100">  
+
+				<!-- 섹션 네비게이션 -->
+				<div class="flex overflow-x-auto">
+				{#each sections as section}
+					<button
+					class="flex items-center px-2 rounded-full text-sm whitespace-nowrap
+						{selectedSection === section.id ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600'}
+						hover:bg-gray-200"
+					on:click={() => scrollToSection(section.id)}
+					>
+					{section.title}
+					</button>
+				{/each}
+				</div>
+				<hr class="border-t border-gray-100">
 
 			  <!-- 기본 정보 섹션 -->
 			  <div class="space-y-2">

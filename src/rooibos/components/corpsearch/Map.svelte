@@ -512,6 +512,9 @@
     return newFilters;
   }
 
+  function closeCompanyInfo() {
+    showCompanyInfo = false
+  }
 
 </script>
 {#if !($showSidebar && $mobile)}
@@ -538,7 +541,7 @@
     class="company-list-wrapper {showCompanyInfo ? 'active' : ''}"
     class:sidebar-visible={$showSidebar}
     >
-      <CorpInfo companyInfo={companyInfo}/>
+      <CorpInfo companyInfo={companyInfo} onClose={closeCompanyInfo}/>
   </div>
 {/if}
 
@@ -608,27 +611,28 @@
 }
 
 
+
 .company-list-wrapper {
-  position: fixed; /* fixed로 설정하여 항상 화면 우측에 고정 */
-  top: 80px; /* searchbar 바로 아래 위치 */
-  right: 0; /* 화면 우측에 붙이기 */
-  width: 40%; /* 우측 영역 너비 */
-  height: calc(100% - 80px); /* searchbar 아래부터 전체 높이 */
-  z-index: 1000; /* 다른 요소 위로 나오도록 높은 z-index 설정 */
-  background: white; /* 하얀 배경 */
-  box-shadow: -2px 0 5px rgba(0, 0, 0, 0.1); /* 그림자 효과 추가 */
-  overflow-y: auto; /* 내용 스크롤 가능 */
-  transition: transform 0.3s ease; /* 부드러운 전환 효과 */
-  transform: translateX(100%); /* 기본적으로 화면에서 숨김 */
+  position: fixed;
+  top: 110px; /* SearchBar 높이 + 여유 공간 */
+  right: 0;
+  width: 40%;
+  height: calc(100vh - 120px); /* 전체 높이에서 상단 여백 제외 */
+  z-index: 40;  /* SearchBar보다 낮은 z-index */
+  background: white;
+  box-shadow: -2px 0 5px rgba(0, 0, 0, 0.1);
+  overflow-y: hidden;
+  transition: transform 0.3s ease;
+  transform: translateX(100%);
 }
 
 .company-list-wrapper.active {
-  transform: translateX(0); /* 활성화 상태에서 화면에 표시 */
+  transform: translateX(0);
 }
 
 @media (max-width: 768px) {
   .company-list-wrapper {
-    width: 100%; /* 모바일에서는 전체 화면 너비 사용 */
+    width: 100%;
   }
 }
 
