@@ -614,10 +614,10 @@
 
 .company-list-wrapper {
   position: fixed;
-  top: 110px; /* SearchBar 높이 + 여유 공간 */
+  top: 100px; /* SearchBar 높이 + 여유 공간 */
   right: 0;
-  width: 40%;
-  height: calc(100vh - 120px); /* 전체 높이에서 상단 여백 제외 */
+  width: 30%;
+  height: calc(100vh - 100px); /* 전체 높이에서 상단 여백 제외 */
   z-index: 40;  /* SearchBar보다 낮은 z-index */
   background: white;
   box-shadow: -2px 0 5px rgba(0, 0, 0, 0.1);
