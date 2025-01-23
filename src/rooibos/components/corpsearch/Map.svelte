@@ -544,17 +544,10 @@
 {/if}
 
 {#if showCompanyInfo && companyInfo}
-  <div 
-    class="company-info-wrapper {showCompanyInfo ? 'active' : ''}"
-    class:sidebar-visible={$showSidebar}
-    class:mobile={$mobile}
-    >
-      <CorpInfo companyInfo={companyInfo} onClose={closeCompanyInfo}/>
+  <div class:sidebar-visible={$showSidebar}>
+    <CorpInfo companyInfo={companyInfo} onClose={closeCompanyInfo}/>
   </div>
 {/if}
-
-
-
 
 {#if loading}
   <div class="absolute inset-0 flex items-center justify-center bg-white/80 z-10">
@@ -620,48 +613,9 @@
       left: 0;
       width: 100%;
     }
-  }
+  }  
+
   
-  .company-info-wrapper {
-    position: fixed;
-    top: 70px;
-    right: 0;
-    width: 30%;
-    height: calc(100vh - 60px);
-    z-index: 40;
-    background: white;
-    box-shadow: -2px 0 5px rgba(0, 0, 0, 0.1);
-    overflow-y: auto;
-    transition: transform 0.3s ease;
-    transform: translateX(100%);
-    border-left: 1px solid #e5e7eb;
-  }
-  
-  .company-info-wrapper.active {
-    transform: translateX(0);
-  }
-  
-  @media (max-width: 768px) {
-    .company-info-wrapper {
-      width: 100%;
-      border-left: none;
-    }
-    
-    .company-info-wrapper.mobile {
-      top: auto;
-      bottom: 0;
-      height: 20vh;
-      transform: translateY(100%);
-      transition: all 0.3s ease;
-    }
-    
-    .company-info-wrapper.mobile.active {
-      transform: translateY(0);
-      border-top: 1px solid #e5e7eb;
-      border-top-left-radius: 20px;
-      border-top-right-radius: 20px;
-    }
-  }
 
 
   #map {

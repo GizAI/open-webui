@@ -264,27 +264,43 @@
     }
 }
 
+
+let isFullscreen = false;
+
+function toggleFullscreen() {
+  isFullscreen = !isFullscreen;
+}
+
+function closeCompanyInfo() {
+  isFullscreen = false;
+}
+
+
 </script>
 
 <!-- 전체 컨테이너: 상단 고정 영역 + 아래 스크롤 영역 -->
-<div class="flex flex-col w-full bg-gray-50 mt-4 h-[calc(100vh-8rem)]">
+<div 
+  class="company-info-wrapper active {isFullscreen ? 'fullscreen' : ''} flex flex-col w-full bg-gray-50 mt-4 h-[calc(100vh-8rem)]"
+  class:mobile={$mobile}
+>
 	{#if companyInfo}
 		<!-- 상단 고정 영역 -->
 		<div class="bg-gray-50 shrink-0 px-4 pt-2 pb-1 border-b border-gray-200">
 			<!-- 회사명 / 닫기 버튼 -->
 			<div class="flex items-center justify-between w-full mb-1">
-				<h1 class="text-2xl font-semibold mb-1">{companyInfo.company_name}</h1>
+				<h3 class="text-2xl font-semibold mb-1">{companyInfo.company_name}</h3>
 				{#if !$mobile}
-					<button class="p-2 hover:bg-gray-100 rounded-full" on:click={onClose}>
+					<button class="p-2 hover:bg-gray-100 rounded-full" on:click={closeCompanyInfo}>
 						<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
 							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
 						</svg>
 					</button>
 				{:else}
 				<button 
-				class="p-2 hover:bg-gray-100 rounded-full" 
-				on:click={isFullscreen ? toggleFullscreen : toggleFullscreen}
-			  >
+					class="p-2 hover:bg-gray-100 rounded-full" 
+					on:click={isFullscreen ? toggleFullscreen : toggleFullscreen}
+				>
+			  
 				<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
 				  <path 
 					stroke-linecap="round" 
@@ -643,10 +659,49 @@
 </div>
 
 <style>
-  	@media (max-width: 768px) {
-    	.company-list-wrapper {
-      		display: none;
-			height: 100px;
-    	}
-  	}
-</style>
+	.company-info-wrapper {
+	  position: fixed;
+	  top: 70px;
+	  right: 0;
+	  width: 30%;
+	  height: calc(100vh - 60px);
+	  z-index: 40;
+	  background: white;
+	  box-shadow: -2px 0 5px rgba(0, 0, 0, 0.1);
+	  overflow-y: auto;
+	  transition: all 0.3s ease;
+	  transform: translateX(100%);
+	  border-left: 1px solid #e5e7eb;
+	}
+	
+	.company-info-wrapper.active {
+	  transform: translateX(0);
+	}
+	
+	@media (max-width: 768px) {
+	  .company-info-wrapper {
+		width: 100%;
+		border-left: none;
+	  }
+	  
+	  .company-info-wrapper.mobile {
+		top: auto;
+		bottom: 0;
+		height: 20vh;
+		transform: translateY(100%);
+	  }
+	    
+	  .company-info-wrapper.mobile.fullscreen {
+		height: 100vh;
+		border-top-left-radius: none;
+		border-top-right-radius: none;
+	  }
+
+	  .company-info-wrapper.mobile.active {
+		transform: translateY(0);
+		border-top: 1px solid #e5e7eb;
+		border-top-left-radius: 20px;
+		border-top-right-radius: 20px;
+	  }
+	}
+  </style>
