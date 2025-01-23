@@ -1,10 +1,10 @@
 <script lang="ts">
-  import { Sliders, Map, List, Building2, Users, TrendingUp, DollarSign, Scale, UserPlus, CalendarDays, Landmark, Ban, RotateCcw, Check, MapPin, Award, History } from 'lucide-svelte';
+  import { onMount } from 'svelte';
   import { filterGroups, filterActions } from './filterdata';
   import SearchFilter from './SearchFilter.svelte';
   import { mobile } from '$lib/stores';
   import { showSidebar } from '$lib/stores';
-	import MenuLines from '$lib/components/icons/MenuLines.svelte';
+  import MenuLines from '$lib/components/icons/MenuLines.svelte';
 
   export let onSearch: (searchValue: string, selectedFilters: any) => Promise<void>;
   export let searchValue: string;
@@ -16,12 +16,15 @@
   export let onShowSearchListChange: (value: boolean) => void;
   export let onFilterChange: (groupId: string, optionId: string, checked: boolean | string) => void;
 
-  async function handleSubmit(event: SubmitEvent) {
+  let filterScrollRef: HTMLDivElement | null = null;
+  let showLeftArrow = false;
+  let showRightArrow = false;
+  let resizeObserver: ResizeObserver;
+
+  function handleSubmit(event: SubmitEvent) {
     event.preventDefault();
-    await onSearch(searchValue, selectedFilters);
-    const inputEl = (event.target as HTMLFormElement).querySelector('input');
-    inputEl?.blur();
-  }  
+    onSearch(searchValue, selectedFilters);
+  }
 
   function handleAction(action: 'reset' | 'apply') {
     if (action === 'reset') {
@@ -32,19 +35,54 @@
   }
 
   const toggleFilter = (groupId: string) => {
+    debugger
     if (activeFilterGroup === groupId && isFilterOpen) {
       activeFilterGroup = null;
+      isFilterOpen = false;
     } else {
       activeFilterGroup = groupId;
+      isFilterOpen = true;
       onShowSearchListChange(false);
     }
   };
 
+  function onScroll() {
+    if (!filterScrollRef) return;
+    const { scrollLeft, scrollWidth, clientWidth } = filterScrollRef;
+    showLeftArrow = scrollLeft > 0;
+    showRightArrow = scrollLeft + clientWidth < scrollWidth - 1;
+  }
+
+  function scrollLeft() {
+    filterScrollRef?.scrollBy({ left: -150, behavior: 'smooth' });
+  }
+  function scrollRight() {
+    filterScrollRef?.scrollBy({ left: 150, behavior: 'smooth' });
+  }
+
+  onMount(() => {
+    onScroll();
+    
+    resizeObserver = new ResizeObserver(() => {
+      onScroll();
+    });
+
+    if (filterScrollRef) {
+      resizeObserver.observe(filterScrollRef);
+    }
+
+    return () => {
+      if (filterScrollRef) {
+        resizeObserver.unobserve(filterScrollRef);
+      }
+      resizeObserver.disconnect();
+    };
+  });
 </script>
 
-<div class="bg-gray-50 overflow-y: auto;">
+<div class="bg-gray-50 overflow-y-auto">
   <div class="flex items-center py-2">
-    <div class="{$showSidebar ? 'hidden' : ''} flex items-center">
+    <div class="{ $showSidebar ? 'hidden' : '' } flex items-center">
       <button
         id="sidebar-toggle-button"
         class="cursor-pointer p-1.5 flex rounded-xl hover:bg-gray-100 dark:hover:bg-gray-850 transition"
@@ -58,7 +96,9 @@
         </div>
       </button>
     </div>
-    <div class="text-xl font-semibold text-gray-800 px-2">기업찾기</div>
+    <div class="text-xl font-semibold text-gray-800 px-2">
+      기업찾기
+    </div>
 
     <button
       type="button"
@@ -83,90 +123,109 @@
     </button>
   </div>
 
+  <div class="relative">
+    {#if showLeftArrow}
+      <div class="absolute left-0 top-1/2 -translate-y-1/2 z-10">
+        <button
+          class="rounded-full p-2"
+          on:click={scrollLeft}
+          aria-label="왼쪽으로 스크롤"
+        >
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M15 19l-7-7 7-7" />
+          </svg>
+        </button>
+      </div>
+    {/if}
 
-  <div class="flex flex-wrap">
-    {#each filterGroups as group, i}
-      <button
-        type="button"
-        class="px-4 py-2 text-sm font-medium text-gray-700 rounded-full hover:bg-gray-200"
-        on:click={() => toggleFilter(group.id)}
+    <div class="mx-8">
+      <div
+        bind:this={filterScrollRef}
+        class="flex flex-nowrap w-full items-center gap-0 overflow-x-auto scrollbar-hide py-2"
+        on:scroll={onScroll}
       >
-        {group.title}
-      </button>
-      {#if i < filterGroups.length - 1}
-        <span class="text-gray-400">|</span>
-      {/if}
-    {/each}
+        {#each filterGroups as group}
+          <button
+            type="button"
+            class="px-2 py-2 text-sm font-medium text-gray-700 whitespace-nowrap rounded-full"
+            on:click={() => toggleFilter(group.id)}
+          >
+            {group.title}
+          </button>
+        {/each}
 
-    {#each filterActions as action, i}
-      <button
-        type="button"
-        class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-full hover:bg-gray-200"
-        on:click={() => handleAction(action.action)}
-      >
-        {action.label}
-      </button>
-      {#if i < filterActions.length - 1}
-        <span class="text-gray-400">|</span>
+        {#each filterActions.filter(a => a.action === 'apply') as action}
+          <button
+            type="button"
+            class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-full hover:bg-gray-200 whitespace-nowrap"
+            on:click={() => handleAction(action.action)}
+          >
+            {action.label}
+          </button>
+        {/each}
+      </div>
+    </div>
+
+    <div class="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white">
+      {#if showRightArrow}
+        <button
+          class="rounded-full p-2"
+          on:click={scrollRight}
+          aria-label="오른쪽으로 스크롤"
+        >
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M9 5l7 7-7 7" />
+          </svg>
+        </button>
       {/if}
-    {/each}
+
+      {#each filterActions.filter(a => a.action === 'reset') as action}
+        <button
+          type="button"
+          class="text-sm px-3 py-1 rounded-full whitespace-nowrap"
+          on:click={() => handleAction(action.action)}
+        >
+          {action.label}
+        </button>
+      {/each}
+    </div>
   </div>
-
 </div>
+
 {#if isFilterOpen}
   <div
     class="search-filter-container"
     style="{$mobile ? 'margin-top: 80px' : ''}"
   >
-      <SearchFilter
-        {selectedFilters}
-        {onFilterChange}
-        {onReset}
-        {onApply}
-        activeGroup={activeFilterGroup}
-      />
-    </div>
-  {/if}
+    <SearchFilter
+      {selectedFilters}
+      {onFilterChange}
+      {onReset}
+      {onApply}
+      activeGroup={activeFilterGroup}
+    />
+  </div>
+{/if}
 
 <style>
-  
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
   .search-filter-container {
     position: fixed;
-    top: 30%;
+    top: 20%;
     left: 50%;
     transform: translate(-50%, -50%);
-    z-index: 1000; 
+    z-index: 1000;
     border-radius: 8px;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     padding: 16px;
   }
-
-  .filter-group-wrapper {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-    padding-bottom: 1rem;
-  }
-
-  .absolute {
-    margin: 0;
-  }
-
-
-  .fixed {
-    left: 0;
-    right: 0;
-  }
-
-  .sidebar-margin {
-    left: 200px;
-  }
-
-  .mobile-layout {
-    height: 70vh;
-    max-height: 70vh;
-    border-top-left-radius: 16px;
-    border-top-right-radius: 16px;
-  }
 </style>
-
