@@ -268,12 +268,12 @@
 	export let isFullscreen = false;
 
 	function toggleFullscreen() {
-	isFullscreen = !isFullscreen;
+		isFullscreen = !isFullscreen;
 	}
 
 	function closeCompanyInfo() {
-	isFullscreen = false;
-	onClose()
+		isFullscreen = false;
+		onClose()
 	}
 
 

@@ -197,7 +197,6 @@
   let showSearchList = false;
   let isListIconVisible = true;
   let activeFilterGroup: string | null = null;
-  let isFilterOpen = false;
   let userLocation:UserLocation | null = null;
   let showCompanyInfo = false;
   let companyInfo: CompanyInfo = {
@@ -215,7 +214,6 @@
 
     showSearchList = false;
     activeFilterGroup = null;
-    isFilterOpen = false;
     isListIconVisible = true;
 
     try {
@@ -297,7 +295,6 @@
               });
 
               naver.maps.Event.addListener(marker, 'click', () => {
-                handleFilterOpenChange(false);
                 companyInfo = result
                 showCompanyInfo = true;
               });
@@ -348,7 +345,7 @@
         location.lng = e.coord._lng;
         showCompanyInfo = false;
       }
-      isFilterOpen = false;
+      activeFilterGroup = null;
     });
 
     naver.maps.Event.addListener(map, 'dragend', (e: any) => {      
@@ -415,7 +412,6 @@
 
   const handleSearchListChange = (newValue: boolean) => {
       showSearchList = newValue;
-      isFilterOpen = newValue;
   };
 
   onMount(() => {
@@ -520,11 +516,9 @@
     showCompanyInfo = false
   }
 
-  const handleFilterOpenChange = (value: boolean) => {
-    isFilterOpen = value;
-  };
 
   let isFullscreen = false; 
+
 
 </script>
 {#if !($showSidebar && $mobile) && (!showCompanyInfo || !isFullscreen)}
@@ -537,13 +531,14 @@
       onReset={handleReset}
       onApply={handleApply}
       searchValue={searchValue}
-      onShowSearchListChange={handleSearchListChange}
-      activeFilterGroup={null}
+      activeFilterGroup={activeFilterGroup}
       onFilterChange={onFilterChange}
       selectedFilters={selectedFilters}
+      on:filterGroupChange={(e) => activeFilterGroup = e.detail} 
     />
   </div>
 {/if}
+
 
 {#if showCompanyInfo && companyInfo}
   <div class:sidebar-visible={$showSidebar}>

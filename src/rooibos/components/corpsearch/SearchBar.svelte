@@ -1,19 +1,17 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  import { onMount, createEventDispatcher } from 'svelte';
   import { filterGroups, filterActions } from './filterdata';
   import SearchFilter from './SearchFilter.svelte';
   import { mobile } from '$lib/stores';
   import { showSidebar } from '$lib/stores';
   import MenuLines from '$lib/components/icons/MenuLines.svelte';
 
-  export let onSearch: (searchValue: string, selectedFilters: any) => Promise<void>;
   export let searchValue: string;
   export let selectedFilters: any = {};
-  export let isFilterOpen: boolean = false;
   export let activeFilterGroup: string | null = null;
+  export let onSearch: (searchValue: string, selectedFilters: any) => Promise<void>;
   export let onReset: () => void;
   export let onApply: () => void;
-  export let onShowSearchListChange: (value: boolean) => void;
   export let onFilterChange: (groupId: string, optionId: string, checked: boolean | string) => void;
 
   let filterScrollRef: HTMLDivElement | null = null;
@@ -34,15 +32,12 @@
     }
   }
 
+  const dispatch = createEventDispatcher();
   const toggleFilter = (groupId: string) => {
-    debugger
-    if (activeFilterGroup === groupId && isFilterOpen) {
-      activeFilterGroup = null;
-      isFilterOpen = false;
+    if (activeFilterGroup === groupId) {
+      dispatch('filterGroupChange', null);
     } else {
-      activeFilterGroup = groupId;
-      isFilterOpen = true;
-      onShowSearchListChange(false);
+      dispatch('filterGroupChange', groupId);
     }
   };
 
@@ -194,7 +189,7 @@
   </div>
 </div>
 
-{#if isFilterOpen}
+{#if activeFilterGroup}
   <div
     class="search-filter-container"
     style="{$mobile ? 'margin-top: 80px' : ''}"
