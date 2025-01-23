@@ -544,17 +544,10 @@
 {/if}
 
 {#if showCompanyInfo && companyInfo}
-  <div 
-    class="company-info-wrapper {showCompanyInfo ? 'active' : ''}"
-    class:sidebar-visible={$showSidebar}
-    class:mobile={$mobile}
-    >
-      <CorpInfo companyInfo={companyInfo} onClose={closeCompanyInfo}/>
+  <div class:sidebar-visible={$showSidebar}>
+    <CorpInfo companyInfo={companyInfo} onClose={closeCompanyInfo}/>
   </div>
 {/if}
-
-
-
 
 {#if loading}
   <div class="absolute inset-0 flex items-center justify-center bg-white/80 z-10">
@@ -620,47 +613,9 @@
       left: 0;
       width: 100%;
     }
-  }
+  }  
+
   
-  .company-info-wrapper {
-    position: fixed;
-    top: 70px;
-    right: 0;
-    width: 30%;
-    height: calc(100vh - 60px);
-    z-index: 40;
-    background: white;
-    box-shadow: -2px 0 5px rgba(0, 0, 0, 0.1);
-    overflow-y: auto;
-    transition: transform 0.3s ease;
-    transform: translateX(100%);
-    border-left: 1px solid #e5e7eb;
-  }
-  
-  .company-info-wrapper.active {
-    transform: translateX(0);
-  }
-  
-  @media (max-width: 768px) {
-    .company-info-wrapper {
-      width: 100%;
-      border-left: none;
-    }
-    
-    .company-info-wrapper.mobile {
-      top: auto;  /* 상단 위치 제거 */
-      bottom: 0;  /* 하단에 위치 */
-      height: 20vh;  /* 화면 높이의 60% 사용 */
-      transform: translateY(100%);  /* 하단에서 올라오도록 변경 */
-    }
-    
-    .company-info-wrapper.mobile.active {
-      transform: translateY(0);  /* 하단에서 올라옴 */
-      border-top: 1px solid #e5e7eb;  /* 상단 테두리 추가 */
-      border-top-left-radius: 20px;   /* 상단 모서리 둥글게 */
-      border-top-right-radius: 20px;
-    }
-  }
 
 
   #map {
