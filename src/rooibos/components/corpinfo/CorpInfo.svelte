@@ -5,6 +5,7 @@
 		Briefcase, MapPin, Users, Phone, Globe, Calendar, DollarSign, List,
 		Award, Building2, FlaskConical, CalendarCheck, Microscope, ClipboardList
 	} from 'lucide-svelte';
+	import { mobile } from '$lib/stores';
 
 	interface CompanyInfo {
 		id: string;
@@ -272,11 +273,20 @@
 			<!-- 회사명 / 닫기 버튼 -->
 			<div class="flex items-center justify-between w-full mb-1">
 				<h1 class="text-2xl font-semibold mb-1">{companyInfo.company_name}</h1>
-				<button class="p-2 hover:bg-gray-100 rounded-full" on:click={onClose}>
-					<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-					</svg>
-				</button>
+				{#if !$mobile}
+					<button class="p-2 hover:bg-gray-100 rounded-full" on:click={onClose}>
+						<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+						</svg>
+					</button>
+				{:else}
+					<button class="p-2 hover:bg-gray-100 rounded-full" on:click={onClose}>
+						<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
+						</svg>
+					</button>
+				
+				{/if}
 			</div>
 			<!-- 섹션 네비게이션 -->
 			<!-- <hr class="border-t border-gray-100 mt-2" /> -->
@@ -622,3 +632,12 @@
 		<Spinner />
 	{/if}
 </div>
+
+<style>
+  	@media (max-width: 768px) {
+    	.company-list-wrapper {
+      		display: none;
+			height: 100px;
+    	}
+  	}
+</style>
