@@ -462,46 +462,68 @@
     const group = filterGroups.find((g) => g.id === groupId);
     if (!group) return;
   
-    const newFilters = { ...selectedFilters };
+    let newFilters = { ...selectedFilters };
   
-    if (groupId === 'radius' && typeof checked === 'string') {
-      newFilters[groupId] = checked;
+    if (optionId === 'checked') {
+      newFilters[groupId] = {
+        ...(newFilters[groupId] as any || {}),
+        checked: checked as boolean
+      };
+    } else if (groupId === 'radius' && typeof checked === 'string') {
+      newFilters[groupId] = {
+        ...(newFilters[groupId] as any || {}),
+        value: checked
+      };
     } else if (
       groupId === 'distance' ||
       groupId === 'representative' ||
-      groupId === 'gender' || groupId === 'loan'
+      groupId === 'gender' || 
+      groupId === 'loan'
     ) {
-      newFilters[groupId] = checked ? optionId : "";
-    }else if (groupId === 'gender_age' && typeof checked === 'string') {
-        newFilters[groupId] = checked  
+      newFilters[groupId] = {
+        ...(newFilters[groupId] as any || {}),
+        value: checked ? optionId : ""
+      };
+    } else if (groupId === 'gender_age' && typeof checked === 'string') {
+      newFilters[groupId] = {
+        ...(newFilters[groupId] as any || {}),
+        value: checked
+      };
     } else if (typeof checked === 'string') {
       newFilters[groupId] = {
-        ...(selectedFilters[groupId] as any),
+        ...(newFilters[groupId] as any || {}),
         [optionId]: checked,
       };
     } else if (group.isMulti) {
-      const currentValues = Array.isArray(selectedFilters[groupId])
-        ? (selectedFilters[groupId] as string[])
+      const currentValues = Array.isArray(selectedFilters[groupId]?.value)
+        ? (selectedFilters[groupId]?.value as string[])
         : [];
-      if (checked) {
-        newFilters[groupId] = [...currentValues, optionId];
-      } else {
-        newFilters[groupId] = currentValues.filter((id) => id !== optionId);
-      }
+      
+      newFilters[groupId] = {
+        ...(newFilters[groupId] as any || {}),
+        value: checked 
+          ? [...currentValues, optionId]
+          : currentValues.filter((id) => id !== optionId)
+      };
     } else {
-      newFilters[groupId] = checked ? optionId : "";
+      newFilters[groupId] = {
+        ...(newFilters[groupId] as any || {}),
+        value: checked ? optionId : ""
+      };
     }
   
+    // 빈 값 정리
     Object.keys(newFilters).forEach((key) => {
-      if (Array.isArray(newFilters[key]) && newFilters[key].length === 0) {
-        delete newFilters[key];
-      }
-      if (newFilters[key] === null) {
+      const filter = newFilters[key];
+      if (!filter) return;
+
+      if (filter.value === null || 
+          (Array.isArray(filter.value) && filter.value.length === 0)) {
         delete newFilters[key];
       }
 
-      if (typeof newFilters[key] === 'object' && newFilters[key] !== null) {
-        const values = Object.values(newFilters[key]);
+      if (typeof filter.value === 'object' && filter.value !== null) {
+        const values = Object.values(filter.value);
         if (values.every(val => val === '' || val === null)) {
           delete newFilters[key];
         }

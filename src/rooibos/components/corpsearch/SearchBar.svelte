@@ -220,7 +220,6 @@
     transform: translate(-50%, -50%);
     z-index: 1000;
     border-radius: 8px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     padding: 16px;
   }
 </style>
