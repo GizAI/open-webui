@@ -524,8 +524,10 @@
     isFilterOpen = value;
   };
 
+  let isFullscreen = false; 
+
 </script>
-{#if !($showSidebar && $mobile)}
+{#if !($showSidebar && $mobile) && (!showCompanyInfo || !isFullscreen)}
   <div 
       class="search-bar-wrapper w-full"
       class:sidebar-visible={$showSidebar}
@@ -545,7 +547,7 @@
 
 {#if showCompanyInfo && companyInfo}
   <div class:sidebar-visible={$showSidebar}>
-    <CorpInfo companyInfo={companyInfo} onClose={closeCompanyInfo}/>
+    <CorpInfo companyInfo={companyInfo} onClose={closeCompanyInfo} bind:isFullscreen={isFullscreen}/>
   </div>
 {/if}
 
