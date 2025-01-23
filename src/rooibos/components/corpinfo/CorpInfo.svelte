@@ -263,6 +263,7 @@
         });
     }
 }
+
 </script>
 
 <!-- 전체 컨테이너: 상단 고정 영역 + 아래 스크롤 영역 -->
@@ -280,11 +281,19 @@
 						</svg>
 					</button>
 				{:else}
-					<button class="p-2 hover:bg-gray-100 rounded-full" on:click={onClose}>
-						<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
-						</svg>
-					</button>
+				<button 
+				class="p-2 hover:bg-gray-100 rounded-full" 
+				on:click={isFullscreen ? toggleFullscreen : toggleFullscreen}
+			  >
+				<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+				  <path 
+					stroke-linecap="round" 
+					stroke-linejoin="round" 
+					stroke-width="2" 
+					d={isFullscreen ? "M19 9l-7 7-7-7" : "M5 15l7-7 7 7"}
+				  />
+				</svg>
+			  </button>
 				
 				{/if}
 			</div>
@@ -308,7 +317,7 @@
 		</div>
 
 		<!-- 스크롤 영역(섹션들) -->
-		<div class="overflow-auto flex-1 px-4 pb-4" bind:this={scrollContainer}>
+		<div class="flex-1 px-4 pb-4" bind:this={scrollContainer}>
 			<!-- 섹션들을 묶을 컨테이너 -->
 			<div class="space-y-6 mt-2">
 				<!-- 기본 정보 섹션 -->

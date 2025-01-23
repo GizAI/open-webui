@@ -648,16 +648,17 @@
     }
     
     .company-info-wrapper.mobile {
-      top: auto;  /* 상단 위치 제거 */
-      bottom: 0;  /* 하단에 위치 */
-      height: 20vh;  /* 화면 높이의 60% 사용 */
-      transform: translateY(100%);  /* 하단에서 올라오도록 변경 */
+      top: auto;
+      bottom: 0;
+      height: 20vh;
+      transform: translateY(100%);
+      transition: all 0.3s ease;
     }
     
     .company-info-wrapper.mobile.active {
-      transform: translateY(0);  /* 하단에서 올라옴 */
-      border-top: 1px solid #e5e7eb;  /* 상단 테두리 추가 */
-      border-top-left-radius: 20px;   /* 상단 모서리 둥글게 */
+      transform: translateY(0);
+      border-top: 1px solid #e5e7eb;
+      border-top-left-radius: 20px;
       border-top-right-radius: 20px;
     }
   }
