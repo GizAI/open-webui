@@ -353,12 +353,12 @@
 
     naver.maps.Event.addListener(map, 'dragend', (e: any) => {      
       if(location) {
+        showCompanyInfo = false;
         const center = map.getCenter();
         location.lat = center.lat();
-        location.lng = center.lng();
-        if(!showCompanyInfo) {
-          handleSearch('', selectedFilters);
-        }
+        location.lng = center.lng();        
+        handleSearch('', selectedFilters);
+        
       }
     });
   };
@@ -525,7 +525,7 @@
   };
 
 </script>
-{#if !($showSidebar && $mobile) && !($mobile && showCompanyInfo)}
+{#if !($showSidebar && $mobile)}
   <div 
       class="search-bar-wrapper w-full"
       class:sidebar-visible={$showSidebar}

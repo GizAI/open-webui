@@ -273,6 +273,7 @@ function toggleFullscreen() {
 
 function closeCompanyInfo() {
   isFullscreen = false;
+  onClose()
 }
 
 
@@ -285,10 +286,10 @@ function closeCompanyInfo() {
 >
 	{#if companyInfo}
 		<!-- 상단 고정 영역 -->
-		<div class="bg-gray-50 shrink-0 px-4 pt-2 pb-1 border-b border-gray-200">
+		<div class="bg-gray-50 sticky top-0 z-10 shrink-0 px-4 pt-2 pb-1 border-b border-gray-200">	
 			<!-- 회사명 / 닫기 버튼 -->
 			<div class="flex items-center justify-between w-full mb-1">
-				<h3 class="text-2xl font-semibold mb-1">{companyInfo.company_name}</h3>
+				<h3 class="text-2xl font-semibold mb-1 truncate">{companyInfo.company_name}</h3>
 				{#if !$mobile}
 					<button class="p-2 hover:bg-gray-100 rounded-full" on:click={closeCompanyInfo}>
 						<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -704,4 +705,6 @@ function closeCompanyInfo() {
 		border-top-right-radius: 20px;
 	  }
 	}
+
+	
   </style>
