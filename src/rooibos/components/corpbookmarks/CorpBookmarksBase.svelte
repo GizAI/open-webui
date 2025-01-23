@@ -28,7 +28,7 @@
 	import LockClosed from '$lib/components/icons/LockClosed.svelte';
 	import AccessControlModal from '$lib/components/workspace/common/AccessControlModal.svelte';
 	import { WEBUI_API_BASE_URL } from '$lib/constants';
-	
+	import { Briefcase, MapPin, Users, Phone, Globe, Calendar, DollarSign, List, Award, Building2, FlaskConical, CalendarCheck, Microscope, ClipboardList } from 'lucide-svelte';
 	import BookOpen from '$lib/components/icons/BookOpen.svelte';
 
 
