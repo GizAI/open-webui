@@ -14,20 +14,32 @@ from open_webui.utils.middleware import chat_web_search_handler
 def parse_json_content(content: str) -> Optional[dict]:
     """
     주어진 문자열 content에서 JSON 객체만 추출하여 dict로 반환한다.
-    - '```json' 블록 제거
-    - 작은따옴표(')를 큰따옴표(")로 변환
-    - 정규식으로 { ... } 블록만 추출
-    - 추출에 실패하면 None 반환
+    - JSON 형식 데이터가 그대로 들어오는 경우도 처리 가능
+    - 작은따옴표(')를 큰따옴표(")로 변환 (필요한 경우만)
+    - selected_knowledge_bases 키를 검증하고 반환
     """
     try:
-        content = content.replace("```json", "").replace("```", "").strip()
-        content = content.replace("'", '"')
-        match = re.search(r"\{.*?\}", content, flags=re.DOTALL)
-        if not match:
-            return None
-        content_json_str = match.group(0)
-        return json.loads(content_json_str)
-    except json.JSONDecodeError:
+        # Remove unnecessary formatting if applicable
+        content = content.strip()
+
+        # Handle directly provided JSON
+        if content.startswith("{") and content.endswith("}"):
+            parsed_data = json.loads(content)
+        else:
+            # Extract JSON object from text
+            match = re.search(r"\{.*\}", content, flags=re.DOTALL)
+            if not match:
+                return None
+            content_json_str = match.group(0)
+            parsed_data = json.loads(content_json_str)
+
+        # Validate the 'selected_knowledge_bases' key
+        if "selected_knowledge_bases" in parsed_data:
+            return parsed_data
+
+        return None
+    except json.JSONDecodeError as e:
+        print(f"JSON Decode Error: {e}")
         return None
 
 
@@ -84,18 +96,26 @@ class Filter:
             ]
         )
 
-        system_prompt = f"""You are a system that selects the most appropriate knowledge base for the user's query.
+        system_prompt = f"""You are a system that selects the most appropriate knowledge bases for the user's query.
 Below is a list of knowledge bases accessible by the user. 
-Based on the user's prompt, return the most relevant knowledge base ID and name as JSON.
+Based on the user's prompt, return the 1-3 most relevant knowledge bases as an array. 
+If no relevant knowledge bases are applicable, return an empty array [] without any explanation.
 
 Available knowledge bases:
 {knowledge_bases_list}
 
 Return the result in the following JSON format (no extra keys, no explanations):
 {{
-    "id": <KnowledgeBaseID or null>,
-    "name": <KnowledgeBaseName or null>
-}}"""
+    "selected_knowledge_bases": 
+        [
+            {{
+                "id": <KnowledgeBaseID>,
+                "name": <KnowledgeBaseName>
+            }},
+            ...
+        ]
+}}
+"""
 
         prompt = (
             "History:\n"
@@ -212,8 +232,14 @@ Return the result in the following JSON format:
             kb_content = (
                 kb_response["choices"][0]["message"]["content"] if kb_response else ""
             )
+            print("kb_content start: =================================")
+            print(kb_content)
+            print("kb_content end: =================================")
             kb_result = parse_json_content(kb_content)
-            selected_knowledge_base = kb_result.get("id") if kb_result else None
+            print("kb_result start: =================================")
+            print(kb_result)
+            print("kb_result end: =================================")
+            selected_knowledge_bases = kb_result.get("selected_knowledge_bases", [])
 
             ###################################################################
             # 2) 웹 검색 필요 여부 판단
@@ -260,29 +286,36 @@ Return the result in the following JSON format:
                 print("No web search required.")
 
             ###################################################################
-            # 선택된 Knowledge Base가 있으면 body에 추가
+            # 선택된 Knowledge Base가 있으면 body에 추가 (기존 files와 병합)
             ###################################################################
-            selected_knowledge_base_info = (
-                Knowledges.get_knowledge_by_id(selected_knowledge_base)
-                if selected_knowledge_base
-                else None
-            )
 
-            if selected_knowledge_base_info:
-                knowledge_file_ids = selected_knowledge_base_info.data["file_ids"]
-                knowledge_files = Files.get_file_metadatas_by_ids(knowledge_file_ids)
-                knowledge_dict = selected_knowledge_base_info.model_dump()
-                knowledge_dict["files"] = [
-                    file.model_dump() for file in knowledge_files
-                ]
-                knowledge_dict["type"] = "collection"
+            selected_kb_names = []
+            for selected_knowledge_base in selected_knowledge_bases:
+                selected_knowledge_base_info = Knowledges.get_knowledge_by_id(
+                    selected_knowledge_base["id"]
+                )
 
-                body["files"] = body.get("files", []) + [knowledge_dict]
+                if selected_knowledge_base_info:
+                    selected_kb_names.append(selected_knowledge_base_info.name)
+                    knowledge_file_ids = selected_knowledge_base_info.data["file_ids"]
+                    knowledge_files = Files.get_file_metadatas_by_ids(
+                        knowledge_file_ids
+                    )
+                    knowledge_dict = selected_knowledge_base_info.model_dump()
+                    knowledge_dict["files"] = [
+                        file.model_dump() for file in knowledge_files
+                    ]
+                    knowledge_dict["type"] = "collection"
 
+                    if "files" not in body:
+                        body["files"] = []
+                    body["files"].append(knowledge_dict)
+
+            if selected_kb_names:
                 await self.emit_status(
                     __event_emitter__,
                     level="status",
-                    message=f"Matching knowledge base found: {selected_knowledge_base_info.name}",
+                    message=f"Matching knowledge bases found: {', '.join(selected_kb_names)}",
                     done=True,
                 )
             else:
@@ -313,6 +346,8 @@ Return the result in the following JSON format:
                 "Additionally, please respond in the language used by the user in their input. "
             ),
         }
-
+        print("body start: =================================")
+        print(body)
+        print("body end: =================================")
         body.setdefault("messages", []).insert(0, context_message)
         return body
