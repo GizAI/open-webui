@@ -254,6 +254,7 @@ from open_webui.config import (
     ENABLE_TAGS_GENERATION,
     ENABLE_SEARCH_QUERY_GENERATION,
     ENABLE_RETRIEVAL_QUERY_GENERATION,
+    ALLOW_MULTIPLE_SEARCH_QUERIES,
     ENABLE_AUTOCOMPLETE_GENERATION,
     TITLE_GENERATION_PROMPT_TEMPLATE,
     TAGS_GENERATION_PROMPT_TEMPLATE,
@@ -641,6 +642,7 @@ app.state.config.TASK_MODEL_EXTERNAL = TASK_MODEL_EXTERNAL
 
 
 app.state.config.ENABLE_SEARCH_QUERY_GENERATION = ENABLE_SEARCH_QUERY_GENERATION
+app.state.config.ALLOW_MULTIPLE_SEARCH_QUERIES = ALLOW_MULTIPLE_SEARCH_QUERIES
 app.state.config.ENABLE_RETRIEVAL_QUERY_GENERATION = ENABLE_RETRIEVAL_QUERY_GENERATION
 app.state.config.ENABLE_AUTOCOMPLETE_GENERATION = ENABLE_AUTOCOMPLETE_GENERATION
 app.state.config.ENABLE_TAGS_GENERATION = ENABLE_TAGS_GENERATION
@@ -778,7 +780,6 @@ app.include_router(
     evaluations.router, prefix="/api/v1/evaluations", tags=["evaluations"]
 )
 app.include_router(utils.router, prefix="/api/v1/utils", tags=["utils"])
-
 
 
 ##################################
@@ -1194,10 +1195,12 @@ applications.get_swagger_ui_html = swagger_ui_html
 
 try:
     from rooibos.main_extension import extend_app
+
     extend_app(app)
 except ImportError as e:
     import traceback
-    log.error(traceback.format_exc())  
+
+    log.error(traceback.format_exc())
 
 if os.path.exists(FRONTEND_BUILD_DIR):
     mimetypes.add_type("text/javascript", ".js")
@@ -1210,4 +1213,3 @@ else:
     log.warning(
         f"Frontend build directory not found at '{FRONTEND_BUILD_DIR}'. Serving API only."
     )
-

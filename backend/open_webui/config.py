@@ -1178,6 +1178,11 @@ ENABLE_RETRIEVAL_QUERY_GENERATION = PersistentConfig(
     os.environ.get("ENABLE_RETRIEVAL_QUERY_GENERATION", "True").lower() == "true",
 )
 
+ALLOW_MULTIPLE_SEARCH_QUERIES = PersistentConfig(
+    "ALLOW_MULTIPLE_SEARCH_QUERIES",
+    "task.query.multiple.enable",
+    os.environ.get("ALLOW_MULTIPLE_SEARCH_QUERIES", "True").lower() == "true",
+)
 
 QUERY_GENERATION_PROMPT_TEMPLATE = PersistentConfig(
     "QUERY_GENERATION_PROMPT_TEMPLATE",

@@ -384,6 +384,7 @@ async def chat_web_search_handler(
             response = response[bracket_start:bracket_end]
             queries = json.loads(response)
             queries = queries.get("queries", [])
+            queries = list(dict.fromkeys(queries))
         except Exception as e:
             queries = [response]
 
@@ -403,9 +404,12 @@ async def chat_web_search_handler(
             }
         )
         return
-
     
-    for searchQuery in queries:
+    searchQueries = queries
+    if not request.app.state.config.ALLOW_MULTIPLE_SEARCH_QUERIES:
+        searchQueries = [queries[0]]
+
+    for searchQuery in searchQueries:
         await event_emitter(
             {
                 "type": "status",
