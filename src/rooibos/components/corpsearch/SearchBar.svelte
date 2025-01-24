@@ -24,14 +24,6 @@
     onSearch(searchValue, selectedFilters);
   }
 
-  function handleAction(action: 'reset' | 'apply') {
-    if (action === 'reset') {
-      onReset();
-    } else if (action === 'apply') {
-      onApply();
-    }
-  }
-
   const dispatch = createEventDispatcher();
   const toggleFilter = (groupId: string) => {
     if (activeFilterGroup === groupId) {
@@ -196,7 +188,7 @@
         <button
           type="button"
           class="text-sm px-3 py-2 font-medium text-gray-700 hover:bg-gray-100 rounded-full whitespace-nowrap"
-          on:click={() => handleAction(action.action)}
+          on:click={() => onReset()}
         >
           {action.label}
         </button>

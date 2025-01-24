@@ -351,7 +351,8 @@
   };
 
   const handleReset = () => {
-    selectedFilters = {};    
+    selectedFilters = {};  
+    handleSearch('', selectedFilters)  
   };
 
   const handleApply = () => {

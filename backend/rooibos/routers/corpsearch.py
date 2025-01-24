@@ -82,55 +82,34 @@ async def search(request: Request):
     filters_param = search_params.get("filters")
     filters = json.loads(filters_param) if filters_param else {}
 
-    distance = float(filters.get("radius", 200))
+    distance = float(filters.get("radius", {}).get("value", "200")) if filters.get("radius") else "200"
+
+    certification = filters.get("certification", {}).get("value") if filters.get("certification") else None
 
     employee_count_data = filters.get("employee_count", {})
-    employee_count_min = employee_count_data.get("min")
-    employee_count_max = employee_count_data.get("max")
-    
-    certification = filters.get("certification", [])
+    employee_count_min = employee_count_data.get("min") if filters.get("employee_count") else None
+    employee_count_max = employee_count_data.get("max") if filters.get("employee_count") else None
 
-    establishment_year = filters.get("establishment_year", {}).get("year")
+    establishment_year = filters.get("establishment_year") if filters.get("establishment_year") else None
 
-    excluded_industries = filters.get("excluded_industries", [])
+    excluded_industries = filters.get("excluded_industries", {}).get("value") if filters.get("excluded_industries") else None
 
-    gender_raw = filters.get("gender")
+    gender_raw = filters.get("gender", {}).get("value") if filters.get("gender") else None
     gender = "남" if gender_raw == "male" else ("여" if gender_raw == "female" else None)
-    gender_age = filters.get("gender_age")
+    gender_age = filters.get("gender_age", {}).get("value") if filters.get("gender_age") else None
 
-    loan = filters.get("loan")    
+    def process_range_filter(data, multiplier=1_000_000):
+        if not data:
+            return None, None
+        min_val = data.get("min")  
+        max_val = data.get("max")
+        return (float(min_val) * multiplier if min_val is not None else None,
+                float(max_val) * multiplier if max_val is not None else None)
 
-    net_profit_data = filters.get("net_profit", {})
-    net_profit_min = net_profit_data.get("min")
-    net_profit_max = net_profit_data.get("max")
-    if net_profit_min is not None:
-        net_profit_min = float(net_profit_min) * 1_000_000
-    if net_profit_max is not None:
-        net_profit_max = float(net_profit_max) * 1_000_000
-
-    profit_data = filters.get("profit", {})
-    profit_min = profit_data.get("min")
-    profit_max = profit_data.get("max")
-    if profit_min is not None:
-        profit_min = float(profit_min) * 1_000_000
-    if profit_max is not None:
-        profit_max = float(profit_max) * 1_000_000
-
-    sales_data = filters.get("sales", {})
-    sales_min = sales_data.get("min")
-    sales_max = sales_data.get("max")
-    if sales_min is not None:
-        sales_min = float(sales_min) * 1_000_000
-    if sales_max is not None:
-        sales_max = float(sales_max) * 1_000_000
-
-    unallocated_data = filters.get("unallocated_profit", {})
-    unallocated_profit_min = unallocated_data.get("min")
-    unallocated_profit_max = unallocated_data.get("max")
-    if unallocated_profit_min is not None:
-        unallocated_profit_min = float(unallocated_profit_min) * 1_000_000
-    if unallocated_profit_max is not None:
-        unallocated_profit_max = float(unallocated_profit_max) * 1_000_000
+    net_profit_min, net_profit_max = process_range_filter(filters.get("net_profit"))
+    profit_min, profit_max = process_range_filter(filters.get("profit"))
+    sales_min, sales_max = process_range_filter(filters.get("sales"))
+    unallocated_profit_min, unallocated_profit_max = process_range_filter(filters.get("unallocated_profit"))
 
     try:
         params = []
@@ -396,10 +375,10 @@ async def search(request: Request):
                 params.append(gender_age)
                 param_count += 1
 
-            if loan is not None:
-                sql_query += f" AND mci.loan = ${param_count}"
-                params.append(loan)
-                param_count += 1
+            # if loan is not None:
+            #     sql_query += f" AND mci.loan = ${param_count}"
+            #     params.append(loan)
+            #     param_count += 1
 
             if not id:
                 if latitude and longitude:
