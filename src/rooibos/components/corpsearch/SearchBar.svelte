@@ -120,18 +120,18 @@
 
   <div class="relative">
     {#if showLeftArrow}
-      <div class="absolute left-0 top-1/2 -translate-y-1/2 z-10">
-        <button
-          class="rounded-full p-2"
-          on:click={scrollLeft}
-          aria-label="왼쪽으로 스크롤"
-        >
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M15 19l-7-7 7-7" />
-          </svg>
-        </button>
-      </div>
+    <div class="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-gradient-to-r from-gray-50 to-transparent pr-8 pl-2">
+      <button
+        class="rounded-full p-2 bg-white"
+        on:click={scrollLeft}
+        aria-label="왼쪽으로 스크롤"
+      >
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M15 19l-7-7 7-7" />
+        </svg>
+      </button>
+    </div>
     {/if}
 
     <div class="mx-2 pr-20"> <!-- 오른쪽 여백 추가 -->
@@ -162,18 +162,18 @@
       </div>
     </div>
 
-    <div class="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white flex items-center">
+    <div class="absolute right-0 top-1/2 -translate-y-1/2 z-10 flex items-center bg-gradient-to-l from-gray-50 to-transparent pl-8 pr-2">
       {#if showRightArrow}
         <button
-          class="rounded-full p-2"
-          on:click={scrollRight}
-          aria-label="오른쪽으로 스크롤"
-        >
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M9 5l7 7-7 7" />
-          </svg>
-        </button>
+         class="rounded-full p-2 bg-white"
+         on:click={scrollRight}
+         aria-label="오른쪽으로 스크롤"
+       >
+         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                 d="M9 5l7 7-7 7" />
+         </svg>
+       </button>
       {/if}
 
       {#each filterActions.filter(a => a.action === 'reset') as action}
