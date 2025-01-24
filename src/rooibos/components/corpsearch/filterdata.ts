@@ -70,7 +70,7 @@ import {
       ],
     },
     {
-      id: 'net_profit' ,
+      id: 'net_profit',
       title: '당기순이익',
       icon: Scale,
       iconClass: "text-pink-500",
