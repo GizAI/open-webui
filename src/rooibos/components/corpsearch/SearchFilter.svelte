@@ -1,8 +1,6 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
-  import { filterGroups, filterActions } from './filterdata';
+  import { filterGroups } from './filterdata';
   import { mobile } from '$lib/stores';
-	import { TypeOutline } from 'lucide-svelte';
 
   type FilterValue = string | string[] | { 
     min?: string;
@@ -102,6 +100,19 @@
               {/each}
             </div>
           </div>
+        {:else if group.id === 'establishment_year'}
+          <div class="border rounded-lg p-3 bg-gray-50"> 
+            <div class="flex items-center gap-2">
+              <input
+                type="number"
+                placeholder="년도 입력"
+                value={selectedFilters[group.id]?.establishment_year || ''}
+                class="w-20 px-2 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all" 
+                on:input={(e) => onFilterChange(group.id, 'establishment_year', e.currentTarget?.value || '')}
+              />
+              <span class="text-sm text-gray-600 ml-1">년도 이상</span>
+            </div>
+          </div>  
 
         {:else}
           <div class="border rounded-lg {shouldShowApplyButton(group.id) ? 'p-2' : 'p-3'} bg-gray-50">

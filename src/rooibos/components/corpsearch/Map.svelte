@@ -581,7 +581,8 @@
       'sales', 
       'profit', 
       'net_profit', 
-      'unallocated_profit'
+      'unallocated_profit',
+      'establishment_year'
     ];
 
     if (!excludedGroupIds.includes(groupId)) {
