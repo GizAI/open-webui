@@ -1,6 +1,6 @@
 <script context="module" lang="ts">
   declare var naver: any;
-</script>
+</script>   
 
 <script lang="ts">
   import { onMount } from 'svelte';
@@ -13,6 +13,7 @@
 	import SearchCompanyList from './SearchCompanyList.svelte';
 	import { WEBUI_API_BASE_URL } from '$lib/constants';
 	import CorpInfo from '../corpinfo/CorpInfo.svelte';
+	import { OverlappingMarkerSpiderfier } from './marker';
 
   type MapInstance = {
     map: any;
@@ -197,7 +198,6 @@
   let showSearchList = false;
   let isListIconVisible = true;
   let activeFilterGroup: string | null = null;
-  let isFilterOpen = false;
   let userLocation:UserLocation | null = null;
   let showCompanyInfo = false;
   let companyInfo: CompanyInfo = {
@@ -215,7 +215,6 @@
 
     showSearchList = false;
     activeFilterGroup = null;
-    isFilterOpen = false;
     isListIconVisible = true;
 
     try {
@@ -267,7 +266,9 @@
         mapInstance?.map.setCenter(firstPoint);
         mapInstance.map.setZoom(17);
 
-        searchResults.forEach((result) => {
+        const spiderfier = new OverlappingMarkerSpiderfier(mapInstance.map);
+
+        searchResults.forEach((result, index) => {
           const point = new naver.maps.LatLng(
               parseFloat(result.latitude),
               parseFloat(result.longitude)
@@ -278,29 +279,69 @@
                   position: point,
                   map: mapInstance.map,
                   title: result.company_name,
+                  zIndex: 100,
                   icon: {
                     content: `
-                        <div style="
-                            padding: 5px;
-                            background: white;
-                            border: 1px solid #888;
-                            border-radius: 4px;
-                            text-align: center;
-                            min-width: 100px;
-                            font-size: 12px;
-                        ">
-                            ${result.company_name}
-                        </div>
-                    `,
-                    anchor: new naver.maps.Point(50, 0)
+                          <div class="marker-content" style="
+                              position: relative;
+                              padding: 8px;
+                              background: white;
+                              border: 1px solid #888;
+                              border-radius: 6px;
+                              text-align: center;
+                              min-width: 120px;
+                              font-size: 12px;
+                              transition: all 0.2s;
+                              cursor: pointer;
+                              box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                          ">
+                              <div style="
+                                  position: absolute;
+                                  bottom: -8px;
+                                  left: 50%;
+                                  transform: translateX(-50%);
+                                  width: 0;
+                                  height: 0;
+                                  border-left: 8px solid transparent;
+                                  border-right: 8px solid transparent;
+                                  border-top: 8px solid white;
+                                  filter: drop-shadow(0 2px 1px rgba(0,0,0,0.1));
+                              "></div>
+                              <div style="
+                                  position: absolute;
+                                  bottom: -7px;
+                                  left: 50%;
+                                  transform: translateX(-50%);
+                                  width: 0;
+                                  height: 0;
+                                  border-left: 8px solid transparent;
+                                  border-right: 8px solid transparent;
+                                  border-top: 8px solid #888;
+                                  z-index: -1;
+                              "></div>
+                              <div style="font-weight: bold;">${result.company_name}</div>
+                              <div style="font-size: 11px; color: #666; margin-top: 2px;">${result.representative || '대표자 미상'}</div>
+                          </div>
+                      `,
+                      anchor: new naver.maps.Point(50, 30)  // 앵커 포인트를 아래로 조정
                   }
               });
 
-              naver.maps.Event.addListener(marker, 'click', () => {
-                handleFilterOpenChange(false);
-                companyInfo = result
-                showCompanyInfo = true;
+              // 마우스 오버 시 최상단으로 표시
+              naver.maps.Event.addListener(marker, 'mouseover', () => {
+                  marker.setZIndex(200);  // 다른 마커보다 높은 zIndex 설정
               });
+
+              // 마우스 아웃 시 기본 zIndex로 복귀
+              naver.maps.Event.addListener(marker, 'mouseout', () => {
+                  marker.setZIndex(100);
+              });
+
+              naver.maps.Event.addListener(marker, 'click', () => {
+                  companyInfo = result;
+                  showCompanyInfo = true;
+              });
+              spiderfier.addMarker(marker);
               mapInstance.companyMarkers.push(marker);
           }
         });
@@ -348,7 +389,7 @@
         location.lng = e.coord._lng;
         showCompanyInfo = false;
       }
-      isFilterOpen = false;
+      activeFilterGroup = null;
     });
 
     naver.maps.Event.addListener(map, 'dragend', (e: any) => {      
@@ -415,7 +456,6 @@
 
   const handleSearchListChange = (newValue: boolean) => {
       showSearchList = newValue;
-      isFilterOpen = newValue;
   };
 
   onMount(() => {
@@ -466,46 +506,68 @@
     const group = filterGroups.find((g) => g.id === groupId);
     if (!group) return;
   
-    const newFilters = { ...selectedFilters };
+    let newFilters = { ...selectedFilters };
   
-    if (groupId === 'radius' && typeof checked === 'string') {
-      newFilters[groupId] = checked;
+    if (optionId === 'checked') {
+      newFilters[groupId] = {
+        ...(newFilters[groupId] as any || {}),
+        checked: checked as boolean
+      };
+    } else if (groupId === 'radius' && typeof checked === 'string') {
+      newFilters[groupId] = {
+        ...(newFilters[groupId] as any || {}),
+        value: checked
+      };
     } else if (
       groupId === 'distance' ||
       groupId === 'representative' ||
-      groupId === 'gender' || groupId === 'loan'
+      groupId === 'gender' || 
+      groupId === 'loan'
     ) {
-      newFilters[groupId] = checked ? optionId : "";
-    }else if (groupId === 'gender_age' && typeof checked === 'string') {
-        newFilters[groupId] = checked  
+      newFilters[groupId] = {
+        ...(newFilters[groupId] as any || {}),
+        value: checked ? optionId : ""
+      };
+    } else if (groupId === 'gender_age' && typeof checked === 'string') {
+      newFilters[groupId] = {
+        ...(newFilters[groupId] as any || {}),
+        value: checked
+      };
     } else if (typeof checked === 'string') {
       newFilters[groupId] = {
-        ...(selectedFilters[groupId] as any),
+        ...(newFilters[groupId] as any || {}),
         [optionId]: checked,
       };
     } else if (group.isMulti) {
-      const currentValues = Array.isArray(selectedFilters[groupId])
-        ? (selectedFilters[groupId] as string[])
+      const currentValues = Array.isArray(selectedFilters[groupId]?.value)
+        ? (selectedFilters[groupId]?.value as string[])
         : [];
-      if (checked) {
-        newFilters[groupId] = [...currentValues, optionId];
-      } else {
-        newFilters[groupId] = currentValues.filter((id) => id !== optionId);
-      }
+      
+      newFilters[groupId] = {
+        ...(newFilters[groupId] as any || {}),
+        value: checked 
+          ? [...currentValues, optionId]
+          : currentValues.filter((id) => id !== optionId)
+      };
     } else {
-      newFilters[groupId] = checked ? optionId : "";
+      newFilters[groupId] = {
+        ...(newFilters[groupId] as any || {}),
+        value: checked ? optionId : ""
+      };
     }
   
+    // 빈 값 정리
     Object.keys(newFilters).forEach((key) => {
-      if (Array.isArray(newFilters[key]) && newFilters[key].length === 0) {
-        delete newFilters[key];
-      }
-      if (newFilters[key] === null) {
+      const filter = newFilters[key];
+      if (!filter) return;
+
+      if (filter.value === null || 
+          (Array.isArray(filter.value) && filter.value.length === 0)) {
         delete newFilters[key];
       }
 
-      if (typeof newFilters[key] === 'object' && newFilters[key] !== null) {
-        const values = Object.values(newFilters[key]);
+      if (typeof filter.value === 'object' && filter.value !== null) {
+        const values = Object.values(filter.value);
         if (values.every(val => val === '' || val === null)) {
           delete newFilters[key];
         }
@@ -520,12 +582,12 @@
     showCompanyInfo = false
   }
 
-  const handleFilterOpenChange = (value: boolean) => {
-    isFilterOpen = value;
-  };
+
+  let isFullscreen = false; 
+
 
 </script>
-{#if !($showSidebar && $mobile)}
+{#if !($showSidebar && $mobile) && (!showCompanyInfo || !isFullscreen)}
   <div 
       class="search-bar-wrapper w-full"
       class:sidebar-visible={$showSidebar}
@@ -535,17 +597,18 @@
       onReset={handleReset}
       onApply={handleApply}
       searchValue={searchValue}
-      onShowSearchListChange={handleSearchListChange}
-      activeFilterGroup={null}
+      activeFilterGroup={activeFilterGroup}
       onFilterChange={onFilterChange}
       selectedFilters={selectedFilters}
+      on:filterGroupChange={(e) => activeFilterGroup = e.detail} 
     />
   </div>
 {/if}
 
+
 {#if showCompanyInfo && companyInfo}
   <div class:sidebar-visible={$showSidebar}>
-    <CorpInfo companyInfo={companyInfo} onClose={closeCompanyInfo}/>
+    <CorpInfo companyInfo={companyInfo} onClose={closeCompanyInfo} bind:isFullscreen={isFullscreen}/>
   </div>
 {/if}
 
@@ -590,33 +653,30 @@
 
 <!-- SearchBar.svelte 스타일 수정 -->
 <style>
-  .search-bar-wrapper {
-    position: fixed; /* absolute에서 fixed로 변경 */
+    .search-bar-wrapper {
+    position: fixed;
     top: 0;
     left: 0;
     right: 0;
     width: 100%;
     z-index: 50;
-    transition: all 0.3s ease;
+    transition: margin-left 0.3s ease-in-out;
     box-sizing: border-box;
-    background-color: white; /* 배경색 추가 */
-    border-bottom: 1px solid #e5e7eb; /* 구분선 추가 */
+    background-color: white;
+    border-bottom: 1px solid #e5e7eb;
   }
   
   .search-bar-wrapper.sidebar-visible {
-    left: 220px;
-    width: calc(100% - 220px);
+    margin-left: 256px; /* left 속성 대신 margin-left 사용 */
+    width: calc(100% - 256px);
   }
   
   @media (max-width: 768px) {
     .search-bar-wrapper.sidebar-visible {
-      left: 0;
+      margin-left: 0;
       width: 100%;
     }
-  }  
-
-  
-
+  }
 
   #map {
     position: relative;

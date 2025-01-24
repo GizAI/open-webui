@@ -1,19 +1,17 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  import { onMount, createEventDispatcher } from 'svelte';
   import { filterGroups, filterActions } from './filterdata';
   import SearchFilter from './SearchFilter.svelte';
   import { mobile } from '$lib/stores';
   import { showSidebar } from '$lib/stores';
   import MenuLines from '$lib/components/icons/MenuLines.svelte';
 
-  export let onSearch: (searchValue: string, selectedFilters: any) => Promise<void>;
   export let searchValue: string;
   export let selectedFilters: any = {};
-  export let isFilterOpen: boolean = false;
   export let activeFilterGroup: string | null = null;
+  export let onSearch: (searchValue: string, selectedFilters: any) => Promise<void>;
   export let onReset: () => void;
   export let onApply: () => void;
-  export let onShowSearchListChange: (value: boolean) => void;
   export let onFilterChange: (groupId: string, optionId: string, checked: boolean | string) => void;
 
   let filterScrollRef: HTMLDivElement | null = null;
@@ -34,15 +32,12 @@
     }
   }
 
+  const dispatch = createEventDispatcher();
   const toggleFilter = (groupId: string) => {
-    debugger
-    if (activeFilterGroup === groupId && isFilterOpen) {
-      activeFilterGroup = null;
-      isFilterOpen = false;
+    if (activeFilterGroup === groupId) {
+      dispatch('filterGroupChange', null);
     } else {
-      activeFilterGroup = groupId;
-      isFilterOpen = true;
-      onShowSearchListChange(false);
+      dispatch('filterGroupChange', groupId);
     }
   };
 
@@ -81,7 +76,7 @@
 </script>
 
 <div class="bg-gray-50 overflow-y-auto">
-  <div class="flex items-center py-2">
+  <div class="flex items-center py-1">
     <div class="{ $showSidebar ? 'hidden' : '' } flex items-center">
       <button
         id="sidebar-toggle-button"
@@ -139,7 +134,7 @@
       </div>
     {/if}
 
-    <div class="mx-8">
+    <div class="mx-2 pr-20"> <!-- 오른쪽 여백 추가 -->
       <div
         bind:this={filterScrollRef}
         class="flex flex-nowrap w-full items-center gap-0 overflow-x-auto scrollbar-hide py-2"
@@ -148,7 +143,7 @@
         {#each filterGroups as group}
           <button
             type="button"
-            class="px-2 py-2 text-sm font-medium text-gray-700 whitespace-nowrap rounded-full"
+            class="px-2 py-2 text-sm {group.checked ? 'font-bold text-blue-700' : 'font-medium text-gray-700'} whitespace-nowrap rounded-full"
             on:click={() => toggleFilter(group.id)}
           >
             {group.title}
@@ -158,7 +153,7 @@
         {#each filterActions.filter(a => a.action === 'apply') as action}
           <button
             type="button"
-            class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-full hover:bg-gray-200 whitespace-nowrap"
+            class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-full whitespace-nowrap"
             on:click={() => handleAction(action.action)}
           >
             {action.label}
@@ -167,7 +162,7 @@
       </div>
     </div>
 
-    <div class="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white">
+    <div class="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white flex items-center">
       {#if showRightArrow}
         <button
           class="rounded-full p-2"
@@ -184,7 +179,7 @@
       {#each filterActions.filter(a => a.action === 'reset') as action}
         <button
           type="button"
-          class="text-sm px-3 py-1 rounded-full whitespace-nowrap"
+          class="text-sm px-3 py-2 font-medium text-gray-700 hover:bg-gray-100 rounded-full whitespace-nowrap"
           on:click={() => handleAction(action.action)}
         >
           {action.label}
@@ -194,7 +189,7 @@
   </div>
 </div>
 
-{#if isFilterOpen}
+{#if activeFilterGroup}
   <div
     class="search-filter-container"
     style="{$mobile ? 'margin-top: 80px' : ''}"
@@ -225,7 +220,6 @@
     transform: translate(-50%, -50%);
     z-index: 1000;
     border-radius: 8px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     padding: 16px;
   }
 </style>
