@@ -12,7 +12,6 @@ import {
       iconClass: "text-red-500",
       isMulti: false,
       defaultValue: '200',
-      checked: true,
       options: [
         { id: '200', label: '200m' },
         { id: '500', label: '500m' },
@@ -26,7 +25,6 @@ import {
       icon: Award,
       iconClass: "text-purple-600",
       isMulti: true,
-      checked: false,
       options: [
         { id: 'research_institute', label: '연구소 인증' },
         { id: 'venture', label: '벤처 인증' },
@@ -42,7 +40,6 @@ import {
       icon: Users,
       iconClass: "text-purple-600",
       isMulti: false,
-      checked: false,
       options: [
         { id: 'range', label: '명 (범위 설정 가능)' },
       ],
@@ -53,7 +50,6 @@ import {
       icon: TrendingUp,
       iconClass: "text-green-500",
       isMulti: false,
-      checked: false,
       options: [
         { id: 'range', label: '숫자를 직접 입력' },
       ],
@@ -64,7 +60,6 @@ import {
       icon: DollarSign,
       iconClass: "text-pink-500",
       isMulti: false,
-      checked: false,
       options: [
         { id: 'range', label: '숫자를 직접 입력' },
       ],
@@ -86,7 +81,6 @@ import {
       icon: UserPlus,
       iconClass: "text-indigo-500",
       isMulti: false,
-      checked: false,
       options: [
         { id: 'male', label: '남자' },
         { id: 'female', label: '여자' },
@@ -98,7 +92,6 @@ import {
       icon: History,
       iconClass: "text-indigo-500",
       isMulti: false,
-      checked: false,
       options: [
         { id: 'age_input', label: '나이 입력' },
       ],
@@ -109,7 +102,6 @@ import {
       icon: Landmark,
       iconClass: "text-green-500",
       isMulti: false,
-      checked: false,
       options: [
         { id: 'range', label: '숫자를 직접 입력' },
       ],
@@ -120,7 +112,6 @@ import {
       icon: CalendarDays,
       iconClass: "text-pink-500",
       isMulti: false,
-      checked: false,
       options: [
         { id: 'input_year', label: '직접 입력' },
       ],
@@ -145,7 +136,6 @@ import {
       icon: Ban,
       iconClass: "text-red-500",
       isMulti: true,
-      checked: false,
       options: [
         { id: 'L6812', label: '임대업' },
         { id: 'L6810', label: '부동산업' },

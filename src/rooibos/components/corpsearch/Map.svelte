@@ -556,7 +556,6 @@
       };
     }
   
-    // 빈 값 정리
     Object.keys(newFilters).forEach((key) => {
       const filter = newFilters[key];
       if (!filter) return;
@@ -575,8 +574,22 @@
     });
   
     selectedFilters = newFilters;
+
+    const excludedGroupIds = [
+      'employee_count', 
+      'sales', 
+      'profit', 
+      'net_profit', 
+      'unallocated_profit'
+    ];
+
+    if (!excludedGroupIds.includes(groupId)) {
+      handleSearch('', selectedFilters);
+    }
+
     return newFilters;
   }
+
 
   function closeCompanyInfo() {
     showCompanyInfo = false

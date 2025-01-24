@@ -56,6 +56,15 @@
   }
 
   onMount(() => {
+    filterGroups.forEach((group) => {
+      if (group.defaultValue && !selectedFilters[group.id]) {
+        selectedFilters[group.id] = {
+          checked: true,
+          value: group.defaultValue
+        };
+      }
+    });
+
     onScroll();
     
     resizeObserver = new ResizeObserver(() => {
@@ -72,6 +81,7 @@
       }
       resizeObserver.disconnect();
     };
+
   });
 </script>
 
@@ -140,15 +150,21 @@
         class="flex flex-nowrap w-full items-center gap-0 overflow-x-auto scrollbar-hide py-2"
         on:scroll={onScroll}
       >
-        {#each filterGroups as group}
-          <button
-            type="button"
-            class="px-2 py-2 text-sm {group.checked ? 'font-bold text-blue-700' : 'font-medium text-gray-700'} whitespace-nowrap rounded-full"
-            on:click={() => toggleFilter(group.id)}
-          >
-            {group.title}
-          </button>
-        {/each}
+      {#each filterGroups as group}
+        <button
+          type="button"
+          class="px-2 py-2 text-sm { (selectedFilters[group.id] || group.defaultValue ) ? 'font-bold text-blue-700' : 'font-medium text-gray-700' } whitespace-nowrap rounded-full"
+          on:click={() => toggleFilter(group.id)}
+        >
+          {group.isMulti 
+            ? `${group.title} ${Array.isArray(selectedFilters[group.id]?.value) && selectedFilters[group.id].value.length > 0 ? `(${selectedFilters[group.id].value.length})` : ''}`
+            : (group.defaultValue || selectedFilters[group.id]?.value 
+              ? group.options.find(opt => opt.id === (selectedFilters[group.id]?.value || group.defaultValue))?.label || group.title
+              : group.title)
+          }
+        </button>
+
+     {/each}
 
         {#each filterActions.filter(a => a.action === 'apply') as action}
           <button
