@@ -1,8 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-
   import { filterGroups, filterActions } from './filterdata';
-  
+  import { mobile } from '$lib/stores';
 
   type FilterValue = string | string[] | { 
     min?: string;
@@ -11,7 +10,7 @@
     age?: string;
   };
 
-  // 타입 가드 함수 추가
+  // 타입 가드 함수
   function isStringArray(value: FilterValue): value is string[] {
     return Array.isArray(value);
   }
@@ -26,27 +25,12 @@
   export let onApply: () => void;
   export let activeGroup: string | null;
 
-  let maxHeight = '60vh';
-
   onMount(() => {
     filterGroups.forEach((group) => {
       if (group.defaultValue && !selectedFilters[group.id]) {
         selectedFilters[group.id] = group.defaultValue;
       }
     });
-    
-    function updateMaxHeight() {
-      const windowHeight = window.innerHeight;
-      const searchBarHeight = 64;
-      const bottomNavHeight = 80;
-      const padding = 32;
-      const availableHeight = windowHeight - searchBarHeight - bottomNavHeight - padding;
-      maxHeight = `${availableHeight}px`;
-    }
-    updateMaxHeight();
-
-    window.addEventListener('resize', updateMaxHeight);
-    return () => window.removeEventListener('resize', updateMaxHeight);
   });
 
   $: group = filterGroups.find((g) => g.id === activeGroup);
@@ -76,11 +60,12 @@
   function shouldShowApplyButton(groupId: string): boolean {
     return applyButtonGroups.includes(groupId);
   }
+
 </script>
 
 {#if group}
   <div>
-    <div class="bg-white rounded-lg shadow-sm p-4">
+    <div class="bg-white rounded-lg shadow-sm {$mobile ? 'p-2' : 'p-4'}">
       <div class="filter-group-title flex items-center justify-between mb-3"> 
         <h3 class="font-semibold text-gray-800 text-sm">{group.title}</h3>
         {#if shouldShowApplyButton(group.id)}
@@ -191,3 +176,4 @@
     </div>
   </div>
 {/if}
+

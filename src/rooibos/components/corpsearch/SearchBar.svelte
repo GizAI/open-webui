@@ -191,8 +191,8 @@
 
 {#if activeFilterGroup}
   <div
-    class="search-filter-container"
-    style="{$mobile ? 'margin-top: 80px' : ''}"
+    class="{$mobile ? '' : 'search-filter-container'}"
+    style="{$mobile ? '' : 'margin-top: 80px'}"
   >
     <SearchFilter
       {selectedFilters}
@@ -215,7 +215,6 @@
 
   .search-filter-container {
     position: fixed;
-    top: 20%;
     left: 50%;
     transform: translate(-50%, -50%);
     z-index: 1000;
