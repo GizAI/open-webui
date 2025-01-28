@@ -138,7 +138,7 @@
 			prompt = '';
 			files = [];
 			selectedToolIds = [];
-			webSearchEnabled = $settings?.alwaysOnWebSearch ?? false;
+			webSearchEnabled = false;
 			imageGenerationEnabled = false;
 
 			loaded = false;
