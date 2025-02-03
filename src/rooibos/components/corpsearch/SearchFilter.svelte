@@ -46,6 +46,26 @@
     return applyButtonGroups.includes(groupId);
   }
 
+  const checkFilter = (filter: any) => {
+    const value = selectedFilters[filter.id];
+
+    if (
+      !value ||
+      value === '' ||
+      (typeof value === 'object' &&
+        (Object.keys(value).length === 0 ||
+          (Object.keys(value).every((key) => value[key] === ''))))
+    ) {
+      delete selectedFilters[filter.id];
+    }
+
+    console.log(filter.id);
+    console.log(selectedFilters[filter.id]);
+    console.log('selectedFilters: ', selectedFilters);
+    onApply();
+  };
+
+
   
 </script>
 
@@ -57,9 +77,9 @@
         {#if shouldShowApplyButton(group.id)}
           <button 
             on:click={() => {
-              onApply()
+              checkFilter(group)
             }}
-            class="p-1.5 hover:bg-blue-50 rounded-md transition-all {selectedFilters[group.id]?.checked ? 'text-blue-600' : 'text-gray-600'}"
+            class="p-1.5 hover:bg-blue-50 rounded-md transition-all text-gray-600"
             aria-label="적용"
           >
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">

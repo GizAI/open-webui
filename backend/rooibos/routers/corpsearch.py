@@ -386,7 +386,7 @@ async def search(request: Request):
             else:
                 sql_query += " ORDER BY distance_from_user ASC"
 
-        sql_query += " LIMIT 1000"
+        # sql_query += " LIMIT 1000"
 
         executable_query = get_executable_query(sql_query, params)
 
