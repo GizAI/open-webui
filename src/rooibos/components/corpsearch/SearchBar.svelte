@@ -173,11 +173,24 @@
       {#if searchResults.length > 0}
         <div class="mt-2 h-full overflow-y-auto pb-20">
           {#each searchResults as result}
-            <div class="p-4 border-b">
+          <button
+            type="button"
+            class="w-full p-4 border-b text-left hover:bg-gray-100"
+            on:click={() => {
+              dispatch('searchResultClick', result);
+              toggleSearchMode();
+            }}
+            on:keydown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                dispatch('searchResultClick', result);
+                toggleSearchMode();
+              }
+            }}
+          >
               <h3 class="font-medium font-semibold">{result.company_name}</h3>
               <p class="text-sm text-gray-600">{result.representative}</p>
               <p class="text-sm text-gray-600">{result.address}</p>
-            </div>
+        </button>
           {/each}
         </div>
       {/if}

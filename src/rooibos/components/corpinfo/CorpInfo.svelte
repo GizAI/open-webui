@@ -155,8 +155,7 @@
 
 	// 필요에 따라 섹션 표시 여부 함수들
 	const hasBasicInfo = (info: CompanyInfo) => {
-		return !!(
-			info.business_registration_number ||
+		return info.business_registration_number ||
 			info.corporate_number ||
 			info.representative ||
 			info.address ||
@@ -167,38 +166,37 @@
 			info.fiscal_month ||
 			info.main_bank ||
 			info.website
-		);
+		;
 	};
 
 	const hasIndustryInfo = (info: CompanyInfo) => {
-		return !!info.industry || !!info.main_product;
+		return info.industry || info.main_product;
 	};
 
 	const hasLabInfo = (info: CompanyInfo) => {
-		return !!(
-			info.lab_name ||
+		return info.lab_name ||
 			info.research_field ||
 			info.division ||
 			info.first_approval_date ||
 			info.lab_location
-		);
+		;
 	};
 
 	const hasCertificationInfo = (info: CompanyInfo) => {
-		return !!(
-			info.venture_confirmation_type ||
+		debugger
+		return info.venture_confirmation_type ||
 			info.sme_type ||
 			info.certificate_expiry_date ||
 			info.venture_valid_from
-		);
+		;
 	};
 
 	const hasShareholderInfo = (info: CompanyInfo) => {
-		return !!(info.family_shareholder_yn || info.external_shareholder_yn);
+		return info.family_shareholder_yn == 'Y' || info.external_shareholder_yn == 'Y';
 	};
 
 	const hasFinancialInfo = () => {
-		return !!(financialData && Array.isArray(financialData) && financialData.length > 0);
+		return financialData && Array.isArray(financialData) && financialData.length > 0;
 	};
 
 	// 동적으로 사용 가능한 섹션 목록
@@ -276,6 +274,18 @@
 		onClose()
 	}
 
+	function saveCompany() {
+
+	}
+
+	function openAIChat() {
+		
+	}
+
+	function searchNaver() {
+		
+	}
+
 
 </script>
 
@@ -289,34 +299,59 @@
 		<div class="bg-gray-50 sticky top-0 z-10 shrink-0 px-4 pt-2 pb-1 border-b border-gray-200">	
 			<!-- 회사명 / 닫기 버튼 -->
 			<div class="flex items-center justify-between w-full mb-1">
-				<h1 class="{$mobile ? 'sm:text-xl' : 'text-2xl'} font-semibold mb-1 truncate">{companyInfo.company_name}</h1>
-
-				{#if !$mobile}
-					<button class="p-2 hover:bg-gray-100 rounded-full" on:click={closeCompanyInfo}>
-						<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+				<h1 class="{$mobile ? 'sm:text-xl' : 'text-xl'} font-semibold mb-1 truncate">
+					{companyInfo.company_name}
+				</h1>
+			
+				<div class="flex items-center space-x-0">
+					<!-- 기업 저장 버튼 -->
+					<button class="p-2 hover:bg-gray-100 rounded-full" on:click={saveCompany}>
+						<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5v14l7-7 7 7V5z" />
 						</svg>
 					</button>
-				{:else}
-					<button 
-						class="p-2 hover:bg-gray-100 rounded-full" 
-						on:click={isFullscreen ? closeCompanyInfo : toggleFullscreen}
-					>
-				
-						<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-							<path 
-							stroke-linecap="round" 
-							stroke-linejoin="round" 
-							stroke-width="2" 
-							d={isFullscreen ? "M6 18L18 6M6 6l12 12" : "M5 15l7-7 7 7"}
-						   />
+			
+					<!-- AI 채팅 버튼 -->
+					<button class="p-2 hover:bg-gray-100 rounded-full" on:click={openAIChat}>
+						<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h8m-8 4h5m-9 6v-6a2 2 0 012-2h12a2 2 0 012 2v6l-4-4H5l-4 4z" />
+						</svg>
 					</button>
-				
-				{/if}
+			
+					<!-- 네이버 찾기 버튼 -->
+					<button class="p-2 hover:bg-gray-100 rounded-full" on:click={searchNaver}>
+						<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35m1.5-4.15a7 7 0 11-14 0 7 7 0 0114 0z" />
+						</svg>
+					</button>
+			
+					{#if !$mobile}
+						<button class="p-2 hover:bg-gray-100 rounded-full" on:click={closeCompanyInfo}>
+							<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+							</svg>
+						</button>
+					{:else}
+						<button 
+							class="p-2 hover:bg-gray-100 rounded-full" 
+							on:click={isFullscreen ? closeCompanyInfo : toggleFullscreen}
+						>
+							<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+								<path 
+									stroke-linecap="round" 
+									stroke-linejoin="round" 
+									stroke-width="2" 
+									d={isFullscreen ? "M6 18L18 6M6 6l12 12" : "M5 15l7-7 7 7"}
+								/>
+							</svg>
+						</button>
+					{/if}
+				</div>
 			</div>
+			
 			<!-- 섹션 네비게이션 -->
-			<!-- <hr class="border-t border-gray-100 mt-2" /> -->
-			<!-- {#if availableSections.length > 0}
+			<hr class="border-t border-gray-100 mt-2" />
+			{#if availableSections.length > 0}
 				<div class="flex overflow-x-auto space-x-2 mt-2">
 					{#each availableSections as section}
 						<button
@@ -330,7 +365,7 @@
 					{/each}
 				</div>
 				<hr class="border-t border-gray-100 mt-2 mb-1" />
-			{/if} -->
+			{/if}
 		</div>
 
 		<!-- 스크롤 영역(섹션들) -->
@@ -582,7 +617,7 @@
 				{/if}
 
 				<!-- 재무 정보 섹션 -->
-				<!-- {#if financialData && Array.isArray(financialData) && financialData.length > 0}
+				{#if financialData && Array.isArray(financialData) && financialData.length > 0}
 					<div
 						bind:this={financialSection}
 						id="financial"
@@ -651,7 +686,7 @@
 							</tbody>
 						</table>
 					</div>
-				{/if} -->
+				{/if}
 			</div>
 		</div>
 	{:else}
