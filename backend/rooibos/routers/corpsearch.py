@@ -115,24 +115,7 @@ async def search(request: Request):
         params = []
         param_count = 1
 
-        sql_query = """        
-            WITH FinancialComparison AS (
-                SELECT 
-                    mfd.financial_company_id,
-                    mfd.revenue,
-                    mfd.net_income,
-                    mfd.total_assets,
-                    mfd.total_liabilities,
-                    mfd.retained_earnings,
-                    CASE
-                        WHEN LAG(mfd.revenue) OVER (PARTITION BY mfd.financial_company_id ORDER BY mfd.year) IS NOT NULL
-                        THEN (mfd.revenue - LAG(mfd.revenue) OVER (PARTITION BY mfd.financial_company_id ORDER BY mfd.year)) 
-                            / NULLIF(LAG(mfd.revenue) OVER (PARTITION BY mfd.financial_company_id ORDER BY mfd.year), 0) * 100
-                        ELSE 0
-                    END AS revenue_growth_rate
-                FROM smtp_financial_data mfd
-                WHERE mfd.year = '2023'
-            )
+        sql_query = """
             SELECT DISTINCT
                 mci.smtp_id,
                 mci.company_name,
