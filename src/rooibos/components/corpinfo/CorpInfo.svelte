@@ -6,6 +6,7 @@
 		Award, Building2, FlaskConical, CalendarCheck, Microscope, ClipboardList
 	} from 'lucide-svelte';
 	import { mobile } from '$lib/stores';
+	import { WEBUI_API_BASE_URL } from '$lib/constants';
 
 	interface CompanyInfo {
 		id: string;
@@ -117,7 +118,16 @@
 	let financialData: FinancialData[] | null = null;
 
 	onMount(async () => {
-		// 필요한 초기 작업이 있다면 여기에 추가
+		const financialResponse = await fetch(`${WEBUI_API_BASE_URL}/rooibos/corpbookmarks/${companyInfo.smtp_id}/financialData`, {
+			method: 'GET',
+			headers: {
+				Accept: 'application/json',
+				'Content-Type': 'application/json',
+				authorization: `Bearer ${localStorage.token}`
+			}
+		})
+		const data = await financialResponse.json();
+		financialData = data.data;
 	});
 
 	const metrics = [
@@ -183,7 +193,6 @@
 	};
 
 	const hasCertificationInfo = (info: CompanyInfo) => {
-		debugger
 		return info.venture_confirmation_type ||
 			info.sme_type ||
 			info.certificate_expiry_date ||
@@ -303,37 +312,40 @@
 					{companyInfo.company_name}
 				</h1>
 			
-				<div class="flex items-center space-x-0">
+				<div class="flex items-center space-x-1">
 					<!-- 기업 저장 버튼 -->
-					<button class="p-2 hover:bg-gray-100 rounded-full" on:click={saveCompany}>
+					<button class="flex flex-col items-center hover:bg-gray-100 rounded-lg" on:click={saveCompany}>
 						<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
 							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5v14l7-7 7 7V5z" />
 						</svg>
+						<span class="text-xs text-gray-500 mt-1 whitespace-nowrap">저장</span>
 					</button>
-			
+				
 					<!-- AI 채팅 버튼 -->
-					<button class="p-2 hover:bg-gray-100 rounded-full" on:click={openAIChat}>
+					<button class="flex flex-col items-center hover:bg-gray-100 rounded-lg" on:click={openAIChat}>
 						<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
 							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h8m-8 4h5m-9 6v-6a2 2 0 012-2h12a2 2 0 012 2v6l-4-4H5l-4 4z" />
 						</svg>
+						<span class="text-xs text-gray-500 mt-1 whitespace-nowrap">AI채팅</span>
 					</button>
-			
+				
 					<!-- 네이버 찾기 버튼 -->
-					<button class="p-2 hover:bg-gray-100 rounded-full" on:click={searchNaver}>
+					<button class="flex flex-col items-center hover:bg-gray-100 rounded-lg" on:click={searchNaver}>
 						<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
 							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35m1.5-4.15a7 7 0 11-14 0 7 7 0 0114 0z" />
 						</svg>
+						<span class="text-xs text-gray-500 mt-1 whitespace-nowrap">네이버</span>
 					</button>
-			
+				
 					{#if !$mobile}
-						<button class="p-2 hover:bg-gray-100 rounded-full" on:click={closeCompanyInfo}>
+						<button class="hover:bg-gray-100 rounded-full" on:click={closeCompanyInfo}>
 							<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
 								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
 							</svg>
 						</button>
 					{:else}
 						<button 
-							class="p-2 hover:bg-gray-100 rounded-full" 
+							class="hover:bg-gray-100 rounded-full" 
 							on:click={isFullscreen ? closeCompanyInfo : toggleFullscreen}
 						>
 							<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -347,7 +359,12 @@
 						</button>
 					{/if}
 				</div>
+				
 			</div>
+			
+			
+			
+			
 			
 			<!-- 섹션 네비게이션 -->
 			<hr class="border-t border-gray-100 mt-2" />
@@ -616,77 +633,148 @@
 					</div>
 				{/if}
 
-				<!-- 재무 정보 섹션 -->
-				{#if financialData && Array.isArray(financialData) && financialData.length > 0}
-					<div
-						bind:this={financialSection}
-						id="financial"
-						class="space-y-2 border-b border-gray-100 pb-4"
-					>
+				<script>
+					
+					$: years = financialData && Array.isArray(financialData) 
+					  ? [...new Set(financialData.map(d => String(d.year)))].sort().reverse()
+					  : [];
+				  </script>
+				  
+				  {#if financialData && Array.isArray(financialData) && financialData.length > 0}
+					<div class="space-y-4 border-b border-gray-100 pb-4">
+					  <!-- 손익계산서 섹션 -->
+					  <div class="space-y-2">
+						<h3 class="text-sm font-semibold text-gray-700 flex items-center gap-2">
+						  <DollarSign size={16} class="text-green-500" />
+						  재무분석
+						</h3>
 						<table class="w-full text-sm">
-							<thead>
-								<tr class="border-b border-gray-200">
-									<th class="text-left px-2 font-medium text-gray-600 py-2">
-										<div class="inline-block">
-											재무정보
-										</div>
-										<div class="inline-block ml-2 text-xs text-gray-500">단위: 백만원</div>
-										<button
-											class="ml-2 inline-flex items-center px-2 py-1 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 text-xs"
-											on:click={() => (showAllMetrics = !showAllMetrics)}
-										>
-											{#if showAllMetrics}접기{:else}더보기{/if}
-										</button>
-									</th>
-									{#each years as year}
-										<th class="w-1/5 text-right px-2 py-2 font-medium text-gray-600 whitespace-nowrap">
-											{year}년
-										</th>
-									{/each}
-								</tr>
-							</thead>
-							<tbody class="text-gray-600">
-								{#if showAllMetrics}
-									{#each metrics as metric}
-										<tr class="border-b border-gray-100 hover:bg-gray-50">
-											<td class="w-1/3 px-2 py-2 font-medium">{metric.name}</td>
-											{#each years as year}
-												{@const data = financialData.find(d => d.year == year)}
-												<td class="w-1/5 text-right px-2 py-2">
-													{#if data && data[metric.key] != null}
-														<span class={`${data[metric.key] < 0 ? 'text-red-500' : ''} whitespace-nowrap`}>
-															{new Intl.NumberFormat('ko-KR').format(data[metric.key])}
-														</span>
-													{:else}
-														-
-													{/if}
-												</td>
-											{/each}
-										</tr>
-									{/each}
-								{:else}
-									{#each metrics.slice(0, 7) as metric}
-										<tr class="border-b border-gray-100 hover:bg-gray-50">
-											<td class="w-1/3 px-2 py-2 font-medium">{metric.name}</td>
-											{#each years as year}
-												{@const data = financialData.find(d => d.year == year)}
-												<td class="w-1/5 text-right px-2 py-2">
-													{#if data && data[metric.key] != null}
-														<span class={`${data[metric.key] < 0 ? 'text-red-500' : ''} whitespace-nowrap`}>
-															{new Intl.NumberFormat('ko-KR').format(data[metric.key])}
-														</span>
-													{:else}
-														-
-													{/if}
-												</td>
-											{/each}
-										</tr>
-									{/each}
-								{/if}
-							</tbody>
+						  <thead>
+							<tr class="border-b border-gray-200">
+							  <th class="text-left px-2 font-medium text-gray-600 py-2">
+								<div class="inline-block ext-sm font-semibold text-gray-700 flex items-center gap-2">손익계산서</div>
+								<div class="inline-block text-xs text-gray-500">단위: 백만원</div>
+							  </th>
+							  {#each years as year}
+								<th class="w-1/5 text-right px-2 py-2 font-medium text-gray-600 whitespace-nowrap">
+								  {year}년
+								</th>
+							  {/each}
+							</tr>
+						  </thead>
+						  <tbody class="text-gray-600">
+							{#each [
+							  { name: '매출액', key: 'revenue' },
+							  { name: '매출원가', key: 'sales_cost' },
+							  { name: '매출총이익', key: 'sales_profit' },
+							  { name: '판매관리비', key: 'sga' },
+							  { name: '영업이익', key: 'operating_income' },
+							  { name: '기타수익', key: 'other_income' },
+							  { name: '기타비용', key: 'other_expenses' },
+							  { name: '세전이익', key: 'pre_tax_income' },
+							  { name: '법인세', key: 'corporate_tax' },
+							  { name: '당기순이익', key: 'net_income' }
+							] as metric}
+							  <tr class="border-b border-gray-100 hover:bg-gray-50">
+								<td class="w-1/3 px-2 py-2 font-medium">{metric.name}</td>
+								{#each years as year}
+								  {@const yearData = financialData.find(d => String(d.year) === year)}
+								  <td class="w-1/5 text-right px-2 py-2">
+									{#if yearData && yearData[metric.key] != null}
+									  <span class={`${yearData[metric.key] < 0 ? 'text-red-500' : ''} whitespace-nowrap`}>
+										{new Intl.NumberFormat('ko-KR').format(yearData[metric.key])}
+									  </span>
+									{:else}
+									  -
+									{/if}
+								  </td>
+								{/each}
+							  </tr>
+							{/each}
+						  </tbody>
 						</table>
+					  </div>
+				  
+					  <!-- 재무상태표 섹션 -->
+					  <div class="space-y-2">
+						<table class="w-full text-sm">
+						  <thead>
+							<tr class="border-b border-gray-200">
+							  <th class="text-left px-2 font-medium text-gray-600 py-2">
+								<div class="inline-block ext-sm font-semibold text-gray-700 flex items-center gap-2">재무상태표</div>
+								<div class="inline-block ml-2 text-xs text-gray-500">단위: 백만원</div>
+							  </th>
+							  {#each years as year}
+								<th class="w-1/5 text-right px-2 py-2 font-medium text-gray-600 whitespace-nowrap">
+								  {year}년
+								</th>
+							  {/each}
+							</tr>
+						  </thead>
+						  <tbody class="text-gray-600">
+							<!-- 자산 -->
+							<tr class="bg-gray-50">
+							  <td colspan={years.length + 1} class="px-2 py-1 font-semibold">자산</td>
+							</tr>
+							{#each [
+							  { name: '유동자산', key: 'current_assets' },
+							  { name: '• 당좌자산', key: 'quick_assets' },
+							  { name: '• 재고자산', key: 'inventory' },
+							  { name: '비유동자산', key: 'non_current_assets' },
+							  { name: '• 투자자산', key: 'investment_assets' },
+							  { name: '• 유형자산', key: 'tangible_assets' },
+							  { name: '• 무형자산', key: 'intangible_assets' }
+							] as metric}
+							  <tr class="border-b border-gray-100 hover:bg-gray-50">
+								<td class="w-1/3 px-2 py-2 font-medium">{metric.name}</td>
+								{#each years as year}
+								  {@const yearData = financialData.find(d => String(d.year) === year)}
+								  <td class="w-1/5 text-right px-2 py-2">
+									{#if yearData && yearData[metric.key] != null}
+									  <span class="whitespace-nowrap">
+										{new Intl.NumberFormat('ko-KR').format(yearData[metric.key])}
+									  </span>
+									{:else}
+									  -
+									{/if}
+								  </td>
+								{/each}
+							  </tr>
+							{/each}
+							
+							<!-- 부채와 자본 -->
+							<tr class="bg-gray-50">
+							  <td colspan={years.length + 1} class="px-2 py-1 font-semibold">부채와 자본</td>
+							</tr>
+							{#each [
+							  { name: '유동부채', key: 'current_liabilities' },
+							  { name: '비유동부채', key: 'non_current_liabilities' },
+							  { name: '자본금', key: 'capital_stock' },
+							  { name: '이익잉여금', key: 'retained_earnings' }
+							] as metric}
+							  <tr class="border-b border-gray-100 hover:bg-gray-50">
+								<td class="w-1/3 px-2 py-2 font-medium">{metric.name}</td>
+								{#each years as year}
+								  {@const yearData = financialData.find(d => String(d.year) === year)}
+								  <td class="w-1/5 text-right px-2 py-2">
+									{#if yearData && yearData[metric.key] != null}
+									  <span class="whitespace-nowrap">
+										{new Intl.NumberFormat('ko-KR').format(yearData[metric.key])}
+									  </span>
+									{:else}
+									  -
+									{/if}
+								  </td>
+								{/each}
+							  </tr>
+							{/each}
+						  </tbody>
+						</table>
+					  </div>
 					</div>
-				{/if}
+				  {/if}
+
+				  
 			</div>
 		</div>
 	{:else}
