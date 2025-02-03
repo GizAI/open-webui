@@ -243,6 +243,7 @@
         }
 
         const data = await response.json();
+
         searchResults = data.data;
         showSearchList = true;
 
@@ -256,6 +257,8 @@
         if (mapInstance?.marker) {
             mapInstance.marker.setMap(null);
         }
+
+        if(searchResults.length == 0) return;
 
         const firstResult = searchResults[0];
         const firstPoint = new naver.maps.LatLng(
@@ -430,7 +433,8 @@
     }      
   };
 
-  const handleResultClick = (result: SearchResult) => {
+  const handleSearchResultClick = (result: SearchResult) => {
+    
     if (!mapInstance) return;
 
     const point = new naver.maps.LatLng(
@@ -438,17 +442,79 @@
         parseFloat(result.longitude)
     );
 
-    mapInstance.map.setCenter(point);
-    mapInstance.map.setZoom(15);
-    mapInstance.infoWindow.close();
-    mapInstance.infoWindow.setContent(compayMarkerInfo(result));
+    mapInstance?.map.setCenter(point);
+        mapInstance.map.setZoom(17);
+    const spiderfier = new OverlappingMarkerSpiderfier(mapInstance.map);
 
-    const marker = mapInstance.companyMarkers.find(
-        (m) => m.getTitle() === result.company_name
-    );
+    if (mapInstance) {
+        const marker = new naver.maps.Marker({
+            position: point,
+            map: mapInstance.map,
+            title: result.company_name,
+            zIndex: 100,
+            icon: {
+              content: `
+                    <div class="marker-content" style="
+                        position: relative;
+                        padding: 8px;
+                        background: white;
+                        border: 1px solid #888;
+                        border-radius: 6px;
+                        text-align: center;
+                        min-width: 120px;
+                        font-size: 12px;
+                        transition: all 0.2s;
+                        cursor: pointer;
+                        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                    ">
+                        <div style="
+                            position: absolute;
+                            bottom: -8px;
+                            left: 50%;
+                            transform: translateX(-50%);
+                            width: 0;
+                            height: 0;
+                            border-left: 8px solid transparent;
+                            border-right: 8px solid transparent;
+                            border-top: 8px solid white;
+                            filter: drop-shadow(0 2px 1px rgba(0,0,0,0.1));
+                        "></div>
+                        <div style="
+                            position: absolute;
+                            bottom: -7px;
+                            left: 50%;
+                            transform: translateX(-50%);
+                            width: 0;
+                            height: 0;
+                            border-left: 8px solid transparent;
+                            border-right: 8px solid transparent;
+                            border-top: 8px solid #888;
+                            z-index: -1;
+                        "></div>
+                        <div style="font-weight: bold;">${result.company_name}</div>
+                        <div style="font-size: 11px; color: #666; margin-top: 2px;">${result.representative || '대표자 미상'}</div>
+                    </div>
+                `,
+                anchor: new naver.maps.Point(50, 30)  // 앵커 포인트를 아래로 조정
+            }
+        });
 
-    if (marker) {
-        mapInstance.infoWindow.open(mapInstance.map, marker);
+        // 마우스 오버 시 최상단으로 표시
+        naver.maps.Event.addListener(marker, 'mouseover', () => {
+            marker.setZIndex(200);  // 다른 마커보다 높은 zIndex 설정
+        });
+
+        // 마우스 아웃 시 기본 zIndex로 복귀
+        naver.maps.Event.addListener(marker, 'mouseout', () => {
+            marker.setZIndex(100);
+        });
+
+        naver.maps.Event.addListener(marker, 'click', () => {
+            companyInfo = result;
+            showCompanyInfo = true;
+        });
+        spiderfier.addMarker(marker);
+        mapInstance.companyMarkers.push(marker);
     }
 
     showSearchList = false;
@@ -587,6 +653,12 @@
 
     if (!excludedGroupIds.includes(groupId)) {
       handleSearch('', selectedFilters);
+    }else {
+      const filter = newFilters[groupId];
+      
+      if (filter && (filter.min === '' || filter.min === null) && (filter.max === '' || filter.max === null)) {
+        delete newFilters[groupId];
+      }
     }
 
     return newFilters;
@@ -616,6 +688,7 @@
       onFilterChange={onFilterChange}
       selectedFilters={selectedFilters}
       on:filterGroupChange={(e) => activeFilterGroup = e.detail} 
+      on:searchResultClick={(e) => handleSearchResultClick(e.detail)} 
     />
   </div>
 {/if}
