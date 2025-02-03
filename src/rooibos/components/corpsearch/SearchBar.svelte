@@ -5,7 +5,10 @@
   import { mobile } from '$lib/stores';
   import { showSidebar } from '$lib/stores';
   import MenuLines from '$lib/components/icons/MenuLines.svelte';
+	import { WEBUI_API_BASE_URL } from '$lib/constants';
 
+  let isSearchMode = false;
+  let searchResults: any = [];
   export let searchValue: string;
   export let selectedFilters: any = {};
   export let activeFilterGroup: string | null = null;
@@ -45,6 +48,33 @@
   }
   function scrollRight() {
     filterScrollRef?.scrollBy({ left: 150, behavior: 'smooth' });
+  }
+
+  function toggleSearchMode() {
+    isSearchMode = !isSearchMode;
+    if (!isSearchMode) {
+      searchValue = '';
+      searchResults = [];
+    }
+  }
+
+  async function handleSearch(event: SubmitEvent) {
+    event.preventDefault();
+    if (searchValue.trim()) {
+      const queryParams = new URLSearchParams({
+          query: searchValue
+      });
+      const response = await fetch(`${WEBUI_API_BASE_URL}/rooibos/corpsearch/?${queryParams.toString()}`, {
+          method: 'GET',
+          headers: {
+              Accept: 'application/json',
+              'Content-Type': 'application/json',
+              authorization: `Bearer ${localStorage.token}`,
+          },
+      });
+      const data = await response.json();
+      searchResults = data.data;
+    }
   }
 
   onMount(() => {
@@ -99,6 +129,7 @@
 
     <button
       type="button"
+      on:click={toggleSearchMode}
       class="text-blue-600 hover:text-blue-800 px-4 ml-auto"
       aria-label="검색"
     >
@@ -119,6 +150,39 @@
       </svg>
     </button>
   </div>
+  {#if isSearchMode}
+  <div class="px-4 py-2 h-[calc(100vh-50px)]">
+      <form on:submit={handleSearch} class="relative">
+        <input
+          type="text"
+          bind:value={searchValue}
+          placeholder="기업명 대표자명 주소로 검색"
+          class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+        <button
+          type="button"
+          class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500"
+          on:click={toggleSearchMode}
+        >
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </form>
+
+      {#if searchResults.length > 0}
+        <div class="mt-2 h-full overflow-y-auto pb-20">
+          {#each searchResults as result}
+            <div class="p-4 border-b">
+              <h3 class="font-medium font-semibold">{result.company_name}</h3>
+              <p class="text-sm text-gray-600">{result.representative}</p>
+              <p class="text-sm text-gray-600">{result.address}</p>
+            </div>
+          {/each}
+        </div>
+      {/if}
+    </div>
+  {:else}
 
   <div class="relative">
     {#if showLeftArrow}
@@ -195,8 +259,8 @@
       {/each}
     </div>
   </div>
+  {/if}
 </div>
-
 {#if activeFilterGroup}
   <div
     class="{$mobile ? '' : 'search-filter-container'}"

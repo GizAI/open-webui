@@ -68,7 +68,7 @@
           </button>
         {/if}
       </div>
-      <div class="space-y-3">
+      <div>
         {#if group.id === 'gender_age'}
           <div class="border rounded-lg p-3 bg-gray-50"> 
             <div class="flex items-center gap-2">

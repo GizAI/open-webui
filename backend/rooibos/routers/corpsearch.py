@@ -380,39 +380,39 @@ async def search(request: Request):
             #     params.append(loan)
             #     param_count += 1
 
-            if not id:
-                if latitude and longitude:
-                    sql_query += " ORDER BY distance_from_location ASC"
-                else:
-                    sql_query += " ORDER BY distance_from_user ASC"
+        if not id:
+            if latitude and longitude:
+                sql_query += " ORDER BY distance_from_location ASC"
+            else:
+                sql_query += " ORDER BY distance_from_user ASC"
 
-            sql_query += " LIMIT 1000"
+        sql_query += " LIMIT 1000"
 
-            executable_query = get_executable_query(sql_query, params)
+        executable_query = get_executable_query(sql_query, params)
 
-            executable_query = '\n'.join(line for line in executable_query.splitlines() if line.strip())
-            log.info("Executing SQL Query:")
-            log.info(executable_query)
+        executable_query = '\n'.join(line for line in executable_query.splitlines() if line.strip())
+        log.info("Executing SQL Query:")
+        log.info(executable_query)
 
-            with get_db() as db:
-                result = db.execute(text(executable_query))
-                companies = [row._mapping for row in result.fetchall()]
-            
-            return {
-                "success": True,
-                "data": companies,
-                "total": len(companies),
-                "query": id or {
-                    "search": query,
-                    "filters": {
-                        "latitude": latitude,
-                        "longitude": longitude,
-                        "userLatitude": user_latitude,
-                        "userLongitude": user_longitude,
-                        "distance": distance,
-                    },
+        with get_db() as db:
+            result = db.execute(text(executable_query))
+            companies = [row._mapping for row in result.fetchall()]
+        
+        return {
+            "success": True,
+            "data": companies,
+            "total": len(companies),
+            "query": id or {
+                "search": query,
+                "filters": {
+                    "latitude": latitude,
+                    "longitude": longitude,
+                    "userLatitude": user_latitude,
+                    "userLongitude": user_longitude,
+                    "distance": distance,
                 },
-            }
+            },
+        }
 
     except Exception as e:
         raise HTTPException(
