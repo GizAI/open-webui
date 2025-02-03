@@ -8,6 +8,8 @@
 	import { mobile, user } from '$lib/stores';
 	import { WEBUI_API_BASE_URL } from '$lib/constants';
 	import { get } from 'svelte/store';
+	import { selectedCompanyInfo } from '$rooibos/stores';
+	import { goto } from '$app/navigation';
 
 	interface CompanyInfo {
 		id: string;
@@ -284,8 +286,8 @@
 		onClose()
 	}
 
-	const saveCompany = async (item: any) => {	
-		if(!item.bookmark_id) {
+	const saveCompany = async (company: any) => {	
+		if(!company.bookmark_id) {
 			const currentUser = get(user);
 			const response = await fetch(`${WEBUI_API_BASE_URL}/rooibos/corpbookmarks/add`, {
 			method: 'POST',
@@ -295,8 +297,8 @@
 			},
 			body: JSON.stringify({ 
 				userId: currentUser?.id, 
-				companyId: item.smtp_id, 
-				business_registration_number: item.business_registration_number 
+				companyId: company.smtp_id, 
+				business_registration_number: company.business_registration_number 
 			}),
 			});    
 			
@@ -313,12 +315,14 @@
 		}
 	}
 
-	function openAIChat() {
-		
+	const openAIChat = async (company: any) => {	
+		selectedCompanyInfo.set(company);
+      	await goto('/');
 	}
-
-	function searchNaver() {
-		
+	
+	const searchNaver = async (company: any) => {	
+		await window.open(`https://map.naver.com/v5/search/${encodeURIComponent(
+        	company.company_name)}`, '_blank');
 	}
 
 
@@ -341,32 +345,32 @@
 				<div class="flex items-center space-x-1">
 					<!-- 기업 저장 버튼 -->
 					<button 
-  class="flex flex-col items-center hover:bg-gray-100 rounded-lg"
-  on:click={() => saveCompany(companyInfo)}
->
-  <svg 
-    xmlns="http://www.w3.org/2000/svg" 
-    class="h-5 w-5 transition-colors duration-200"
-    fill="none" 
-    viewBox="0 0 24 24" 
-    stroke="currentColor"
-    class:text-yellow-500={companyInfo.bookmark_id}
-    class:text-gray-500={!companyInfo.bookmark_id}
-  >
-    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5v14l7-7 7 7V5z" />
-  </svg>
-  <span 
-    class="text-xs mt-1 whitespace-nowrap transition-colors duration-200"
-    class:text-yellow-500={companyInfo.bookmark_id}
-    class:text-gray-500={!companyInfo.bookmark_id}
-  >
-    저장
-  </span>
-</button>
+						class="flex flex-col items-center hover:bg-gray-100 rounded-lg"
+						on:click={() => saveCompany(companyInfo)}
+						>
+						<svg 
+							xmlns="http://www.w3.org/2000/svg" 
+							class="h-5 w-5 transition-colors duration-200"
+							fill="none" 
+							viewBox="0 0 24 24" 
+							stroke="currentColor"
+							class:text-yellow-500={companyInfo.bookmark_id}
+							class:text-gray-500={!companyInfo.bookmark_id}
+						>
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5v14l7-7 7 7V5z" />
+						</svg>
+						<span 
+							class="text-xs mt-1 whitespace-nowrap transition-colors duration-200"
+							class:text-yellow-500={companyInfo.bookmark_id}
+							class:text-gray-500={!companyInfo.bookmark_id}
+						>
+							저장
+						</span>
+					</button>
 
 				
 					<!-- AI 채팅 버튼 -->
-					<button class="flex flex-col items-center hover:bg-gray-100 rounded-lg" on:click={openAIChat}>
+					<button class="flex flex-col items-center hover:bg-gray-100 rounded-lg" on:click={() => openAIChat(companyInfo)}>
 						<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
 							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h8m-8 4h5m-9 6v-6a2 2 0 012-2h12a2 2 0 012 2v6l-4-4H5l-4 4z" />
 						</svg>
@@ -374,7 +378,7 @@
 					</button>
 				
 					<!-- 네이버 찾기 버튼 -->
-					<button class="flex flex-col items-center hover:bg-gray-100 rounded-lg" on:click={searchNaver}>
+					<button class="flex flex-col items-center hover:bg-gray-100 rounded-lg" on:click={() => searchNaver(companyInfo)}>
 						<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
 							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35m1.5-4.15a7 7 0 11-14 0 7 7 0 0114 0z" />
 						</svg>
