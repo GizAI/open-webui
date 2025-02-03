@@ -83,6 +83,9 @@
 	import Placeholder from './Placeholder.svelte';
 	import NotificationToast from '../NotificationToast.svelte';
 
+	import {selectedCompanyInfo} from '$rooibos/stores'
+
+
 	export let chatIdProp = '';
 
 	let loaded = false;
@@ -1436,6 +1439,13 @@
 							}
 						}
 					}
+					// for rooibos app only, add company info to user context
+					if($selectedCompanyInfo.business_registration_number) {
+						const selectedCompanyInfo = JSON.stringify($selectedCompanyInfo);
+						console.log("selectedCompanyInfo", selectedCompanyInfo);
+						userContext = selectedCompanyInfo;
+					}
+
 					responseMessage.userContext = userContext;
 
 					const chatEventEmitter = await getChatEventEmitter(model.id, _chatId);
