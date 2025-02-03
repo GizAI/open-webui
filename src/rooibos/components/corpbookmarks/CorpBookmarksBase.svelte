@@ -656,9 +656,11 @@
 		isFullscreen = !isFullscreen;
 	}
 
+	export let onClose: () => void;
+
 	function closeCompanyInfo() {
 		isFullscreen = false;
-		onClose()
+		goto('/rooibos/corpbookmarks');
 	}
 	
 </script>
@@ -792,27 +794,13 @@
 						<span class="text-xs text-gray-500 mt-1 whitespace-nowrap">네이버</span>
 					</button>
 				
-					{#if !$mobile}
+					
 						<button class="hover:bg-gray-100 rounded-full" on:click={closeCompanyInfo}>
 							<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
 								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
 							</svg>
 						</button>
-					{:else}
-						<button 
-							class="hover:bg-gray-100 rounded-full" 
-							on:click={isFullscreen ? closeCompanyInfo : toggleFullscreen}
-						>
-							<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-								<path 
-									stroke-linecap="round" 
-									stroke-linejoin="round" 
-									stroke-width="2" 
-									d={isFullscreen ? "M6 18L18 6M6 6l12 12" : "M5 15l7-7 7 7"}
-								/>
-							</svg>
-						</button>
-					{/if}
+					
 				</div>
 			</div>
 		</div>

@@ -379,7 +379,7 @@
 			</div>
 			
 			<!-- 섹션 네비게이션 -->
-			<hr class="border-t border-gray-100 mt-2" />
+			<!-- <hr class="border-t border-gray-100 mt-2" />
 			{#if availableSections.length > 0}
 				<div class="flex overflow-x-auto space-x-2 mt-2">
 					{#each availableSections as section}
@@ -394,7 +394,7 @@
 					{/each}
 				</div>
 				<hr class="border-t border-gray-100 mt-2 mb-1" />
-			{/if}
+			{/if} -->
 		</div>
 
 		<!-- 스크롤 영역(섹션들) -->
@@ -646,6 +646,7 @@
 				{/if}
 
 				<script>
+					let financialData = []; // 초기값 설정
 					$: years = financialData && Array.isArray(financialData) 
 						? [...new Set(financialData.map(d => String(d.year)))].sort().reverse()
 						: [];
