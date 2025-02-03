@@ -133,38 +133,7 @@
 		financialData = data.data;
 	});
 
-	const metrics = [
-		{ name: '매출액', key: 'revenue' },
-		{ name: '당기순이익', key: 'net_income' },
-		{ name: '영업이익', key: 'operating_income' },
-		{ name: '총자산', key: 'total_assets' },
-		{ name: '총부채', key: 'total_liabilities' },
-		{ name: '총자본', key: 'total_equity' },
-		{ name: '자본금', key: 'capital_stock' },
-		{ name: '법인세', key: 'corporate_tax' },
-		{ name: '유동자산', key: 'current_assets' },
-		{ name: '당좌자산', key: 'quick_assets' },
-		{ name: '재고자산', key: 'inventory' },
-		{ name: '비유동자산', key: 'non_current_assets' },
-		{ name: '투자자산', key: 'investment_assets' },
-		{ name: '유형자산', key: 'tangible_assets' },
-		{ name: '무형자산', key: 'intangible_assets' },
-		{ name: '유동부채', key: 'current_liabilities' },
-		{ name: '비유동부채', key: 'non_current_liabilities' },
-		{ name: '이익잉여금', key: 'retained_earnings' },
-		{ name: '이익', key: 'profit' },
-		{ name: '매출원가', key: 'sales_cost' },
-		{ name: '매출총이익', key: 'sales_profit' },
-		{ name: '판매관리비', key: 'sga' },
-		{ name: '기타수익', key: 'other_income' },
-		{ name: '기타비용', key: 'other_expenses' },
-		{ name: '세전이익', key: 'pre_tax_income' }
-	];
-
-	const years = ['2023', '2022', '2021'];
-	let showAllMetrics = false;
-
-	
+	const years = ['2023', '2022', '2021'];	
 
 	// 필요에 따라 섹션 표시 여부 함수들
 	const hasBasicInfo = (info: CompanyInfo) => {
@@ -688,14 +657,14 @@
 					<div class="space-y-2">
 					<h3 class="text-sm font-semibold text-gray-700 flex items-center gap-2">
 						<DollarSign size={16} class="text-green-500" />
-						재무분석
+						재무분석 <div class="inline-block text-xs text-gray-500">단위: 백만원</div>
 					</h3>
+					
 					<table class="w-full text-sm">
 						<thead>
 						<tr class="border-b border-gray-200">
 							<th class="text-left px-2 font-medium text-gray-600 py-2">
 							<div class="inline-block ext-sm font-semibold text-gray-700 flex items-center gap-2">손익계산서</div>
-							<div class="inline-block text-xs text-gray-500">단위: 백만원</div>
 							</th>
 							{#each years as year}
 							<th class="w-1/5 text-right px-2 py-2 font-medium text-gray-600 whitespace-nowrap">
@@ -744,7 +713,6 @@
 						<tr class="border-b border-gray-200">
 							<th class="text-left px-2 font-medium text-gray-600 py-2">
 							<div class="inline-block ext-sm font-semibold text-gray-700 flex items-center gap-2">재무상태표</div>
-							<div class="inline-block ml-2 text-xs text-gray-500">단위: 백만원</div>
 							</th>
 							{#each years as year}
 							<th class="w-1/5 text-right px-2 py-2 font-medium text-gray-600 whitespace-nowrap">
@@ -792,7 +760,7 @@
 							{ name: '유동부채', key: 'current_liabilities' },
 							{ name: '비유동부채', key: 'non_current_liabilities' },
 							{ name: '자본금', key: 'capital_stock' },
-							{ name: '이익잉여금', key: 'retained_earnings' }
+							{ name: '총이익잉여금', key: 'retained_earnings' }
 						] as metric}
 							<tr class="border-b border-gray-100 hover:bg-gray-50">
 							<td class="w-1/3 px-2 py-2 font-medium">{metric.name}</td>
