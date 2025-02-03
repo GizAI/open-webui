@@ -113,7 +113,7 @@
 
 	let selectedToolIds = [];
 	let imageGenerationEnabled = false;
-	let webSearchEnabled = false;
+	let webSearchEnabled = $settings?.alwaysOnWebSearch ?? false;
 
 	let chat = null;
 	let tags = [];
@@ -138,7 +138,6 @@
 			prompt = '';
 			files = [];
 			selectedToolIds = [];
-			webSearchEnabled = false;
 			imageGenerationEnabled = false;
 
 			loaded = false;
@@ -715,11 +714,7 @@
 		if ($page.url.searchParams.get('web-search') === 'true') {
 			webSearchEnabled = true;
 		}
-
-		if($settings?.alwaysOnWebSearch) {
-			webSearchEnabled = true;
-		}
-
+	
 		if ($page.url.searchParams.get('image-generation') === 'true') {
 			imageGenerationEnabled = true;
 		}

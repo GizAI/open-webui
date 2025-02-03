@@ -13,34 +13,58 @@ from open_webui.utils.middleware import chat_web_search_handler
 
 def parse_json_content(content: str) -> Optional[dict]:
     """
-    주어진 문자열 content에서 JSON 객체만 추출하여 dict로 반환한다.
-    - JSON 형식 데이터가 그대로 들어오는 경우도 처리 가능
-    - 작은따옴표(')를 큰따옴표(")로 변환 (필요한 경우만)
-    - selected_knowledge_bases 키를 검증하고 반환
+    주어진 문자열에서 JSON 객체를 추출하고 dict로 변환합니다.
+    - 문자열 전체가 '{...}'로 감싸져 있다면 직접 파싱을 시도합니다.
+    - 아닐 경우, 정규표현식으로 첫 번째 JSON 객체를 추출하여 파싱 시도합니다.
+    - 파싱에 실패하면 None을 반환합니다.
+    - 필요 시(파싱 실패), 작은따옴표(')를 큰따옴표(")로 바꿔보는 시도도 합니다.
     """
-    try:
-        # Remove unnecessary formatting if applicable
-        content = content.strip()
 
-        # Handle directly provided JSON
-        if content.startswith("{") and content.endswith("}"):
-            parsed_data = json.loads(content)
-        else:
-            # Extract JSON object from text
-            match = re.search(r"\{.*\}", content, flags=re.DOTALL)
-            if not match:
-                return None
-            content_json_str = match.group(0)
-            parsed_data = json.loads(content_json_str)
+    def try_load_json(json_str: str) -> Optional[dict]:
+        """주어진 json_str을 파싱 시도하고 실패 시 None을 반환합니다."""
+        try:
+            return json.loads(json_str)
+        except json.JSONDecodeError:
+            return None
 
-        # Validate the 'selected_knowledge_bases' key
-        if "selected_knowledge_bases" in parsed_data:
+    content = content.strip()
+
+    # "None"과 같이 JSON 아닌 특정 문자열 처리
+    if content.lower() == "none":
+        return None
+
+    # 1) 직접 '{...}'로 감싸져 있는지 확인
+    if content.startswith("{") and content.endswith("}"):
+        parsed_data = try_load_json(content)
+        if parsed_data is not None:
+            return parsed_data
+
+        # 파싱 실패 시, 작은따옴표를 큰따옴표로 치환 후 재시도
+        content_single_to_double = content.replace("'", '"')
+        parsed_data = try_load_json(content_single_to_double)
+        if parsed_data is not None:
             return parsed_data
 
         return None
-    except json.JSONDecodeError as e:
-        print(f"JSON Decode Error: {e}")
+
+    # 2) 정규표현식으로 '{...}' 형태 추출
+    match = re.search(r"\{.*?\}", content, flags=re.DOTALL)
+    if not match:
         return None
+
+    json_str = match.group(0)
+
+    parsed_data = try_load_json(json_str)
+    if parsed_data is not None:
+        return parsed_data
+
+    # 파싱 실패 시, 작은따옴표를 큰따옴표로 치환 후 재시도
+    json_str_converted = json_str.replace("'", '"')
+    parsed_data = try_load_json(json_str_converted)
+    if parsed_data is not None:
+        return parsed_data
+
+    return None
 
 
 class Filter:
@@ -99,7 +123,7 @@ class Filter:
         system_prompt = f"""You are a system that selects the most appropriate knowledge bases for the user's query.
 Below is a list of knowledge bases accessible by the user. 
 Based on the user's prompt, return the 1-3 most relevant knowledge bases as an array. 
-If no relevant knowledge bases are applicable, return an empty array [] without any explanation.
+If no relevant knowledge bases are applicable, return an "None" without any explanation.
 
 Available knowledge bases:
 {knowledge_bases_list}
@@ -163,8 +187,12 @@ Consider the following when making your decision:
    taxes, new technologies, and other fast-changing subjects—web search is strongly recommended 
    to ensure accuracy and freshness of data.
 
-4. Strive to make human-like judgments to ensure your decision aligns with the user's intent 
+4. For general or everyday prompts that may require current information (e.g., weather updates, recent news, live events), enable a web search.
+
+5. Strive to make human-like judgments to ensure your decision aligns with the user's intent 
    and the context of the question.
+
+6. If the user's query is not clear, return "None" without any explanation.
 
 Return the result in the following JSON format:
 {
@@ -235,11 +263,21 @@ Return the result in the following JSON format:
             print("kb_content start: =================================")
             print(kb_content)
             print("kb_content end: =================================")
-            kb_result = parse_json_content(kb_content)
-            print("kb_result start: =================================")
-            print(kb_result)
-            print("kb_result end: =================================")
-            selected_knowledge_bases = kb_result.get("selected_knowledge_bases", [])
+
+            if kb_content == "None":
+                selected_knowledge_bases = []
+            else:
+                try:
+                    kb_result = parse_json_content(kb_content)
+
+                    selected_knowledge_bases = (
+                        kb_result.get("selected_knowledge_bases", [])
+                        if kb_result
+                        else []
+                    )
+                except Exception as e:
+                    print(e)
+                    selected_knowledge_bases = []
 
             ###################################################################
             # 2) 웹 검색 필요 여부 판단
@@ -260,9 +298,13 @@ Return the result in the following JSON format:
             ws_response = await generate_chat_completion(
                 request=__request__, form_data=ws_payload, user=user
             )
+
             ws_content = (
                 ws_response["choices"][0]["message"]["content"] if ws_response else ""
             )
+            print("ws_content start: =================================")
+            print(ws_content)
+            print("ws_content end: =================================")
             ws_result = parse_json_content(ws_content)
 
             web_search_enabled = (
@@ -270,12 +312,13 @@ Return the result in the following JSON format:
             )
 
             if isinstance(web_search_enabled, str):
-                web_search_enabled = web_search_enabled.lower() == "true"
+                web_search_enabled = web_search_enabled.lower() in ["true", "yes"]
 
             if web_search_enabled:
                 print("Web search required.")
                 print("body : =================================")
                 print(body)
+                print("body end: =================================")
                 await chat_web_search_handler(
                     __request__,
                     body,
@@ -291,25 +334,29 @@ Return the result in the following JSON format:
 
             selected_kb_names = []
             for selected_knowledge_base in selected_knowledge_bases:
-                selected_knowledge_base_info = Knowledges.get_knowledge_by_id(
-                    selected_knowledge_base["id"]
-                )
+                kb_id = selected_knowledge_base.get("id")
+                kb_name = selected_knowledge_base.get("name")
 
-                if selected_knowledge_base_info:
-                    selected_kb_names.append(selected_knowledge_base_info.name)
-                    knowledge_file_ids = selected_knowledge_base_info.data["file_ids"]
-                    knowledge_files = Files.get_file_metadatas_by_ids(
-                        knowledge_file_ids
-                    )
-                    knowledge_dict = selected_knowledge_base_info.model_dump()
-                    knowledge_dict["files"] = [
-                        file.model_dump() for file in knowledge_files
-                    ]
-                    knowledge_dict["type"] = "collection"
+                if kb_id and kb_name:
+                    selected_kb_names.append(kb_name)
+                    selected_knowledge_base_info = Knowledges.get_knowledge_by_id(kb_id)
 
-                    if "files" not in body:
-                        body["files"] = []
-                    body["files"].append(knowledge_dict)
+                    if selected_knowledge_base_info:
+                        knowledge_file_ids = selected_knowledge_base_info.data.get(
+                            "file_ids", []
+                        )
+                        knowledge_files = Files.get_file_metadatas_by_ids(
+                            knowledge_file_ids
+                        )
+                        knowledge_dict = selected_knowledge_base_info.model_dump()
+                        knowledge_dict["files"] = [
+                            file.model_dump() for file in knowledge_files
+                        ]
+                        knowledge_dict["type"] = "collection"
+
+                        if "files" not in body:
+                            body["files"] = []
+                        body["files"].append(knowledge_dict)
 
             if selected_kb_names:
                 await self.emit_status(
