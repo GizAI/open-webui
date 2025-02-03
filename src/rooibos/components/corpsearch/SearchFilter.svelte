@@ -90,7 +90,7 @@
       </div>
       <div>
         {#if group.id === 'gender_age'}
-          <div class="border rounded-lg p-3 bg-gray-50"> 
+          <div class="border rounded-lg p-7 bg-gray-50"> 
             <div class="flex items-center gap-2">
               <input
                 type="number"
@@ -104,8 +104,8 @@
           </div>
 
         {:else if group.id === 'gender'}
-          <div class="border rounded-lg p-3 bg-gray-50">
-            <div class="flex items-center gap-4"> 
+          <div class="border rounded-lg p-7 bg-gray-50">
+            <div class="flex items-center gap-2"> 
               {#each group.options as option}
                 <label class="flex items-center hover:bg-white p-1.5 rounded-md transition-all">
                   <input
@@ -121,7 +121,7 @@
             </div>
           </div>
         {:else if group.id === 'establishment_year'}
-          <div class="border rounded-lg p-3 bg-gray-50"> 
+          <div class="border rounded-lg p-6 bg-gray-50"> 
             <div class="flex items-center gap-2">
               <input
                 type="number"
@@ -135,7 +135,7 @@
           </div>  
 
         {:else}
-          <div class="border rounded-lg {shouldShowApplyButton(group.id) ? 'p-2' : 'p-3'} bg-gray-50">
+          <div class="border rounded-lg {shouldShowApplyButton(group.id) ? 'p-6' : 'p-3'} bg-gray-50">
             <div class="grid {shouldShowApplyButton(group.id) ? 'grid-cols-1 gap-1' : 'grid-cols-2 gap-2'}">
               {#each group.options as option}
                 {#if (['employee_count', 'sales', 'profit', 'net_profit', 'unallocated_profit'].includes(group.id)) && option.id === 'range'}
@@ -159,25 +159,30 @@
                     <span class="text-xs text-gray-600 whitespace-nowrap">{group.id === 'employee_count' ? '명' : '백만'}</span>
                   </div>
                 {:else}
-                  <label class="flex items-center hover:bg-white p-1.5 rounded-md transition-all"> 
-                    <input
-                      type={group.isMulti ? 'checkbox' : 'radio'}
-                      name={group.id}
-                      checked={
-                        group.isMulti
-                          ? (Array.isArray(selectedFilters[group.id]?.value) 
-                            && selectedFilters[group.id]?.value.includes(option.id))
-                          : selectedFilters[group.id]?.value === option.id
-                      }
-                      on:change={(e) => onFilterChange(
-                        group.id,
-                        option.id,
-                        group.isMulti ? e.currentTarget?.checked : option.id
-                      )}
-                      class="w-4 h-4 text-blue-600 mr-2"
-                    />
-                    <span class="text-sm text-gray-700">{option.label}</span>
-                  </label>
+                <div class="border rounded-lg p-1 bg-gray-50"> 
+                  <div class="flex items-center gap-2">
+                    <label class="flex items-center hover:bg-white rounded-md transition-all"> 
+                      <input
+                        type={group.isMulti ? 'checkbox' : 'radio'}
+                        name={group.id}
+                        checked={
+                          group.isMulti
+                            ? (Array.isArray(selectedFilters[group.id]?.value) 
+                              && selectedFilters[group.id]?.value.includes(option.id))
+                            : selectedFilters[group.id]?.value === option.id
+                        }
+                        on:change={(e) => onFilterChange(
+                          group.id,
+                          option.id,
+                          group.isMulti ? e.currentTarget?.checked : option.id
+                        )}
+                        class="w-4 h-4 text-blue-600 mr-2"
+                      />
+                      <span class="text-sm text-gray-700">{option.label}</span>
+                    </label>
+                  </div>
+                </div>
+
                 {/if}
               {/each}
             </div>
