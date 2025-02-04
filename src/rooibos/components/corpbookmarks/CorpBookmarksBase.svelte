@@ -657,13 +657,10 @@
 		isFullscreen = !isFullscreen;
 	}
 
-	export let onClose: () => void;
-
 	function closeCompanyInfo() {
 		isFullscreen = false;
 		goto('/rooibos/corpbookmarks');
 	}
-
 	
 	const hasIndustryInfo = (info: Bookmark) => {
 		return info.industry || info.main_product;
@@ -688,10 +685,6 @@
 
 	const hasShareholderInfo = (info: Bookmark) => {
 		return info.family_shareholder_yn == 'Y' || info.external_shareholder_yn == 'Y';
-	};
-
-	const hasFinancialInfo = () => {
-		return financialData && Array.isArray(financialData) && financialData.length > 0;
 	};
 	
 </script>
@@ -771,12 +764,12 @@
 			}}
 		/>
 		<div 
-  class="company-info-wrapper active {isFullscreen ? 'fullscreen' : ''} flex flex-col w-full bg-gray-50 mt-4 h-[calc(100vh-8rem)]"
+  class="company-info-wrapper active {isFullscreen ? 'fullscreen' : ''} flex flex-col w-full mt-4 h-[calc(100vh-8rem)]"
   class:mobile={$mobile}
 >
 	{#if bookmark}
 		<!-- 상단 고정 영역 -->
-		<div class="bg-gray-50 sticky top-0 z-10 shrink-0 px-4 pt-2 pb-1 border-b border-gray-200">	
+		<div class="sticky top-0 z-10 shrink-0 px-4 pt-2 pb-1">	
 			<!-- 회사명 / 닫기 버튼 -->
 			<div class="flex items-center justify-between w-full mb-1">
 				<h1 class="{$mobile ? 'sm:text-xl' : 'text-xl'} font-semibold mb-1 truncate">
