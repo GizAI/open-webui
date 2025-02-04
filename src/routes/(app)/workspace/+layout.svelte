@@ -129,7 +129,7 @@
 									: 'text-gray-300 dark:text-gray-600 hover:text-gray-700 dark:hover:text-white'} transition"
 								href="/rooibos/corpbookmarks"
 							>
-								{$i18n.t('Companies')}
+								{$i18n.t('My Companies')}
 							</a>
 						{/if}
 
