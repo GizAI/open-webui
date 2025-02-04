@@ -769,7 +769,7 @@
 >
 	{#if bookmark}
 		<!-- 상단 고정 영역 -->
-		<div class="sticky top-0 z-10 shrink-0 px-4 pt-2 pb-1">	
+		<div class="top-0 z-10 shrink-0 px-4 pt-2 pb-1">	
 			<!-- 회사명 / 닫기 버튼 -->
 			<div class="flex items-center justify-between w-full mb-1">
 				<h1 class="{$mobile ? 'sm:text-xl' : 'text-xl'} font-semibold mb-1 truncate">
