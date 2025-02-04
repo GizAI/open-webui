@@ -618,7 +618,7 @@
 				{/if}
 
 				<!-- 주주 정보 섹션 -->
-				{#if hasShareholderInfo(companyInfo)}
+				{#if false && hasShareholderInfo(companyInfo)}
 					<div
 						bind:this={shareholdersSection}
 						id="shareholders"
@@ -825,7 +825,7 @@
 	  }
 	    
 	  .company-info-wrapper.mobile.fullscreen {
-		top: 0;
+		top: 1;
 		height: 100vh;
 		border-top-left-radius: 0;
 		border-top-right-radius: 0;

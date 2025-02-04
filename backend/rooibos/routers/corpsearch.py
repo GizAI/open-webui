@@ -239,7 +239,7 @@ async def search(request: Request):
             """
 
         if id:
-            sql_query += f" AND mci.smtp_id = ${param_count}"
+            sql_query += f" AND (mci.smtp_id = ${param_count} OR mci.business_registration_number = ${param_count})"
             params.append(float(id))
             param_count += 1
         else:
