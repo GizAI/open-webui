@@ -825,7 +825,7 @@
 	  }
 	    
 	  .company-info-wrapper.mobile.fullscreen {
-		top: 5;
+		top: 10;
 		height: 100vh;
 		border-top-left-radius: 0;
 		border-top-right-radius: 0;
