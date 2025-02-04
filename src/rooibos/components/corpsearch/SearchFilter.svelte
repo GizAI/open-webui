@@ -39,7 +39,8 @@
     'net_profit',
     'representative_age',
     'unallocated_profit',
-    'establishment_year'
+    'establishment_year',
+    'gender_age'
   ];
 
   function shouldShowApplyButton(groupId: string): boolean {

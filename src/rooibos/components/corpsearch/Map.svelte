@@ -14,6 +14,7 @@
 	import { WEBUI_API_BASE_URL } from '$lib/constants';
 	import CorpInfo from '../corpinfo/CorpInfo.svelte';
 	import { OverlappingMarkerSpiderfier } from './marker';
+	import SearchResultCorpList from './SearchResultCorpList.svelte';
 
   type MapInstance = {
     map: any;
@@ -201,6 +202,7 @@
   let userLocation:UserLocation | null = null;
   let showCompanyInfo = false;
   let zoom = 18;
+  let isFullscreen = false;
   let companyInfo: CompanyInfo = {
     id: '',
     company_id: '',
@@ -267,7 +269,7 @@
         mapInstance.map.setCenter(firstPoint);
         mapInstance.map.setZoom(zoom);
 
-        // const spiderfier = new OverlappingMarkerSpiderfier(mapInstance.map);
+        const spiderfier = new OverlappingMarkerSpiderfier(mapInstance.map);
 
         searchResults.forEach((result, index) => {
           const point = new naver.maps.LatLng(
@@ -320,7 +322,7 @@
                                   border-top: 8px solid #888;
                                   z-index: -1;
                               "></div>
-                              <div style="font-weight: bold;">${result.company_name}</div>
+                              <div style="font-weight: bold;">${result.company_name}(${result.business_registration_number})</div>
                               <div style="font-size: 11px; color: #666; margin-top: 2px;">${result.representative || '대표자 미상'}</div>
                           </div>
                       `,
@@ -340,8 +342,9 @@
               naver.maps.Event.addListener(marker, 'click', () => {
                   companyInfo = result;
                   showCompanyInfo = true;
+                  showSearchList = false;
               });
-              // spiderfier.addMarker(marker);
+              spiderfier.addMarker(marker);
               mapInstance.companyMarkers.push(marker);
           }
         });
@@ -447,7 +450,7 @@
     mapInstance?.map.setCenter(point);
     mapInstance.map.setZoom(zoom);
 
-    // const spiderfier = new OverlappingMarkerSpiderfier(mapInstance.map);
+    const spiderfier = new OverlappingMarkerSpiderfier(mapInstance.map);
 
     if (mapInstance) {
         const marker = new naver.maps.Marker({
@@ -494,7 +497,7 @@
                             border-top: 8px solid #888;
                             z-index: -1;
                         "></div>
-                        <div style="font-weight: bold;">${result.company_name}</div>
+                        <div style="font-weight: bold;">${result.company_name}(${result.business_registration_number})</div>
                         <div style="font-size: 11px; color: #666; margin-top: 2px;">${result.representative || '대표자 미상'}</div>
                     </div>
                 `,
@@ -516,7 +519,7 @@
             companyInfo = result;
             showCompanyInfo = true;
         });
-        // spiderfier.addMarker(marker);
+        spiderfier.addMarker(marker);
         mapInstance.companyMarkers.push(marker);
     }
 
@@ -651,7 +654,8 @@
       'profit', 
       'net_profit', 
       'unallocated_profit',
-      'establishment_year'
+      'establishment_year',
+      'gender_age'
     ];
 
     if (!excludedGroupIds.includes(groupId)) {
@@ -661,13 +665,37 @@
     return newFilters;
   }
 
-
   function closeCompanyInfo() {
-    showCompanyInfo = false
-  }
+    showCompanyInfo = false;
+    showSearchList = true;
+  } 
 
+  const handleResultClick = (result: SearchResult) => {
+    return;
+    if (!mapInstance) return;
 
-  let isFullscreen = false; 
+    const point = new naver.maps.LatLng(
+        parseFloat(result.latitude),
+        parseFloat(result.longitude)
+    );
+
+    mapInstance.map.setCenter(point);
+    mapInstance.map.setZoom(zoom);
+    // mapInstance.infoWindow.close();
+    // mapInstance.infoWindow.setContent(compayMarkerInfo(result));
+
+    const marker = mapInstance.companyMarkers.find(
+        (m) => m.getTitle() === result.company_name
+    );
+
+    if (marker) {
+        mapInstance.infoWindow.open(mapInstance.map, marker);
+    }
+
+    showSearchList = false;
+    isListIconVisible = !isListIconVisible;
+    handleSearchListChange(false);
+  };
 
 
 </script>
@@ -690,6 +718,19 @@
   </div>
 {/if}
 
+{#if searchResults.length > 1 && showSearchList && !($mobile && $showSidebar)}
+  <div 
+    class="company-list-wrapper w-full"
+    class:sidebar-visible={$showSidebar}
+    >
+      <SearchCompanyList
+        searchResults={searchResults}
+        onResultClick={handleResultClick}
+        bind:isFullscreen={isFullscreen}
+        onClose={closeCompanyInfo}
+      />
+  </div>
+{/if}
 
 {#if showCompanyInfo && companyInfo}
   <div class:sidebar-visible={$showSidebar}>
@@ -752,7 +793,7 @@
   }
   
   .search-bar-wrapper.sidebar-visible {
-    margin-left: 256px; /* left 속성 대신 margin-left 사용 */
+    margin-left: 260px; /* left 속성 대신 margin-left 사용 */
     width: calc(100% - 256px);
   }
   
@@ -761,6 +802,24 @@
       margin-left: 0;
       width: 100%;
     }
+  }
+
+  .company-list-wrapper {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    z-index: 50;
+    transition: margin-left 0.3s ease-in-out;
+    box-sizing: border-box;
+    background-color: white;
+    border-bottom: 1px solid #e5e7eb;
+  }
+
+  .company-list-wrapper.sidebar-visible {
+    margin-left: 256px; /* left 속성 대신 margin-left 사용 */
+    width: calc(100% - 256px);
   }
 
   #map {
