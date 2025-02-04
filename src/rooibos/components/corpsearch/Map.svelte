@@ -200,6 +200,7 @@
   let activeFilterGroup: string | null = null;
   let userLocation:UserLocation | null = null;
   let showCompanyInfo = false;
+  let zoom = 18;
   let companyInfo: CompanyInfo = {
     id: '',
     company_id: '',
@@ -247,29 +248,26 @@
         searchResults = data.data;
         showSearchList = true;
 
-        if (!mapInstance) return;
+        if (!mapInstance || searchResults.length == 0) return;
 
         if (mapInstance?.companyMarkers) {
             mapInstance.companyMarkers.forEach((marker) => marker.setMap(null));
             mapInstance.companyMarkers = [];
         }
 
-        if (mapInstance?.marker) {
-            mapInstance.marker.setMap(null);
-        }
+        // if (mapInstance?.marker) {
+        //     mapInstance.marker.setMap(null);
+        // }
 
-        if(searchResults.length == 0) return;
-
-        const firstResult = searchResults[0];
         const firstPoint = new naver.maps.LatLng(
-            parseFloat(firstResult.latitude),
-            parseFloat(firstResult.longitude)
+            location?.lat,
+            location?.lng
         );
 
-        mapInstance?.map.setCenter(firstPoint);
-        mapInstance.map.setZoom(17);
+        mapInstance.map.setCenter(firstPoint);
+        mapInstance.map.setZoom(zoom);
 
-        const spiderfier = new OverlappingMarkerSpiderfier(mapInstance.map);
+        // const spiderfier = new OverlappingMarkerSpiderfier(mapInstance.map);
 
         searchResults.forEach((result, index) => {
           const point = new naver.maps.LatLng(
@@ -330,12 +328,11 @@
                   }
               });
 
-              // 마우스 오버 시 최상단으로 표시
-              naver.maps.Event.addListener(marker, 'mouseover', () => {
-                  marker.setZIndex(200);  // 다른 마커보다 높은 zIndex 설정
+              naver.maps.Event.addListener(marker, 'mouseover', function() {
+                  console.log('mouseover');
+                  marker.setZIndex(200);
               });
 
-              // 마우스 아웃 시 기본 zIndex로 복귀
               naver.maps.Event.addListener(marker, 'mouseout', () => {
                   marker.setZIndex(100);
               });
@@ -344,7 +341,7 @@
                   companyInfo = result;
                   showCompanyInfo = true;
               });
-              spiderfier.addMarker(marker);
+              // spiderfier.addMarker(marker);
               mapInstance.companyMarkers.push(marker);
           }
         });
@@ -406,6 +403,11 @@
         
       }
     });
+
+    naver.maps.Event.addListener(map, 'zoom_changed', () => {  
+      zoom = map.getZoom(); // 줌 변경 시 현재 줌 값 저장
+      console.log('zoom:', zoom);
+    });
   };
 
   const moveToCurrentLocation = () => {
@@ -443,8 +445,9 @@
     );
 
     mapInstance?.map.setCenter(point);
-        mapInstance.map.setZoom(17);
-    const spiderfier = new OverlappingMarkerSpiderfier(mapInstance.map);
+    mapInstance.map.setZoom(zoom);
+
+    // const spiderfier = new OverlappingMarkerSpiderfier(mapInstance.map);
 
     if (mapInstance) {
         const marker = new naver.maps.Marker({
@@ -513,7 +516,7 @@
             companyInfo = result;
             showCompanyInfo = true;
         });
-        spiderfier.addMarker(marker);
+        // spiderfier.addMarker(marker);
         mapInstance.companyMarkers.push(marker);
     }
 
@@ -653,12 +656,6 @@
 
     if (!excludedGroupIds.includes(groupId)) {
       handleSearch('', selectedFilters);
-    }else {
-      const filter = newFilters[groupId];
-      
-      if (filter && (filter.min === '' || filter.min === null) && (filter.max === '' || filter.max === null)) {
-        delete newFilters[groupId];
-      }
     }
 
     return newFilters;
