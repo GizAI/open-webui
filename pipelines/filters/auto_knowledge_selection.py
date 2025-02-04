@@ -70,6 +70,7 @@ def parse_json_content(content: str) -> Optional[dict]:
 class Filter:
     class Valves(BaseModel):
         status: bool = Field(default=True)
+        auto_search_mode: bool = Field(default=False)
 
     def __init__(self):
         self.valves = self.Valves()
@@ -282,51 +283,48 @@ Return the result in the following JSON format:
             ###################################################################
             # 2) 웹 검색 필요 여부 판단
             ###################################################################
-            ws_plan = await self.determine_web_search_needed(body, __user__)
-            if ws_plan is None:
-                raise ValueError("determine_web_search_needed result is None")
 
-            ws_payload = {
-                "model": ws_plan["model"],
-                "messages": [
-                    {"role": "system", "content": ws_plan["system_prompt"]},
-                    {"role": "user", "content": ws_plan["prompt"]},
-                ],
-                "stream": False,
-            }
+            if self.valves.auto_search_mode:
+                ws_plan = await self.determine_web_search_needed(body, __user__)
+                if ws_plan is None:
+                    raise ValueError("determine_web_search_needed result is None")
 
-            ws_response = await generate_chat_completion(
-                request=__request__, form_data=ws_payload, user=user
-            )
+                ws_payload = {
+                    "model": ws_plan["model"],
+                    "messages": [
+                        {"role": "system", "content": ws_plan["system_prompt"]},
+                        {"role": "user", "content": ws_plan["prompt"]},
+                    ],
+                    "stream": False,
+                }
 
-            ws_content = (
-                ws_response["choices"][0]["message"]["content"] if ws_response else ""
-            )
-            print("ws_content start: =================================")
-            print(ws_content)
-            print("ws_content end: =================================")
-            ws_result = parse_json_content(ws_content)
-
-            web_search_enabled = (
-                ws_result.get("web_search_enabled") if ws_result else False
-            )
-
-            if isinstance(web_search_enabled, str):
-                web_search_enabled = web_search_enabled.lower() in ["true", "yes"]
-
-            if web_search_enabled:
-                print("Web search required.")
-                print("body : =================================")
-                print(body)
-                print("body end: =================================")
-                await chat_web_search_handler(
-                    __request__,
-                    body,
-                    {"__event_emitter__": __event_emitter__},
-                    user_object,
+                ws_response = await generate_chat_completion(
+                    request=__request__, form_data=ws_payload, user=user
                 )
-            else:
-                print("No web search required.")
+
+                ws_content = (
+                    ws_response["choices"][0]["message"]["content"]
+                    if ws_response
+                    else ""
+                )
+                ws_result = parse_json_content(ws_content)
+
+                web_search_enabled = (
+                    ws_result.get("web_search_enabled") if ws_result else False
+                )
+
+                if isinstance(web_search_enabled, str):
+                    web_search_enabled = web_search_enabled.lower() in ["true", "yes"]
+
+                if web_search_enabled:
+                    await chat_web_search_handler(
+                        __request__,
+                        body,
+                        {"__event_emitter__": __event_emitter__},
+                        user_object,
+                    )
+                else:
+                    print("No web search required.")
 
             ###################################################################
             # 선택된 Knowledge Base가 있으면 body에 추가 (기존 files와 병합)
