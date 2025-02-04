@@ -33,6 +33,7 @@
 	import { selectedCompanyInfo } from '$rooibos/stores';
 	import { goto } from '$app/navigation';
 	import { get } from 'svelte/store';
+	import Bookmark from '$lib/components/icons/Bookmark.svelte';
 
 
 	let largeScreen = true;
@@ -662,6 +663,36 @@
 		isFullscreen = false;
 		goto('/rooibos/corpbookmarks');
 	}
+
+	
+	const hasIndustryInfo = (info: Bookmark) => {
+		return info.industry || info.main_product;
+	};
+
+	const hasLabInfo = (info: Bookmark) => {
+		return info.lab_name ||
+			info.research_field ||
+			info.division ||
+			info.first_approval_date ||
+			info.lab_location
+		;
+	};
+
+	const hasCertificationInfo = (info: Bookmark) => {
+		return info.venture_confirmation_type ||
+			info.sme_type ||
+			info.certificate_expiry_date ||
+			info.venture_valid_from
+		;
+	};
+
+	const hasShareholderInfo = (info: Bookmark) => {
+		return info.family_shareholder_yn == 'Y' || info.external_shareholder_yn == 'Y';
+	};
+
+	const hasFinancialInfo = () => {
+		return financialData && Array.isArray(financialData) && financialData.length > 0;
+	};
 	
 </script>
 
@@ -901,6 +932,7 @@
 				</div>
 
 				<!-- 업종 정보 섹션 -->
+				{#if hasIndustryInfo(bookmark)}
 				<div
 					id="industry"
 					class="space-y-2 border-b border-gray-100 pb-4"
@@ -924,8 +956,10 @@
 						{/if}
 					</div>
 				</div>
+				{/if}
 
 				<!-- 연구소 정보 섹션 -->
+				{#if hasLabInfo(bookmark)}
 				<div
 					id="lab"
 					class="space-y-2 border-b border-gray-100 pb-4"
@@ -967,8 +1001,10 @@
 						{/if}
 					</div>
 				</div>
+				{/if}
 
 				<!-- 인증 정보 섹션 -->
+				{#if hasCertificationInfo(bookmark)}
 				<div
 					id="certification"
 					class="space-y-2 border-b border-gray-100 pb-4"
@@ -1012,8 +1048,10 @@
 						{/if}
 					</div>
 				</div>
+				{/if}
 
 				<!-- 주주 정보 섹션 -->
+				{#if hasShareholderInfo(bookmark)}
 				<div
 					id="shareholders"
 					class="space-y-2 border-b border-gray-100 pb-4"
@@ -1037,7 +1075,7 @@
 						{/if}
 					</div>
 				</div>
-				
+				{/if}
 
 				<script>
 					$: years = financialData && Array.isArray(financialData) 
