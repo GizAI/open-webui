@@ -825,9 +825,10 @@
 	  }
 	    
 	  .company-info-wrapper.mobile.fullscreen {
+		top: 0;
 		height: 100vh;
-		border-top-left-radius: none;
-		border-top-right-radius: none;
+		border-top-left-radius: 0;
+		border-top-right-radius: 0;
 	  }
 
 	  .company-info-wrapper.mobile.active {
