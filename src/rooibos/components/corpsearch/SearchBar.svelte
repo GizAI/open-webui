@@ -228,7 +228,6 @@
         <input
           type="text"
           bind:value={searchValue}
-          placeholder="기업명 대표자명 주소로 검색"
           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
           bind:this={inputRef}
         />
