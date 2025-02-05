@@ -24,13 +24,17 @@
   let inputRef: any;
   let filterPosition = { top: 0, left: 0 };
   let filterContainerRef: HTMLDivElement;
+  let searchByCompany = true;
+  let searchByRepresentative = false;
+  let searchByBizNumber = false;
+  let searchByLocation = false;
+
+  const dispatch = createEventDispatcher();
 
   function handleSubmit(event: SubmitEvent) {
     event.preventDefault();
     onSearch(searchValue, selectedFilters);
   }
-
-  const dispatch = createEventDispatcher();
 
   const toggleFilter = (groupId: string, event: MouseEvent) => {
     const target = event.currentTarget as HTMLElement;
@@ -158,28 +162,69 @@
       type="button"
       on:click={toggleSearchMode}
       class="text-blue-600 hover:text-blue-800 px-4 ml-auto"
-      aria-label="검색"
+      aria-label={isSearchMode ? '닫기' : '검색'}
     >
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        width="24"
-        height="24"
-        fill="none"
-        viewBox="0 0 24 24"
-        stroke="currentColor"
-        stroke-width="2"
-      >
-        <path
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          d="M21 21l-4.35-4.35M10 18a8 8 0 100-16 8 8 0 000 16z"
-        />
-      </svg>
+      {#if isSearchMode}
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="24"
+          height="24"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          stroke-width="2"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            d="M6 18L18 6M6 6l12 12"
+          />
+        </svg>
+      {:else}
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="24"
+          height="24"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          stroke-width="2"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            d="M21 21l-4.35-4.35M10 18a8 8 0 100-16 8 8 0 000 16z"
+          />
+        </svg>
+      {/if}
     </button>
   </div>
   {#if isSearchMode}
   <div class="px-4 py-2 h-[calc(100vh-50px)]">
       <form on:submit={handleSearch} class="relative">
+        <div class="flex items-center justify-between mb-2 flex-nowrap overflow-x-auto gap-2"
+          style="white-space: nowrap; font-size: { $mobile ? '0.875rem' : '1rem' };">
+          <div class="flex gap-4">
+            <!-- 토글(체크박스)들 -->
+            <label class="flex items-center">
+              <input type="checkbox" bind:checked={searchByCompany} />
+              <span class="ml-1">기업명</span>
+            </label>
+            <label class="flex items-center">
+              <input type="checkbox" bind:checked={searchByRepresentative} />
+              <span class="ml-1">대표자명</span>
+            </label>
+            <label class="flex items-center">
+              <input type="checkbox" bind:checked={searchByBizNumber} />
+              <span class="ml-1">사업자번호</span>
+            </label>
+            <label class="flex items-center">
+              <input type="checkbox" bind:checked={searchByLocation} />
+              <span class="ml-1">지명</span>
+            </label>
+          </div>          
+        </div>
+
         <input
           type="text"
           bind:value={searchValue}
@@ -187,15 +232,6 @@
           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
           bind:this={inputRef}
         />
-        <button
-          type="button"
-          class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500"
-          on:click={toggleSearchMode}
-        >
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </button>
       </form>
 
       {#if searchResults.length > 0}
