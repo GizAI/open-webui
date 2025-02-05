@@ -603,7 +603,7 @@
     } else if (groupId === 'representative_age' && typeof checked === 'string') {
       newFilters[groupId] = {
         ...(newFilters[groupId] as any || {}),
-        representative_age: checked
+        value: checked
       };
     } else if (typeof checked === 'string') {
       newFilters[groupId] = {
