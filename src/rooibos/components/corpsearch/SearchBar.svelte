@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount, createEventDispatcher } from 'svelte';
+  import { onMount, createEventDispatcher, afterUpdate } from 'svelte';
   import { filterGroups, filterActions } from './filterdata';
   import SearchFilter from './SearchFilter.svelte';
   import { mobile } from '$lib/stores';
@@ -21,6 +21,7 @@
   let showLeftArrow = false;
   let showRightArrow = false;
   let resizeObserver: ResizeObserver;
+  let inputRef: any;
 
   function handleSubmit(event: SubmitEvent) {
     event.preventDefault();
@@ -105,6 +106,12 @@
     };
 
   });
+
+  afterUpdate(() => {
+    if (isSearchMode && inputRef) {
+      inputRef.focus();
+    }
+  });
 </script>
 
 <div class="bg-gray-50 overflow-y-auto">
@@ -158,6 +165,7 @@
           bind:value={searchValue}
           placeholder="기업명 대표자명 주소로 검색"
           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          bind:this={inputRef}
         />
         <button
           type="button"

@@ -718,7 +718,7 @@
   </div>
 {/if}
 
-{#if searchResults.length > 1 && showSearchList && !($mobile && $showSidebar)}
+{#if false && searchResults.length > 1 && showSearchList && !($mobile && $showSidebar)}
   <div 
     class="company-list-wrapper w-full"
     class:sidebar-visible={$showSidebar}
