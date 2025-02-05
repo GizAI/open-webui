@@ -23,14 +23,7 @@
 
   let ageValue = '';
 
-  $: if (group?.id === 'representative_age') {
-     const filterObj = selectedFilters[group.id];
-     if (filterObj && typeof filterObj === 'object' && 'age' in filterObj) {
-       ageValue = filterObj.age ?? '';
-     } else {
-       ageValue = '';
-     }
-   }
+
 
   const applyButtonGroups = [
     'employee_count',
@@ -46,24 +39,31 @@
     return applyButtonGroups.includes(groupId);
   }
 
-  const checkFilter = (filter: any) => {
-    const value = selectedFilters[filter.id];
+  // 변경 후
+const checkFilter = (filter: any) => {
+  // 대표자 나이 필터인 경우, 적용 버튼 클릭 시에만 onFilterChange 호출
+  if (filter.id === 'representative_age') {
+    onFilterChange(filter.id, 'representative_age', ageValue);
+  }
 
-    if (
-      !value ||
-      value === '' ||
-      (typeof value === 'object' &&
-        (Object.keys(value).length === 0 ||
-          (Object.keys(value).every((key) => value[key] === ''))))
-    ) {
-      delete selectedFilters[filter.id];
-    }
+  const value = selectedFilters[filter.id];
 
-    console.log(filter.id);
-    console.log(selectedFilters[filter.id]);
-    console.log('selectedFilters: ', selectedFilters);
-    onApply();
-  };
+  if (
+    !value ||
+    value === '' ||
+    (typeof value === 'object' &&
+      (Object.keys(value).length === 0 ||
+        (Object.keys(value).every((key) => value[key] === ''))))
+  ) {
+    delete selectedFilters[filter.id];
+  }
+
+  console.log(filter.id);
+  console.log(selectedFilters[filter.id]);
+  console.log('selectedFilters: ', selectedFilters);
+  onApply();
+};
+
 
 
   
@@ -95,9 +95,8 @@
               <input
                 type="number"
                 placeholder="나이 입력"
-                value={selectedFilters[group.id]?.representative_age || ''}
+                bind:value={ageValue}
                 class="w-20 px-2 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all" 
-                on:input={(e) => onFilterChange(group.id, 'representative_age', e.currentTarget?.value || '')}
               />
               <span class="text-sm text-gray-600 ml-1">세 이상</span>
             </div>
@@ -121,18 +120,18 @@
             </div>
           </div>
         {:else if group.id === 'establishment_year'}
-          <div class="border rounded-lg p-6 bg-gray-50"> 
-            <div class="flex items-center gap-2">
-              <input
-                type="number"
-                placeholder="년도 입력"
-                value={selectedFilters[group.id]?.establishment_year || ''}
-                class="w-20 px-2 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all" 
-                on:input={(e) => onFilterChange(group.id, 'establishment_year', e.currentTarget?.value || '')}
-              />
-              <span class="text-sm text-gray-600 ml-1">년도 이상</span>
-            </div>
-          </div>  
+        <div class="border rounded-lg p-7 bg-gray-50"> 
+          <div class="flex items-center gap-2">
+            <input
+              type="number"
+              placeholder="나이 입력"
+              bind:value={ageValue}
+              on:input={(e) => ageValue = e.currentTarget.value}
+              class="w-20 px-2 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all" 
+            />
+            <span class="text-sm text-gray-600 ml-1">세 이상</span>
+          </div>
+        </div> 
 
         {:else}
           <div class="border rounded-lg {shouldShowApplyButton(group.id) ? 'p-6' : 'p-3'} bg-gray-50">

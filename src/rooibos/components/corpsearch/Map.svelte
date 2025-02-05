@@ -600,7 +600,7 @@
         ...(newFilters[groupId] as any || {}),
         value: checked ? optionId : ""
       };
-    } else if (groupId === 'representative_age' && typeof checked === 'string') {
+    } else if (groupId === 'representative_age') {
       newFilters[groupId] = {
         ...(newFilters[groupId] as any || {}),
         value: checked
