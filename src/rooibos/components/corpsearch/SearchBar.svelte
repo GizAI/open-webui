@@ -122,21 +122,26 @@
 
       const newHistoryItem = {
         query: searchValue,
-        conditions: conditionNames
+        conditions: conditionNames,
+        date: new Date().toLocaleDateString('ko-KR', {
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit'
+        }) 
       };
 
-      const isDuplicate = searchHistory.some((item) => {
+      const duplicateIndex = searchHistory.findIndex((item) => {
         if (item.query !== newHistoryItem.query) return false;
-        
         if (item.conditions.length !== newHistoryItem.conditions.length) return false;
-        
         return item.conditions.every((c) => newHistoryItem.conditions.includes(c));
       });
 
-      if (!isDuplicate) {
-        searchHistory.push(newHistoryItem);
-        localStorage.setItem('searchHistory', JSON.stringify(searchHistory));
+      if (duplicateIndex > -1) {
+        searchHistory.splice(duplicateIndex, 1);
       }
+      searchHistory.unshift(newHistoryItem);
+      localStorage.setItem('searchHistory', JSON.stringify(searchHistory));
+      
     }
   }
 
@@ -290,23 +295,46 @@
           </div>          
         </div>
 
-        <input
-          type="text"
-          bind:value={searchValue}
-          class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-          bind:this={inputRef}
-        />
+        <div class="relative">
+          <!-- 인풋 오른쪽 여백(pr-16) 확보 -->
+          <input
+            type="text"
+            bind:value={searchValue}
+            class="w-full pl-4 pr-16 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            bind:this={inputRef}
+          />
+  
+          <!-- 우측끝에 검색 버튼 추가 -->
+          <button
+            type="submit"
+            class="absolute inset-y-0 right-0 flex items-center px-3 text-gray-400 hover:bg-blue-700 rounded-r-lg"
+            aria-label="검색"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="24"
+              height="24"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M21 21l-4.35-4.35M10 18a8 8 0 100-16 8 8 0 000 16z"
+              />
+            </svg>
+          </button>
+        </div>
       </form>
 
       {#if searchHistory.length > 0 && searchResults.length == 0}
         <div class="mt-2 pb-20">
           <h2 class="text-base font-semibold mb-2">최근 검색 이력</h2>
 
-          <!-- 검색 이력 반복 출력 -->
           {#each searchHistory as item}
-            <!-- flex 컨테이너로 만들어 우측에 X 버튼 배치 -->
             <div class="flex items-center w-full text-left p-2 border-b hover:bg-gray-100">
-              <!-- 이력 클릭 시 반복 검색 버튼 (기존 repeatSearch 로직) -->
               <button
                 type="button"
                 class="flex-grow text-left"
@@ -315,7 +343,7 @@
                 {#each item.conditions as c}
                   [{c}]
                 {/each}
-                {item.query}
+                <span class="font-bold">{item.query}</span>
               </button>
               <button
                 type="button"
