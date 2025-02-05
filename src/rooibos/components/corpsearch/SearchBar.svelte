@@ -73,6 +73,7 @@
   }
 
   function toggleSearchMode() {
+    searchByCompany = true;
     isSearchMode = !isSearchMode;
     if (!isSearchMode) {
       searchValue = '';
@@ -83,9 +84,17 @@
   async function handleSearch(event: SubmitEvent) {
     event.preventDefault();
     if (searchValue.trim()) {
+      const searchCategories: string[] = [];
+      if (searchByCompany) searchCategories.push('company');
+      if (searchByRepresentative) searchCategories.push('representative');
+      if (searchByBizNumber) searchCategories.push('bizNumber');
+      if (searchByLocation) searchCategories.push('location');
+
       const queryParams = new URLSearchParams({
-          query: searchValue
+        query: searchValue,
+        categories: searchCategories.join(','),
       });
+
       const response = await fetch(`${WEBUI_API_BASE_URL}/rooibos/corpsearch/?${queryParams.toString()}`, {
           method: 'GET',
           headers: {
