@@ -121,16 +121,7 @@
 	let financialData: FinancialData[] | null = null;
 
 	onMount(async () => {
-		const financialResponse = await fetch(`${WEBUI_API_BASE_URL}/rooibos/corpbookmarks/${companyInfo.smtp_id}/financialData`, {
-			method: 'GET',
-			headers: {
-				Accept: 'application/json',
-				'Content-Type': 'application/json',
-				authorization: `Bearer ${localStorage.token}`
-			}
-		})
-		const data = await financialResponse.json();
-		financialData = data.data;
+		fetchFinancialData(companyInfo.smtp_id);
 	});
 
 	const years = ['2023', '2022', '2021'];	
@@ -294,6 +285,27 @@
         	company.company_name)}`, '_blank');
 	}
 
+	$: if (companyInfo.smtp_id) {
+		fetchFinancialData(companyInfo.smtp_id);
+	}
+
+	async function fetchFinancialData(smtp_id: string) {
+		try {
+			const financialResponse = await fetch(`${WEBUI_API_BASE_URL}/rooibos/corpbookmarks/${smtp_id}/financialData`, {
+				method: 'GET',
+				headers: {
+					Accept: 'application/json',
+					'Content-Type': 'application/json',
+					authorization: `Bearer ${localStorage.token}`
+				}
+			});
+			const data = await financialResponse.json();
+			financialData = data.data;
+		} catch (error) {
+			console.error("재무 데이터 로딩 실패:", error);
+			financialData = null;
+		}
+	}	
 
 </script>
 
@@ -311,8 +323,8 @@
 					{companyInfo.company_name}
 				</h1>
 			
+				<!-- 기업 저장 버튼 -->
 				<div class="flex items-center space-x-1">
-					<!-- 기업 저장 버튼 -->
 					<button 
 						class="flex flex-col items-center hover:bg-gray-100 rounded-lg"
 						on:click={() => saveCompany(companyInfo)}
