@@ -14,7 +14,6 @@
 	import { WEBUI_API_BASE_URL } from '$lib/constants';
 	import CorpInfo from '../corpinfo/CorpInfo.svelte';
 	import { OverlappingMarkerSpiderfier } from './marker';
-	import SearchResultCorpList from './SearchResultCorpList.svelte';
 
   type MapInstance = {
     map: any;
