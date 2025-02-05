@@ -14,7 +14,6 @@
 	import { WEBUI_API_BASE_URL } from '$lib/constants';
 	import CorpInfo from '../corpinfo/CorpInfo.svelte';
 	import { OverlappingMarkerSpiderfier } from './marker';
-	import SearchResultCorpList from './SearchResultCorpList.svelte';
 
   type MapInstance = {
     map: any;
@@ -331,7 +330,6 @@
               });
 
               naver.maps.Event.addListener(marker, 'mouseover', function() {
-                  console.log('mouseover');
                   marker.setZIndex(200);
               });
 
@@ -343,6 +341,7 @@
                   companyInfo = result;
                   showCompanyInfo = true;
                   showSearchList = false;
+                  activeFilterGroup = null;
               });
               spiderfier.addMarker(marker);
               mapInstance.companyMarkers.push(marker);
@@ -374,7 +373,7 @@
     }
     const mapOptions = {
       center: new naver.maps.LatLng(position.lat, position.lng),
-      zoom: 17,
+      zoom: zoom,
     };
 
     const map = new naver.maps.Map(mapContainer, mapOptions);
@@ -403,7 +402,7 @@
         location.lat = center.lat();
         location.lng = center.lng();        
         handleSearch('', selectedFilters);
-        
+        activeFilterGroup = null;
       }
     });
 
@@ -601,10 +600,10 @@
         ...(newFilters[groupId] as any || {}),
         value: checked ? optionId : ""
       };
-    } else if (groupId === 'gender_age' && typeof checked === 'string') {
+    } else if (groupId === 'representative_age' && typeof checked === 'string') {
       newFilters[groupId] = {
         ...(newFilters[groupId] as any || {}),
-        value: checked
+        representative_age: checked
       };
     } else if (typeof checked === 'string') {
       newFilters[groupId] = {
@@ -655,7 +654,7 @@
       'net_profit', 
       'unallocated_profit',
       'establishment_year',
-      'gender_age'
+      'representative_age'
     ];
 
     if (!excludedGroupIds.includes(groupId)) {
@@ -712,13 +711,14 @@
       activeFilterGroup={activeFilterGroup}
       onFilterChange={onFilterChange}
       selectedFilters={selectedFilters}
+      on:showCompanyInfo={(e) => showCompanyInfo = e.detail}
       on:filterGroupChange={(e) => activeFilterGroup = e.detail} 
       on:searchResultClick={(e) => handleSearchResultClick(e.detail)} 
     />
   </div>
 {/if}
 
-{#if searchResults.length > 1 && showSearchList && !($mobile && $showSidebar)}
+{#if false && searchResults.length > 1 && showSearchList && !($mobile && $showSidebar)}
   <div 
     class="company-list-wrapper w-full"
     class:sidebar-visible={$showSidebar}

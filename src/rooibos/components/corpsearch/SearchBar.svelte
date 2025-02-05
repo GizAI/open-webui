@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount, createEventDispatcher } from 'svelte';
+  import { onMount, createEventDispatcher, afterUpdate } from 'svelte';
   import { filterGroups, filterActions } from './filterdata';
   import SearchFilter from './SearchFilter.svelte';
   import { mobile } from '$lib/stores';
@@ -7,8 +7,6 @@
   import MenuLines from '$lib/components/icons/MenuLines.svelte';
 	import { WEBUI_API_BASE_URL } from '$lib/constants';
 
-  let isSearchMode = false;
-  let searchResults: any = [];
   export let searchValue: string;
   export let selectedFilters: any = {};
   export let activeFilterGroup: string | null = null;
@@ -17,18 +15,48 @@
   export let onApply: () => void;
   export let onFilterChange: (groupId: string, optionId: string, checked: boolean | string) => void;
 
+  let isSearchMode = false;
+  let searchResults: any = [];
   let filterScrollRef: HTMLDivElement | null = null;
   let showLeftArrow = false;
   let showRightArrow = false;
   let resizeObserver: ResizeObserver;
+  let inputRef: any;
+  let filterPosition = { top: 0, left: 0 };
+  let filterContainerRef: HTMLDivElement;
+  let searchByCompany = true;
+  let searchByRepresentative = false;
+  let searchByBizNumber = false;
+  let searchByLocation = false;
+
+  let searchHistory: Array<{
+    query: string;
+    conditions: string[];
+  }> = [];
+
+  const dispatch = createEventDispatcher();
 
   function handleSubmit(event: SubmitEvent) {
     event.preventDefault();
     onSearch(searchValue, selectedFilters);
   }
 
-  const dispatch = createEventDispatcher();
-  const toggleFilter = (groupId: string) => {
+  const toggleFilter = (groupId: string, event: MouseEvent) => {    
+    dispatch('showCompanyInfo', false);
+    const target = event.currentTarget as HTMLElement;
+    const rect = target.getBoundingClientRect();
+    const containerRect = filterContainerRef.getBoundingClientRect();
+    const searchFilterWidth = 320;
+   
+    filterPosition = {
+      top: rect.bottom - containerRect.top,
+      left: rect.left - containerRect.left
+    };
+    
+    if (filterPosition.left + searchFilterWidth > containerRect.width) {
+      filterPosition.left = containerRect.width - searchFilterWidth - 20; // 여유 공간 16px
+    }
+
     if (activeFilterGroup === groupId) {
       dispatch('filterGroupChange', null);
     } else {
@@ -51,6 +79,10 @@
   }
 
   function toggleSearchMode() {
+    searchByCompany = true;
+    searchByRepresentative = false;
+    searchByBizNumber = false;
+    searchByLocation = false;
     isSearchMode = !isSearchMode;
     if (!isSearchMode) {
       searchValue = '';
@@ -61,9 +93,17 @@
   async function handleSearch(event: SubmitEvent) {
     event.preventDefault();
     if (searchValue.trim()) {
+      const queryCategories: string[] = [];
+      if (searchByCompany) queryCategories.push('company');
+      if (searchByRepresentative) queryCategories.push('representative');
+      if (searchByBizNumber) queryCategories.push('bizNumber');
+      if (searchByLocation) queryCategories.push('location');
+
       const queryParams = new URLSearchParams({
-          query: searchValue
+        query: searchValue,
+        queryCategories: queryCategories.join(','),
       });
+
       const response = await fetch(`${WEBUI_API_BASE_URL}/rooibos/corpsearch/?${queryParams.toString()}`, {
           method: 'GET',
           headers: {
@@ -74,10 +114,63 @@
       });
       const data = await response.json();
       searchResults = data.data;
+
+      const conditionNames = [];
+      if (searchByCompany) conditionNames.push('기업명');
+      if (searchByRepresentative) conditionNames.push('대표자명');
+      if (searchByBizNumber) conditionNames.push('사업자번호');
+      if (searchByLocation) conditionNames.push('지명');
+
+      const newHistoryItem = {
+        query: searchValue,
+        conditions: conditionNames,
+        date: new Date().toLocaleDateString('ko-KR', {
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit'
+        }) 
+      };
+
+      const duplicateIndex = searchHistory.findIndex((item) => {
+        if (item.query !== newHistoryItem.query) return false;
+        if (item.conditions.length !== newHistoryItem.conditions.length) return false;
+        return item.conditions.every((c) => newHistoryItem.conditions.includes(c));
+      });
+
+      if (duplicateIndex > -1) {
+        searchHistory.splice(duplicateIndex, 1);
+      }
+      searchHistory.unshift(newHistoryItem);
+      localStorage.setItem('searchHistory', JSON.stringify(searchHistory));
+      
     }
   }
 
+  function repeatSearch(item: { query: string; conditions: string[] }) {
+    searchByCompany = item.conditions.includes('기업명');
+    searchByRepresentative = item.conditions.includes('대표자명');
+    searchByBizNumber = item.conditions.includes('사업자번호');
+    searchByLocation = item.conditions.includes('지명');
+
+    searchValue = item.query;
+    
+    handleSearch(new SubmitEvent('submit'));
+  }
+
+  function removeHistoryItem(item: { query: string; conditions: string[] }) {
+    // 해당 item만 제외한 새로운 배열
+    searchHistory = searchHistory.filter((h) => h !== item);
+
+    // 로컬스토리지에 반영
+    localStorage.setItem('searchHistory', JSON.stringify(searchHistory));
+  }
+
   onMount(() => {
+    const savedHistory = localStorage.getItem('searchHistory');
+    if (savedHistory) {
+      searchHistory = JSON.parse(savedHistory);
+    }
+
     filterGroups.forEach((group) => {
       if (group.defaultValue && !selectedFilters[group.id]) {
         selectedFilters[group.id] = {
@@ -105,9 +198,18 @@
     };
 
   });
+
+  afterUpdate(() => {
+    if (isSearchMode && inputRef) {
+      inputRef.focus();
+    }
+  });
+
 </script>
 
-<div class="bg-gray-50 overflow-y-auto">
+<div 
+  bind:this={filterContainerRef}
+  class="bg-gray-50 overflow-y-auto">
   <div class="flex items-center py-1">
     <div class="{ $showSidebar ? 'hidden' : '' } flex items-center">
       <button
@@ -131,44 +233,130 @@
       type="button"
       on:click={toggleSearchMode}
       class="text-blue-600 hover:text-blue-800 px-4 ml-auto"
-      aria-label="검색"
+      aria-label={isSearchMode ? '닫기' : '검색'}
     >
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        width="24"
-        height="24"
-        fill="none"
-        viewBox="0 0 24 24"
-        stroke="currentColor"
-        stroke-width="2"
-      >
-        <path
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          d="M21 21l-4.35-4.35M10 18a8 8 0 100-16 8 8 0 000 16z"
-        />
-      </svg>
+      {#if isSearchMode}
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="24"
+          height="24"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          stroke-width="2"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            d="M6 18L18 6M6 6l12 12"
+          />
+        </svg>
+      {:else}
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="24"
+          height="24"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          stroke-width="2"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            d="M21 21l-4.35-4.35M10 18a8 8 0 100-16 8 8 0 000 16z"
+          />
+        </svg>
+      {/if}
     </button>
   </div>
   {#if isSearchMode}
   <div class="px-4 py-2 h-[calc(100vh-50px)]">
       <form on:submit={handleSearch} class="relative">
-        <input
-          type="text"
-          bind:value={searchValue}
-          placeholder="기업명 대표자명 주소로 검색"
-          class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-        />
-        <button
-          type="button"
-          class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500"
-          on:click={toggleSearchMode}
-        >
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </button>
+        <div class="flex items-center justify-between mb-2 flex-nowrap overflow-x-auto gap-2"
+          style="white-space: nowrap; font-size: { $mobile ? '0.875rem' : '1rem' };">
+          <div class="flex gap-4">
+            <!-- 토글(체크박스)들 -->
+            <label class="flex items-center">
+              <input type="checkbox" bind:checked={searchByCompany} />
+              <span class="ml-1">기업명</span>
+            </label>
+            <label class="flex items-center">
+              <input type="checkbox" bind:checked={searchByRepresentative} />
+              <span class="ml-1">대표자명</span>
+            </label>
+            <label class="flex items-center">
+              <input type="checkbox" bind:checked={searchByBizNumber} />
+              <span class="ml-1">사업자번호</span>
+            </label>
+            <label class="flex items-center">
+              <input type="checkbox" bind:checked={searchByLocation} />
+              <span class="ml-1">지명</span>
+            </label>
+          </div>          
+        </div>
+
+        <div class="relative">
+          <!-- 인풋 오른쪽 여백(pr-16) 확보 -->
+          <input
+            type="text"
+            bind:value={searchValue}
+            class="w-full pl-4 pr-16 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            bind:this={inputRef}
+          />
+  
+          <!-- 우측끝에 검색 버튼 추가 -->
+          <button
+            type="submit"
+            class="absolute inset-y-0 right-0 flex items-center px-3 text-gray-400 hover:bg-blue-700 rounded-r-lg"
+            aria-label="검색"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="24"
+              height="24"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M21 21l-4.35-4.35M10 18a8 8 0 100-16 8 8 0 000 16z"
+              />
+            </svg>
+          </button>
+        </div>
       </form>
+
+      {#if searchHistory.length > 0 && searchResults.length == 0}
+        <div class="mt-2 pb-20">
+          <h2 class="text-base font-semibold mb-2">최근 검색 이력</h2>
+
+          {#each searchHistory as item}
+            <div class="flex items-center w-full text-left p-2 border-b hover:bg-gray-100">
+              <button
+                type="button"
+                class="flex-grow text-left"
+                on:click={() => repeatSearch(item)}
+              >
+                {#each item.conditions as c}
+                  [{c}]
+                {/each}
+                <span class="font-bold">{item.query}</span>
+              </button>
+              <button
+                type="button"
+                class="text-gray-400 hover:text-gray-600 ml-2"
+                on:click={() => removeHistoryItem(item)}
+              >
+                X
+              </button>
+            </div>
+          {/each}
+        </div>
+      {/if}
 
       {#if searchResults.length > 0}
         <div class="mt-2 h-full overflow-y-auto pb-20">
@@ -223,7 +411,7 @@
         <button
           type="button"
           class="px-2 py-2 text-sm { (selectedFilters[group.id] || group.defaultValue ) ? 'font-bold text-blue-700' : 'font-medium text-gray-700' } whitespace-nowrap rounded-full"
-          on:click={() => toggleFilter(group.id)}
+          on:click={(e) => toggleFilter(group.id, e)}
         >
           {group.isMulti 
             ? `${group.title} ${Array.isArray(selectedFilters[group.id]?.value) && selectedFilters[group.id].value.length > 0 ? `(${selectedFilters[group.id].value.length})` : ''}`
@@ -277,7 +465,7 @@
 {#if activeFilterGroup}
   <div
     class="{$mobile ? '' : 'search-filter-container'}"
-    style="{$mobile ? '' : 'margin-top: 80px'}"
+    style="{$mobile ? '' : `position: absolute; top: ${filterPosition.top}px; left: ${filterPosition.left}px; z-index: 1000;`}"
   >
     <SearchFilter
       {selectedFilters}
@@ -299,11 +487,9 @@
   }
 
   .search-filter-container {
-    position: fixed;
-    left: 50%;
-    transform: translate(-50%, -50%);
     z-index: 1000;
     border-radius: 8px;
     padding: 16px;
   }
+
 </style>

@@ -121,16 +121,7 @@
 	let financialData: FinancialData[] | null = null;
 
 	onMount(async () => {
-		const financialResponse = await fetch(`${WEBUI_API_BASE_URL}/rooibos/corpbookmarks/${companyInfo.smtp_id}/financialData`, {
-			method: 'GET',
-			headers: {
-				Accept: 'application/json',
-				'Content-Type': 'application/json',
-				authorization: `Bearer ${localStorage.token}`
-			}
-		})
-		const data = await financialResponse.json();
-		financialData = data.data;
+		fetchFinancialData(companyInfo.smtp_id);
 	});
 
 	const years = ['2023', '2022', '2021'];	
@@ -294,6 +285,27 @@
         	company.company_name)}`, '_blank');
 	}
 
+	$: if (companyInfo.smtp_id) {
+		fetchFinancialData(companyInfo.smtp_id);
+	}
+
+	async function fetchFinancialData(smtp_id: string) {
+		try {
+			const financialResponse = await fetch(`${WEBUI_API_BASE_URL}/rooibos/corpbookmarks/${smtp_id}/financialData`, {
+				method: 'GET',
+				headers: {
+					Accept: 'application/json',
+					'Content-Type': 'application/json',
+					authorization: `Bearer ${localStorage.token}`
+				}
+			});
+			const data = await financialResponse.json();
+			financialData = data.data;
+		} catch (error) {
+			console.error("재무 데이터 로딩 실패:", error);
+			financialData = null;
+		}
+	}	
 
 </script>
 
@@ -311,8 +323,8 @@
 					{companyInfo.company_name}
 				</h1>
 			
+				<!-- 기업 저장 버튼 -->
 				<div class="flex items-center space-x-1">
-					<!-- 기업 저장 버튼 -->
 					<button 
 						class="flex flex-col items-center hover:bg-gray-100 rounded-lg"
 						on:click={() => saveCompany(companyInfo)}
@@ -341,17 +353,18 @@
 					<!-- AI 채팅 버튼 -->
 					<button class="flex flex-col items-center hover:bg-gray-100 rounded-lg" on:click={() => openAIChat(companyInfo)}>
 						<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h8m-8 4h5m-9 6v-6a2 2 0 012-2h12a2 2 0 012 2v6l-4-4H5l-4 4z" />
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
 						</svg>
 						<span class="text-xs text-gray-500 mt-1 whitespace-nowrap">AI채팅</span>
 					</button>
-				
-					<!-- 네이버 찾기 버튼 -->
+					
+					<!-- 네이버 지도 버튼 -->
 					<button class="flex flex-col items-center hover:bg-gray-100 rounded-lg" on:click={() => searchNaver(companyInfo)}>
 						<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35m1.5-4.15a7 7 0 11-14 0 7 7 0 0114 0z" />
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
 						</svg>
-						<span class="text-xs text-gray-500 mt-1 whitespace-nowrap">네이버</span>
+						<span class="text-xs text-gray-500 mt-1 whitespace-nowrap">네이버지도</span>
 					</button>
 				
 					{#if !$mobile}

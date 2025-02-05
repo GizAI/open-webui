@@ -23,14 +23,14 @@
 
   let ageValue = '';
 
-  $: if (group?.id === 'gender_age') {
-    const filterObj = selectedFilters[group.id];
-    if (filterObj && typeof filterObj === 'object' && 'age' in filterObj) {
-      ageValue = filterObj.age ?? '';
-    } else {
-      ageValue = '';
-    }
-  }
+  $: if (group?.id === 'representative_age') {
+     const filterObj = selectedFilters[group.id];
+     if (filterObj && typeof filterObj === 'object' && 'age' in filterObj) {
+       ageValue = filterObj.age ?? '';
+     } else {
+       ageValue = '';
+     }
+   }
 
   const applyButtonGroups = [
     'employee_count',
@@ -39,8 +39,7 @@
     'net_profit',
     'representative_age',
     'unallocated_profit',
-    'establishment_year',
-    'gender_age'
+    'establishment_year'
   ];
 
   function shouldShowApplyButton(groupId: string): boolean {
@@ -90,15 +89,15 @@
         {/if}
       </div>
       <div>
-        {#if group.id === 'gender_age'}
+        {#if group.id === 'representative_age'}
           <div class="border rounded-lg p-7 bg-gray-50"> 
             <div class="flex items-center gap-2">
               <input
                 type="number"
                 placeholder="나이 입력"
-                value={selectedFilters[group.id]?.age || ''}
+                value={selectedFilters[group.id]?.representative_age || ''}
                 class="w-20 px-2 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all" 
-                on:input={(e) => onFilterChange(group.id, 'age', e.currentTarget?.value || '')}
+                on:input={(e) => onFilterChange(group.id, 'representative_age', e.currentTarget?.value || '')}
               />
               <span class="text-sm text-gray-600 ml-1">세 이상</span>
             </div>
@@ -160,7 +159,7 @@
                     <span class="text-xs text-gray-600 whitespace-nowrap">{group.id === 'employee_count' ? '명' : '백만'}</span>
                   </div>
                 {:else}
-                <div class="border rounded-lg p-1 bg-gray-50"> 
+                <div class="rounded-lg p-1 bg-gray-50"> 
                   <div class="flex items-center gap-2">
                     <label class="flex items-center hover:bg-white rounded-md transition-all"> 
                       <input

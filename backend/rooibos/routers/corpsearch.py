@@ -96,7 +96,7 @@ async def search(request: Request):
 
     gender_raw = filters.get("gender", {}).get("value") if filters.get("gender") else None
     gender = "남" if gender_raw == "male" else ("여" if gender_raw == "female" else None)
-    gender_age = filters.get("gender_age", {}).get("value") if filters.get("gender_age") else None
+    representative_age = filters.get("representative_age", {}).get("value") if filters.get("representative_age") else None
 
     def process_range_filter(data, multiplier=1_000_000):
         if not data:
@@ -261,16 +261,44 @@ async def search(request: Request):
                 param_count += 3
 
             else:
-                sql_query += f"""
-                    AND (
-                        mci.company_name ILIKE ${param_count}
-                        OR mci.representative ILIKE ${param_count}
-                        OR mci.address ILIKE ${param_count}
-                    )
-                    
-                """
-                params.extend([f"%{query}%"])
-                param_count += 4
+                categories_str = search_params.get("queryCategories", "")
+                categories = [cat.strip() for cat in categories_str.split(",") if cat.strip()]
+
+                if len(categories) > 0:
+                    # 여러 토글 중 활성화된 것만 조건 생성
+                    conditions = []
+                    for cat in categories:
+                        if cat == "company":
+                            conditions.append(f"mci.company_name ILIKE ${param_count}")
+                            params.append(f"%{query}%")
+                            param_count += 1
+                        elif cat == "representative":
+                            conditions.append(f"mci.representative ILIKE ${param_count}")
+                            params.append(f"%{query}%")
+                            param_count += 1
+                        elif cat == "bizNumber":
+                            conditions.append(f"mci.business_registration_number ILIKE ${param_count}")
+                            params.append(f"%{query}%")
+                            param_count += 1
+                        elif cat == "location":
+                            conditions.append(f"mci.address ILIKE ${param_count}")
+                            params.append(f"%{query}%")
+                            param_count += 1
+
+                    if conditions:
+                        joined_conditions = " OR ".join(conditions)
+                        sql_query += f" AND ({joined_conditions}) "
+                    else:
+                        sql_query += f"""
+                            AND (
+                                mci.company_name ILIKE ${param_count}
+                                OR mci.representative ILIKE ${param_count}
+                                OR mci.address ILIKE ${param_count}
+                            )
+                        """
+                        params.append(f"%{query}%")
+                        param_count += 1
+                
 
         if not query:
             if sales_min is not None:
@@ -353,9 +381,9 @@ async def search(request: Request):
                 params.append(gender)
                 param_count += 1
 
-            if gender_age is not None:
+            if representative_age is not None:
                 sql_query += f" AND (EXTRACT(YEAR FROM CURRENT_DATE) - mci.birth_year) >= ${param_count}"
-                params.append(gender_age)
+                params.append(representative_age)
                 param_count += 1
 
             # if loan is not None:
