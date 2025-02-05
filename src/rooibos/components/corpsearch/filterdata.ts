@@ -77,7 +77,7 @@ import {
       ],
     },
     {
-      id: 'gender_age',
+      id: 'representative_age',
       title: '대표의 나이',
       icon: History,
       iconClass: "text-indigo-500",

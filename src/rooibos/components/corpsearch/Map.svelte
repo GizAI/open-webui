@@ -402,7 +402,7 @@
         location.lat = center.lat();
         location.lng = center.lng();        
         handleSearch('', selectedFilters);
-        
+        activeFilterGroup = null;
       }
     });
 
@@ -600,10 +600,10 @@
         ...(newFilters[groupId] as any || {}),
         value: checked ? optionId : ""
       };
-    } else if (groupId === 'gender_age' && typeof checked === 'string') {
+    } else if (groupId === 'representative_age' && typeof checked === 'string') {
       newFilters[groupId] = {
         ...(newFilters[groupId] as any || {}),
-        value: checked
+        representative_age: checked
       };
     } else if (typeof checked === 'string') {
       newFilters[groupId] = {
@@ -654,7 +654,7 @@
       'net_profit', 
       'unallocated_profit',
       'establishment_year',
-      'gender_age'
+      'representative_age'
     ];
 
     if (!excludedGroupIds.includes(groupId)) {

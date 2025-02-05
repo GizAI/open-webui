@@ -96,7 +96,7 @@ async def search(request: Request):
 
     gender_raw = filters.get("gender", {}).get("value") if filters.get("gender") else None
     gender = "남" if gender_raw == "male" else ("여" if gender_raw == "female" else None)
-    gender_age = filters.get("gender_age", {}).get("value") if filters.get("gender_age") else None
+    representative_age = filters.get("representative_age", {}).get("value") if filters.get("representative_age") else None
 
     def process_range_filter(data, multiplier=1_000_000):
         if not data:
@@ -381,9 +381,9 @@ async def search(request: Request):
                 params.append(gender)
                 param_count += 1
 
-            if gender_age is not None:
+            if representative_age is not None:
                 sql_query += f" AND (EXTRACT(YEAR FROM CURRENT_DATE) - mci.birth_year) >= ${param_count}"
-                params.append(gender_age)
+                params.append(representative_age)
                 param_count += 1
 
             # if loan is not None:
