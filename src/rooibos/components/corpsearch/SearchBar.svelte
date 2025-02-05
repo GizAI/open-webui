@@ -7,8 +7,6 @@
   import MenuLines from '$lib/components/icons/MenuLines.svelte';
 	import { WEBUI_API_BASE_URL } from '$lib/constants';
 
-  let isSearchMode = false;
-  let searchResults: any = [];
   export let searchValue: string;
   export let selectedFilters: any = {};
   export let activeFilterGroup: string | null = null;
@@ -17,6 +15,8 @@
   export let onApply: () => void;
   export let onFilterChange: (groupId: string, optionId: string, checked: boolean | string) => void;
 
+  let isSearchMode = false;
+  let searchResults: any = [];
   let filterScrollRef: HTMLDivElement | null = null;
   let showLeftArrow = false;
   let showRightArrow = false;
@@ -35,13 +35,17 @@
   const toggleFilter = (groupId: string, event: MouseEvent) => {
     const target = event.currentTarget as HTMLElement;
     const rect = target.getBoundingClientRect();
-   
     const containerRect = filterContainerRef.getBoundingClientRect();
+    const searchFilterWidth = 320;
    
     filterPosition = {
       top: rect.bottom - containerRect.top,
       left: rect.left - containerRect.left
     };
+    
+    if (filterPosition.left + searchFilterWidth > containerRect.width) {
+      filterPosition.left = containerRect.width - searchFilterWidth - 20; // 여유 공간 16px
+    }
 
     if (activeFilterGroup === groupId) {
       dispatch('filterGroupChange', null);
