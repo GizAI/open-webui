@@ -22,6 +22,8 @@
   let showRightArrow = false;
   let resizeObserver: ResizeObserver;
   let inputRef: any;
+  let filterPosition = { top: 0, left: 0 };
+  let filterContainerRef: HTMLDivElement;
 
   function handleSubmit(event: SubmitEvent) {
     event.preventDefault();
@@ -29,7 +31,18 @@
   }
 
   const dispatch = createEventDispatcher();
-  const toggleFilter = (groupId: string) => {
+
+  const toggleFilter = (groupId: string, event: MouseEvent) => {
+    const target = event.currentTarget as HTMLElement;
+    const rect = target.getBoundingClientRect();
+   
+    const containerRect = filterContainerRef.getBoundingClientRect();
+   
+    filterPosition = {
+      top: rect.bottom - containerRect.top,
+      left: rect.left - containerRect.left
+    };
+
     if (activeFilterGroup === groupId) {
       dispatch('filterGroupChange', null);
     } else {
@@ -112,9 +125,12 @@
       inputRef.focus();
     }
   });
+
 </script>
 
-<div class="bg-gray-50 overflow-y-auto">
+<div 
+  bind:this={filterContainerRef}
+  class="bg-gray-50 overflow-y-auto">
   <div class="flex items-center py-1">
     <div class="{ $showSidebar ? 'hidden' : '' } flex items-center">
       <button
@@ -231,7 +247,7 @@
         <button
           type="button"
           class="px-2 py-2 text-sm { (selectedFilters[group.id] || group.defaultValue ) ? 'font-bold text-blue-700' : 'font-medium text-gray-700' } whitespace-nowrap rounded-full"
-          on:click={() => toggleFilter(group.id)}
+          on:click={(e) => toggleFilter(group.id, e)}
         >
           {group.isMulti 
             ? `${group.title} ${Array.isArray(selectedFilters[group.id]?.value) && selectedFilters[group.id].value.length > 0 ? `(${selectedFilters[group.id].value.length})` : ''}`
@@ -285,7 +301,7 @@
 {#if activeFilterGroup}
   <div
     class="{$mobile ? '' : 'search-filter-container'}"
-    style="{$mobile ? '' : 'margin-top: 80px'}"
+    style="{$mobile ? '' : `position: absolute; top: ${filterPosition.top}px; left: ${filterPosition.left}px; z-index: 1000;`}"
   >
     <SearchFilter
       {selectedFilters}
@@ -307,11 +323,9 @@
   }
 
   .search-filter-container {
-    position: fixed;
-    left: 50%;
-    transform: translate(-50%, -50%);
     z-index: 1000;
     border-radius: 8px;
     padding: 16px;
   }
+
 </style>
