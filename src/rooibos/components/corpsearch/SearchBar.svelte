@@ -29,6 +29,11 @@
   let searchByBizNumber = false;
   let searchByLocation = false;
 
+  let searchHistory: Array<{
+    query: string;
+    conditions: string[];
+  }> = [];
+
   const dispatch = createEventDispatcher();
 
   function handleSubmit(event: SubmitEvent) {
@@ -74,6 +79,9 @@
 
   function toggleSearchMode() {
     searchByCompany = true;
+    searchByRepresentative = false;
+    searchByBizNumber = false;
+    searchByLocation = false;
     isSearchMode = !isSearchMode;
     if (!isSearchMode) {
       searchValue = '';
@@ -84,15 +92,15 @@
   async function handleSearch(event: SubmitEvent) {
     event.preventDefault();
     if (searchValue.trim()) {
-      const searchCategories: string[] = [];
-      if (searchByCompany) searchCategories.push('company');
-      if (searchByRepresentative) searchCategories.push('representative');
-      if (searchByBizNumber) searchCategories.push('bizNumber');
-      if (searchByLocation) searchCategories.push('location');
+      const queryCategories: string[] = [];
+      if (searchByCompany) queryCategories.push('company');
+      if (searchByRepresentative) queryCategories.push('representative');
+      if (searchByBizNumber) queryCategories.push('bizNumber');
+      if (searchByLocation) queryCategories.push('location');
 
       const queryParams = new URLSearchParams({
         query: searchValue,
-        categories: searchCategories.join(','),
+        queryCategories: queryCategories.join(','),
       });
 
       const response = await fetch(`${WEBUI_API_BASE_URL}/rooibos/corpsearch/?${queryParams.toString()}`, {
@@ -105,10 +113,58 @@
       });
       const data = await response.json();
       searchResults = data.data;
+
+      const conditionNames = [];
+      if (searchByCompany) conditionNames.push('기업명');
+      if (searchByRepresentative) conditionNames.push('대표자명');
+      if (searchByBizNumber) conditionNames.push('사업자번호');
+      if (searchByLocation) conditionNames.push('지명');
+
+      const newHistoryItem = {
+        query: searchValue,
+        conditions: conditionNames
+      };
+
+      const isDuplicate = searchHistory.some((item) => {
+        if (item.query !== newHistoryItem.query) return false;
+        
+        if (item.conditions.length !== newHistoryItem.conditions.length) return false;
+        
+        return item.conditions.every((c) => newHistoryItem.conditions.includes(c));
+      });
+
+      if (!isDuplicate) {
+        searchHistory.push(newHistoryItem);
+        localStorage.setItem('searchHistory', JSON.stringify(searchHistory));
+      }
     }
   }
 
+  function repeatSearch(item: { query: string; conditions: string[] }) {
+    searchByCompany = item.conditions.includes('기업명');
+    searchByRepresentative = item.conditions.includes('대표자명');
+    searchByBizNumber = item.conditions.includes('사업자번호');
+    searchByLocation = item.conditions.includes('지명');
+
+    searchValue = item.query;
+    
+    handleSearch(new SubmitEvent('submit'));
+  }
+
+  function removeHistoryItem(item: { query: string; conditions: string[] }) {
+    // 해당 item만 제외한 새로운 배열
+    searchHistory = searchHistory.filter((h) => h !== item);
+
+    // 로컬스토리지에 반영
+    localStorage.setItem('searchHistory', JSON.stringify(searchHistory));
+  }
+
   onMount(() => {
+    const savedHistory = localStorage.getItem('searchHistory');
+    if (savedHistory) {
+      searchHistory = JSON.parse(savedHistory);
+    }
+
     filterGroups.forEach((group) => {
       if (group.defaultValue && !selectedFilters[group.id]) {
         selectedFilters[group.id] = {
@@ -241,6 +297,37 @@
           bind:this={inputRef}
         />
       </form>
+
+      {#if searchHistory.length > 0 && searchResults.length == 0}
+        <div class="mt-2 pb-20">
+          <h2 class="text-base font-semibold mb-2">최근 검색 이력</h2>
+
+          <!-- 검색 이력 반복 출력 -->
+          {#each searchHistory as item}
+            <!-- flex 컨테이너로 만들어 우측에 X 버튼 배치 -->
+            <div class="flex items-center w-full text-left p-2 border-b hover:bg-gray-100">
+              <!-- 이력 클릭 시 반복 검색 버튼 (기존 repeatSearch 로직) -->
+              <button
+                type="button"
+                class="flex-grow text-left"
+                on:click={() => repeatSearch(item)}
+              >
+                {#each item.conditions as c}
+                  [{c}]
+                {/each}
+                {item.query}
+              </button>
+              <button
+                type="button"
+                class="text-gray-400 hover:text-gray-600 ml-2"
+                on:click={() => removeHistoryItem(item)}
+              >
+                X
+              </button>
+            </div>
+          {/each}
+        </div>
+      {/if}
 
       {#if searchResults.length > 0}
         <div class="mt-2 h-full overflow-y-auto pb-20">

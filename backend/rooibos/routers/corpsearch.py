@@ -261,16 +261,44 @@ async def search(request: Request):
                 param_count += 3
 
             else:
-                sql_query += f"""
-                    AND (
-                        mci.company_name ILIKE ${param_count}
-                        OR mci.representative ILIKE ${param_count}
-                        OR mci.address ILIKE ${param_count}
-                    )
-                    
-                """
-                params.extend([f"%{query}%"])
-                param_count += 4
+                categories_str = search_params.get("queryCategories", "")
+                categories = [cat.strip() for cat in categories_str.split(",") if cat.strip()]
+
+                if len(categories) > 0:
+                    # 여러 토글 중 활성화된 것만 조건 생성
+                    conditions = []
+                    for cat in categories:
+                        if cat == "company":
+                            conditions.append(f"mci.company_name ILIKE ${param_count}")
+                            params.append(f"%{query}%")
+                            param_count += 1
+                        elif cat == "representative":
+                            conditions.append(f"mci.representative ILIKE ${param_count}")
+                            params.append(f"%{query}%")
+                            param_count += 1
+                        elif cat == "bizNumber":
+                            conditions.append(f"mci.business_registration_number ILIKE ${param_count}")
+                            params.append(f"%{query}%")
+                            param_count += 1
+                        elif cat == "location":
+                            conditions.append(f"mci.address ILIKE ${param_count}")
+                            params.append(f"%{query}%")
+                            param_count += 1
+
+                    if conditions:
+                        joined_conditions = " OR ".join(conditions)
+                        sql_query += f" AND ({joined_conditions}) "
+                    else:
+                        sql_query += f"""
+                            AND (
+                                mci.company_name ILIKE ${param_count}
+                                OR mci.representative ILIKE ${param_count}
+                                OR mci.address ILIKE ${param_count}
+                            )
+                        """
+                        params.append(f"%{query}%")
+                        param_count += 1
+                
 
         if not query:
             if sales_min is not None:
