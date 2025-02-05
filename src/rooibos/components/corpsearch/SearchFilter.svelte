@@ -160,7 +160,7 @@
                     <span class="text-xs text-gray-600 whitespace-nowrap">{group.id === 'employee_count' ? '명' : '백만'}</span>
                   </div>
                 {:else}
-                <div class="border rounded-lg p-1 bg-gray-50"> 
+                <div class="rounded-lg p-1 bg-gray-50"> 
                   <div class="flex items-center gap-2">
                     <label class="flex items-center hover:bg-white rounded-md transition-all"> 
                       <input

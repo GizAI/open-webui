@@ -41,7 +41,8 @@
     onSearch(searchValue, selectedFilters);
   }
 
-  const toggleFilter = (groupId: string, event: MouseEvent) => {
+  const toggleFilter = (groupId: string, event: MouseEvent) => {    
+    dispatch('showCompanyInfo', false);
     const target = event.currentTarget as HTMLElement;
     const rect = target.getBoundingClientRect();
     const containerRect = filterContainerRef.getBoundingClientRect();

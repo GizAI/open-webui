@@ -330,7 +330,6 @@
               });
 
               naver.maps.Event.addListener(marker, 'mouseover', function() {
-                  console.log('mouseover');
                   marker.setZIndex(200);
               });
 
@@ -342,6 +341,7 @@
                   companyInfo = result;
                   showCompanyInfo = true;
                   showSearchList = false;
+                  activeFilterGroup = null;
               });
               spiderfier.addMarker(marker);
               mapInstance.companyMarkers.push(marker);
@@ -373,7 +373,7 @@
     }
     const mapOptions = {
       center: new naver.maps.LatLng(position.lat, position.lng),
-      zoom: 17,
+      zoom: zoom,
     };
 
     const map = new naver.maps.Map(mapContainer, mapOptions);
@@ -711,6 +711,7 @@
       activeFilterGroup={activeFilterGroup}
       onFilterChange={onFilterChange}
       selectedFilters={selectedFilters}
+      on:showCompanyInfo={(e) => showCompanyInfo = e.detail}
       on:filterGroupChange={(e) => activeFilterGroup = e.detail} 
       on:searchResultClick={(e) => handleSearchResultClick(e.detail)} 
     />
