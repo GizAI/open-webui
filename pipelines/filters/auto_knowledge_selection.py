@@ -71,6 +71,7 @@ class Filter:
     class Valves(BaseModel):
         status: bool = Field(default=True)
         auto_search_mode: bool = Field(default=False)
+        plan_model: str = Field(default="litellm/gpt-4o")
 
     def __init__(self):
         self.valves = self.Valves()
@@ -156,8 +157,9 @@ Return the result in the following JSON format (no extra keys, no explanations):
         return {
             "system_prompt": system_prompt,
             "prompt": prompt,
-            "model": "gpt-4o",
+            "model": self.valves.plan_model,
         }
+
 
     async def determine_web_search_needed(
         self, body: dict, __user__: Optional[dict]
@@ -214,8 +216,9 @@ Return the result in the following JSON format:
         return {
             "system_prompt": system_prompt,
             "prompt": prompt,
-            "model": "gpt-4o",
+            "model": self.valves.plan_model,
         }
+
 
     async def inlet(
         self,
