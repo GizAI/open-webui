@@ -86,7 +86,7 @@
 	import NotificationToast from '../NotificationToast.svelte';
 	import Spinner from '../common/Spinner.svelte';
 
-	import {selectedCompanyInfo} from '$rooibos/stores'
+	import {selectedCompanyInfo, formatCompanyInfo} from '$rooibos/stores'
 
 
 	export let chatIdProp = '';
@@ -1430,10 +1430,8 @@
 						}
 					}
 					// for rooibos app only, add company info to user context
-					if($selectedCompanyInfo.business_registration_number) {
-						const selectedCompanyInfo = JSON.stringify($selectedCompanyInfo);
-						console.log("selectedCompanyInfo", selectedCompanyInfo);
-						userContext = selectedCompanyInfo;
+					if ($selectedCompanyInfo.business_registration_number) {
+						userContext = formatCompanyInfo($selectedCompanyInfo);
 					}
 
 					responseMessage.userContext = userContext;

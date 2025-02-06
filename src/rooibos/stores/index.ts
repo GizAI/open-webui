@@ -80,3 +80,70 @@ type CompanySettings = {
     new_reconfirmation_code?: string;
 };
 
+export function formatCompanyInfo(companyInfo: CompanySettings): string {
+    // 기업 분석에 필요한 필드 목록
+    const allowedFields = [
+        "smtp_id",
+        "company_name",
+        "representative",
+        "postal_code",
+        "address",
+        "phone_number",
+        "fax_number",
+        "company_type",
+        "establishment_date",
+        "employee_count",
+        "industry_code1",
+        "industry_code2",
+        "industry",
+        "business_registration_number",
+        "corporate_number",
+        "fiscal_month",
+        "sales_year",
+        "recent_sales",
+        "profit_year",
+        "recent_profit",
+        "operating_profit_year",
+        "recent_operating_profit",
+        "asset_year",
+        "recent_total_assets",
+        "equity_year",
+        "recent_total_equity",
+        "capital_year",
+        "recent_capital",
+        "region1",
+        "region2",
+        "industry_major",
+        "industry_middle",
+        "industry_small"
+    ];
+
+    // allowedFields 목록에 포함된 항목만 추출하여 새 객체 생성
+    const filteredCompanyInfo: Record<string, any> = {};
+    allowedFields.forEach(field => {
+        if (companyInfo[field as keyof CompanySettings] !== undefined) {
+            filteredCompanyInfo[field] = companyInfo[field as keyof CompanySettings];
+        }
+    });
+
+    // 금액 항목에 ' (백만원)' 단위 추가
+    const monetaryFields = [
+        "recent_sales",
+        "recent_profit",
+        "recent_operating_profit",
+        "recent_total_assets",
+        "recent_total_equity",
+        "recent_capital"
+    ];
+    monetaryFields.forEach(field => {
+        if (filteredCompanyInfo[field]) {
+            filteredCompanyInfo[field] = `${filteredCompanyInfo[field]} (백만원)`;
+        }
+    });
+
+    // GPT가 이해하기 쉬운 형태의 문자열로 변환 (각 항목을 '키: 값' 형태의 줄로 변환)
+    return Object.entries(filteredCompanyInfo)
+        .map(([key, value]) => `${key}: ${value}`)
+        .join("\n");
+}
+
