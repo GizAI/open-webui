@@ -103,6 +103,10 @@ async def search(request: Request):
             return None, None
         min_val = data.get("min")  
         max_val = data.get("max")
+
+        min_val = None if min_val == '' else min_val
+        max_val = None if max_val == '' else max_val
+
         return (float(min_val) * multiplier if min_val is not None else None,
                 float(max_val) * multiplier if max_val is not None else None)
 
