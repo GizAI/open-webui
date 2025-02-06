@@ -35,36 +35,32 @@ import {
       id: 'employee_count',
       title: '종업원 수',
       isMulti: false,
-      options: [
-        { id: 'range', label: '명 (범위 설정 가능)' },
-      ],
+      min: 0,
+      max: 0,
     },
     {
       id: 'sales',
       title: '매출 관련',
       isMulti: false,
       checked: false,
-      options: [
-        { id: 'range', label: '숫자를 직접 입력' },
-      ],
+      min: 0,
+      max: 0,
     },
     {
       id: 'profit',
       title: '영업이익',
       isMulti: false,
       checked: false,
-      options: [
-        { id: 'range', label: '숫자를 직접 입력' },
-      ],
+      min: 0,
+      max: 0,
     },
     {
       id: 'net_profit',
       title: '당기순이익',
       isMulti: false,
       checked: false,
-      options: [
-        { id: 'range', label: '숫자를 직접 입력' },
-      ],
+      min: 0,
+      max: 0,
     },
     {
       id: 'gender',
@@ -79,31 +75,22 @@ import {
     {
       id: 'representative_age',
       title: '대표의 나이',
-      icon: History,
-      iconClass: "text-indigo-500",
       isMulti: false,
-      checked: false,
-      options: [
-        { id: 'age_input', label: '나이 입력' },
-      ],
+      checked: false
     },
     {
       id: 'unallocated_profit',
       title: '미처분 이익 잉여금',
       isMulti: false,
       checked: false,
-      options: [
-        { id: 'range', label: '숫자를 직접 입력' },
-      ],
+      min: 0,
+      max: 0,
     },
     {
       id: 'establishment_year',
       title: '법인 설립 연도',
       isMulti: false,
       checked: false,
-      options: [
-        { id: 'input_year', label: '직접 입력' },
-      ],
     },
     // {
     //   id: 'loan',

@@ -21,6 +21,17 @@
 
   $: group = filterGroups.find((g) => g.id === activeGroup);
 
+  let rangeMin = '';
+  let rangeMax = '';
+  let prevGroupId: string | null = null;
+
+  // 그룹이 변경될 때만 초기값을 설정하도록 수정
+  $: if (group && group.id !== prevGroupId && ['employee_count', 'sales', 'profit', 'net_profit', 'unallocated_profit'].includes(group.id)) {
+    rangeMin = selectedFilters[group.id]?.min || group.min;
+    rangeMax = selectedFilters[group.id]?.max || "";
+    prevGroupId = group.id;
+  }
+
   let ageValue = selectedFilters['representative_age']?.value || '';
   let establishmentYearValue = selectedFilters['establishment_year']?.value || '';
 
@@ -41,22 +52,21 @@
   const checkFilter = (filter: any) => {
     if (filter.id === 'representative_age') {
       onFilterChange(filter.id, 'representative_age', ageValue);
-    }
-
-    if (filter.id === 'establishment_year') {
+    } else if (filter.id === 'establishment_year') {
       onFilterChange(filter.id, 'establishment_year', establishmentYearValue);
-    }
-
-    const value = selectedFilters[filter.id];
-
-    if (
-      !value ||
-      value === '' ||
-      (typeof value === 'object' &&
-        (Object.keys(value).length === 0 ||
-          (Object.keys(value).every((key) => value[key] === ''))))
-    ) {
-      delete selectedFilters[filter.id];
+    } else if (['employee_count', 'sales', 'profit', 'net_profit', 'unallocated_profit'].includes(filter.id)) {
+      onFilterChange(filter.id, '', { min: rangeMin, max: rangeMax });
+    } else {
+      const value = selectedFilters[filter.id];
+      if (
+        !value ||
+        value === '' ||
+        (typeof value === 'object' &&
+          (Object.keys(value).length === 0 ||
+            Object.keys(value).every((key) => value[key] === '')))
+      ) {
+        delete selectedFilters[filter.id];
+      }
     }
     onApply();
   };
@@ -130,28 +140,36 @@
         {:else}
           <div class="border rounded-lg {shouldShowApplyButton(group.id) ? 'p-6' : 'p-3'} bg-gray-50">
             <div class="grid {shouldShowApplyButton(group.id) ? 'grid-cols-1 gap-1' : 'grid-cols-2 gap-2'}">
-              {#each group.options as option}
-                {#if (['employee_count', 'sales', 'profit', 'net_profit', 'unallocated_profit'].includes(group.id)) && option.id === 'range'}
-                  <div class="flex items-center gap-1">
+             
+              {#if ['employee_count', 'sales', 'profit', 'net_profit', 'unallocated_profit'].includes(group.id)}
+                <div class="flex items-center gap-1">
+                  <label class="flex items-center hover:bg-white rounded-md transition-all">
+                    <span class="text-sm text-gray-700 mr-2">최소</span>
                     <input
                       type="number"
-                      placeholder="최소"
-                      value={selectedFilters[group.id]?.min || ''}
-                      class="w-20 px-1.5 py-1 text-sm border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                      on:input={(e) => onFilterChange(group.id, 'min', e.currentTarget?.value || '')}
+                      name={`${group.id}-min`}
+                      bind:value={rangeMin}
+                      min={group.min}
+                      class="w-20 h-8 text-gray-700 border rounded-md p-1"
                     />
-                    <span class="text-xs text-gray-600 whitespace-nowrap">{group.id === 'employee_count' ? '명' : '백만'}</span>
-                    <span class="text-xs text-gray-600 mx-0.5">~</span>
+                  </label>
+                  
+                  <label class="flex items-center hover:bg-white rounded-md transition-all">
+                    <span class="text-sm text-gray-700 mr-2">최대</span>
                     <input
                       type="number"
-                      placeholder="최대"
-                      value={selectedFilters[group.id]?.max || ''}
-                      class="w-20 px-1.5 py-1 text-sm border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                      on:input={(e) => onFilterChange(group.id, 'max', e.currentTarget?.value || '')}
+                      name={`${group.id}-max`}
+                      bind:value={rangeMax}
+                      min={group.min}
+                      max={group.max}
+                      class="w-20 h-8 text-gray-700 border rounded-md p-1"
                     />
-                    <span class="text-xs text-gray-600 whitespace-nowrap">{group.id === 'employee_count' ? '명' : '백만'}</span>
-                  </div>
-                {:else}
+                  </label>
+                </div>
+              {/if}
+
+                {#if group.options}
+                {#each group.options as option}
                 <div class="rounded-lg p-1 bg-gray-50"> 
                   <div class="flex items-center gap-2">
                     <label class="flex items-center hover:bg-white rounded-md transition-all"> 
@@ -175,9 +193,8 @@
                     </label>
                   </div>
                 </div>
-
+                {/each}
                 {/if}
-              {/each}
             </div>
           </div>
         {/if}

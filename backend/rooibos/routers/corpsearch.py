@@ -322,12 +322,12 @@ async def search(request: Request):
                 param_count += 1
 
             if employee_count_min is not None:
-                sql_query += f" AND mci.employee_count >= ${param_count}"
+                sql_query += f" AND (mci.employee_count)::numeric >= ${param_count}"
                 params.append(employee_count_min)
                 param_count += 1
 
             if employee_count_max is not None:
-                sql_query += f" AND mci.employee_count <= ${param_count}"
+                sql_query += f" AND (mci.employee_count)::numeric <= ${param_count}"
                 params.append(employee_count_max)
                 param_count += 1
 

@@ -610,7 +610,16 @@
         ...(newFilters[groupId] as any || {}),
         value: checked
       };
-    }  else if (typeof checked === 'string') {
+    } else if (
+      ['employee_count', 'sales', 'profit', 'net_profit', 'unallocated_profit'].includes(groupId) &&
+      typeof checked === 'object' &&
+      checked !== null
+    ) {
+      newFilters[groupId] = {
+        ...(newFilters[groupId] as any || {}),
+        ...checked
+      };
+    } else if (typeof checked === 'string') {
       newFilters[groupId] = {
         ...(newFilters[groupId] as any || {}),
         [optionId]: checked,
