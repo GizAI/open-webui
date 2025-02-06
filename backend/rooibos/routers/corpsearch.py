@@ -33,8 +33,7 @@ def get_coordinates(query: str):
     data = response.json()
 
     if data.get("addresses"):
-        address = data["addresses"][0]
-        return {"latitude": address["y"], "longitude": address["x"], "address": address["roadAddress"]}
+        return data["addresses"]
     else:
         return {"error": "주소로 검색된 결과가 없습니다."}
 
@@ -68,13 +67,31 @@ async def search(request: Request):
     latitude = search_params.get("latitude")
     longitude = search_params.get("longitude")
 
-    if query:
-        result = get_coordinates(query)
-        if result.get('latitude'):
-            latitude = result['latitude']
-            longitude = result['longitude']
-    else:
-        result = None        
+    categories_str = search_params.get("queryCategories", "")
+    categories = [cat.strip() for cat in categories_str.split(",") if cat.strip()]
+
+
+    if "location" in categories and query:
+        coordinates_result = get_coordinates(query)
+        if coordinates_result:
+            return {
+                "success": True,
+                "data": coordinates_result,
+                "total": 0,
+                "query": {
+                    "search": query,
+                    "filters": {},
+                },
+            }
+        else:
+            # If no valid coordinates were found, return an error response.
+            return {
+                "success": False,
+                "error": "No location found",
+                "data": coordinates_result,
+                "total": 0,
+                "query": {"search": query, "filters": {}},
+            }     
     
     user_latitude = float(search_params.get("userLatitude", 0))
     user_longitude = float(search_params.get("userLongitude", 0))
@@ -248,26 +265,40 @@ async def search(request: Request):
             param_count += 1
         else:
             if not query:
-                sql_query += f"""
-                AND ROUND(
-                    (
-                        6371 * acos(
-                            cos(radians(${param_count})) *
-                            cos(radians(mci.latitude)) *
-                            cos(radians(mci.longitude) - radians(${param_count + 1})) +
-                            sin(radians(${param_count})) *
-                            sin(radians(mci.latitude))
-                        )
-                    ) * 1000
-                ) <= ${param_count + 2}
-                """
-                params.extend([float(latitude), float(longitude), distance])
-                param_count += 3
-
+                if latitude and longitude:
+                    sql_query += f"""
+                        AND ROUND(
+                            (
+                                6371 * acos(
+                                    cos(radians(${param_count})) *
+                                    cos(radians(mci.latitude)) *
+                                    cos(radians(mci.longitude) - radians(${param_count + 1})) +
+                                    sin(radians(${param_count})) *
+                                    sin(radians(mci.latitude))
+                                )
+                            ) * 1000
+                        ) <= ${param_count + 2}
+                    """
+                    params.extend([float(latitude), float(longitude), distance])
+                    param_count += 3
+                else:
+                    # latitude와 longitude가 제공되지 않은 경우 기존 코드대로 userLatitude, userLongitude와 필터의 distance를 사용
+                    sql_query += f"""
+                        AND ROUND(
+                            (
+                                6371 * acos(
+                                    cos(radians(${param_count})) *
+                                    cos(radians(mci.latitude)) *
+                                    cos(radians(mci.longitude) - radians(${param_count + 1})) +
+                                    sin(radians(${param_count})) *
+                                    sin(radians(mci.latitude))
+                                )
+                            ) * 1000
+                        ) <= ${param_count + 2}
+                    """
+                    params.extend([user_latitude, user_longitude, distance])
+                    param_count += 3
             else:
-                categories_str = search_params.get("queryCategories", "")
-                categories = [cat.strip() for cat in categories_str.split(",") if cat.strip()]
-
                 if len(categories) > 0:
                     # 여러 토글 중 활성화된 것만 조건 생성
                     conditions = []
