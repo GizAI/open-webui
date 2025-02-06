@@ -75,28 +75,19 @@ async def cleanup_response(
         await session.close()
 
 
-def handle_max_tokens(payload):
+def remove_max_tokens_param(payload):
     if "max_tokens" in payload:
-        # Remove "max_tokens" from the payload
-
         payload["max_completion_tokens"] = payload["max_tokens"]
         del payload["max_tokens"]
     return payload
 
-def handle_system_role(payload):
+def change_system_role_to_user(payload):
     if payload["messages"][0]["role"] == "system":
         payload["messages"][0]["role"] = "user"
     return payload
 
-def openai_o1_handler(payload):
-    payload = handle_max_tokens(payload)
-    payload = handle_system_role(payload)
-    return payload
 
-def openai_o3_handler(payload):
-    payload = handle_max_tokens(payload)
-    # o3 supports system role
-    return payload
+
 
 
 ##########################################
@@ -631,11 +622,13 @@ async def generate_chat_completion(
 
     # Fix: O1, o3 does not support the "max_tokens" parameter, Modify "max_tokens" to "max_completion_tokens"
     model = payload["model"].lower()
-
-    if model.startswith("o1-"):
-        payload = openai_o1_handler(payload)
+       
+    if model.startswith("o1"):
+        payload = remove_max_tokens_param(payload)
+        if model.startswith("o1-"):
+            payload = change_system_role_to_user(payload)
     elif model.startswith("o3-"):
-        payload = openai_o3_handler(payload)
+        payload = remove_max_tokens_param(payload)
     elif "api.openai.com" not in url:
         # Remove "max_completion_tokens" from the payload for backward compatibility
         if "max_completion_tokens" in payload:
