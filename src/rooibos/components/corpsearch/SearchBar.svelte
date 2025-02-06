@@ -410,7 +410,9 @@
       {#each filterGroups as group}
         <button
           type="button"
-          class="px-2 py-2 text-sm { (selectedFilters[group.id] || group.defaultValue ) ? 'font-bold text-blue-700' : 'font-medium text-gray-700' } whitespace-nowrap rounded-full"
+          class="px-2 py-2 text-sm { (selectedFilters[group.id] && (
+            selectedFilters[group.id].value || selectedFilters[group.id].min || selectedFilters[group.id].max
+          )) ? 'font-bold text-blue-700' : 'font-medium text-gray-700' } whitespace-nowrap rounded-full"
           on:click={(e) => toggleFilter(group.id, e)}
         >
           {group.isMulti 
