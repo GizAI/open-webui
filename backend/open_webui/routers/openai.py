@@ -621,14 +621,14 @@ async def generate_chat_completion(
     key = request.app.state.config.OPENAI_API_KEYS[idx]
 
     # Fix: O1, o3 does not support the "max_tokens" parameter, Modify "max_tokens" to "max_completion_tokens"
-    model = payload["model"].lower()
-       
-    if model.startswith("o1"):
+    model_name = payload["model"].lower()
+    if model_name.startswith("o1-"):
         payload = remove_max_tokens_param(payload)
-        if model.startswith("o1-"):
-            payload = change_system_role_to_user(payload)
-    elif model.startswith("o3-"):
+        payload = change_system_role_to_user(payload)
+    elif model_name.startswith("o3-"):
+        # o3 supports messages/system
         payload = remove_max_tokens_param(payload)
+        
     elif "api.openai.com" not in url:
         # Remove "max_completion_tokens" from the payload for backward compatibility
         if "max_completion_tokens" in payload:
