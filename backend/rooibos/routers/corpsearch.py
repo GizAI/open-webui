@@ -90,7 +90,7 @@ async def search(request: Request):
     employee_count_min = employee_count_data.get("min") if filters.get("employee_count") else None
     employee_count_max = employee_count_data.get("max") if filters.get("employee_count") else None
 
-    establishment_year = filters.get("establishment_year", {}).get("establishment_year") if filters.get("establishment_year") else None
+    establishment_year = filters.get("establishment_year", {}).get("value") if filters.get("establishment_year") else None
 
     excluded_industries = filters.get("excluded_industries", {}).get("value") if filters.get("excluded_industries") else None
 

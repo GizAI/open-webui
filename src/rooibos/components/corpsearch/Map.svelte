@@ -605,7 +605,12 @@
         ...(newFilters[groupId] as any || {}),
         value: checked
       };
-    } else if (typeof checked === 'string') {
+    }else if (groupId === 'establishment_year') {
+      newFilters[groupId] = {
+        ...(newFilters[groupId] as any || {}),
+        value: checked
+      };
+    }  else if (typeof checked === 'string') {
       newFilters[groupId] = {
         ...(newFilters[groupId] as any || {}),
         [optionId]: checked,
