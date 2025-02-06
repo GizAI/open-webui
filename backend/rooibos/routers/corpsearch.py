@@ -301,60 +301,61 @@ async def search(request: Request):
                 
 
         if not query:
-            if sales_min is not None:
+            if sales_min not in [None, '']:
                 sql_query += f" AND (mci.sales_amount)::numeric >= ${param_count}"
                 params.append(sales_min)
                 param_count += 1
 
-            if sales_max is not None:
+            if sales_max not in [None, '']:
                 sql_query += f" AND (mci.sales_amount)::numeric <= ${param_count}"
                 params.append(sales_max)
                 param_count += 1
 
-            if profit_min is not None:
+            if profit_min not in [None, '']:
                 sql_query += f" AND (mci.recent_profit)::numeric >= ${param_count}"
                 params.append(profit_min)
                 param_count += 1
 
-            if profit_max is not None:
+            if profit_max not in [None, '']:
                 sql_query += f" AND (mci.recent_profit)::numeric <= ${param_count}"
                 params.append(profit_max)
                 param_count += 1
 
-            if employee_count_min is not None:
+            if employee_count_min not in [None, '']:
                 sql_query += f" AND (mci.employee_count)::numeric >= ${param_count}"
                 params.append(employee_count_min)
                 param_count += 1
 
-            if employee_count_max is not None:
+            if employee_count_max not in [None, '']:
                 sql_query += f" AND (mci.employee_count)::numeric <= ${param_count}"
                 params.append(employee_count_max)
                 param_count += 1
 
-            if net_profit_min is not None:
+            if net_profit_min not in [None, '']:
                 sql_query += f" AND (mci.net_income)::numeric >= ${param_count}"
                 params.append(net_profit_min)
                 param_count += 1
 
-            if net_profit_max is not None:
+            if net_profit_max not in [None, '']:
                 sql_query += f" AND (mci.net_income)::numeric <= ${param_count}"
                 params.append(net_profit_max)
                 param_count += 1
 
-            if unallocated_profit_min is not None:
+            if unallocated_profit_min not in [None, '']:
                 sql_query += f" AND (FinancialComparison.retained_earnings)::numeric >= ${param_count}"
                 params.append(unallocated_profit_min)
                 param_count += 1
 
-            if unallocated_profit_max is not None:
+            if unallocated_profit_max not in [None, '']:
                 sql_query += f" AND (FinancialComparison.retained_earnings)::numeric <= ${param_count}"
                 params.append(unallocated_profit_max)
                 param_count += 1
 
-            if establishment_year is not None:
+            if establishment_year not in [None, '']:
                 sql_query += f" AND SUBSTRING(mci.establishment_date, 1, 4)::INTEGER >= ${param_count}"
                 params.append(establishment_year)
                 param_count += 1
+
 
             if certification:
                 conditions = []

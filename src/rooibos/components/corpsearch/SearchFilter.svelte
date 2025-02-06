@@ -27,7 +27,7 @@
 
   // 그룹이 변경될 때만 초기값을 설정하도록 수정
   $: if (group && group.id !== prevGroupId && ['employee_count', 'sales', 'profit', 'net_profit', 'unallocated_profit'].includes(group.id)) {
-    rangeMin = selectedFilters[group.id]?.min || group.min;
+    rangeMin = selectedFilters[group.id]?.min || "";
     rangeMax = selectedFilters[group.id]?.max || "";
     prevGroupId = group.id;
   }
