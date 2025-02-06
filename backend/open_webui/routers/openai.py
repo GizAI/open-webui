@@ -75,11 +75,12 @@ async def cleanup_response(
         await session.close()
 
 
-def openai_o1_handler(payload):
+def openai_o1_o3_handler(payload):
     """
-    Handle O1 specific parameters
+    Handle O1 and O3 specific parameters
     """
     if "max_tokens" in payload:
+
         # Remove "max_tokens" from the payload
         payload["max_completion_tokens"] = payload["max_tokens"]
         del payload["max_tokens"]
@@ -621,11 +622,12 @@ async def generate_chat_completion(
     url = request.app.state.config.OPENAI_API_BASE_URLS[idx]
     key = request.app.state.config.OPENAI_API_KEYS[idx]
 
-    # Fix: O1 does not support the "max_tokens" parameter, Modify "max_tokens" to "max_completion_tokens"
-    is_o1 = payload["model"].lower().startswith("o1-")
-    if is_o1:
-        payload = openai_o1_handler(payload)
+    # Fix: O1, o3 does not support the "max_tokens" parameter, Modify "max_tokens" to "max_completion_tokens"
+    is_o1_o3 = payload["model"].lower().startswith("o1-") or payload["model"].lower().startswith("o3-")
+    if is_o1_o3:
+        payload = openai_o1_o3_handler(payload)
     elif "api.openai.com" not in url:
+
         # Remove "max_completion_tokens" from the payload for backward compatibility
         if "max_completion_tokens" in payload:
             payload["max_tokens"] = payload["max_completion_tokens"]
