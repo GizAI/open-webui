@@ -418,7 +418,7 @@
           {group.isMulti 
             ? `${group.title} ${Array.isArray(selectedFilters[group.id]?.value) && selectedFilters[group.id].value.length > 0 ? `(${selectedFilters[group.id].value.length})` : ''}`
             : (group.defaultValue || selectedFilters[group.id]?.value 
-              ? group.options.find(opt => opt.id === (selectedFilters[group.id]?.value || group.defaultValue))?.label || group.title
+              ? group.options?.find(opt => opt.id === (selectedFilters[group.id]?.value || group.defaultValue))?.label || group.title
               : group.title)
           }
         </button>

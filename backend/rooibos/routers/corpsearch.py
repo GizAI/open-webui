@@ -120,6 +120,23 @@ async def search(request: Request):
         param_count = 1
 
         sql_query = """
+        WITH FinancialComparison AS (
+                SELECT 
+                    mfd.financial_company_id,
+                    mfd.revenue,
+                    mfd.net_income,
+                    mfd.total_assets,
+                    mfd.total_liabilities,
+                    mfd.retained_earnings,
+                    CASE
+                        WHEN LAG(mfd.revenue) OVER (PARTITION BY mfd.financial_company_id ORDER BY mfd.year) IS NOT NULL
+                        THEN (mfd.revenue - LAG(mfd.revenue) OVER (PARTITION BY mfd.financial_company_id ORDER BY mfd.year)) 
+                            / NULLIF(LAG(mfd.revenue) OVER (PARTITION BY mfd.financial_company_id ORDER BY mfd.year), 0) * 100
+                        ELSE 0
+                    END AS revenue_growth_rate
+                FROM smtp_financial_data mfd
+                WHERE mfd.year = '2023'
+            )
             SELECT DISTINCT
                 mci.smtp_id,
                 mci.company_name,
@@ -235,10 +252,14 @@ async def search(request: Request):
 
         sql_query += f"""
             FROM master_company_info mci
+            LEFT JOIN smtp_financial_company fc 
+                ON mci.company_name = fc.company_name
             LEFT JOIN corp_bookmark cb ON cb.company_id = mci.smtp_id AND cb.user_id = ${user_id_param}
             LEFT JOIN smtp_executives me
                 ON mci.business_registration_number = me.business_registration_number
                 AND me.position = '대표이사'
+            LEFT JOIN FinancialComparison 
+                ON fc.id = FinancialComparison.financial_company_id    
             WHERE mci.latitude IS NOT NULL
             """
 
