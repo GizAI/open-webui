@@ -5,7 +5,7 @@
   import { mobile } from '$lib/stores';
   import { showSidebar } from '$lib/stores';
   import MenuLines from '$lib/components/icons/MenuLines.svelte';
-	import { WEBUI_API_BASE_URL } from '$lib/constants';
+  import { WEBUI_API_BASE_URL } from '$lib/constants';
 
   export let searchValue: string;
   export let selectedFilters: any = {};
@@ -17,6 +17,7 @@
 
   let isSearchMode = false;
   let searchResults: any = [];
+  let addressList: any = []; // To store address search results when '지명' is selected
   let filterScrollRef: HTMLDivElement | null = null;
   let showLeftArrow = false;
   let showRightArrow = false;
@@ -87,6 +88,24 @@
     if (!isSearchMode) {
       searchValue = '';
       searchResults = [];
+      addressList = [];
+    }
+  }
+
+  // If '지명' is selected, clear other checkboxes.
+  function handleLocationChange() {
+    if (searchByLocation) {
+      searchByCompany = false;
+      searchByRepresentative = false;
+      searchByBizNumber = false;
+    }
+  }
+
+  // If any non-'지명' checkbox is selected, uncheck '지명'
+  function handleNonLocationChange(event: Event) {
+    const target = event.target as HTMLInputElement;
+    if (target.checked) {
+      searchByLocation = false;
     }
   }
 
@@ -113,36 +132,41 @@
           },
       });
       const data = await response.json();
-      searchResults = data.data;
 
-      const conditionNames = [];
-      if (searchByCompany) conditionNames.push('기업명');
-      if (searchByRepresentative) conditionNames.push('대표자명');
-      if (searchByBizNumber) conditionNames.push('사업자번호');
-      if (searchByLocation) conditionNames.push('지명');
+      if (searchByLocation) {
+        // When '지명' is selected, store results in addressList.
+        addressList = data.data;
+        searchResults = [];
+      } else {
+        searchResults = data.data;
+        addressList = [];
+        const conditionNames = [];
+        if (searchByCompany) conditionNames.push('기업명');
+        if (searchByRepresentative) conditionNames.push('대표자명');
+        if (searchByBizNumber) conditionNames.push('사업자번호');
 
-      const newHistoryItem = {
-        query: searchValue,
-        conditions: conditionNames,
-        date: new Date().toLocaleDateString('ko-KR', {
-          year: 'numeric',
-          month: '2-digit',
-          day: '2-digit'
-        }) 
-      };
+        const newHistoryItem = {
+          query: searchValue,
+          conditions: conditionNames,
+          date: new Date().toLocaleDateString('ko-KR', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit'
+          }) 
+        };
 
-      const duplicateIndex = searchHistory.findIndex((item) => {
-        if (item.query !== newHistoryItem.query) return false;
-        if (item.conditions.length !== newHistoryItem.conditions.length) return false;
-        return item.conditions.every((c) => newHistoryItem.conditions.includes(c));
-      });
+        const duplicateIndex = searchHistory.findIndex((item) => {
+          if (item.query !== newHistoryItem.query) return false;
+          if (item.conditions.length !== newHistoryItem.conditions.length) return false;
+          return item.conditions.every((c) => newHistoryItem.conditions.includes(c));
+        });
 
-      if (duplicateIndex > -1) {
-        searchHistory.splice(duplicateIndex, 1);
+        if (duplicateIndex > -1) {
+          searchHistory.splice(duplicateIndex, 1);
+        }
+        searchHistory.unshift(newHistoryItem);
+        localStorage.setItem('searchHistory', JSON.stringify(searchHistory));
       }
-      searchHistory.unshift(newHistoryItem);
-      localStorage.setItem('searchHistory', JSON.stringify(searchHistory));
-      
     }
   }
 
@@ -150,7 +174,7 @@
     searchByCompany = item.conditions.includes('기업명');
     searchByRepresentative = item.conditions.includes('대표자명');
     searchByBizNumber = item.conditions.includes('사업자번호');
-    searchByLocation = item.conditions.includes('지명');
+    searchByLocation = false;
 
     searchValue = item.query;
     
@@ -158,11 +182,39 @@
   }
 
   function removeHistoryItem(item: { query: string; conditions: string[] }) {
-    // 해당 item만 제외한 새로운 배열
     searchHistory = searchHistory.filter((h) => h !== item);
-
-    // 로컬스토리지에 반영
     localStorage.setItem('searchHistory', JSON.stringify(searchHistory));
+  }
+
+  // New: Send the selected address's x and y coordinates to the server.
+  async function sendAddressCoordinates(x: string, y: string) {
+    try {
+      const queryParams = new URLSearchParams({
+        query: '',
+        latitude: y,
+        longitude: x
+      });
+
+      const response = await fetch(`${WEBUI_API_BASE_URL}/rooibos/corpsearch/?${queryParams.toString()}`, {
+          method: 'GET',
+          headers: {
+              Accept: 'application/json',
+              'Content-Type': 'application/json',
+              authorization: `Bearer ${localStorage.token}`,
+          },
+      });
+      const data = await response.json();
+      const list = data.data;
+      dispatch('addressResultClick', list);
+    } catch (error) {
+      console.error('Error sending address coordinates:', error);
+    }
+  }
+
+  async function handleAddressSelect(address: any) {
+    await sendAddressCoordinates(address.x, address.y);
+    dispatch('addressResultClick', address);
+    toggleSearchMode();
   }
 
   onMount(() => {
@@ -204,7 +256,6 @@
       inputRef.focus();
     }
   });
-
 </script>
 
 <div 
@@ -276,28 +327,27 @@
         <div class="flex items-center justify-between mb-2 flex-nowrap overflow-x-auto gap-2"
           style="white-space: nowrap; font-size: { $mobile ? '0.875rem' : '1rem' };">
           <div class="flex gap-4">
-            <!-- 토글(체크박스)들 -->
+            <!-- Updated 체크박스들 with change handlers -->
             <label class="flex items-center">
-              <input type="checkbox" bind:checked={searchByCompany} />
+              <input type="checkbox" bind:checked={searchByCompany} on:change={handleNonLocationChange} />
               <span class="ml-1">기업명</span>
             </label>
             <label class="flex items-center">
-              <input type="checkbox" bind:checked={searchByRepresentative} />
+              <input type="checkbox" bind:checked={searchByRepresentative} on:change={handleNonLocationChange} />
               <span class="ml-1">대표자명</span>
             </label>
             <label class="flex items-center">
-              <input type="checkbox" bind:checked={searchByBizNumber} />
+              <input type="checkbox" bind:checked={searchByBizNumber} on:change={handleNonLocationChange} />
               <span class="ml-1">사업자번호</span>
             </label>
             <label class="flex items-center">
-              <input type="checkbox" bind:checked={searchByLocation} />
+              <input type="checkbox" bind:checked={searchByLocation} on:change={handleLocationChange} />
               <span class="ml-1">지명</span>
             </label>
           </div>          
         </div>
 
         <div class="relative">
-          <!-- 인풋 오른쪽 여백(pr-16) 확보 -->
           <input
             type="text"
             bind:value={searchValue}
@@ -305,7 +355,6 @@
             bind:this={inputRef}
           />
   
-          <!-- 우측끝에 검색 버튼 추가 -->
           <button
             type="submit"
             class="absolute inset-y-0 right-0 flex items-center px-3 text-gray-400 hover:bg-blue-700 rounded-r-lg"
@@ -330,7 +379,7 @@
         </div>
       </form>
 
-      {#if searchHistory.length > 0 && searchResults.length == 0}
+      {#if searchHistory.length > 0 && searchResults.length == 0 && addressList.length == 0}
         <div class="mt-2 pb-20">
           <h2 class="text-base font-semibold mb-2">최근 검색 이력</h2>
 
@@ -358,7 +407,7 @@
         </div>
       {/if}
 
-      {#if searchResults.length > 0}
+      {#if searchResults.length > 0 && addressList.length == 0}
         <div class="mt-2 h-full overflow-y-auto pb-20">
           {#each searchResults as result}
           <button
@@ -378,7 +427,26 @@
               <h3 class="font-medium font-semibold">{result.company_name}</h3>
               <p class="text-sm text-gray-600">{result.representative}</p>
               <p class="text-sm text-gray-600">{result.address}</p>
-        </button>
+          </button>
+          {/each}
+        </div>
+      {/if}
+
+      {#if addressList.length > 0}
+        <div class="mt-2 h-full overflow-y-auto pb-20">
+          {#each addressList as address}
+            <button
+              type="button"
+              class="w-full p-4 border-b text-left hover:bg-gray-100"
+              on:click={() => handleAddressSelect(address)}
+              on:keydown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  handleAddressSelect(address);
+                }
+              }}
+            >
+              <h3 class="font-medium font-semibold">{address.roadAddress}</h3>
+            </button>
           {/each}
         </div>
       {/if}
@@ -401,7 +469,7 @@
     </div>
     {/if}
 
-    <div class="mx-2 pr-20"> <!-- 오른쪽 여백 추가 -->
+    <div class="mx-2 pr-20">
       <div
         bind:this={filterScrollRef}
         class="flex flex-nowrap w-full items-center gap-0 overflow-x-auto scrollbar-hide py-2"
@@ -418,11 +486,10 @@
           {group.isMulti 
             ? `${group.title} ${Array.isArray(selectedFilters[group.id]?.value) && selectedFilters[group.id].value.length > 0 ? `(${selectedFilters[group.id].value.length})` : ''}`
             : (group.defaultValue || selectedFilters[group.id]?.value 
-              ? group.options.find(opt => opt.id === (selectedFilters[group.id]?.value || group.defaultValue))?.label || group.title
+              ? group.options?.find(opt => opt.id === (selectedFilters[group.id]?.value || group.defaultValue))?.label || group.title
               : group.title)
           }
         </button>
-
      {/each}
 
         {#each filterActions.filter(a => a.action === 'apply') as action}
@@ -493,5 +560,4 @@
     border-radius: 8px;
     padding: 16px;
   }
-
 </style>
