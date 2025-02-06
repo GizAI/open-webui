@@ -249,7 +249,15 @@
         searchResults = data.data;
         showSearchList = true;
 
-        if (!mapInstance || searchResults.length == 0) return;
+        if (!searchResults.length) {
+            if (mapInstance?.companyMarkers) {
+                mapInstance.companyMarkers.forEach((marker) => marker.setMap(null));
+                mapInstance.companyMarkers = [];
+            }
+            return;
+        }
+
+        if (!mapInstance) return;
 
         if (mapInstance?.companyMarkers) {
             mapInstance.companyMarkers.forEach((marker) => marker.setMap(null));
@@ -359,7 +367,6 @@
 
   const handleApply = () => {
     handleSearch(searchValue, selectedFilters);
-    
   };
 
   const initializeMap = (position: any) => {
