@@ -12,8 +12,10 @@
 	import SearchCompanyList from './SearchCompanyList.svelte';
 	import { WEBUI_API_BASE_URL } from '$lib/constants';
 	import CorpInfo from '../corpinfo/CorpInfo.svelte';
-	import { OverlappingMarkerSpiderfier } from './marker';
 
+	// ─────────────────────────────
+	// 타입 및 변수 정의 (기존 코드 유지)
+	// ─────────────────────────────
 	type MapInstance = {
 		map: any;
 		marker: any;
@@ -210,6 +212,13 @@
 		longitude: ''
 	};
 
+	// MarkerClustering 인스턴스를 위한 변수 추가
+	let markerClustering: MarkerClustering;
+
+	// ─────────────────────────────
+	// 기존 검색, 필터 및 지도 관련 함수들 (로직은 원본 그대로)
+	// ─────────────────────────────
+
 	const handleSearch = async (searchValue: string, filters: any) => {
 		console.log('Searching for:', searchValue, 'with filters:', filters);
 
@@ -255,6 +264,8 @@
 					mapInstance.companyMarkers.forEach((marker) => marker.setMap(null));
 					mapInstance.companyMarkers = [];
 				}
+				// 클러스터링된 마커도 초기화
+				if (markerClustering) markerClustering.clearMarkers();
 				return;
 			}
 
@@ -264,18 +275,14 @@
 				mapInstance.companyMarkers.forEach((marker) => marker.setMap(null));
 				mapInstance.companyMarkers = [];
 			}
-
-			// if (mapInstance?.marker) {
-			//     mapInstance.marker.setMap(null);
-			// }
+			// 클러스터링 마커 초기화
+			if (markerClustering) markerClustering.clearMarkers();
 
 			const firstPoint = new naver.maps.LatLng(location?.lat, location?.lng);
-
 			mapInstance.map.setCenter(firstPoint);
 			mapInstance.map.setZoom(zoom);
 
-			const spiderfier = new OverlappingMarkerSpiderfier(mapInstance.map);
-
+			// 각 검색 결과에 대해 마커 생성 후 MarkerClustering 에 등록합니다.
 			searchResults.forEach((result, index) => {
 				const point = new naver.maps.LatLng(
 					parseFloat(result.latitude),
@@ -290,25 +297,26 @@
 						zIndex: 100,
 						icon: {
 							content: getMarkerContent(result),
-							anchor: new naver.maps.Point(50, 30) // 앵커 포인트를 아래로 조정
+							anchor: new naver.maps.Point(50, 30)
 						}
 					});
 
 					naver.maps.Event.addListener(marker, 'mouseover', function () {
 						marker.setZIndex(200);
 					});
-
 					naver.maps.Event.addListener(marker, 'mouseout', () => {
 						marker.setZIndex(100);
 					});
-
 					naver.maps.Event.addListener(marker, 'click', () => {
 						companyInfo = result;
 						showCompanyInfo = true;
 						showSearchList = false;
 						activeFilterGroup = null;
 					});
-					spiderfier.addMarker(marker);
+
+					// MarkerClustering 모듈에 마커를 등록합니다.
+					markerClustering.addMarker(marker);
+
 					mapInstance.companyMarkers.push(marker);
 				}
 			});
@@ -370,7 +378,7 @@
 		});
 
 		naver.maps.Event.addListener(map, 'zoom_changed', () => {
-			zoom = map.getZoom(); // 줌 변경 시 현재 줌 값 저장
+			zoom = map.getZoom();
 			console.log('zoom:', zoom);
 		});
 	};
@@ -405,11 +413,10 @@
 
 		const point = new naver.maps.LatLng(parseFloat(result.latitude), parseFloat(result.longitude));
 
-		mapInstance?.map.setCenter(point);
+		mapInstance.map.setCenter(point);
 		mapInstance.map.setZoom(zoom);
 
-		const spiderfier = new OverlappingMarkerSpiderfier(mapInstance.map);
-
+		// 검색 결과 클릭 시 새 마커를 생성합니다.
 		if (mapInstance) {
 			const marker = new naver.maps.Marker({
 				position: point,
@@ -418,30 +425,27 @@
 				zIndex: 100,
 				icon: {
 					content: getMarkerContent(result),
-					anchor: new naver.maps.Point(50, 30) // 앵커 포인트를 아래로 조정
+					anchor: new naver.maps.Point(50, 30)
 				}
 			});
 
-			// 마우스 오버 시 최상단으로 표시
 			naver.maps.Event.addListener(marker, 'mouseover', () => {
-				marker.setZIndex(200); // 다른 마커보다 높은 zIndex 설정
+				marker.setZIndex(200);
 			});
-
-			// 마우스 아웃 시 기본 zIndex로 복귀
 			naver.maps.Event.addListener(marker, 'mouseout', () => {
 				marker.setZIndex(100);
 			});
-
 			naver.maps.Event.addListener(marker, 'click', () => {
 				companyInfo = result;
 				showCompanyInfo = true;
 			});
-			spiderfier.addMarker(marker);
+
+			// MarkerClustering 모듈에 등록합니다.
+			markerClustering.addMarker(marker);
 			mapInstance.companyMarkers.push(marker);
 		}
 
 		showSearchList = false;
-		handleSearchListChange(false);
 	};
 
 	const handleSearchAddressListClick = (searchAddressList: SearchResult[]) => {
@@ -453,10 +457,8 @@
 			parseFloat(firstResult.longitude)
 		);
 
-		mapInstance?.map.setCenter(point);
+		mapInstance.map.setCenter(point);
 		mapInstance.map.setZoom(zoom);
-
-		const spiderfier = new OverlappingMarkerSpiderfier(mapInstance.map);
 
 		searchAddressList.forEach((result, index) => {
 			const point = new naver.maps.LatLng(
@@ -472,31 +474,30 @@
 					zIndex: 100,
 					icon: {
 						content: getMarkerContent(result),
-						anchor: new naver.maps.Point(50, 30) // 앵커 포인트를 아래로 조정
+						anchor: new naver.maps.Point(50, 30)
 					}
 				});
 
 				naver.maps.Event.addListener(marker, 'mouseover', function () {
 					marker.setZIndex(200);
 				});
-
 				naver.maps.Event.addListener(marker, 'mouseout', () => {
 					marker.setZIndex(100);
 				});
-
 				naver.maps.Event.addListener(marker, 'click', () => {
 					companyInfo = result;
 					showCompanyInfo = true;
 					showSearchList = false;
 					activeFilterGroup = null;
 				});
-				spiderfier.addMarker(marker);
+
+				// MarkerClustering 모듈에 등록합니다.
+				markerClustering.addMarker(marker);
 				mapInstance.companyMarkers.push(marker);
 			}
 		});
 
 		showSearchList = false;
-		handleSearchListChange(false);
 	};
 
 	const handleSearchListChange = (newValue: boolean) => {
@@ -529,11 +530,17 @@
 				script = document.createElement('script');
 				script.src = `https://openapi.map.naver.com/openapi/v3/maps.js?ncpClientId=t80s8o2xsl&submodules=geocoder`;
 				script.async = true;
-
-				script.onload = () => {
+				script.onload = async () => {
 					initializeMap(location);
+					const module = await import('./MarkerClustering');
+					const MarkerClustering = module.default;
+					markerClustering = new MarkerClustering({
+						map: mapInstance.map,
+						gridSize: 60,
+						maxZoom: zoom,
+						disableClickZoom: false
+					});
 				};
-
 				document.body.appendChild(script);
 			} catch (err) {
 				const errorMessage = (err as Error).message;
@@ -551,7 +558,7 @@
 		};
 	});
 
-	// 1. 새 헬퍼 함수를 추가합니다.
+	// 기존 마커 콘텐츠 생성 헬퍼 함수 그대로 사용
 	function getMarkerContent(result: SearchResult): string {
 		return `
     <div class="marker-content" style="
@@ -715,8 +722,6 @@
 
 		mapInstance.map.setCenter(point);
 		mapInstance.map.setZoom(zoom);
-		// mapInstance.infoWindow.close();
-		// mapInstance.infoWindow.setContent(compayMarkerInfo(result));
 
 		const marker = mapInstance.companyMarkers.find((m) => m.getTitle() === result.company_name);
 
@@ -805,7 +810,6 @@
 	</svg>
 </button>
 
-<!-- SearchBar.svelte 스타일 수정 -->
 <style>
 	.search-bar-wrapper {
 		position: fixed;
@@ -821,7 +825,7 @@
 	}
 
 	.search-bar-wrapper.sidebar-visible {
-		margin-left: 260px; /* left 속성 대신 margin-left 사용 */
+		margin-left: 260px;
 		width: calc(100% - 256px);
 	}
 
@@ -846,7 +850,7 @@
 	}
 
 	.company-list-wrapper.sidebar-visible {
-		margin-left: 256px; /* left 속성 대신 margin-left 사용 */
+		margin-left: 256px;
 		width: calc(100% - 256px);
 	}
 
