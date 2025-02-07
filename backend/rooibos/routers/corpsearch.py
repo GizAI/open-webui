@@ -22,6 +22,21 @@ import requests
 
 import requests
 
+def search_place(query: str):
+    url = "https://naveropenapi.apigw.ntruss.com/map-place/v1/search"
+    headers = {
+        "X-NCP-APIGW-API-KEY-ID": str(NAVER_MAP_CLIENT_ID).strip(),
+        "X-NCP-APIGW-API-KEY": str(NAVER_MAP_CLIENT_SECRET).strip(),
+    }
+    params = {"query": query}  # 강남역 좌표 기준으로 검색
+    response = requests.get(url, headers=headers, params=params)
+    data = response.json()
+    
+    if data.get("places"):
+        return data["places"]
+    else:
+        return {"error": "검색된 장소가 없습니다."}
+
 def get_coordinates(query: str):
     url = "https://naveropenapi.apigw.ntruss.com/map-geocode/v2/geocode"
     headers = {
