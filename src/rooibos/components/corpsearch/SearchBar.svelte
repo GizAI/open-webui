@@ -9,6 +9,7 @@
 
 	export let searchValue: string;
 	export let selectedFilters: any = {};
+	export let searchCompanyResults: any = {};
 	export let activeFilterGroup: string | null = null;
 	export let onSearch: (searchValue: string, selectedFilters: any) => Promise<void>;
 	export let onReset: () => void;
@@ -260,6 +261,12 @@
 			inputRef.focus();
 		}
 	});
+
+	let viewMode = 'map';
+
+	function toggleViewMode() {
+		viewMode = viewMode === 'map' ? 'list' : 'map';
+	}
 </script>
 
 <div bind:this={filterContainerRef} class="bg-gray-50 overflow-y-auto">
@@ -279,6 +286,15 @@
 			</button>
 		</div>
 		<div class="text-xl font-semibold text-gray-800 px-2">기업찾기</div>
+		{#if searchCompanyResults.length >= 2}
+			<button
+				type="button"
+				on:click={toggleViewMode}
+				class="ml-4 px-3 py-1 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-full"
+			>
+				{viewMode === 'list' ? '지도보기' : '목록보기'}
+			</button>
+		{/if}
 
 		<button
 			type="button"

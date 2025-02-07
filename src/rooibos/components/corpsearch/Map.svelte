@@ -6,7 +6,6 @@
 	import { onMount } from 'svelte';
 	import { get } from 'svelte/store';
 	import SearchBar from './SearchBar.svelte';
-	import { compayMarkerInfo } from './companymarkerinfo';
 	import { filterGroups } from './filterdata';
 	import { mobile } from '$lib/stores';
 	import { showSidebar, user } from '$lib/stores';
@@ -116,7 +115,7 @@
 		representative?: string;
 		gender?: string;
 		loan?: string;
-		[key: string]: any; // Allow additional keys
+		[key: string]: any;
 	};
 
 	interface CompanyInfo {
@@ -185,7 +184,7 @@
 		postal_code?: string;
 	}
 
-	let selectedFilters: Filters = {}; // Define selectedFilters with the Filters type
+	let selectedFilters: Filters = {};
 
 	let mapInstance: MapInstance | null = null;
 	let searchResults: SearchResult[] = [];
@@ -737,6 +736,7 @@
 			onSearch={handleSearch}
 			onReset={handleReset}
 			onApply={handleApply}
+			searchCompanyResults={searchResults}
 			{searchValue}
 			{activeFilterGroup}
 			{onFilterChange}
