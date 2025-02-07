@@ -785,9 +785,7 @@
 
 			if (chatContent) {
 				console.log(chatContent);
-				if(chatContent.selectedCompany) {
-					selectedCompanyInfo.set(chatContent.selectedCompany);
-				}
+				selectedCompanyInfo.set(chatContent.selectedCompany ?? {});
 
 				selectedModels =
 					(chatContent?.models ?? undefined) !== undefined
