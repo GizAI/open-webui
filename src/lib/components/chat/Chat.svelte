@@ -785,6 +785,9 @@
 
 			if (chatContent) {
 				console.log(chatContent);
+				if(chatContent.selectedCompany) {
+					selectedCompanyInfo.set(chatContent.selectedCompany);
+				}
 
 				selectedModels =
 					(chatContent?.models ?? undefined) !== undefined
@@ -1809,6 +1812,7 @@
 		if (!$temporaryChatEnabled) {
 			chat = await createNewChat(localStorage.token, {
 				id: _chatId,
+				selectedCompany: $selectedCompanyInfo,
 				title: $i18n.t('New Chat'),
 				models: selectedModels,
 				system: $settings.system ?? undefined,
