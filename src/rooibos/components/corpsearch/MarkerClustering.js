@@ -825,4 +825,17 @@ Cluster.prototype = {
 	}
 };
 
+Cluster.prototype.enableClickZoom = function () {
+	if (this._relation) return;
+
+	var cluster = this;
+
+	this._relation = naver.maps.Event.addListener(this._clusterMarker, 'click', function (e) {
+		var map = cluster._markerClusterer.getMap();
+		// 클러스터 중심으로 이동 후 현재 줌 레벨보다 1단계 확대
+		map.setCenter(cluster.getCenter());
+		map.setZoom(map.getZoom() + 1);
+	});
+};
+
 export default MarkerClustering;
