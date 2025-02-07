@@ -507,7 +507,6 @@
 				draggable="false"
 				on:click={async () => {
 					selectedChatId = null;
-					selectedCompanyInfo.set({})
 					await goto('/');
 					const newChatButton = document.getElementById('new-chat-button');
 					setTimeout(() => {

@@ -1,6 +1,35 @@
 import { type Writable, writable } from 'svelte/store';
 
-export const selectedCompanyInfo: Writable<CompanySettings> = writable({});
+// sessionStorage에서 초기 데이터를 불러오는 함수
+function getInitialCompanyInfo(): CompanySettings {
+    try {
+        const storedData = sessionStorage.getItem('selectedCompany');
+        return storedData ? JSON.parse(storedData) : {};
+    } catch (error) {
+        console.error('Error loading company info from sessionStorage:', error);
+        return {};
+    }
+}
+
+// 커스텀 store 생성
+function createCompanyStore(): Writable<CompanySettings> {
+    const store = writable<CompanySettings>(getInitialCompanyInfo());
+    const { subscribe, set: originalSet, update } = store;
+
+    return {
+        subscribe,
+        update,
+        set: (value: CompanySettings) => {
+            originalSet(value);
+            if (value?.company_name) {
+                sessionStorage.setItem('selectedCompany', JSON.stringify(value));
+                console.log('Company info saved to sessionStorage:', value);
+            }
+        }
+    };
+}
+
+export const selectedCompanyInfo = createCompanyStore();
 
 type CompanySettings = {
     smtp_id?: string;
@@ -146,4 +175,3 @@ export function formatCompanyInfo(companyInfo: CompanySettings): string {
         .map(([key, value]) => `${key}: ${value}`)
         .join("\n");
 }
-
