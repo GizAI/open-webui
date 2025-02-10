@@ -633,7 +633,7 @@
 
 <button
 	on:click={moveToCurrentLocation}
-	class="absolute bottom-20 right-5 bg-transparent border rounded-full w-12 h-12 flex items-center justify-center shadow-lg z-30 hover:bg-gray-100"
+	class="absolute bottom-10 right-5 bg-transparent border rounded-full w-12 h-12 flex items-center justify-center shadow-lg z-30 hover:bg-gray-100"
 >
 	<svg
 		xmlns="http://www.w3.org/2000/svg"
