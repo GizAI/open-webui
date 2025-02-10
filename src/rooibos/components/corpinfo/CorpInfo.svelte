@@ -835,11 +835,13 @@
 		bottom: 0;
 		height: 20vh;
 		transform: translateY(100%);
+		transform-origin: bottom;
+		margin-top: 0;
 	  }
 	    
 	  .company-info-wrapper.mobile.fullscreen {
-		top: 0;
 		height: 100vh;
+		margin-top: 0;
 		border-top-left-radius: 0;
 		border-top-right-radius: 0;
 	  }

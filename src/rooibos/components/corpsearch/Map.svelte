@@ -309,18 +309,25 @@
 
         // 기존 마커 클릭 이벤트 처리
         naver.maps.Event.addListener(marker, 'click', () => {
+          debugger
           if (selectedMarker && selectedMarker !== marker) {
+            
             selectedMarker.setIcon({
-              content: getMarkerContent(selectedMarker.searchResult),
+              content: getMarkerContent(selectedMarker),
               anchor: new naver.maps.Point(50, 30)
             });
             selectedMarker.setZIndex(100);
           }
           selectedMarker = marker;
+
           marker.setIcon({
             content: getMarkerContent(result, true),
             anchor: new naver.maps.Point(50, 30)
           });
+          marker.company_name = result.company_name;
+          marker.business_registration_number = result.business_registration_number;
+          marker.representative = result.representative;
+
           marker.setZIndex(300);
           companyInfo = result;
           showCompanyInfo = true;
@@ -586,7 +593,7 @@
 					markerClustering = new MarkerClustering({
 						map: mapInstance.map,
 						gridSize: 60,
-						maxZoom: zoom,
+						maxZoom: zoom+1,
 						disableClickZoom: false
 					});
 				};
