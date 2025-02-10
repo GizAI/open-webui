@@ -291,14 +291,28 @@
 		</div>
 		<div class="text-xl font-semibold text-gray-800 px-2">기업찾기</div>
 		{#if searchCompanyResults.length >= 2 && !isSearchMode}
-			<button
-				type="button"
-				on:click={toggleViewMode}
-				class="ml-4 px-3 py-1 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-full"
-			>
-				{resultViewMode === 'list' ? '지도보기' : '목록보기'}
-			</button>
-		{/if}
+      <button
+        type="button"
+        on:click={toggleViewMode}
+        class="ml-4 px-3 py-1 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-full inline-flex items-center gap-1"
+      >
+        {#if resultViewMode === 'list'}
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="3 7.5 3 18.5 12 22 21 18.5 21 7.5 12 4 3 7.5"/>
+            <path d="M12 22V4"/>
+            <path d="M3 7.5L21 7.5"/>
+          </svg>
+          지도보기
+        {:else}
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect width="18" height="18" x="3" y="3" rx="2" ry="2"/>
+            <path d="M3 15h18"/>
+            <path d="M3 9h18"/>
+          </svg>
+          목록보기
+        {/if}
+      </button>
+    {/if}
 
 		<button
 			type="button"

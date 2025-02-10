@@ -13,7 +13,6 @@
 	import { WEBUI_API_BASE_URL } from '$lib/constants';
 	import CorpInfo from '../corpinfo/CorpInfo.svelte';
 	import { getMarkerContent } from './marker';
-	// import { OverlappingMarkerSpiderfier } from './overlappingMarkerSpiderfierppingMarkerSpiderfier';
 
 	type MapInstance = {
 		map: any;
@@ -187,13 +186,12 @@
 
 	let selectedFilters: Filters = {};
 	let selectedMarker: any = null;
-
 	let mapInstance: MapInstance | null = null;
 	let searchResults: SearchResult[] = [];
 	let location: Location | null = null;
 	let error: string | null = null;
 	let loading = true;
-	let script: HTMLScriptElement;
+	let naverScript: HTMLScriptElement;
 	let searchValue: string = '';
 	let resultViewMode = 'map';
 	let isListIconVisible = true;
@@ -202,6 +200,7 @@
 	let showCompanyInfo = false;
 	let zoom = 18;
 	let isFullscreen = false;
+  let markerClustering: any;
 	let companyInfo: CompanyInfo = {
 		id: '',
 		company_id: '',
@@ -212,10 +211,78 @@
 		longitude: ''
 	};
 
-	let markerClustering: MarkerClustering;
+	function clearMarkers() {
+		if (mapInstance?.companyMarkers) {
+			mapInstance.companyMarkers.forEach((marker) => marker.setMap(null));
+			mapInstance.companyMarkers = [];
+		}
+		if (markerClustering) {
+			markerClustering.clearMarkers();
+		}
+	}
+
+	function createLatLng(lat: string | number, lng: string | number) {
+		const latitude = typeof lat === 'string' ? parseFloat(lat) : lat;
+		const longitude = typeof lng === 'string' ? parseFloat(lng) : lng;
+		return new naver.maps.LatLng(latitude, longitude);
+	}
+
+	function updateSelectedMarker(newMarker: any, result: SearchResult, zIndex: number = 300) {
+		if (selectedMarker && selectedMarker !== newMarker) {
+			selectedMarker.setIcon({
+				content: getMarkerContent(selectedMarker.searchResult, false),
+				anchor: new naver.maps.Point(50, 30)
+			});
+			selectedMarker.setZIndex(100);
+		}
+		selectedMarker = newMarker;
+		selectedMarker.setIcon({
+			content: getMarkerContent(result, true),
+			anchor: new naver.maps.Point(50, 30)
+		});
+		selectedMarker.setZIndex(zIndex);
+	}
+
+	function registerMapEvents(map: any) {
+		naver.maps.Event.addListener(map, 'click', (e: any) => {
+			if (location) {
+				location.lat = e.coord._lat;
+				location.lng = e.coord._lng;
+				showCompanyInfo = false;
+			}
+			activeFilterGroup = null;
+		});
+
+		naver.maps.Event.addListener(map, 'dragend', (e: any) => {
+			if (location) {
+				showCompanyInfo = false;
+				const center = map.getCenter();
+				location.lat = center.lat();
+				location.lng = center.lng();
+				handleSearch('', selectedFilters);
+				activeFilterGroup = null;
+			}
+		});
+
+		naver.maps.Event.addListener(map, 'zoom_changed', () => {
+			zoom = map.getZoom();
+			console.log('zoom:', zoom);
+		});
+	}
+
+	function loadNaverMapScript(): Promise<void> {
+		return new Promise((resolve, reject) => {
+			naverScript = document.createElement('script');
+			naverScript.src = `https://openapi.map.naver.com/openapi/v3/maps.js?ncpClientId=t80s8o2xsl&submodules=geocoder`;
+			naverScript.async = true;
+			naverScript.onload = () => resolve();
+			naverScript.onerror = (err) => reject(err);
+			document.body.appendChild(naverScript);
+		});
+	}
 
 	function createCompanyMarker(result: SearchResult, selectedZIndex: number = 300, autoSelect: boolean = false): any {
-		const point = new naver.maps.LatLng(parseFloat(result.latitude), parseFloat(result.longitude));
+		const point = createLatLng(result.latitude, result.longitude);
 		const marker = new naver.maps.Marker({
 			position: point,
 			map: mapInstance?.map,
@@ -227,7 +294,6 @@
 			}
 		});
 
-		// Attach result data to marker for later use
 		marker.searchResult = result;
 		marker.company_name = result.company_name;
 		marker.business_registration_number = result.business_registration_number;
@@ -242,19 +308,7 @@
 			}
 		});
 		naver.maps.Event.addListener(marker, 'click', () => {
-			if (selectedMarker && selectedMarker !== marker) {
-				selectedMarker.setIcon({
-					content: getMarkerContent(selectedMarker.searchResult, false),
-					anchor: new naver.maps.Point(50, 30)
-				});
-				selectedMarker.setZIndex(100);
-			}
-			selectedMarker = marker;
-			marker.setIcon({
-				content: getMarkerContent(result, true),
-				anchor: new naver.maps.Point(50, 30)
-			});
-			marker.setZIndex(selectedZIndex);
+			updateSelectedMarker(marker, result, selectedZIndex);
 			companyInfo = result;
 			showCompanyInfo = true;
 			activeFilterGroup = null;
@@ -266,10 +320,6 @@
 
 		return marker;
 	}
-
-	// ─────────────────────────────
-	// 기존 검색, 필터 및 지도 관련 함수들 (로직은 원본 그대로)
-	// ─────────────────────────────
 
 	export const handleSearch = async (searchValue: string, filters: any) => {
 		console.log('Searching for:', searchValue, 'with filters:', filters);
@@ -309,23 +359,15 @@
 			searchResults = data.data;
 
 			if (!searchResults.length) {
-				if (mapInstance?.companyMarkers) {
-					mapInstance.companyMarkers.forEach((marker) => marker.setMap(null));
-					mapInstance.companyMarkers = [];
-				}
-				if (markerClustering) markerClustering.clearMarkers();
+				clearMarkers();
 				return;
 			}
 
 			if (!mapInstance) return;
 
-			if (mapInstance?.companyMarkers) {
-				mapInstance.companyMarkers.forEach((marker) => marker.setMap(null));
-				mapInstance.companyMarkers = [];
-			}
-			if (markerClustering) markerClustering.clearMarkers();
+			clearMarkers();
 
-			const firstPoint = new naver.maps.LatLng(location?.lat, location?.lng);
+			const firstPoint = createLatLng(location?.lat, location?.lng);
 			mapInstance.map.setCenter(firstPoint);
 			mapInstance.map.setZoom(zoom);
 
@@ -360,43 +402,20 @@
 			return;
 		}
 		const mapOptions = {
-			center: new naver.maps.LatLng(position.lat, position.lng),
+			center: createLatLng(position.lat, position.lng),
 			zoom: zoom
 		};
 
 		const map = new naver.maps.Map(mapContainer, mapOptions);
 		const marker = new naver.maps.Marker({
-			position: new naver.maps.LatLng(position.lat, position.lng),
+			position: createLatLng(position.lat, position.lng),
 			map: map
 		});
 
 		mapInstance = { map, marker, infoWindow: null, companyMarkers: [] };
 		loading = false;
 
-		naver.maps.Event.addListener(map, 'click', (e: any) => {
-			if (location) {
-				location.lat = e.coord._lat;
-				location.lng = e.coord._lng;
-				showCompanyInfo = false;
-			}
-			activeFilterGroup = null;
-		});
-
-		naver.maps.Event.addListener(map, 'dragend', (e: any) => {
-			if (location) {
-				showCompanyInfo = false;
-				const center = map.getCenter();
-				location.lat = center.lat();
-				location.lng = center.lng();
-				handleSearch('', selectedFilters);
-				activeFilterGroup = null;
-			}
-		});
-
-		naver.maps.Event.addListener(map, 'zoom_changed', () => {
-			zoom = map.getZoom();
-			console.log('zoom:', zoom);
-		});
+		registerMapEvents(map);
 	};
 
 	const moveToCurrentLocation = () => {
@@ -408,7 +427,7 @@
 		if (userLocation) {
 			location.lat = userLocation.lat;
 			location.lng = userLocation.lng;
-			const currentLocation = new naver.maps.LatLng(userLocation.lat, userLocation.lng);
+			const currentLocation = createLatLng(userLocation.lat, userLocation.lng);
 			mapInstance.map.setCenter(currentLocation);
 
 			if (mapInstance.marker) {
@@ -427,14 +446,10 @@
 	const handleSearchResultClick = (result: SearchResult) => {
 		if (!mapInstance) return;
 
-		const point = new naver.maps.LatLng(
-			parseFloat(result.latitude),
-			parseFloat(result.longitude)
-		);
+		const point = createLatLng(result.latitude, result.longitude);
 		mapInstance.map.setCenter(point);
 		mapInstance.map.setZoom(zoom);
 
-		// 검색 결과 클릭 시 헬퍼 함수를 통해 마커 생성 및 자동 선택
 		const marker = createCompanyMarker(result, 300, true);
 		mapInstance.companyMarkers.push(marker);
 	};
@@ -443,17 +458,13 @@
 		if (!mapInstance) return;
 
 		const firstResult = searchAddressList[0];
-		const point = new naver.maps.LatLng(
-			parseFloat(firstResult.latitude),
-			parseFloat(firstResult.longitude)
-		);
+		const point = createLatLng(firstResult.latitude, firstResult.longitude);
 
 		mapInstance.map.setCenter(point);
 		mapInstance.map.setZoom(zoom);
 
 		searchAddressList.forEach((result) => {
 			if (mapInstance) {
-				// 주소 검색에서는 선택 시 zIndex가 500으로 설정됨
 				const marker = createCompanyMarker(result, 300, false);
 				mapInstance.companyMarkers.push(marker);
 			}
@@ -488,21 +499,19 @@
 					lng: position.coords.longitude
 				};
 
-				script = document.createElement('script');
-				script.src = `https://openapi.map.naver.com/openapi/v3/maps.js?ncpClientId=t80s8o2xsl&submodules=geocoder`;
-				script.async = true;
-				script.onload = async () => {
-					initializeMap(location);
-					const module = await import('./MarkerClustering');
-					const MarkerClustering = module.default;
-					markerClustering = new MarkerClustering({
-						map: mapInstance.map,
-						gridSize: 60,
-						maxZoom: zoom + 1,
-						disableClickZoom: false
-					});
-				};
-				document.body.appendChild(script);
+				await loadNaverMapScript();
+				initializeMap(location);
+
+				const module = await import('./MarkerClustering');
+				const MarkerClustering = module.default;
+				markerClustering = new MarkerClustering({
+					map: mapInstance.map,
+					gridSize: 60,
+					maxZoom: zoom + 1,
+					disableClickZoom: false
+				});
+
+				handleSearch('', selectedFilters);
 			} catch (err) {
 				const errorMessage = (err as Error).message;
 				error = errorMessage;
@@ -513,8 +522,8 @@
 		initialize();
 
 		return () => {
-			if (document.body.contains(script)) {
-				document.body.removeChild(script);
+			if (document.body.contains(naverScript)) {
+				document.body.removeChild(naverScript);
 			}
 		};
 	});
@@ -522,9 +531,9 @@
 	async function filterChange(groupId: string, optionId: string, checked: boolean | string) {
 		selectedFilters = await onFilterChange(selectedFilters, groupId, optionId, checked);
 
-    if (!excludedGroupIds.includes(groupId)) {
-      handleSearch('', selectedFilters);
-    }
+		if (!excludedGroupIds.includes(groupId)) {
+			handleSearch('', selectedFilters);
+		}
 	}
 
 	function closeCompanyInfo() {
@@ -543,7 +552,7 @@
 	const handleResultClick = (result: SearchResult) => {
 		if (!mapInstance) return;
 
-		const point = new naver.maps.LatLng(parseFloat(result.latitude), parseFloat(result.longitude));
+		const point = createLatLng(result.latitude, result.longitude);
 		mapInstance.map.setCenter(point);
 		mapInstance.map.setZoom(zoom);
 
@@ -561,12 +570,7 @@
 
 		const marker = mapInstance.companyMarkers.find(m => m.searchResult?.smtp_id === result.smtp_id);
 		if (marker) {
-			selectedMarker = marker;
-			marker.setIcon({
-				content: getMarkerContent(result, true),
-				anchor: new naver.maps.Point(50, 30)
-			});
-			marker.setZIndex(300);
+			updateSelectedMarker(marker, result, 300);
 		}
 	};
 </script>
