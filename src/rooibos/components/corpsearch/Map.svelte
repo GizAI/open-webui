@@ -6,7 +6,7 @@
 	import { onMount } from 'svelte';
 	import { get } from 'svelte/store';
 	import SearchBar from './SearchBar.svelte';
-	import { filterGroups } from './filterdata';
+	import { excludedGroupIds, filterGroups, onFilterChange } from './filterdata';
 	import { mobile } from '$lib/stores';
 	import { showSidebar, user } from '$lib/stores';
 	import SearchCompanyList from './SearchCompanyList.svelte';
@@ -271,7 +271,7 @@
 	// 기존 검색, 필터 및 지도 관련 함수들 (로직은 원본 그대로)
 	// ─────────────────────────────
 
-	const handleSearch = async (searchValue: string, filters: any) => {
+	export const handleSearch = async (searchValue: string, filters: any) => {
 		console.log('Searching for:', searchValue, 'with filters:', filters);
 
 		activeFilterGroup = null;
@@ -519,107 +519,12 @@
 		};
 	});
 
-	function onFilterChange(groupId: string, optionId: string, checked: boolean | string) {
-		const group = filterGroups.find((g) => g.id === groupId);
-		if (!group) return;
+	async function filterChange(groupId: string, optionId: string, checked: boolean | string) {
+		selectedFilters = await onFilterChange(selectedFilters, groupId, optionId, checked);
 
-		let newFilters = { ...selectedFilters };
-
-		if (optionId === 'checked') {
-			newFilters[groupId] = {
-				...((newFilters[groupId] as any) || {}),
-				checked: checked as boolean
-			};
-		} else if (groupId === 'radius' && typeof checked === 'string') {
-			newFilters[groupId] = {
-				...((newFilters[groupId] as any) || {}),
-				value: checked
-			};
-		} else if (
-			groupId === 'distance' ||
-			groupId === 'representative' ||
-			groupId === 'gender' ||
-			groupId === 'loan'
-		) {
-			newFilters[groupId] = {
-				...((newFilters[groupId] as any) || {}),
-				value: checked ? optionId : ''
-			};
-		} else if (groupId === 'representative_age') {
-			newFilters[groupId] = {
-				...((newFilters[groupId] as any) || {}),
-				value: checked
-			};
-		} else if (groupId === 'establishment_year') {
-			newFilters[groupId] = {
-				...((newFilters[groupId] as any) || {}),
-				value: checked
-			};
-		} else if (
-			['employee_count', 'sales', 'profit', 'net_profit', 'unallocated_profit'].includes(groupId) &&
-			typeof checked === 'object' &&
-			checked !== null
-		) {
-			newFilters[groupId] = {
-				...((newFilters[groupId] as any) || {}),
-				...checked
-			};
-		} else if (typeof checked === 'string') {
-			newFilters[groupId] = {
-				...((newFilters[groupId] as any) || {}),
-				[optionId]: checked
-			};
-		} else if (group.isMulti) {
-			const currentValues = Array.isArray(selectedFilters[groupId]?.value)
-				? (selectedFilters[groupId]?.value as string[])
-				: [];
-
-			newFilters[groupId] = {
-				...((newFilters[groupId] as any) || {}),
-				value: checked
-					? [...currentValues, optionId]
-					: currentValues.filter((id) => id !== optionId)
-			};
-		} else {
-			newFilters[groupId] = {
-				...((newFilters[groupId] as any) || {}),
-				value: checked ? optionId : ''
-			};
-		}
-
-		Object.keys(newFilters).forEach((key) => {
-			const filter = newFilters[key];
-			if (!filter) return;
-
-			if (filter.value === null || (Array.isArray(filter.value) && filter.value.length === 0)) {
-				delete newFilters[key];
-			}
-
-			if (typeof filter.value === 'object' && filter.value !== null) {
-				const values = Object.values(filter.value);
-				if (values.every((val) => val === '' || val === null)) {
-					delete newFilters[key];
-				}
-			}
-		});
-
-		selectedFilters = newFilters;
-
-		const excludedGroupIds = [
-			'employee_count',
-			'sales',
-			'profit',
-			'net_profit',
-			'unallocated_profit',
-			'establishment_year',
-			'representative_age'
-		];
-
-		if (!excludedGroupIds.includes(groupId)) {
-			handleSearch('', selectedFilters);
-		}
-
-		return newFilters;
+    if (!excludedGroupIds.includes(groupId)) {
+      handleSearch('', selectedFilters);
+    }
 	}
 
 	function closeCompanyInfo() {
@@ -675,7 +580,7 @@
 			searchCompanyResults={searchResults}
 			{searchValue}
 			{activeFilterGroup}
-			{onFilterChange}
+			{filterChange}
 			{selectedFilters}
 			{resultViewMode}
 			on:showCompanyInfo={(e) => (showCompanyInfo = e.detail)}

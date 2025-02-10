@@ -15,7 +15,7 @@
 	export let onSearch: (searchValue: string, selectedFilters: any) => Promise<void>;
 	export let onReset: () => void;
 	export let onApply: () => void;
-	export let onFilterChange: (groupId: string, optionId: string, checked: boolean | string) => void;
+	export let filterChange: (groupId: string, optionId: string, checked: boolean | string) => void;
 
 	let isSearchMode = false;
 	let searchResults: any = [];
@@ -138,6 +138,7 @@
 					}
 				}
 			);
+      
 			const data = await response.json();
 
 			if (searchByLocation) {
@@ -272,7 +273,7 @@
 	}
 </script>
 
-<div bind:this={filterContainerRef} class="bg-gray-50 overflow-y-auto">
+<div bind:this={filterContainerRef} class="overflow-y-auto">
 	<div class="flex items-center py-1">
 		<div class="{$showSidebar ? 'hidden' : ''} flex items-center">
 			<button
@@ -579,7 +580,7 @@
 	>
 		<SearchFilter
 			{selectedFilters}
-			{onFilterChange}
+			{filterChange}
 			{onReset}
 			{onApply}
 			activeGroup={activeFilterGroup}

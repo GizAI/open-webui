@@ -10,7 +10,7 @@
   };
 
   export let selectedFilters: Record<string, FilterValue> = {};
-  export let onFilterChange: (
+  export let filterChange: (
     groupId: string,
     optionId: string,
     checked: boolean | string
@@ -49,13 +49,13 @@
     return applyButtonGroups.includes(groupId);
   }
 
-  const checkFilter = (filter: any) => {
+  const checkFilter = async (filter: any) => {
     if (filter.id === 'representative_age') {
-      onFilterChange(filter.id, 'representative_age', ageValue);
+      await filterChange(filter.id, 'representative_age', ageValue);
     } else if (filter.id === 'establishment_year') {
-      onFilterChange(filter.id, 'establishment_year', establishmentYearValue);
+      await filterChange(filter.id, 'establishment_year', establishmentYearValue);
     } else if (['employee_count', 'sales', 'profit', 'net_profit', 'unallocated_profit'].includes(filter.id)) {
-      onFilterChange(filter.id, '', { min: rangeMin, max: rangeMax });
+      await filterChange(filter.id, '', { min: rangeMin, max: rangeMax });
     } else {
       const value = selectedFilters[filter.id];
       if (
@@ -115,7 +115,7 @@
                     type="radio"
                     name="gender"
                     checked={selectedFilters[group.id]?.value === option.id}
-                    on:change={() => onFilterChange(group.id, option.id, option.id)}
+                    on:change={async () => await filterChange(group.id, option.id, option.id)}
                     class="w-4 h-4 text-blue-600 mr-2"
                   />
                   <span class="text-sm text-gray-700">{option.label}</span>
@@ -182,7 +182,7 @@
                               && selectedFilters[group.id]?.value.includes(option.id))
                             : selectedFilters[group.id]?.value === option.id
                         }
-                        on:change={(e) => onFilterChange(
+                        on:change={async (e) => await filterChange(
                           group.id,
                           option.id,
                           group.isMulti ? e.currentTarget?.checked : option.id

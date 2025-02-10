@@ -1,21 +1,3 @@
-import {
-	MapPin,
-	Award,
-	Users,
-	TrendingUp,
-	DollarSign,
-	Scale,
-	UserPlus,
-	History,
-	Landmark,
-	CalendarDays,
-	Building2,
-	Ban,
-	RotateCcw,
-	Check,
-	Sliders
-} from 'lucide-svelte';
-
 export const filterGroups = [
 	{
 		id: 'radius',
@@ -139,3 +121,100 @@ export const filterActions = [
 		action: 'reset'
 	}
 ];
+
+export const excludedGroupIds = [
+	'employee_count',
+	'sales',
+	'profit',
+	'net_profit',
+	'unallocated_profit',
+	'establishment_year',
+	'representative_age'
+];
+
+export function onFilterChange(selectedFilters: any, groupId: string, optionId: string, checked: boolean | string) {
+	const group = filterGroups.find((g) => g.id === groupId);
+	if (!group) return;
+
+	let newFilters = { ...selectedFilters };
+
+	if (optionId === 'checked') {
+		newFilters[groupId] = {
+			...((newFilters[groupId] as any) || {}),
+			checked: checked as boolean
+		};
+	} else if (groupId === 'radius' && typeof checked === 'string') {
+		newFilters[groupId] = {
+			...((newFilters[groupId] as any) || {}),
+			value: checked
+		};
+	} else if (
+		groupId === 'distance' ||
+		groupId === 'representative' ||
+		groupId === 'gender' ||
+		groupId === 'loan'
+	) {
+		newFilters[groupId] = {
+			...((newFilters[groupId] as any) || {}),
+			value: checked ? optionId : ''
+		};
+	} else if (groupId === 'representative_age') {
+		newFilters[groupId] = {
+			...((newFilters[groupId] as any) || {}),
+			value: checked
+		};
+	} else if (groupId === 'establishment_year') {
+		newFilters[groupId] = {
+			...((newFilters[groupId] as any) || {}),
+			value: checked
+		};
+	} else if (
+		['employee_count', 'sales', 'profit', 'net_profit', 'unallocated_profit'].includes(groupId) &&
+		typeof checked === 'object' &&
+		checked !== null
+	) {
+		newFilters[groupId] = {
+			...((newFilters[groupId] as any) || {}),
+			...checked
+		};
+	} else if (typeof checked === 'string') {
+		newFilters[groupId] = {
+			...((newFilters[groupId] as any) || {}),
+			[optionId]: checked
+		};
+	} else if (group.isMulti) {
+		const currentValues = Array.isArray(selectedFilters[groupId]?.value)
+			? (selectedFilters[groupId]?.value as string[])
+			: [];
+
+		newFilters[groupId] = {
+			...((newFilters[groupId] as any) || {}),
+			value: checked
+				? [...currentValues, optionId]
+				: currentValues.filter((id) => id !== optionId)
+		};
+	} else {
+		newFilters[groupId] = {
+			...((newFilters[groupId] as any) || {}),
+			value: checked ? optionId : ''
+		};
+	}
+
+	Object.keys(newFilters).forEach((key) => {
+		const filter = newFilters[key];
+		if (!filter) return;
+
+		if (filter.value === null || (Array.isArray(filter.value) && filter.value.length === 0)) {
+			delete newFilters[key];
+		}
+
+		if (typeof filter.value === 'object' && filter.value !== null) {
+			const values = Object.values(filter.value);
+			if (values.every((val) => val === '' || val === null)) {
+				delete newFilters[key];
+			}
+		}
+	});
+
+	return newFilters;
+}
