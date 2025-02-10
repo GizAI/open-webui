@@ -210,6 +210,7 @@
 					}
 				}
 			);
+      
 			const data = await response.json();
 			const list = data.data;
 			dispatch('addressResultClick', list);
@@ -266,6 +267,7 @@
 
 	function toggleViewMode() {
 		viewMode = viewMode === 'map' ? 'list' : 'map';
+    dispatch('showCompanyListClick', viewMode);
 	}
 </script>
 

@@ -94,11 +94,10 @@
 </script>
 
 <div 
-  class="fixed {isFullscreen ? 'fullscreen' : ''} bottom-0 bg-gray-50 shadow-lg pl-2 pt-2 rounded-t-2xl overflow-y-auto z-40 transition-all duration-300
-  md:max-h-[calc(100vh-800px)] 
-  max-h-[calc(100vh-150px)]"
-  class:sidebar-margin={$showSidebar}
-  class:mobile-layout={$mobile}
+class="fixed {isFullscreen ? 'fullscreen' : ''} bottom-0 bg-gray-50 shadow-lg pl-2 pt-2 rounded-t-2xl overflow-y-auto z-40 transition-all duration-300"
+class:sidebar-margin={$showSidebar}
+class:mobile-layout={$mobile}
+style="top: 50px;"
 >
   <ul class="p-4 space-y-2 overflow-y-auto">
     {#each searchResults as result}
@@ -137,34 +136,9 @@
                 <div class="text-sm text-gray-500 mt-1">당기 순이익: {result.net_income.toLocaleString()}억</div>
               {/if} -->
             </div>
-            <button 
-							class="hover:bg-gray-100 rounded-full" 
-							on:click={isFullscreen ? closeCompanyInfo : toggleFullscreen}
-						>
-							<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-								<path 
-									stroke-linecap="round" 
-									stroke-linejoin="round" 
-									stroke-width="2" 
-									d={isFullscreen ? "M6 18L18 6M6 6l12 12" : "M5 15l7-7 7 7"}
-								/>
-							</svg>
-						</button>
           </div>
         </button>
-        <button 
-							class="hover:bg-gray-100 rounded-full" 
-							on:click={isFullscreen ? closeCompanyInfo : toggleFullscreen}
-						>
-							<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-								<path 
-									stroke-linecap="round" 
-									stroke-linejoin="round" 
-									stroke-width="2" 
-									d={isFullscreen ? "M6 18L18 6M6 6l12 12" : "M5 15l7-7 7 7"}
-								/>
-							</svg>
-						</button>
+        
       </li>
     {/each}
   </ul>
@@ -188,8 +162,6 @@
   }
 
   .mobile-layout {
-    height: 20vh;
-    max-height: 80vh;
     border-top-left-radius: 20px;
     border-top-right-radius: 20px;
   }

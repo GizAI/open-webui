@@ -200,6 +200,7 @@
 	let activeFilterGroup: string | null = null;
 	let userLocation: UserLocation | null = null;
 	let showCompanyInfo = false;
+  let showCompanyList = false;
 	let zoom = 18;
 	let isFullscreen = false;
 	let companyInfo: CompanyInfo = {
@@ -315,7 +316,7 @@
 					});
 
 					// MarkerClustering 모듈에 마커를 등록합니다.
-					markerClustering.addMarker(marker);
+					// markerClustering.addMarker(marker);
 
 					mapInstance.companyMarkers.push(marker);
 				}
@@ -492,7 +493,7 @@
 				});
 
 				// MarkerClustering 모듈에 등록합니다.
-				markerClustering.addMarker(marker);
+				// markerClustering.addMarker(marker);
 				mapInstance.companyMarkers.push(marker);
 			}
 		});
@@ -503,6 +504,10 @@
 	const handleSearchListChange = (newValue: boolean) => {
 		showSearchList = newValue;
 	};
+
+  const handleShowCompanyListClick = (viewMode: any) => {
+    showCompanyList =  viewMode === 'map' ? false : true;
+  }
 
 	onMount(() => {
 		const initialize = async () => {
@@ -532,14 +537,14 @@
 				script.async = true;
 				script.onload = async () => {
 					initializeMap(location);
-					const module = await import('./MarkerClustering');
-					const MarkerClustering = module.default;
-					markerClustering = new MarkerClustering({
-						map: mapInstance.map,
-						gridSize: 60,
-						maxZoom: zoom,
-						disableClickZoom: false
-					});
+					// const module = await import('./MarkerClustering');
+					// const MarkerClustering = module.default;
+					// markerClustering = new MarkerClustering({
+					// 	map: mapInstance.map,
+					// 	gridSize: 60,
+					// 	maxZoom: zoom,
+					// 	disableClickZoom: false
+					// });
 				};
 				document.body.appendChild(script);
 			} catch (err) {
@@ -750,11 +755,12 @@
 			on:filterGroupChange={(e) => (activeFilterGroup = e.detail)}
 			on:searchResultClick={(e) => handleSearchResultClick(e.detail)}
 			on:addressResultClick={(e) => handleSearchAddressListClick(e.detail)}
+      on:showCompanyListClick={(e) => handleShowCompanyListClick(e.detail)}
 		/>
 	</div>
 {/if}
 
-{#if false && searchResults.length > 1 && showSearchList && !($mobile && $showSidebar)}
+{#if showCompanyList && searchResults.length > 1 && showSearchList && !($mobile && $showSidebar)}
 	<div class="company-list-wrapper w-full" class:sidebar-visible={$showSidebar}>
 		<SearchCompanyList
 			{searchResults}
