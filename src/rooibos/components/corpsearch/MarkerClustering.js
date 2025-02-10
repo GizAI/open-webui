@@ -691,43 +691,43 @@ Cluster.prototype = {
 			icon = icons[index];
 		} else {
 			var displayHtml = '';
-			var splitGroups = [];
-			if (count > 10) {
-				var groups = Math.floor(count / 10);
-				var remainder = count % 10;
-				// 10개 단위 그룹과 마지막 남은 그룹을 분할하여 저장
-				for (var i = 0; i < groups; i++) {
-					splitGroups.push(10);
-				}
-				if (remainder > 0) {
-					splitGroups.push(remainder);
-				}
-				var numGroups = splitGroups.length;
-				// 컨테이너를 60x60px로 설정하고, 내부에 원형으로 배치
-				displayHtml = '<div style="position: relative; width: 60px; height: 60px;">';
-				var center = 30; // 컨테이너 중심 (60/2)
-				var radius = 20; // 원형 배치의 반지름 (적절한 값으로 조정 가능)
-				for (var i = 0; i < numGroups; i++) {
-					var angle = (2 * Math.PI / numGroups) * i;
-					var left = center + radius * Math.cos(angle) - 15; // 15 = (30/2)
-					var top = center + radius * Math.sin(angle) - 15;
-					var groupNumber = splitGroups[i];
-					// 각 하위 마커에 data-group-index 속성을 부여하여 어느 그룹인지 표시
-					displayHtml += '<div data-group-index="'+ i +'" style="position: absolute; left: '+ left +'px; top: '+ top +'px; width:30px; height:30px; background: rgba(0, 123, 255, 0.8); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; cursor: pointer;">' + groupNumber + '</div>';
-				}
-				displayHtml += '</div>';
-			} else {
-				splitGroups.push(count);
-				displayHtml = '<div style="position: relative; width: 60px; height: 60px;">' +
-							'<div data-group-index="0" style="position: absolute; left: 15px; top: 15px; width:30px; height:30px; background: rgba(0, 123, 255, 0.8); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; cursor: pointer;">' + count + '</div>' +
-							'</div>';
+		var splitGroups = [];
+		if (count > 10) {
+			var groups = Math.floor(count / 10);
+			var remainder = count % 10;
+			// 10개 단위 그룹과 마지막 남은 그룹을 분할하여 저장
+			for (var i = 0; i < groups; i++) {
+				splitGroups.push(10);
 			}
-			icon = {
-				content: displayHtml,
-				anchor: new naver.maps.Point(30, 30)
-			};
-			// 클러스터 객체에 분할 그룹 정보를 저장(이후 클릭 시 사용)
-			this._splitGroups = splitGroups;
+			if (remainder > 0) {
+				splitGroups.push(remainder);
+			}
+			var numGroups = splitGroups.length;
+			// 컨테이너를 60x60px로 설정하고, 내부에 원형으로 배치
+			displayHtml = '<div style="position: relative; width: 60px; height: 60px;">';
+			var center = 30; // 컨테이너 중심 (60/2)
+			var radius = 20; // 원형 배치의 반지름 (적절한 값으로 조정 가능)
+			for (var i = 0; i < numGroups; i++) {
+				var angle = (2 * Math.PI / numGroups) * i;
+				var left = center + radius * Math.cos(angle) - 15; // 15 = (30/2)
+				var top = center + radius * Math.sin(angle) - 15;
+				var groupNumber = splitGroups[i];
+				// 각 하위 마커에 data-group-index 속성을 부여하여 어느 그룹인지 표시
+				displayHtml += '<div data-group-index="'+ i +'" style="position: absolute; left: '+ left +'px; top: '+ top +'px; width:30px; height:30px; background: rgba(0, 123, 255, 0.8); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; cursor: pointer;">' + groupNumber + '</div>';
+			}
+			displayHtml += '</div>';
+		} else {
+			splitGroups.push(count);
+			displayHtml = '<div style="position: relative; width: 60px; height: 60px;">' +
+						'<div data-group-index="0" style="position: absolute; left: 15px; top: 15px; width:30px; height:30px; background: rgba(0, 123, 255, 0.8); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; cursor: pointer;">' + count + '</div>' +
+						'</div>';
+		}
+		icon = {
+			content: displayHtml,
+			anchor: new naver.maps.Point(30, 30)
+		};
+		// 클러스터 객체에 분할 그룹 정보를 저장(이후 클릭 시 사용)
+		this._splitGroups = splitGroups;
 		}
 
 		this._clusterMarker.setIcon(icon);
@@ -926,11 +926,6 @@ Cluster.prototype._showMember = function (members) {
         membersToShow[i].setPosition(newLatLng);
         membersToShow[i].setMap(map);
     }
-    if (marker) {
-        marker.setMap(null);
-    }
 };
-
-
 
 export default MarkerClustering;
