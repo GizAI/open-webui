@@ -44,6 +44,7 @@ var MarkerClustering = function (options) {
 	};
 
 	this._clusters = [];
+	this._expandedCluster = null;
 
 	this._mapRelations = null;
 	this._markerRelations = [];
@@ -61,6 +62,14 @@ naver.maps.Util.ClassExtend(MarkerClustering, naver.maps.OverlayView, {
 			'idle',
 			naver.maps.Util.bind(this._onIdle, this)
 		);
+
+		this._mapClickListener = naver.maps.Event.addListener(map, 'click', () => {
+			if (this._expandedCluster) {
+			  this._expandedCluster._hideMember();
+			  this._expandedCluster._clicked = false;
+			  this._expandedCluster = null;
+			}
+		});
 
 		if (this.getMarkers().length > 0) {
 			this._createClusters();
@@ -565,12 +574,20 @@ Cluster.prototype = {
 	 */
 	enableClickZoom: function () {
 		if (this._relation) return;
-
-		var cluster = this;
-
-		this._relation = naver.maps.Event.addListener(this._clusterMarker, 'click', function (e) {
-			cluster._clicked = true; // 클릭 시 플래그 설정
-			cluster._showMember();
+		var markerClusterer = this._markerClusterer;
+		this._relation = naver.maps.Event.addListener(this._clusterMarker, 'click', () => {
+		  // 이미 확장된 다른 클러스터가 있다면 접는다.
+		  if (markerClusterer._expandedCluster && markerClusterer._expandedCluster !== this) {
+			markerClusterer._expandedCluster._hideMember();
+			markerClusterer._expandedCluster._clicked = false;
+			markerClusterer._expandedCluster = null;
+		  }
+		  // 현재 클러스터가 아직 확장되지 않았다면 확장한다.
+		  if (!this._clicked) {
+			this._clicked = true;
+			this._showMember();
+			markerClusterer._expandedCluster = this;
+		  }
 		});
 	},
 
@@ -825,17 +842,17 @@ Cluster.prototype = {
 	}
 };
 
-Cluster.prototype.enableClickZoom = function () {
-	if (this._relation) return;
+// Cluster.prototype.enableClickZoom = function () {
+// 	if (this._relation) return;
 
-	var cluster = this;
+// 	var cluster = this;
 
-	this._relation = naver.maps.Event.addListener(this._clusterMarker, 'click', function (e) {
-		var map = cluster._markerClusterer.getMap();
-		// 클러스터 중심으로 이동 후 현재 줌 레벨보다 1단계 확대
-		map.setCenter(cluster.getCenter());
-		map.setZoom(map.getZoom() + 1);
-	});
-};
+// 	this._relation = naver.maps.Event.addListener(this._clusterMarker, 'click', function (e) {
+// 		var map = cluster._markerClusterer.getMap();
+// 		// 클러스터 중심으로 이동 후 현재 줌 레벨보다 1단계 확대
+// 		map.setCenter(cluster.getCenter());
+// 		map.setZoom(map.getZoom() + 1);
+// 	});
+// };
 
 export default MarkerClustering;
