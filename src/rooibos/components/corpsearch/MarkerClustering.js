@@ -690,13 +690,44 @@ Cluster.prototype = {
 			index = Math.min(index, icons.length - 1);
 			icon = icons[index];
 		} else {
-			// 기본 아이콘 생성: 겹친 마커 수를 표시하는 HTML 아이콘
+			var displayHtml = '';
+			var splitGroups = [];
+			if (count > 10) {
+				var groups = Math.floor(count / 10);
+				var remainder = count % 10;
+				// 10개 단위 그룹과 마지막 남은 그룹을 분할하여 저장
+				for (var i = 0; i < groups; i++) {
+					splitGroups.push(10);
+				}
+				if (remainder > 0) {
+					splitGroups.push(remainder);
+				}
+				var numGroups = splitGroups.length;
+				// 컨테이너를 60x60px로 설정하고, 내부에 원형으로 배치
+				displayHtml = '<div style="position: relative; width: 60px; height: 60px;">';
+				var center = 30; // 컨테이너 중심 (60/2)
+				var radius = 20; // 원형 배치의 반지름 (적절한 값으로 조정 가능)
+				for (var i = 0; i < numGroups; i++) {
+					var angle = (2 * Math.PI / numGroups) * i;
+					var left = center + radius * Math.cos(angle) - 15; // 15 = (30/2)
+					var top = center + radius * Math.sin(angle) - 15;
+					var groupNumber = splitGroups[i];
+					// 각 하위 마커에 data-group-index 속성을 부여하여 어느 그룹인지 표시
+					displayHtml += '<div data-group-index="'+ i +'" style="position: absolute; left: '+ left +'px; top: '+ top +'px; width:30px; height:30px; background: rgba(0, 123, 255, 0.8); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; cursor: pointer;">' + groupNumber + '</div>';
+				}
+				displayHtml += '</div>';
+			} else {
+				splitGroups.push(count);
+				displayHtml = '<div style="position: relative; width: 60px; height: 60px;">' +
+							'<div data-group-index="0" style="position: absolute; left: 15px; top: 15px; width:30px; height:30px; background: rgba(0, 123, 255, 0.8); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; cursor: pointer;">' + count + '</div>' +
+							'</div>';
+			}
 			icon = {
-				content: `<div style="background: rgba(0, 123, 255, 0.8); border-radius: 50%; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold;">
-                        ${count}
-                      </div>`,
-				anchor: new naver.maps.Point(15, 15)
+				content: displayHtml,
+				anchor: new naver.maps.Point(30, 30)
 			};
+			// 클러스터 객체에 분할 그룹 정보를 저장(이후 클릭 시 사용)
+			this._splitGroups = splitGroups;
 		}
 
 		this._clusterMarker.setIcon(icon);
@@ -842,17 +873,64 @@ Cluster.prototype = {
 	}
 };
 
-// Cluster.prototype.enableClickZoom = function () {
-// 	if (this._relation) return;
+Cluster.prototype.enableClickZoom = function () {
+    if (this._relation) return;
+    var cluster = this;
+    this._relation = naver.maps.Event.addListener(this._clusterMarker, 'click', function (e) {
+        var markerClusterer = cluster._markerClusterer;
+        if (markerClusterer._expandedCluster && markerClusterer._expandedCluster !== cluster) {
+            markerClusterer._expandedCluster._hideMember();
+            markerClusterer._expandedCluster._clicked = false;
+            markerClusterer._expandedCluster = null;
+        }
+        if (!cluster._clicked) {
+            cluster._clicked = true;
+            // e.domEvent.target 에서 data-group-index 값을 확인
+            var target = e.domEvent.target;
+            var groupIndex = target.getAttribute('data-group-index');
+            if (groupIndex === null || groupIndex === undefined) {
+                groupIndex = 0;
+            } else {
+                groupIndex = parseInt(groupIndex, 10);
+            }
+            // 저장된 분할 그룹 정보(_splitGroups)를 이용해 해당 그룹의 시작 인덱스를 계산
+            var splitGroups = cluster._splitGroups || [cluster._clusterMember.length];
+            var startIndex = 0;
+            for (var i = 0; i < groupIndex; i++) {
+                startIndex += splitGroups[i];
+            }
+            var groupCount = splitGroups[groupIndex];
+            // _clusterMember 배열에서 해당 그룹만 슬라이스하여 전달
+            var membersToShow = cluster._clusterMember.slice(startIndex, startIndex + groupCount);
+            cluster._showMember(membersToShow);
+            markerClusterer._expandedCluster = cluster;
+        }
+    });
+};
 
-// 	var cluster = this;
 
-// 	this._relation = naver.maps.Event.addListener(this._clusterMarker, 'click', function (e) {
-// 		var map = cluster._markerClusterer.getMap();
-// 		// 클러스터 중심으로 이동 후 현재 줌 레벨보다 1단계 확대
-// 		map.setCenter(cluster.getCenter());
-// 		map.setZoom(map.getZoom() + 1);
-// 	});
-// };
+Cluster.prototype._showMember = function (members) {
+    var map = this._markerClusterer.getMap(),
+        marker = this._clusterMarker,
+        projection = this._markerClusterer.getProjection();
+    var membersToShow = members || this._clusterMember;
+    var count = membersToShow.length;
+    var centerPixel = projection.fromCoordToOffset(this._clusterCenter);
+    var spreadRadius = 30;
+    for (var i = 0; i < count; i++) {
+        var angle = (2 * Math.PI / count) * i,
+            offsetX = spreadRadius * Math.cos(angle),
+            offsetY = spreadRadius * Math.sin(angle),
+            newPixel = new naver.maps.Point(centerPixel.x + offsetX, centerPixel.y + offsetY),
+            newLatLng = projection.fromOffsetToCoord(newPixel);
+        membersToShow[i].setPosition(newLatLng);
+        membersToShow[i].setMap(map);
+    }
+    if (marker) {
+        marker.setMap(null);
+    }
+};
+
+
 
 export default MarkerClustering;
