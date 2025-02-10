@@ -838,12 +838,15 @@
 		transform-origin: bottom;
 		margin-top: 0;
 	  }
-	    
+
 	  .company-info-wrapper.mobile.fullscreen {
-		height: 100vh;
+		top: env(safe-area-inset-top);
+		bottom: auto;
+		height: calc(100vh - env(safe-area-inset-top));
 		margin-top: 0;
 		border-top-left-radius: 0;
 		border-top-right-radius: 0;
+		padding-top: env(safe-area-inset-top);
 	  }
 
 	  .company-info-wrapper.mobile.active {
