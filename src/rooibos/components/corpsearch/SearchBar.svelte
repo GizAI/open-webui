@@ -92,6 +92,8 @@
 			searchResults = [];
 			addressList = [];
 		}
+    resultViewMode = 'list';
+    toggleViewMode();
 	}
 
 	// If '지명' is selected, clear other checkboxes.
@@ -287,7 +289,7 @@
 			</button>
 		</div>
 		<div class="text-xl font-semibold text-gray-800 px-2">기업찾기</div>
-		{#if searchCompanyResults.length >= 2}
+		{#if searchCompanyResults.length >= 2 && !isSearchMode}
 			<button
 				type="button"
 				on:click={toggleViewMode}
