@@ -658,12 +658,12 @@
 					</div>
 				{/if}
 
-				<script>
+				<!-- <script>
 					let financialData = []; // 초기값 설정
 					$: years = financialData && Array.isArray(financialData) 
 						? [...new Set(financialData.map(d => String(d.year)))].sort().reverse()
 						: [];
-				</script>
+				</script> -->
 				
 				{#if financialData && Array.isArray(financialData) && financialData.length > 0}
 				<div class="space-y-4 border-b border-gray-100 pb-4">
