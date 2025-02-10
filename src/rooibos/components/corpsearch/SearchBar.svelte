@@ -11,6 +11,7 @@
 	export let selectedFilters: any = {};
 	export let searchCompanyResults: any = {};
 	export let activeFilterGroup: string | null = null;
+  export let resultViewMode = 'map';
 	export let onSearch: (searchValue: string, selectedFilters: any) => Promise<void>;
 	export let onReset: () => void;
 	export let onApply: () => void;
@@ -263,11 +264,9 @@
 		}
 	});
 
-	let viewMode = 'map';
-
 	function toggleViewMode() {
-		viewMode = viewMode === 'map' ? 'list' : 'map';
-    dispatch('showCompanyListClick', viewMode);
+		resultViewMode = resultViewMode === 'map' ? 'list' : 'map';
+    dispatch('showCompanyListClick', resultViewMode);
 	}
 </script>
 
@@ -294,7 +293,7 @@
 				on:click={toggleViewMode}
 				class="ml-4 px-3 py-1 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-full"
 			>
-				{viewMode === 'list' ? '지도보기' : '목록보기'}
+				{resultViewMode === 'list' ? '지도보기' : '목록보기'}
 			</button>
 		{/if}
 

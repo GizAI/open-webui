@@ -195,12 +195,11 @@
 	let loading = true;
 	let script: HTMLScriptElement;
 	let searchValue: string = '';
-	let showSearchList = false;
+	let resultViewMode = 'map';
 	let isListIconVisible = true;
 	let activeFilterGroup: string | null = null;
 	let userLocation: UserLocation | null = null;
 	let showCompanyInfo = false;
-  let showCompanyList = false;
 	let zoom = 18;
 	let isFullscreen = false;
 	let companyInfo: CompanyInfo = {
@@ -223,7 +222,6 @@
 	const handleSearch = async (searchValue: string, filters: any) => {
 		console.log('Searching for:', searchValue, 'with filters:', filters);
 
-		showSearchList = false;
 		activeFilterGroup = null;
 		isListIconVisible = true;
 
@@ -258,7 +256,6 @@
 			const data = await response.json();
 
 			searchResults = data.data;
-			showSearchList = true;
 
 			if (!searchResults.length) {
 				if (mapInstance?.companyMarkers) {
@@ -311,7 +308,6 @@
 					naver.maps.Event.addListener(marker, 'click', () => {
 						companyInfo = result;
 						showCompanyInfo = true;
-						showSearchList = false;
 						activeFilterGroup = null;
 					});
 
@@ -446,7 +442,6 @@
 			mapInstance.companyMarkers.push(marker);
 		}
 
-		showSearchList = false;
 	};
 
 	const handleSearchAddressListClick = (searchAddressList: SearchResult[]) => {
@@ -488,7 +483,6 @@
 				naver.maps.Event.addListener(marker, 'click', () => {
 					companyInfo = result;
 					showCompanyInfo = true;
-					showSearchList = false;
 					activeFilterGroup = null;
 				});
 
@@ -498,15 +492,11 @@
 			}
 		});
 
-		showSearchList = false;
-	};
-
-	const handleSearchListChange = (newValue: boolean) => {
-		showSearchList = newValue;
 	};
 
   const handleShowCompanyListClick = (viewMode: any) => {
-    showCompanyList =  viewMode === 'map' ? false : true;
+    resultViewMode =  viewMode; 
+    if(resultViewMode != 'map') showCompanyInfo = false;
   }
 
 	onMount(() => {
@@ -716,28 +706,24 @@
 
 	function closeCompanyInfo() {
 		showCompanyInfo = false;
-		showSearchList = true;
+		resultViewMode = 'map';
 	}
 
 	const handleResultClick = (result: SearchResult) => {
-		return;
-		if (!mapInstance) return;
+	if (!mapInstance) return;
 
-		const point = new naver.maps.LatLng(parseFloat(result.latitude), parseFloat(result.longitude));
+	const point = new naver.maps.LatLng(parseFloat(result.latitude), parseFloat(result.longitude));
+	mapInstance.map.setCenter(point);
+	mapInstance.map.setZoom(zoom);
 
-		mapInstance.map.setCenter(point);
-		mapInstance.map.setZoom(zoom);
+	// 클릭한 결과를 corpinfo에 할당하고 corpinfo를 활성화합니다.
+	companyInfo = result;
+	showCompanyInfo = true;
 
-		const marker = mapInstance.companyMarkers.find((m) => m.getTitle() === result.company_name);
+	// searchcompanylist (검색 리스트)를 비활성화합니다.
+	resultViewMode = 'map';
+};
 
-		if (marker) {
-			mapInstance.infoWindow.open(mapInstance.map, marker);
-		}
-
-		showSearchList = false;
-		isListIconVisible = !isListIconVisible;
-		handleSearchListChange(false);
-	};
 </script>
 
 {#if !($showSidebar && $mobile) && (!showCompanyInfo || !isFullscreen)}
@@ -751,6 +737,7 @@
 			{activeFilterGroup}
 			{onFilterChange}
 			{selectedFilters}
+      {resultViewMode}
 			on:showCompanyInfo={(e) => (showCompanyInfo = e.detail)}
 			on:filterGroupChange={(e) => (activeFilterGroup = e.detail)}
 			on:searchResultClick={(e) => handleSearchResultClick(e.detail)}
@@ -760,7 +747,7 @@
 	</div>
 {/if}
 
-{#if showCompanyList && searchResults.length > 1 && showSearchList && !($mobile && $showSidebar)}
+{#if resultViewMode != 'map'}
 	<div class="company-list-wrapper w-full" class:sidebar-visible={$showSidebar}>
 		<SearchCompanyList
 			{searchResults}
