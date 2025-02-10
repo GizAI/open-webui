@@ -681,6 +681,14 @@ Cluster.prototype = {
 	 */
 	updateIcon: function () {
 		var count = this.getCount();
+
+		if (count === 1) {
+			if (this._clusterMarker) {
+				this._clusterMarker.setMap(null);
+			}
+			return;
+		}
+
 		var icons = this._markerClusterer.getIcons();
 		var icon;
 
