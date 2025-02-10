@@ -12,11 +12,9 @@
 	import SearchCompanyList from './SearchCompanyList.svelte';
 	import { WEBUI_API_BASE_URL } from '$lib/constants';
 	import CorpInfo from '../corpinfo/CorpInfo.svelte';
-	import { OverlappingMarkerSpiderfier } from './marker';
+	import { getMarkerContent } from './marker';
+	// import { OverlappingMarkerSpiderfier } from './overlappingMarkerSpiderfierppingMarkerSpiderfier';
 
-	// ─────────────────────────────
-	// 타입 및 변수 정의 (기존 코드 유지)
-	// ─────────────────────────────
 	type MapInstance = {
 		map: any;
 		marker: any;
@@ -188,7 +186,7 @@
 	}
 
 	let selectedFilters: Filters = {};
-  let selectedMarker: any = null;
+	let selectedMarker: any = null;
 
 	let mapInstance: MapInstance | null = null;
 	let searchResults: SearchResult[] = [];
@@ -214,138 +212,134 @@
 		longitude: ''
 	};
 
-	// MarkerClustering 인스턴스를 위한 변수 추가
 	let markerClustering: MarkerClustering;
+
+	function createCompanyMarker(result: SearchResult, selectedZIndex: number = 300, autoSelect: boolean = false): any {
+		const point = new naver.maps.LatLng(parseFloat(result.latitude), parseFloat(result.longitude));
+		const marker = new naver.maps.Marker({
+			position: point,
+			map: mapInstance?.map,
+			title: result.company_name,
+			zIndex: 100,
+			icon: {
+				content: getMarkerContent(result),
+				anchor: new naver.maps.Point(50, 30)
+			}
+		});
+
+		// Attach result data to marker for later use
+		marker.searchResult = result;
+		marker.company_name = result.company_name;
+		marker.business_registration_number = result.business_registration_number;
+		marker.representative = result.representative;
+
+		naver.maps.Event.addListener(marker, 'mouseover', () => {
+			marker.setZIndex(200);
+		});
+		naver.maps.Event.addListener(marker, 'mouseout', () => {
+			if (selectedMarker !== marker) {
+				marker.setZIndex(100);
+			}
+		});
+		naver.maps.Event.addListener(marker, 'click', () => {
+			if (selectedMarker && selectedMarker !== marker) {
+				selectedMarker.setIcon({
+					content: getMarkerContent(selectedMarker.searchResult, false),
+					anchor: new naver.maps.Point(50, 30)
+				});
+				selectedMarker.setZIndex(100);
+			}
+			selectedMarker = marker;
+			marker.setIcon({
+				content: getMarkerContent(result, true),
+				anchor: new naver.maps.Point(50, 30)
+			});
+			marker.setZIndex(selectedZIndex);
+			companyInfo = result;
+			showCompanyInfo = true;
+			activeFilterGroup = null;
+		});
+
+		if (autoSelect) {
+			naver.maps.Event.trigger(marker, 'click');
+		}
+
+		return marker;
+	}
 
 	// ─────────────────────────────
 	// 기존 검색, 필터 및 지도 관련 함수들 (로직은 원본 그대로)
 	// ─────────────────────────────
 
 	const handleSearch = async (searchValue: string, filters: any) => {
-  console.log('Searching for:', searchValue, 'with filters:', filters);
+		console.log('Searching for:', searchValue, 'with filters:', filters);
 
-  activeFilterGroup = null;
-  isListIconVisible = true;
+		activeFilterGroup = null;
+		isListIconVisible = true;
 
-  try {
-    const currentUser = get(user);
-    const queryParams = new URLSearchParams({
-      query: searchValue,
-      user_id: currentUser?.id ? currentUser.id : '',
-      latitude: location ? location.lat.toString() : '',
-      longitude: location ? location.lng.toString() : '',
-      userLatitude: location?.lat?.toString() || '',
-      userLongitude: location?.lng?.toString() || '',
-      filters: JSON.stringify(filters)
-    });
+		try {
+			const currentUser = get(user);
+			const queryParams = new URLSearchParams({
+				query: searchValue,
+				user_id: currentUser?.id ? currentUser.id : '',
+				latitude: location ? location.lat.toString() : '',
+				longitude: location ? location.lng.toString() : '',
+				userLatitude: location?.lat?.toString() || '',
+				userLongitude: location?.lng?.toString() || '',
+				filters: JSON.stringify(filters)
+			});
 
-    const response = await fetch(
-      `${WEBUI_API_BASE_URL}/rooibos/corpsearch/?${queryParams.toString()}`,
-      {
-        method: 'GET',
-        headers: {
-          Accept: 'application/json',
-          'Content-Type': 'application/json',
-          authorization: `Bearer ${localStorage.token}`
-        }
-      }
-    );
+			const response = await fetch(
+				`${WEBUI_API_BASE_URL}/rooibos/corpsearch/?${queryParams.toString()}`,
+				{
+					method: 'GET',
+					headers: {
+						Accept: 'application/json',
+						'Content-Type': 'application/json',
+						authorization: `Bearer ${localStorage.token}`
+					}
+				}
+			);
 
-    if (!response.ok) {
-      throw new Error('검색 요청 실패');
-    }
+			if (!response.ok) {
+				throw new Error('검색 요청 실패');
+			}
 
-    const data = await response.json();
-    searchResults = data.data;
+			const data = await response.json();
+			searchResults = data.data;
 
-    if (!searchResults.length) {
-      if (mapInstance?.companyMarkers) {
-        mapInstance.companyMarkers.forEach((marker) => marker.setMap(null));
-        mapInstance.companyMarkers = [];
-      }
-      if (markerClustering) markerClustering.clearMarkers();
-      return;
-    }
+			if (!searchResults.length) {
+				if (mapInstance?.companyMarkers) {
+					mapInstance.companyMarkers.forEach((marker) => marker.setMap(null));
+					mapInstance.companyMarkers = [];
+				}
+				if (markerClustering) markerClustering.clearMarkers();
+				return;
+			}
 
-    if (!mapInstance) return;
+			if (!mapInstance) return;
 
-    if (mapInstance?.companyMarkers) {
-      mapInstance.companyMarkers.forEach((marker) => marker.setMap(null));
-      mapInstance.companyMarkers = [];
-    }
-    if (markerClustering) markerClustering.clearMarkers();
+			if (mapInstance?.companyMarkers) {
+				mapInstance.companyMarkers.forEach((marker) => marker.setMap(null));
+				mapInstance.companyMarkers = [];
+			}
+			if (markerClustering) markerClustering.clearMarkers();
 
-    const firstPoint = new naver.maps.LatLng(location?.lat, location?.lng);
-    mapInstance.map.setCenter(firstPoint);
-    mapInstance.map.setZoom(zoom);
+			const firstPoint = new naver.maps.LatLng(location?.lat, location?.lng);
+			mapInstance.map.setCenter(firstPoint);
+			mapInstance.map.setZoom(zoom);
 
-    // ================================
-    // 검색 결과에 따른 마커 생성
-    // ================================
-    searchResults.forEach((result, index) => {
-      const point = new naver.maps.LatLng(
-        parseFloat(result.latitude),
-        parseFloat(result.longitude)
-      );
-
-      if (mapInstance) {
-        const marker = new naver.maps.Marker({
-          position: point,
-          map: mapInstance.map,
-          title: result.company_name,
-          zIndex: 100,
-          icon: {
-            content: getMarkerContent(result),
-            anchor: new naver.maps.Point(50, 30)
-          }
-        });
-
-        naver.maps.Event.addListener(marker, 'mouseover', () => {
-          marker.setZIndex(200);
-        });
-        naver.maps.Event.addListener(marker, 'mouseout', () => {
-          marker.setZIndex(100);
-        });
-
-        // 기존 마커 클릭 이벤트 처리
-        naver.maps.Event.addListener(marker, 'click', () => {
-          debugger
-          if (selectedMarker && selectedMarker !== marker) {
-            
-            selectedMarker.setIcon({
-              content: getMarkerContent(selectedMarker),
-              anchor: new naver.maps.Point(50, 30)
-            });
-            selectedMarker.setZIndex(100);
-          }
-          selectedMarker = marker;
-
-          marker.setIcon({
-            content: getMarkerContent(result, true),
-            anchor: new naver.maps.Point(50, 30)
-          });
-          marker.company_name = result.company_name;
-          marker.business_registration_number = result.business_registration_number;
-          marker.representative = result.representative;
-
-          marker.setZIndex(300);
-          companyInfo = result;
-          showCompanyInfo = true;
-          activeFilterGroup = null;
-        });
-
-        // 클러스터링 모듈에 마커 등록
-        markerClustering.addMarker(marker);
-        mapInstance.companyMarkers.push(marker);
-      }
-    });
-  } catch (error) {
-    console.error('검색 중 오류가 발생했습니다:', error);
-  }
-};
-
-
-
+			searchResults.forEach((result) => {
+				if (mapInstance) {
+					const marker = createCompanyMarker(result, 300, false);
+					markerClustering.addMarker(marker);
+					mapInstance.companyMarkers.push(marker);
+				}
+			});
+		} catch (error) {
+			console.error('검색 중 오류가 발생했습니다:', error);
+		}
+	};
 
 	const handleReset = () => {
 		selectedFilters = {};
@@ -431,64 +425,19 @@
 	};
 
 	const handleSearchResultClick = (result: SearchResult) => {
-    if (!mapInstance) return;
+		if (!mapInstance) return;
 
-    // 이전에 선택된 마커가 있다면 원래 아이콘과 zIndex(100)로 복원합니다.
-    if (selectedMarker) {
-      selectedMarker.setIcon({
-        content: getMarkerContent(selectedMarker.searchResult, false),
-        anchor: new naver.maps.Point(50, 30)
-      });
-      selectedMarker.setZIndex(100);
-    }
+		const point = new naver.maps.LatLng(
+			parseFloat(result.latitude),
+			parseFloat(result.longitude)
+		);
+		mapInstance.map.setCenter(point);
+		mapInstance.map.setZoom(zoom);
 
-    const point = new naver.maps.LatLng(
-      parseFloat(result.latitude),
-      parseFloat(result.longitude)
-    );
-    mapInstance.map.setCenter(point);
-    mapInstance.map.setZoom(zoom);
-
-    // 검색 결과 클릭 시 새 마커를 생성하며, 바로 선택된 상태로 표시합니다.
-    const marker = new naver.maps.Marker({
-      position: point,
-      map: mapInstance.map,
-      title: result.company_name,
-      zIndex: 300, // 선택된 마커가 항상 최상단에 표시되도록 설정
-      icon: {
-        content: getMarkerContent(result, true),
-        anchor: new naver.maps.Point(50, 30)
-      }
-    });
-
-    // (선택된 마커를 클릭 시 재선택 처리)
-    naver.maps.Event.addListener(marker, 'click', () => {
-      if (selectedMarker && selectedMarker !== marker) {
-        selectedMarker.setIcon({
-          content: getMarkerContent(selectedMarker.searchResult, false),
-          anchor: new naver.maps.Point(50, 30)
-        });
-        selectedMarker.setZIndex(100);
-      }
-      selectedMarker = marker;
-      marker.setIcon({
-        content: getMarkerContent(result, true),
-        anchor: new naver.maps.Point(50, 30)
-      });
-      marker.setZIndex(300);
-      companyInfo = result;
-      showCompanyInfo = true;
-      activeFilterGroup = null;
-    });
-
-    selectedMarker = marker;
-    companyInfo = result;
-    showCompanyInfo = true;
-
-    // markerClustering.addMarker(marker);
-    mapInstance.companyMarkers.push(marker);
-  };
-
+		// 검색 결과 클릭 시 헬퍼 함수를 통해 마커 생성 및 자동 선택
+		const marker = createCompanyMarker(result, 300, true);
+		mapInstance.companyMarkers.push(marker);
+	};
 
 	const handleSearchAddressListClick = (searchAddressList: SearchResult[]) => {
 		if (!mapInstance) return;
@@ -502,63 +451,19 @@
 		mapInstance.map.setCenter(point);
 		mapInstance.map.setZoom(zoom);
 
-		searchAddressList.forEach((result, index) => {
-			const point = new naver.maps.LatLng(
-				parseFloat(result.latitude),
-				parseFloat(result.longitude)
-			);
-
+		searchAddressList.forEach((result) => {
 			if (mapInstance) {
-				const marker = new naver.maps.Marker({
-					position: point,
-					map: mapInstance.map,
-					title: result.company_name,
-					zIndex: 100,
-					icon: {
-						content: getMarkerContent(result),
-						anchor: new naver.maps.Point(50, 30)
-					}
-				});
-
-				naver.maps.Event.addListener(marker, 'mouseover', function () {
-					marker.setZIndex(200);
-				});
-				naver.maps.Event.addListener(marker, 'mouseout', () => {
-					marker.setZIndex(100);
-				});
-				naver.maps.Event.addListener(marker, 'click', () => {
-          if (selectedMarker && selectedMarker !== marker) {
-            selectedMarker.setIcon({
-              content: getMarkerContent(selectedMarker.searchResult),
-              anchor: new naver.maps.Point(50, 30)
-            });
-            selectedMarker.setZIndex(100);
-          }
-          selectedMarker = marker;
-          marker.setIcon({
-            content: getMarkerContent(result, true),
-            anchor: new naver.maps.Point(50, 30)
-          });
-          marker.setZIndex(500); // 선택 시 최상단으로 설정
-
-          companyInfo = result;
-          showCompanyInfo = true;
-          activeFilterGroup = null;
-        });
-
-
-				// MarkerClustering 모듈에 등록합니다.
-				// markerClustering.addMarker(marker);
+				// 주소 검색에서는 선택 시 zIndex가 500으로 설정됨
+				const marker = createCompanyMarker(result, 300, false);
 				mapInstance.companyMarkers.push(marker);
 			}
 		});
-
 	};
 
-  const handleShowCompanyListClick = (viewMode: any) => {
-    resultViewMode =  viewMode; 
-    if(resultViewMode != 'map') showCompanyInfo = false;
-  }
+	const handleShowCompanyListClick = (viewMode: any) => {
+		resultViewMode = viewMode;
+		if (resultViewMode != 'map') showCompanyInfo = false;
+	};
 
 	onMount(() => {
 		const initialize = async () => {
@@ -593,7 +498,7 @@
 					markerClustering = new MarkerClustering({
 						map: mapInstance.map,
 						gridSize: 60,
-						maxZoom: zoom+1,
+						maxZoom: zoom + 1,
 						disableClickZoom: false
 					});
 				};
@@ -613,57 +518,6 @@
 			}
 		};
 	});
-
-	// 기존 마커 콘텐츠 생성 헬퍼 함수 그대로 사용
-	function getMarkerContent(result: SearchResult, selected: boolean = false): string {
-	const background = selected ? "#ffeb3b" : "white";
-	const border = selected ? "2px solid #fbc02d" : "1px solid #888";
-	return `
-    <div class="marker-content" style="
-        position: relative;
-        padding: 8px;
-        background: ${background};
-        border: ${border};
-        border-radius: 6px;
-        text-align: center;
-        min-width: 120px;
-        font-size: 12px;
-        transition: all 0.2s;
-        cursor: pointer;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    ">
-        <div style="
-            position: absolute;
-            bottom: -8px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 0;
-            height: 0;
-            border-left: 8px solid transparent;
-            border-right: 8px solid transparent;
-            border-top: 8px solid ${selected ? "#fbc02d" : "white"};
-            filter: drop-shadow(0 2px 1px rgba(0,0,0,0.1));
-        "></div>
-        <div style="
-            position: absolute;
-            bottom: -7px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 0;
-            height: 0;
-            border-left: 8px solid transparent;
-            border-right: 8px solid transparent;
-            border-top: 8px solid ${selected ? "#fbc02d" : "#888"};
-            z-index: -1;
-        "></div>
-        <div style="font-weight: bold;">${result.company_name}(${result.business_registration_number})</div>
-        <div style="font-size: 11px; color: #666; margin-top: 2px;">
-            ${result.representative || '대표자 미상'}
-        </div>
-    </div>
-  `;
-}
-
 
 	function onFilterChange(groupId: string, optionId: string, checked: boolean | string) {
 		const group = filterGroups.find((g) => g.id === groupId);
@@ -772,50 +626,44 @@
 		showCompanyInfo = false;
 		resultViewMode = 'map';
 
-    if (selectedMarker) {
-      selectedMarker.setIcon({
-        content: getMarkerContent(selectedMarker.searchResult),
-        anchor: new naver.maps.Point(50, 30)
-      });
-		  selectedMarker = null;
-	  }
+		if (selectedMarker) {
+			selectedMarker.setIcon({
+				content: getMarkerContent(selectedMarker.searchResult),
+				anchor: new naver.maps.Point(50, 30)
+			});
+			selectedMarker = null;
+		}
 	}
 
 	const handleResultClick = (result: SearchResult) => {
-    if (!mapInstance) return;
+		if (!mapInstance) return;
 
-    const point = new naver.maps.LatLng(parseFloat(result.latitude), parseFloat(result.longitude));
-    mapInstance.map.setCenter(point);
-    mapInstance.map.setZoom(zoom);
+		const point = new naver.maps.LatLng(parseFloat(result.latitude), parseFloat(result.longitude));
+		mapInstance.map.setCenter(point);
+		mapInstance.map.setZoom(zoom);
 
-    // 클릭한 결과를 corpinfo에 할당하고 corpinfo를 활성화합니다.
-    companyInfo = result;
-    showCompanyInfo = true;
+		companyInfo = result;
+		showCompanyInfo = true;
+		resultViewMode = 'map';
 
-    // 검색 리스트를 비활성화합니다.
-    resultViewMode = 'map';
+		if (selectedMarker) {
+			selectedMarker.setIcon({
+				content: getMarkerContent(selectedMarker.searchResult),
+				anchor: new naver.maps.Point(50, 30)
+			});
+			selectedMarker.setZIndex(100);
+		}
 
-    // 이전에 선택된 마커가 있다면 원래 아이콘과 zIndex(100)로 복원합니다.
-    if (selectedMarker) {
-      selectedMarker.setIcon({
-        content: getMarkerContent(selectedMarker.searchResult),
-        anchor: new naver.maps.Point(50, 30)
-      });
-      selectedMarker.setZIndex(100);
-    }
-
-    const marker = mapInstance.companyMarkers.find(m => m.searchResult?.smtp_id === result.smtp_id);
-    if (marker) {
-      selectedMarker = marker;
-      marker.setIcon({
-        content: getMarkerContent(result, true),
-        anchor: new naver.maps.Point(50, 30)
-      });
-      marker.setZIndex(300);
-    }
-  };
-
-
+		const marker = mapInstance.companyMarkers.find(m => m.searchResult?.smtp_id === result.smtp_id);
+		if (marker) {
+			selectedMarker = marker;
+			marker.setIcon({
+				content: getMarkerContent(result, true),
+				anchor: new naver.maps.Point(50, 30)
+			});
+			marker.setZIndex(300);
+		}
+	};
 </script>
 
 {#if !($showSidebar && $mobile) && (!showCompanyInfo || !isFullscreen)}
@@ -829,12 +677,12 @@
 			{activeFilterGroup}
 			{onFilterChange}
 			{selectedFilters}
-      {resultViewMode}
+			{resultViewMode}
 			on:showCompanyInfo={(e) => (showCompanyInfo = e.detail)}
 			on:filterGroupChange={(e) => (activeFilterGroup = e.detail)}
 			on:searchResultClick={(e) => handleSearchResultClick(e.detail)}
 			on:addressResultClick={(e) => handleSearchAddressListClick(e.detail)}
-      on:showCompanyListClick={(e) => handleShowCompanyListClick(e.detail)}
+			on:showCompanyListClick={(e) => handleShowCompanyListClick(e.detail)}
 		/>
 	</div>
 {/if}
