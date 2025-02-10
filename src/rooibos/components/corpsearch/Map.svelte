@@ -479,7 +479,7 @@
     companyInfo = result;
     showCompanyInfo = true;
 
-    markerClustering.addMarker(marker);
+    // markerClustering.addMarker(marker);
     mapInstance.companyMarkers.push(marker);
   };
 
