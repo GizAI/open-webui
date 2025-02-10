@@ -739,6 +739,7 @@ Cluster.prototype = {
 		}
 
 		this._clusterMarker.setIcon(icon);
+		this._clusterMarker.setTitle(`${count}개의 마커`);
 	},
 
 	/**
@@ -883,22 +884,16 @@ Cluster.prototype = {
 Cluster.prototype.enableClickZoom = function () {
     if (this._relation) return;
     var cluster = this;
-
-    // mouseover: 클러스터에 마우스 오버하면 숨김 타이머가 있으면 취소하고 즉시 클러스터 확장
-    this._relation = naver.maps.Event.addListener(this._clusterMarker, 'mouseover', function (e) {
-        // 기존에 설정된 숨김 타이머 취소
-        if (cluster._hideTimer) {
-            clearTimeout(cluster._hideTimer);
-            cluster._hideTimer = null;
-        }
+    this._relation = naver.maps.Event.addListener(this._clusterMarker, 'click', function (e) {
         var markerClusterer = cluster._markerClusterer;
         if (markerClusterer._expandedCluster && markerClusterer._expandedCluster !== cluster) {
             markerClusterer._expandedCluster._hideMember();
             markerClusterer._expandedCluster._clicked = false;
             markerClusterer._expandedCluster = null;
         }
-        // 클러스터가 아직 클릭되어 잠금되지 않은 경우에만 확장 (그룹별 분할 처리)
         if (!cluster._clicked) {
+            cluster._clicked = true;
+            // e.domEvent.target 에서 data-group-index 값을 확인
             var target = e.domEvent.target;
             var groupIndex = target.getAttribute('data-group-index');
             if (groupIndex === null || groupIndex === undefined) {
@@ -906,43 +901,20 @@ Cluster.prototype.enableClickZoom = function () {
             } else {
                 groupIndex = parseInt(groupIndex, 10);
             }
+            // 저장된 분할 그룹 정보(_splitGroups)를 이용해 해당 그룹의 시작 인덱스를 계산
             var splitGroups = cluster._splitGroups || [cluster._clusterMember.length];
             var startIndex = 0;
             for (var i = 0; i < groupIndex; i++) {
                 startIndex += splitGroups[i];
             }
             var groupCount = splitGroups[groupIndex];
+            // _clusterMember 배열에서 해당 그룹만 슬라이스하여 전달
             var membersToShow = cluster._clusterMember.slice(startIndex, startIndex + groupCount);
             cluster._showMember(membersToShow);
             markerClusterer._expandedCluster = cluster;
         }
     });
-
-    // mouseout: 마우스가 떠나면 3초 후에 클러스터를 접음(단, 이미 클릭되어 잠금된 경우는 유지)
-    naver.maps.Event.addListener(this._clusterMarker, 'mouseout', function (e) {
-        if (!cluster._clicked) {
-            cluster._hideTimer = setTimeout(function() {
-                cluster._hideMember();
-                cluster._markerClusterer._expandedCluster = null;
-                cluster._hideTimer = null;
-            }, 3000);
-        }
-    });
-
-    // click: 클러스터 마커 클릭 시 확장 상태를 잠금(이후 mouseout해도 사라지지 않음)
-    naver.maps.Event.addListener(this._clusterMarker, 'click', function(e) {
-        if (cluster._hideTimer) {
-            clearTimeout(cluster._hideTimer);
-            cluster._hideTimer = null;
-        }
-        cluster._clicked = true;
-        // 클릭 시 전체 클러스터 멤버를 보여줌
-        cluster._showMember();
-        cluster._markerClusterer._expandedCluster = cluster;
-    });
 };
-
-
 
 
 Cluster.prototype._showMember = function (members) {
