@@ -839,15 +839,14 @@
 		margin-top: 0;
 	  }
 
+	  
 	  .company-info-wrapper.mobile.fullscreen {
 		top: env(safe-area-inset-top);
-		bottom: auto;
-		height: calc(100vh - env(safe-area-inset-top) - env(safe-area-inset-bottom));
-		margin-top: 0;
-		border-top-left-radius: 0;
-		border-top-right-radius: 0;
+		bottom: env(safe-area-inset-bottom);
+		height: auto;
+		max-height: calc(100vh - env(safe-area-inset-top) - env(safe-area-inset-bottom));
 		padding-top: env(safe-area-inset-top);
-    	padding-bottom: env(safe-area-inset-bottom);
+		padding-bottom: env(safe-area-inset-bottom);
 	  }
 
 	  .company-info-wrapper.mobile.active {
