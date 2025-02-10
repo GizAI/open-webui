@@ -187,6 +187,7 @@
 	}
 
 	let selectedFilters: Filters = {};
+  let selectedMarker: any = null;
 
 	let mapInstance: MapInstance | null = null;
 	let searchResults: SearchResult[] = [];
@@ -305,15 +306,33 @@
 					naver.maps.Event.addListener(marker, 'mouseout', () => {
 						marker.setZIndex(100);
 					});
-					naver.maps.Event.addListener(marker, 'click', () => {
-						companyInfo = result;
-						showCompanyInfo = true;
-						activeFilterGroup = null;
-					});
+					
+          naver.maps.Event.addListener(marker, 'click', () => {
+          // 이전에 선택된 마커가 있다면 기본 아이콘과 zIndex(100)로 복원합니다.
+          if (selectedMarker && selectedMarker !== marker) {
+            selectedMarker.setIcon({
+              content: getMarkerContent(selectedMarker.searchResult),
+              anchor: new naver.maps.Point(50, 30)
+            });
+            selectedMarker.setZIndex(100);
+          }
+          // 현재 마커를 선택된 마커로 지정 후 아이콘과 zIndex 변경
+          selectedMarker = marker;
+          marker.setIcon({
+            content: getMarkerContent(result, true),
+            anchor: new naver.maps.Point(50, 30)
+          });
+          marker.setZIndex(300); // 다른 마커보다 위로 나오게 처리
+
+          companyInfo = result;
+          showCompanyInfo = true;
+          activeFilterGroup = null;
+        });
+
 
 					// MarkerClustering 모듈에 마커를 등록합니다.
 					// markerClustering.addMarker(marker);
-
+          marker.searchResult = result;
 					mapInstance.companyMarkers.push(marker);
 				}
 			});
@@ -406,43 +425,64 @@
 	};
 
 	const handleSearchResultClick = (result: SearchResult) => {
-		if (!mapInstance) return;
+    if (!mapInstance) return;
 
-		const point = new naver.maps.LatLng(parseFloat(result.latitude), parseFloat(result.longitude));
+    // 이전에 선택된 마커가 있다면 원래 아이콘과 zIndex(100)로 복원합니다.
+    if (selectedMarker) {
+      selectedMarker.setIcon({
+        content: getMarkerContent(selectedMarker.searchResult, false),
+        anchor: new naver.maps.Point(50, 30)
+      });
+      selectedMarker.setZIndex(100);
+    }
 
-		mapInstance.map.setCenter(point);
-		mapInstance.map.setZoom(zoom);
+    const point = new naver.maps.LatLng(
+      parseFloat(result.latitude),
+      parseFloat(result.longitude)
+    );
+    mapInstance.map.setCenter(point);
+    mapInstance.map.setZoom(zoom);
 
-		// 검색 결과 클릭 시 새 마커를 생성합니다.
-		if (mapInstance) {
-			const marker = new naver.maps.Marker({
-				position: point,
-				map: mapInstance.map,
-				title: result.company_name,
-				zIndex: 100,
-				icon: {
-					content: getMarkerContent(result),
-					anchor: new naver.maps.Point(50, 30)
-				}
-			});
+    // 검색 결과 클릭 시 새 마커를 생성하며, 바로 선택된 상태로 표시합니다.
+    const marker = new naver.maps.Marker({
+      position: point,
+      map: mapInstance.map,
+      title: result.company_name,
+      zIndex: 300, // 선택된 마커가 항상 최상단에 표시되도록 설정
+      icon: {
+        content: getMarkerContent(result, true),
+        anchor: new naver.maps.Point(50, 30)
+      }
+    });
 
-			naver.maps.Event.addListener(marker, 'mouseover', () => {
-				marker.setZIndex(200);
-			});
-			naver.maps.Event.addListener(marker, 'mouseout', () => {
-				marker.setZIndex(100);
-			});
-			naver.maps.Event.addListener(marker, 'click', () => {
-				companyInfo = result;
-				showCompanyInfo = true;
-			});
+    // (선택된 마커를 클릭 시 재선택 처리)
+    naver.maps.Event.addListener(marker, 'click', () => {
+      if (selectedMarker && selectedMarker !== marker) {
+        selectedMarker.setIcon({
+          content: getMarkerContent(selectedMarker.searchResult, false),
+          anchor: new naver.maps.Point(50, 30)
+        });
+        selectedMarker.setZIndex(100);
+      }
+      selectedMarker = marker;
+      marker.setIcon({
+        content: getMarkerContent(result, true),
+        anchor: new naver.maps.Point(50, 30)
+      });
+      marker.setZIndex(300);
+      companyInfo = result;
+      showCompanyInfo = true;
+      activeFilterGroup = null;
+    });
 
-			// MarkerClustering 모듈에 등록합니다.
-			markerClustering.addMarker(marker);
-			mapInstance.companyMarkers.push(marker);
-		}
+    selectedMarker = marker;
+    companyInfo = result;
+    showCompanyInfo = true;
 
-	};
+    markerClustering.addMarker(marker);
+    mapInstance.companyMarkers.push(marker);
+  };
+
 
 	const handleSearchAddressListClick = (searchAddressList: SearchResult[]) => {
 		if (!mapInstance) return;
@@ -481,10 +521,25 @@
 					marker.setZIndex(100);
 				});
 				naver.maps.Event.addListener(marker, 'click', () => {
-					companyInfo = result;
-					showCompanyInfo = true;
-					activeFilterGroup = null;
-				});
+          if (selectedMarker && selectedMarker !== marker) {
+            selectedMarker.setIcon({
+              content: getMarkerContent(selectedMarker.searchResult),
+              anchor: new naver.maps.Point(50, 30)
+            });
+            selectedMarker.setZIndex(100);
+          }
+          selectedMarker = marker;
+          marker.setIcon({
+            content: getMarkerContent(result, true),
+            anchor: new naver.maps.Point(50, 30)
+          });
+          marker.setZIndex(500); // 선택 시 최상단으로 설정
+
+          companyInfo = result;
+          showCompanyInfo = true;
+          activeFilterGroup = null;
+        });
+
 
 				// MarkerClustering 모듈에 등록합니다.
 				// markerClustering.addMarker(marker);
@@ -554,13 +609,15 @@
 	});
 
 	// 기존 마커 콘텐츠 생성 헬퍼 함수 그대로 사용
-	function getMarkerContent(result: SearchResult): string {
-		return `
+	function getMarkerContent(result: SearchResult, selected: boolean = false): string {
+	const background = selected ? "#ffeb3b" : "white";
+	const border = selected ? "2px solid #fbc02d" : "1px solid #888";
+	return `
     <div class="marker-content" style="
         position: relative;
         padding: 8px;
-        background: white;
-        border: 1px solid #888;
+        background: ${background};
+        border: ${border};
         border-radius: 6px;
         text-align: center;
         min-width: 120px;
@@ -578,7 +635,7 @@
             height: 0;
             border-left: 8px solid transparent;
             border-right: 8px solid transparent;
-            border-top: 8px solid white;
+            border-top: 8px solid ${selected ? "#fbc02d" : "white"};
             filter: drop-shadow(0 2px 1px rgba(0,0,0,0.1));
         "></div>
         <div style="
@@ -590,7 +647,7 @@
             height: 0;
             border-left: 8px solid transparent;
             border-right: 8px solid transparent;
-            border-top: 8px solid #888;
+            border-top: 8px solid ${selected ? "#fbc02d" : "#888"};
             z-index: -1;
         "></div>
         <div style="font-weight: bold;">${result.company_name}(${result.business_registration_number})</div>
@@ -599,7 +656,8 @@
         </div>
     </div>
   `;
-	}
+}
+
 
 	function onFilterChange(groupId: string, optionId: string, checked: boolean | string) {
 		const group = filterGroups.find((g) => g.id === groupId);
@@ -707,22 +765,50 @@
 	function closeCompanyInfo() {
 		showCompanyInfo = false;
 		resultViewMode = 'map';
+
+    if (selectedMarker) {
+      selectedMarker.setIcon({
+        content: getMarkerContent(selectedMarker.searchResult),
+        anchor: new naver.maps.Point(50, 30)
+      });
+		  selectedMarker = null;
+	  }
 	}
 
 	const handleResultClick = (result: SearchResult) => {
-	if (!mapInstance) return;
+    if (!mapInstance) return;
 
-	const point = new naver.maps.LatLng(parseFloat(result.latitude), parseFloat(result.longitude));
-	mapInstance.map.setCenter(point);
-	mapInstance.map.setZoom(zoom);
+    const point = new naver.maps.LatLng(parseFloat(result.latitude), parseFloat(result.longitude));
+    mapInstance.map.setCenter(point);
+    mapInstance.map.setZoom(zoom);
 
-	// 클릭한 결과를 corpinfo에 할당하고 corpinfo를 활성화합니다.
-	companyInfo = result;
-	showCompanyInfo = true;
+    // 클릭한 결과를 corpinfo에 할당하고 corpinfo를 활성화합니다.
+    companyInfo = result;
+    showCompanyInfo = true;
 
-	// searchcompanylist (검색 리스트)를 비활성화합니다.
-	resultViewMode = 'map';
-};
+    // 검색 리스트를 비활성화합니다.
+    resultViewMode = 'map';
+
+    // 이전에 선택된 마커가 있다면 원래 아이콘과 zIndex(100)로 복원합니다.
+    if (selectedMarker) {
+      selectedMarker.setIcon({
+        content: getMarkerContent(selectedMarker.searchResult),
+        anchor: new naver.maps.Point(50, 30)
+      });
+      selectedMarker.setZIndex(100);
+    }
+
+    const marker = mapInstance.companyMarkers.find(m => m.searchResult?.smtp_id === result.smtp_id);
+    if (marker) {
+      selectedMarker = marker;
+      marker.setIcon({
+        content: getMarkerContent(result, true),
+        anchor: new naver.maps.Point(50, 30)
+      });
+      marker.setZIndex(300);
+    }
+  };
+
 
 </script>
 
