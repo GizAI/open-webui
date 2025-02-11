@@ -360,10 +360,14 @@
 </script>
 
 <div 
-	class="company-info-wrapper active {isFullscreen ? 'fullscreen' : ''} flex flex-col w-full bg-gray-50 mt-4 h-[calc(100vh-8rem)]"
+	class="company-info-wrapper active {isFullscreen ? 'fullscreen' : ''} flex flex-col w-full bg-gray-50"
 	class:mobile={$mobile}
-	style={$mobile ? `height: ${mobileHeight}; transition: ${isDragging ? 'none' : 'height 0.3s ease'}` : ''}
+	style={$mobile 
+		? `height: ${mobileHeight}; transition: ${isDragging ? 'none' : 'height 0.3s ease'}; bottom: 0; top: auto;`
+		: 'margin-top: 1rem;'
+	}
 >
+
 	{#if companyInfo}
 		<!-- 상단 고정 영역 -->
 		<div class="bg-gray-50 sticky top-0 z-10 shrink-0 px-4 pt-2 pb-1 border-b border-gray-200">	
