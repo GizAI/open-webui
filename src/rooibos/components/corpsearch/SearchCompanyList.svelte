@@ -77,7 +77,7 @@
     new_reconfirmation_code?: string;
   }
   import { showSidebar, mobile } from '$lib/stores';
-  export let searchResults: SearchResult[] = [];
+  export let companyList: SearchResult[] = [];
   export let onResultClick: (result: SearchResult) => void;
   export let isFullscreen = false;
   export let onClose: () => void;
@@ -100,7 +100,7 @@ class:mobile-layout={$mobile}
 style="top: 50px;"
 >
   <ul class="p-4 space-y-2 overflow-y-auto">
-    {#each searchResults as result}
+    {#each companyList as result}
       <li>
         <button 
           on:click={() => onResultClick(result)} 

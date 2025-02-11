@@ -569,28 +569,6 @@ Cluster.prototype = {
 		return this._clusterBounds && this._clusterBounds.hasLatLng(latlng);
 	},
 
-	/**
-	 * 클러스터 마커 클릭 시 줌 동작을 수행하도록 합니다.
-	 */
-	enableClickZoom: function () {
-		if (this._relation) return;
-		var markerClusterer = this._markerClusterer;
-		this._relation = naver.maps.Event.addListener(this._clusterMarker, 'click', () => {
-		  // 이미 확장된 다른 클러스터가 있다면 접는다.
-		  if (markerClusterer._expandedCluster && markerClusterer._expandedCluster !== this) {
-			markerClusterer._expandedCluster._hideMember();
-			markerClusterer._expandedCluster._clicked = false;
-			markerClusterer._expandedCluster = null;
-		  }
-		  // 현재 클러스터가 아직 확장되지 않았다면 확장한다.
-		  if (!this._clicked) {
-			this._clicked = true;
-			this._showMember();
-			markerClusterer._expandedCluster = this;
-		  }
-		});
-	},
-
 	_showClusterDetails: function () {
 		var markers = this.getClusterMember();
 		var companyDetails = markers.map((marker) => marker.getTitle()); // 마커에 대한 정보를 가져옴
@@ -657,7 +635,7 @@ Cluster.prototype = {
 			currentZoom = clusterer.getMap().getZoom();
 
 		if (this.getCount() < minClusterSize) {
-			this._showMember();
+			// this._showMember();
 		} else {
 			this._hideMember();
 
@@ -700,36 +678,12 @@ Cluster.prototype = {
 		} else {
 			var displayHtml = '';
 		var splitGroups = [];
-		if (count > 10) {
-			var groups = Math.floor(count / 10);
-			var remainder = count % 10;
-			// 10개 단위 그룹과 마지막 남은 그룹을 분할하여 저장
-			for (var i = 0; i < groups; i++) {
-				splitGroups.push(10);
-			}
-			if (remainder > 0) {
-				splitGroups.push(remainder);
-			}
-			var numGroups = splitGroups.length;
-			// 컨테이너를 60x60px로 설정하고, 내부에 원형으로 배치
-			displayHtml = '<div style="position: relative; width: 60px; height: 60px;">';
-			var center = 30; // 컨테이너 중심 (60/2)
-			var radius = 20; // 원형 배치의 반지름 (적절한 값으로 조정 가능)
-			for (var i = 0; i < numGroups; i++) {
-				var angle = (2 * Math.PI / numGroups) * i;
-				var left = center + radius * Math.cos(angle) - 15; // 15 = (30/2)
-				var top = center + radius * Math.sin(angle) - 15;
-				var groupNumber = splitGroups[i];
-				// 각 하위 마커에 data-group-index 속성을 부여하여 어느 그룹인지 표시
-				displayHtml += '<div data-group-index="'+ i +'" style="position: absolute; left: '+ left +'px; top: '+ top +'px; width:30px; height:30px; background: rgba(0, 123, 255, 0.8); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; cursor: pointer;">' + groupNumber + '</div>';
-			}
-			displayHtml += '</div>';
-		} else {
-			splitGroups.push(count);
-			displayHtml = '<div style="position: relative; width: 60px; height: 60px;">' +
+		
+		splitGroups.push(count);
+		displayHtml = '<div style="position: relative; width: 60px; height: 60px;">' +
 						'<div data-group-index="0" style="position: absolute; left: 15px; top: 15px; width:30px; height:30px; background: rgba(0, 123, 255, 0.8); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; cursor: pointer;">' + count + '</div>' +
 						'</div>';
-		}
+		
 		icon = {
 			content: displayHtml,
 			anchor: new naver.maps.Point(30, 30)
@@ -745,33 +699,30 @@ Cluster.prototype = {
 	 * 클러스터를 구성하는 마커를 노출합니다. 이때에는 클러스터 마커를 노출하지 않습니다.
 	 * @private
 	 */
-	_showMember: function () {
-		var map = this._markerClusterer.getMap(),
-			marker = this._clusterMarker,
-			members = this._clusterMember,
-			projection = this._markerClusterer.getProjection();
+	_showMember: function (membersToShow) {
+		var markers = membersToShow || this._clusterMember;
+		// 이벤트 발생을 비동기로 처리하여 첫 클릭 시 전체 목록으로 갱신되는 문제를 방지함
+		setTimeout(() => {
+			var event = new CustomEvent('clusterClick', { detail: { markers: markers } });
+			window.dispatchEvent(event);
+		}, 0);
+	},
 
-		// 클러스터 중심의 픽셀 좌표를 계산합니다.
-		var centerPixel = projection.fromCoordToOffset(this._clusterCenter);
-		// 원형으로 펼칠 반지름 (픽셀 단위)
-		var spreadRadius = 30;
-
-		// 클러스터에 포함된 각 마커에 대해 원형으로 배치합니다.
-		for (var i = 0, ii = members.length; i < ii; i++) {
-			var angle = ((2 * Math.PI) / ii) * i, // 마커마다 고른 각도 계산
-				offsetX = spreadRadius * Math.cos(angle),
-				offsetY = spreadRadius * Math.sin(angle),
-				newPixel = new naver.maps.Point(centerPixel.x + offsetX, centerPixel.y + offsetY),
-				newLatLng = projection.fromOffsetToCoord(newPixel);
-
-			members[i].setPosition(newLatLng);
-			members[i].setMap(map);
-		}
-
-		// 클러스터 마커는 숨깁니다.
-		if (marker) {
-			marker.setMap(null);
-		}
+	enableClickZoom: function () {
+		if (this._relation) return;
+		var markerClusterer = this._markerClusterer;
+		this._relation = naver.maps.Event.addListener(this._clusterMarker, 'click', () => {
+		  // 다른 클러스터가 확장되어 있다면 접는다.
+		  if (markerClusterer._expandedCluster && markerClusterer._expandedCluster !== this) {
+			markerClusterer._expandedCluster._hideMember();
+			markerClusterer._expandedCluster._clicked = false;
+			markerClusterer._expandedCluster = null;
+		  }
+		  // _clicked 여부와 관계없이 항상 클러스터 멤버 정보를 보여줌
+		  this._clicked = true;
+		  this._showMember();
+		  markerClusterer._expandedCluster = this;
+		});
 	},
 
 	/**
@@ -878,61 +829,6 @@ Cluster.prototype = {
 
 		return new naver.maps.Point(averageCenter[0], averageCenter[1]);
 	}
-};
-
-Cluster.prototype.enableClickZoom = function () {
-    if (this._relation) return;
-    var cluster = this;
-    this._relation = naver.maps.Event.addListener(this._clusterMarker, 'click', function (e) {
-        var markerClusterer = cluster._markerClusterer;
-        if (markerClusterer._expandedCluster && markerClusterer._expandedCluster !== cluster) {
-            markerClusterer._expandedCluster._hideMember();
-            markerClusterer._expandedCluster._clicked = false;
-            markerClusterer._expandedCluster = null;
-        }
-        if (!cluster._clicked) {
-            cluster._clicked = true;
-            // e.domEvent.target 에서 data-group-index 값을 확인
-            var target = e.domEvent.target;
-            var groupIndex = target.getAttribute('data-group-index');
-            if (groupIndex === null || groupIndex === undefined) {
-                groupIndex = 0;
-            } else {
-                groupIndex = parseInt(groupIndex, 10);
-            }
-            // 저장된 분할 그룹 정보(_splitGroups)를 이용해 해당 그룹의 시작 인덱스를 계산
-            var splitGroups = cluster._splitGroups || [cluster._clusterMember.length];
-            var startIndex = 0;
-            for (var i = 0; i < groupIndex; i++) {
-                startIndex += splitGroups[i];
-            }
-            var groupCount = splitGroups[groupIndex];
-            // _clusterMember 배열에서 해당 그룹만 슬라이스하여 전달
-            var membersToShow = cluster._clusterMember.slice(startIndex, startIndex + groupCount);
-            cluster._showMember(membersToShow);
-            markerClusterer._expandedCluster = cluster;
-        }
-    });
-};
-
-
-Cluster.prototype._showMember = function (members) {
-    var map = this._markerClusterer.getMap(),
-        marker = this._clusterMarker,
-        projection = this._markerClusterer.getProjection();
-    var membersToShow = members || this._clusterMember;
-    var count = membersToShow.length;
-    var centerPixel = projection.fromCoordToOffset(this._clusterCenter);
-    var spreadRadius = 80;
-    for (var i = 0; i < count; i++) {
-        var angle = (2 * Math.PI / count) * i,
-            offsetX = spreadRadius * Math.cos(angle),
-            offsetY = spreadRadius * Math.sin(angle),
-            newPixel = new naver.maps.Point(centerPixel.x + offsetX, centerPixel.y + offsetY),
-            newLatLng = projection.fromOffsetToCoord(newPixel);
-        membersToShow[i].setPosition(newLatLng);
-        membersToShow[i].setMap(map);
-    }
 };
 
 export default MarkerClustering;

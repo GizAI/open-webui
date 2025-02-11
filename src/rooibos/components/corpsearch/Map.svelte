@@ -188,6 +188,7 @@
 	let selectedMarker: any = null;
 	let mapInstance: MapInstance | null = null;
 	let searchResults: SearchResult[] = [];
+  let companyList: SearchResult[] = [];
 	let location: Location | null = null;
 	let error: string | null = null;
 	let loading = true;
@@ -294,10 +295,7 @@
 			}
 		});
 
-		marker.searchResult = result;
-		marker.company_name = result.company_name;
-		marker.business_registration_number = result.business_registration_number;
-		marker.representative = result.representative;
+		marker.company_info = result;
 
 		naver.maps.Event.addListener(marker, 'mouseover', () => {
 			marker.setZIndex(200);
@@ -308,7 +306,7 @@
 			}
 		});
 		naver.maps.Event.addListener(marker, 'click', () => {
-			updateSelectedMarker(marker, result, selectedZIndex);
+			// updateSelectedMarker(marker, result, selectedZIndex);
 			companyInfo = result;
 			showCompanyInfo = true;
 			activeFilterGroup = null;
@@ -473,6 +471,7 @@
 
 	const handleShowCompanyListClick = (viewMode: any) => {
 		resultViewMode = viewMode;
+    companyList = searchResults;
 		if (resultViewMode != 'map') showCompanyInfo = false;
 	};
 
@@ -520,6 +519,12 @@
 		};
 
 		initialize();
+
+    window.addEventListener('clusterClick', (e: CustomEvent) => {
+			companyList =  e.detail.markers.map(marker => marker.company_info);
+			resultViewMode = 'list';
+			showCompanyInfo = false;
+		});
 
 		return () => {
 			if (document.body.contains(naverScript)) {
@@ -605,7 +610,7 @@
 {#if resultViewMode != 'map'}
 	<div class="company-list-wrapper w-full" class:sidebar-visible={$showSidebar}>
 		<SearchCompanyList
-			{searchResults}
+			{companyList}
 			onResultClick={handleResultClick}
 			bind:isFullscreen
 			onClose={closeCompanyInfo}
