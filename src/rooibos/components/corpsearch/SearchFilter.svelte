@@ -114,7 +114,7 @@
                   <input
                     type="radio"
                     name="gender"
-                    checked={selectedFilters[group.id]?.value === option.id}
+                    checked={selectedFilters[group.id]?.value === option.id || option.id == ''}
                     on:change={async () => await filterChange(group.id, option.id, option.id)}
                     class="w-4 h-4 text-blue-600 mr-2"
                   />

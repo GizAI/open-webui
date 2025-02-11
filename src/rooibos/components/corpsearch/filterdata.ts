@@ -62,6 +62,7 @@ export const filterGroups = [
 		isMulti: false,
 		checked: false,
 		options: [
+			{ id: '', label: '선택없음' },
 			{ id: 'male', label: '남자' },
 			{ id: 'female', label: '여자' }
 		]
