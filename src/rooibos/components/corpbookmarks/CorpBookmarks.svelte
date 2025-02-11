@@ -70,7 +70,7 @@
 
 <svelte:head>
 	<title>
-		{$i18n.t('CorpBookmarks')} | {$WEBUI_NAME}
+		나의기업 | {$WEBUI_NAME}
 	</title>
 </svelte:head>
 
@@ -108,7 +108,7 @@
 						<div class=" font-semibold line-clamp-1 h-fit">{bookmark.company_name}</div>
 
 						<div class=" text-xs overflow-hidden text-ellipsis line-clamp-1">
-							{bookmark.address}
+							{bookmark.address} 
 						</div>
 					</div>
 				</div>
