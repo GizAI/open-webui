@@ -231,7 +231,7 @@
 	function updateSelectedMarker(newMarker: any, result: SearchResult, zIndex: number = 300) {
 		if (selectedMarker && selectedMarker !== newMarker) {
 			selectedMarker.setIcon({
-				content: getMarkerContent(selectedMarker.searchResult, false),
+				content: getMarkerContent(result, false),
 				anchor: new naver.maps.Point(50, 30)
 			});
 			selectedMarker.setZIndex(100);
@@ -296,6 +296,9 @@
 		});
 
 		marker.company_info = result;
+    marker.company_name = result.company_name;
+		marker.business_registration_number = result.business_registration_number;
+		marker.representative = result.representative;
 
 		naver.maps.Event.addListener(marker, 'mouseover', () => {
 			marker.setZIndex(200);
@@ -306,7 +309,7 @@
 			}
 		});
 		naver.maps.Event.addListener(marker, 'click', () => {
-			// updateSelectedMarker(marker, result, selectedZIndex);
+			updateSelectedMarker(marker, result, selectedZIndex);
 			companyInfo = result;
 			showCompanyInfo = true;
 			activeFilterGroup = null;
