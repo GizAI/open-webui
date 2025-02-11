@@ -608,7 +608,7 @@
 					</div>
 
 					<div class="flex self-center">
-						<div class="self-center font-medium text-sm font-primary">{$i18n.t('Find Companies')}</div>
+						<div class="self-center font-medium text-sm font-primary">기업찾기</div>
 					</div>
 				</a>
 			</div>
@@ -644,7 +644,7 @@
 					</div>
 
 					<div class="flex self-center">
-						<div class="self-center font-medium text-sm font-primary">{$i18n.t('My Companies')}</div>
+						<div class="self-center font-medium text-sm font-primary">나의기업</div>
 					</div>
 				</a>
 			</div>

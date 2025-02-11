@@ -8,7 +8,7 @@
 	import SearchBar from './SearchBar.svelte';
 	import { excludedGroupIds, filterGroups, onFilterChange } from './filterdata';
 	import { mobile } from '$lib/stores';
-	import { showSidebar, user } from '$lib/stores';
+	import { showSidebar, user, WEBUI_NAME } from '$lib/stores';
 	import SearchCompanyList from './SearchCompanyList.svelte';
 	import { WEBUI_API_BASE_URL } from '$lib/constants';
 	import CorpInfo from '../corpinfo/CorpInfo.svelte';
@@ -574,8 +574,14 @@
 		}
 	};
 </script>
+<svelte:head>
+	<title>
+		기업찾기 | {$WEBUI_NAME}
+	</title>
+</svelte:head>
 
 {#if !($showSidebar && $mobile) && (!showCompanyInfo || !isFullscreen)}
+
 	<div class="search-bar-wrapper w-full" class:sidebar-visible={$showSidebar}>
 		<SearchBar
 			onSearch={handleSearch}
