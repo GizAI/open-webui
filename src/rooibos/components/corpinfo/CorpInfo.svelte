@@ -117,14 +117,48 @@
 		latitude: '',
 		longitude: ''
 	};
-
+	
 	let financialData: FinancialData[] | null = null;
+
+	const years = ['2023', '2022', '2021'];		
 
 	onMount(async () => {
 		fetchFinancialData(companyInfo.smtp_id);
 	});
 
-	const years = ['2023', '2022', '2021'];	
+	// 추가된 드래그 관련 변수 및 핸들러
+	let startY = 0;
+	let dragOffset = 0;
+	let isDragging = false;
+
+	function handleTouchStart(e: TouchEvent) {
+		startY = e.touches[0].clientY;
+		isDragging = true;
+	}
+
+	function handleTouchMove(e: TouchEvent) {
+		if (!isDragging) return;
+		const currentY = e.touches[0].clientY;
+		dragOffset = currentY - startY;
+	}
+
+	function handleTouchEnd(e: TouchEvent) {
+		isDragging = false;
+		const threshold = 50;
+		if (dragOffset > threshold) {
+			// 아래로 드래그한 경우: 풀스크린 상태라면 축소, 아니면 닫기
+			if (isFullscreen) {
+				isFullscreen = false;
+			} else {
+				closeCompanyInfo();
+			}
+		} else if (dragOffset < -threshold) {
+			// 위로 드래그한 경우: 풀스크린으로 전환
+			isFullscreen = true;
+		}
+		dragOffset = 0;
+	}
+
 
 	// 필요에 따라 섹션 표시 여부 함수들
 	const hasBasicInfo = (info: CompanyInfo) => {
@@ -307,16 +341,41 @@
 		}
 	}	
 
+	$: mobileHeight = (() => {
+		if (!$mobile) return '';
+		const fullHeight = `calc(100vh - env(safe-area-inset-top) - env(safe-area-inset-bottom))`;
+		const initialHeight = `20vh`;
+		if (isDragging) {
+			if (!isFullscreen && dragOffset < 0) {
+				// 위로 드래그 시: 기존 20vh에서 dragOffset 만큼 높이를 증가
+				return `calc(20vh + ${-dragOffset}px)`;
+			} else if (isFullscreen && dragOffset > 0) {
+				// 풀스크린 상태에서 아래로 드래그 시: 전체 높이에서 dragOffset 만큼 차감
+				return `calc(${fullHeight} - ${dragOffset}px)`;
+			}
+		}
+		return isFullscreen ? fullHeight : initialHeight;
+	})();
+
 </script>
 
-<!-- 전체 컨테이너: 상단 고정 영역 + 아래 스크롤 영역 -->
 <div 
-  class="company-info-wrapper active {isFullscreen ? 'fullscreen' : ''} flex flex-col w-full bg-gray-50 mt-4 h-[calc(100vh-8rem)]"
-  class:mobile={$mobile}
+	class="company-info-wrapper active {isFullscreen ? 'fullscreen' : ''} flex flex-col w-full bg-gray-50 mt-4 h-[calc(100vh-8rem)]"
+	class:mobile={$mobile}
+	style={$mobile ? `height: ${mobileHeight}; transition: ${isDragging ? 'none' : 'height 0.3s ease'}` : ''}
 >
 	{#if companyInfo}
 		<!-- 상단 고정 영역 -->
 		<div class="bg-gray-50 sticky top-0 z-10 shrink-0 px-4 pt-2 pb-1 border-b border-gray-200">	
+			{#if $mobile && !isFullscreen}
+				<div
+					class="drag-handle"
+					on:touchstart={handleTouchStart}
+					on:touchmove={handleTouchMove}
+					on:touchend={handleTouchEnd}>
+					<div class="handle-bar"></div>
+				</div>
+			{/if}
 			<!-- 회사명 / 닫기 버튼 -->
 			<div class="flex items-center justify-between w-full mb-1">
 				<h1 class="{$mobile ? 'sm:text-xl' : 'text-xl'} font-semibold mb-1 truncate">
@@ -856,6 +915,19 @@
 		border-top-right-radius: 20px;
 	  }
 	}
-
+	
+	.drag-handle {
+		width: 100%;
+		display: flex;
+		justify-content: center;
+		padding: 8px 0;
+		touch-action: none;
+	}
+	.drag-handle .handle-bar {
+		width: 40px;
+		height: 6px;
+		background-color: #ccc;
+		border-radius: 2px;
+	}
 	
   </style>
