@@ -739,7 +739,6 @@ Cluster.prototype = {
 		}
 
 		this._clusterMarker.setIcon(icon);
-		this._clusterMarker.setTitle(`${count}개의 마커`);
 	},
 
 	/**
