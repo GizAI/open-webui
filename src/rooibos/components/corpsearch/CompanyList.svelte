@@ -85,20 +85,17 @@
 
 	import { showSidebar, mobile } from '$lib/stores';
 	export let companyList: SearchResult[] = [];
-	export let onResultClick: (result: SearchResult) => void;
-	export let onClose: () => void;
 
 	let fullscreenStates: Record<string, boolean> = {};
 
 	let filters = {
 		keyword: '',
-		minEmployees: null as number | null,
 		industry: '',
 		radius: 'near',
 		establishmentFrom: '',
 		establishmentTo: '',
-		smeType: '',
-		labName: '',
+		smeType: false,
+		labName: false
 	};
 
 	$: filteredCompanies = companyList.filter(company => {
@@ -113,33 +110,15 @@
 			);
 		}
 		
-		if (filters.minEmployees !== null) {
-			pass = pass && (company.employee_count !== undefined && company.employee_count >= filters.minEmployees);
-		}
-		
 		if (filters.industry) {
 			pass = pass && (company.industry && company.industry.toLowerCase().includes(filters.industry.toLowerCase()));
-		}
-		
-		if (filters.establishmentFrom) {
-			const estDate = company.establishment_date ? String(company.establishment_date).replace(/-/g, '') : '';
-			const filterFrom = filters.establishmentFrom.replace(/-/g, '');
-			pass = pass && (estDate >= filterFrom);
-		}
-		if (filters.establishmentTo) {
-			const estDate = company.establishment_date ? String(company.establishment_date).replace(/-/g, '') : '';
-			const filterTo = filters.establishmentTo.replace(/-/g, '');
-			pass = pass && (estDate <= filterTo);
-		}
+		}		
 		
 		if (filters.smeType) {
-			pass = pass && (company.sme_type && company.sme_type.toLowerCase().includes(filters.smeType.toLowerCase()));
+			pass = pass && Boolean(company.sme_type);
 		}
 		if (filters.labName) {
-			pass = pass && (
-				(company.lab_name && company.lab_name.toLowerCase().includes(filters.labName.toLowerCase())) ||
-				(company.research_field && company.research_field.toLowerCase().includes(filters.labName.toLowerCase()))
-			);
+			pass = pass && (Boolean(company.lab_name) || Boolean(company.research_field));
 		}
 		
 		return pass;
@@ -161,7 +140,6 @@
 
 	function closeCompanyInfo(smtp_id: string) {
 		fullscreenStates = { ...fullscreenStates, [smtp_id]: false };
-		onClose();
 	}
 </script>
 
@@ -174,10 +152,15 @@
 			<option value="far">먼거리</option>
 		</select>
 		<input type="text" placeholder="키워드" bind:value={filters.keyword} class="filter-input" />
-		<input type="number" placeholder="임직원 수 (몇 명 이상)" bind:value={filters.minEmployees} class="filter-input" />
 		<input type="text" placeholder="업종" bind:value={filters.industry} class="filter-input" />
-		<input type="text" placeholder="인증/유형" bind:value={filters.smeType} class="filter-input" />
-		<input type="text" placeholder="연구소명/분야" bind:value={filters.labName} class="filter-input" />
+		<label>
+			<input type="checkbox" bind:checked={filters.smeType} />
+			벤처인증
+		</label>
+		<label>
+			<input type="checkbox" bind:checked={filters.labName} />
+			연구소
+		</label>
 	</div>
 	<div class="list-container flex-1 overflow-y-auto">
 		<ul class="pt-2 p-4 space-y-2">
@@ -185,8 +168,8 @@
 				<li>
 					<div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
 						<div role="button" tabindex="0"
-							on:click={() => onResultClick(result)}
-							on:keydown={(e) => { if(e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onResultClick(result); } }}
+							on:click={() => toggleFullscreen(result.smtp_id)}
+							on:keydown={(e) => { if(e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleFullscreen(result.smtp_id); } }}
 							class="w-full text-left p-4 hover:bg-gray-50 transition-colors duration-200">
 							<div class="flex items-start justify-between">
 								<div class="flex-1">

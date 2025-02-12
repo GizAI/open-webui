@@ -614,7 +614,6 @@
 	<div class="company-list-wrapper w-full" class:sidebar-visible={$showSidebar}>
 		<CompanyList
 			{companyList}
-			onResultClick={handleResultClick}
 			bind:isFullscreen
 			onClose={closeCompanyInfo}
 		/>
