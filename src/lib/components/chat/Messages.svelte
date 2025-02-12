@@ -340,7 +340,7 @@
 <div class={className}>
 	{#if Object.keys(history?.messages ?? {}).length == 0}
 	
-		<div class="max-h-[600XXpx] overflow-auto">
+		<div class="w-full flex gap-1.5">
 			<ChatCategories />
 		</div>
 	
