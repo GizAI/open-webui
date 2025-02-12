@@ -214,7 +214,9 @@
 							<div class="flex items-center justify-between">
 								<div class="flex items-center">
 									<span class="font-semibold text-gray-900">{result.company_name}</span>
-									<span class="ml-1">({result.business_registration_number})</span>
+									{#if !fullscreenStates[result.smtp_id]}
+										<span class="ml-1">({result.business_registration_number})</span>
+									{/if}
 									<button type="button" on:click|stopPropagation={() => toggleFullscreen(result.smtp_id)} class="ml-2">
 										{#if fullscreenStates[result.smtp_id]}
 											<ChevronUp size={20} strokeWidth="2.5"/>

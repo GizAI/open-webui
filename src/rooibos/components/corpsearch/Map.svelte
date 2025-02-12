@@ -231,7 +231,7 @@
 	function updateSelectedMarker(newMarker: any, result: SearchResult, zIndex: number = 300) {
 		if (selectedMarker && selectedMarker !== newMarker) {
 			selectedMarker.setIcon({
-				content: getMarkerContent(result, false),
+				content: getMarkerContent(selectedMarker.company_info, false),
 				anchor: new naver.maps.Point(50, 30)
 			});
 			selectedMarker.setZIndex(100);
@@ -296,7 +296,7 @@
 		});
 
 		marker.company_info = result;
-    marker.company_name = result.company_name;
+    	marker.company_name = result.company_name;
 		marker.business_registration_number = result.business_registration_number;
 		marker.representative = result.representative;
 
@@ -477,7 +477,8 @@
 
 	const handleShowCompanyListClick = (viewMode: any) => {
 		resultViewMode = viewMode;
-    companyList = searchResults;
+    	companyList = searchResults;
+		
 		if (resultViewMode != 'map') showCompanyInfo = false;
 	};
 
@@ -560,30 +561,6 @@
 		}
 	}
 
-	const handleResultClick = (result: SearchResult) => {
-		if (!mapInstance) return;
-
-		const point = createLatLng(result.latitude, result.longitude);
-		mapInstance.map.setCenter(point);
-		mapInstance.map.setZoom(zoom);
-
-		companyInfo = result;
-		showCompanyInfo = true;
-		resultViewMode = 'map';
-
-		if (selectedMarker) {
-			selectedMarker.setIcon({
-				content: getMarkerContent(selectedMarker.searchResult),
-				anchor: new naver.maps.Point(50, 30)
-			});
-			selectedMarker.setZIndex(100);
-		}
-
-		const marker = mapInstance.companyMarkers.find(m => m.searchResult?.smtp_id === result.smtp_id);
-		if (marker) {
-			updateSelectedMarker(marker, result, 300);
-		}
-	};
 </script>
 <svelte:head>
 	<title>
@@ -617,8 +594,6 @@
 	<div class="company-list-wrapper w-full" class:sidebar-visible={$showSidebar}>
 		<CompanyList
 			{companyList}
-			bind:isFullscreen
-			onClose={closeCompanyInfo}
 		/>
 	</div>
 {/if}
