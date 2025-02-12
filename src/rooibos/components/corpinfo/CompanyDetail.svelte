@@ -2,6 +2,8 @@
 <script lang="ts">
 	import { MapPin, Briefcase, Microscope, Award, Users, DollarSign, ChevronDown, ChevronUp } from 'lucide-svelte';
 	import { goto } from '$app/navigation';
+	import { onMount } from 'svelte';
+	import { WEBUI_API_BASE_URL } from '$lib/constants';
   
 	// 회사 정보(혹은 북마크)와 재무 데이터를 prop으로 받습니다.
 	export let company: any;
@@ -59,6 +61,28 @@
 	$: years = financialData && Array.isArray(financialData)
 		 ? [...new Set(financialData.map(d => String(d.year)))].sort().reverse()
 		 : [];
+
+  onMount(async () => {
+		fetchFinancialData(company.smtp_id);
+	});   
+
+  async function fetchFinancialData(smtp_id: string) {
+		try {
+			const financialResponse = await fetch(`${WEBUI_API_BASE_URL}/rooibos/corpbookmarks/${smtp_id}/financialData`, {
+				method: 'GET',
+				headers: {
+					Accept: 'application/json',
+					'Content-Type': 'application/json',
+					authorization: `Bearer ${localStorage.token}`
+				}
+			});
+			const data = await financialResponse.json();
+			financialData = data.data;
+		} catch (error) {
+			console.error("재무 데이터 로딩 실패:", error);
+			financialData = null;
+		}
+	}	
 </script>
 
 <div class="company-info-wrapper active flex flex-col w-full overflow-hidden">

@@ -6,158 +6,176 @@
 	import CompanyDetail from '../corpinfo/CompanyDetail.svelte';
 
 	interface SearchResult {
-	  smtp_id: string;
-	  company_name: string;
-	  address: string;
-	  latitude: string;
-	  longitude: string;
-	  phone_number?: string;
-	  category?: string[];
-	  business_registration_number?: string;
-	  representative?: string;
-	  birth_date?: string;
-	  industry?: string;
-	  establishment_date?: string;
-	  employee_count?: number;
-	  recent_sales?: number;
-	  recent_revenue?: number;
-	  recent_profit?: number;
-	  website?: string;
-	  distance_from_user?: number;
-	  bookmark_id?: string | null;    
-	  fax_number?: string;
-	  email?: string;
-	  company_type?: string;
-	  founding_date?: string;
-	  industry_code1?: string;
-	  industry_code2?: string;
-	  main_product?: string;
-	  main_bank?: string;
-	  main_branch?: string;
-	  group_name?: string;
-	  stock_code?: string;
-	  corporate_number?: string;
-	  english_name?: string;
-	  trade_name?: string;
-	  fiscal_month?: string;
-	  sales_year?: string;
-	  profit_year?: string;
-	  operating_profit_year?: string;
-	  recent_operating_profit?: number;
-	  asset_year?: string;
-	  recent_total_assets?: number;
-	  debt_year?: string;
-	  recent_total_debt?: number;
-	  equity_year?: string;
-	  recent_total_equity?: number;
-	  capital_year?: string;
-	  recent_capital?: number;
-	  region1?: string;
-	  region2?: string;
-	  industry_major?: string;
-	  industry_middle?: string;
-	  industry_small?: string;
-	  certificate_expiry_date?: string;
-	  sme_type?: string;
-	  cri_company_size?: string;
-	  lab_name?: string;
-	  first_approval_date?: string;
-	  lab_location?: string;
-	  research_field?: string;
-	  division?: string;
-	  birth_year?: string;
-	  foundation_year?: string;
-	  family_shareholder_yn?: string;
-	  external_shareholder_yn?: string;
-	  financial_statement_year?: string;
-	  employees?: number;
-	  total_assets?: number;
-	  total_equity?: number;
-	  sales_amount?: number;
-	  net_income?: number;
-	  venture_confirmation_type?: string;
-	  svcl_region?: string;
-	  venture_valid_from?: string;
-	  venture_valid_until?: string;
-	  confirming_authority?: string;
-	  new_reconfirmation_code?: string;
+		smtp_id: string;
+		company_name: string;
+		address: string;
+		latitude: string;
+		longitude: string;
+		phone_number?: string;
+		category?: string[];
+		business_registration_number?: string;
+		representative?: string;
+		birth_date?: string;
+		industry?: string;
+		establishment_date?: string;
+		employee_count?: number;
+		recent_sales?: number;
+		recent_revenue?: number;
+		recent_profit?: number;
+		website?: string;
+		distance_from_user?: number;
+		bookmark_id?: string | null;    
+		fax_number?: string;
+		email?: string;
+		company_type?: string;
+		founding_date?: string;
+		industry_code1?: string;
+		industry_code2?: string;
+		main_product?: string;
+		main_bank?: string;
+		main_branch?: string;
+		group_name?: string;
+		stock_code?: string;
+		corporate_number?: string;
+		english_name?: string;
+		trade_name?: string;
+		fiscal_month?: string;
+		sales_year?: string;
+		profit_year?: string;
+		operating_profit_year?: string;
+		recent_operating_profit?: number;
+		asset_year?: string;
+		recent_total_assets?: number;
+		debt_year?: string;
+		recent_total_debt?: number;
+		equity_year?: string;
+		recent_total_equity?: number;
+		capital_year?: string;
+		recent_capital?: number;
+		region1?: string;
+		region2?: string;
+		industry_major?: string;
+		industry_middle?: string;
+		industry_small?: string;
+		certificate_expiry_date?: string;
+		sme_type?: string;
+		cri_company_size?: string;
+		lab_name?: string;
+		first_approval_date?: string;
+		lab_location?: string;
+		research_field?: string;
+		division?: string;
+		birth_year?: string;
+		foundation_year?: string;
+		family_shareholder_yn?: string;
+		external_shareholder_yn?: string;
+		financial_statement_year?: string;
+		employees?: number;
+		total_assets?: number;
+		total_equity?: number;
+		sales_amount?: number;
+		net_income?: number;
+		venture_confirmation_type?: string;
+		svcl_region?: string;
+		venture_valid_from?: string;
+		venture_valid_until?: string;
+		confirming_authority?: string;
+		new_reconfirmation_code?: string;
 	}
 
 	import { showSidebar, mobile } from '$lib/stores';
 	export let companyList: SearchResult[] = [];
-	export let onResultClick: (result: SearchResult) => void;
-	export let onClose: () => void;
 
 	let fullscreenStates: Record<string, boolean> = {};
 
+	// 필터 객체에 정렬 기준(sortBy) 추가
 	let filters = {
 		keyword: '',
-		minEmployees: null as number | null,
 		industry: '',
 		radius: 'near',
-		establishmentFrom: '',
-		establishmentTo: '',
-		smeType: '',
-		labName: '',
+		sortBy: 'distanceAscending', // 기본 정렬: 가까운거리 순
+		smeType: false,
+		labName: false
 	};
 
+	// 필터링 로직
 	$: filteredCompanies = companyList.filter(company => {
 		let pass = true;
 		if (filters.keyword) {
 			const keyword = filters.keyword.toLowerCase();
 			pass = pass && (
 				company.company_name.toLowerCase().includes(keyword) ||
-				company.address.toLowerCase().includes(keyword) ||
-				company.business_registration_number.toLowerCase().includes(keyword) ||
+				(company.address && company.address.toLowerCase().includes(keyword)) ||
+				(company.business_registration_number && company.business_registration_number.toLowerCase().includes(keyword)) ||
 				(company.representative && company.representative.toLowerCase().includes(keyword))
 			);
 		}
 		
-		if (filters.minEmployees !== null) {
-			pass = pass && (company.employee_count !== undefined && company.employee_count >= filters.minEmployees);
-		}
-		
 		if (filters.industry) {
-			pass = pass && (company.industry && company.industry.toLowerCase().includes(filters.industry.toLowerCase()));
-		}
-		
-		if (filters.establishmentFrom) {
-			const estDate = company.establishment_date ? String(company.establishment_date).replace(/-/g, '') : '';
-			const filterFrom = filters.establishmentFrom.replace(/-/g, '');
-			pass = pass && (estDate >= filterFrom);
-		}
-		if (filters.establishmentTo) {
-			const estDate = company.establishment_date ? String(company.establishment_date).replace(/-/g, '') : '';
-			const filterTo = filters.establishmentTo.replace(/-/g, '');
-			pass = pass && (estDate <= filterTo);
-		}
+			pass = pass && (
+				company.industry && company.industry.toLowerCase().includes(filters.industry.toLowerCase())
+			);
+		}		
 		
 		if (filters.smeType) {
-			pass = pass && (company.sme_type && company.sme_type.toLowerCase().includes(filters.smeType.toLowerCase()));
+			pass = pass && (
+				Boolean(company.venture_confirmation_type) ||
+				Boolean(company.sme_type) ||
+				Boolean(company.certificate_expiry_date) ||
+				Boolean(company.venture_valid_from)
+			);
 		}
 		if (filters.labName) {
 			pass = pass && (
-				(company.lab_name && company.lab_name.toLowerCase().includes(filters.labName.toLowerCase())) ||
-				(company.research_field && company.research_field.toLowerCase().includes(filters.labName.toLowerCase()))
+				Boolean(company.lab_name) ||
+				Boolean(company.research_field) ||
+				Boolean(company.division) ||
+				Boolean(company.first_approval_date) ||
+				Boolean(company.lab_location)
 			);
 		}
 		
 		return pass;
 	});
 
+	// 정렬 로직
 	$: sortedCompanies = [...filteredCompanies].sort((a, b) => {
-		const distanceA = a.distance_from_user ?? 0;
-		const distanceB = b.distance_from_user ?? 0;
-		return filters.radius === 'near' ? distanceA - distanceB : distanceB - distanceA;
+		switch (filters.sortBy) {
+			case 'distanceAscending':
+				return (a.distance_from_user ?? 0) - (b.distance_from_user ?? 0);
+			case 'distanceDescending':
+				return (b.distance_from_user ?? 0) - (a.distance_from_user ?? 0);
+			case 'nameAscending':
+				return a.company_name.localeCompare(b.company_name);
+			case 'nameDescending':
+				return b.company_name.localeCompare(a.company_name);
+			case 'establishmentDateAscending':
+				return (Number(a.establishment_date) || 0) - (Number(b.establishment_date) || 0);
+			case 'establishmentDateDescending':
+				return (Number(b.establishment_date) || 0) - (Number(a.establishment_date) || 0);
+			case 'salesAmountAscending':
+				return (a.sales_amount ?? 0) - (b.sales_amount ?? 0);
+			case 'salesAmountDescending':
+				return (b.sales_amount ?? 0) - (a.sales_amount ?? 0);
+			case 'employeeCountAscending':
+				return (a.employee_count ?? 0) - (b.employee_count ?? 0);
+			case 'employeeCountDescending':
+				return (b.employee_count ?? 0) - (a.employee_count ?? 0);
+			default:
+				return 0;
+		}
 	});
 
 	function toggleFullscreen(smtp_id: string) {
-		fullscreenStates = { ...fullscreenStates, [smtp_id]: !fullscreenStates[smtp_id] };
+		if (fullscreenStates[smtp_id]) {
+			fullscreenStates = { ...fullscreenStates, [smtp_id]: false };
+		} else {
+			fullscreenStates = { [smtp_id]: true };
+		}
 	}
 
 	function closeCompanyInfo(smtp_id: string) {
 		fullscreenStates = { ...fullscreenStates, [smtp_id]: false };
-		onClose();
 	}
 </script>
 
@@ -165,15 +183,26 @@
 	 class:sidebar-margin={$showSidebar}
 	 class:mobile-layout={$mobile}>
 	<div class="p-4 pb-0 bg-gray-80 border-gray-300 flex flex-wrap items-center gap-2">
-		<input type="text" placeholder="키워드" bind:value={filters.keyword} class="filter-input" />
-		<input type="number" placeholder="임직원 수 (몇 명 이상)" bind:value={filters.minEmployees} class="filter-input" />
-		<input type="text" placeholder="업종" bind:value={filters.industry} class="filter-input" />
-		<select bind:value={filters.radius} class="filter-input">
-			<option value="near">가까운거리</option>
-			<option value="far">먼거리</option>
+		<select bind:value={filters.sortBy} class="filter-input">
+			<option value="distanceAscending">거리 (가까운 순)</option>
+			<option value="distanceDescending">거리 (먼 순)</option>
+			<option value="nameAscending">회사명 (오름차순)</option>
+			<option value="nameDescending">회사명 (내림차순)</option>
+			<option value="establishmentDateAscending">설립연도 (오래된 순)</option>
+			<option value="establishmentDateDescending">설립연도 (최신 순)</option>
+			<option value="employeeCountAscending">직원 수 (적은 순)</option>
+			<option value="employeeCountDescending">직원 수 (많은 순)</option>
 		</select>
-		<input type="text" placeholder="인증/유형" bind:value={filters.smeType} class="filter-input" />
-		<input type="text" placeholder="연구소명/분야" bind:value={filters.labName} class="filter-input" />
+		<input type="text" placeholder="키워드" bind:value={filters.keyword} class="filter-input" />
+		<input type="text" placeholder="업종" bind:value={filters.industry} class="filter-input" />
+		<label>
+			<input type="checkbox" bind:checked={filters.smeType} />
+			벤처인증
+		</label>
+		<label>
+			<input type="checkbox" bind:checked={filters.labName} />
+			연구소
+		</label>
 	</div>
 	<div class="list-container flex-1 overflow-y-auto">
 		<ul class="pt-2 p-4 space-y-2">
@@ -181,8 +210,8 @@
 				<li>
 					<div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
 						<div role="button" tabindex="0"
-							on:click={() => onResultClick(result)}
-							on:keydown={(e) => { if(e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onResultClick(result); } }}
+							on:click={() => toggleFullscreen(result.smtp_id)}
+							on:keydown={(e) => { if(e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleFullscreen(result.smtp_id); } }}
 							class="w-full text-left p-4 hover:bg-gray-50 transition-colors duration-200">
 							<div class="flex items-start justify-between">
 								<div class="flex-1">
@@ -202,7 +231,7 @@
 									{/if}
 									{#if result.representative && !fullscreenStates[result.smtp_id]}
 										<div class="text-sm text-gray-500 mt-1">
-											대표자: {result.representative} | 거리: {result.distance_from_location} m
+											대표자: {result.representative} | 거리: {result.distance_from_user} m
 										</div>
 									{/if}
 								</div>
@@ -210,7 +239,9 @@
 						</div>
 						{#if fullscreenStates[result.smtp_id]}
 							<div transition:slide class="border-t border-gray-200">
-								<CompanyDetail company={result} onClose={() => closeCompanyInfo(result.smtp_id)} />
+								<div class="detail-scroll-container">
+									<CompanyDetail company={result} onClose={() => closeCompanyInfo(result.smtp_id)} />
+								</div>
 							</div>
 						{/if}
 					</div>
@@ -221,6 +252,10 @@
 </div>
 
 <style>
+	.detail-scroll-container {
+		max-height: 400px;
+		overflow-y: auto;
+	}
 	.company-list-wrapper {
 		display: flex;
 		flex-direction: column;

@@ -404,7 +404,10 @@
 		}
 		const mapOptions = {
 			center: createLatLng(position.lat, position.lng),
-			zoom: zoom
+			zoom: zoom,
+			scaleControl: false,
+			logoControl: false,
+			mapDataControl: false 
 		};
 
 		const map = new naver.maps.Map(mapContainer, mapOptions);
@@ -614,7 +617,6 @@
 	<div class="company-list-wrapper w-full" class:sidebar-visible={$showSidebar}>
 		<CompanyList
 			{companyList}
-			onResultClick={handleResultClick}
 			bind:isFullscreen
 			onClose={closeCompanyInfo}
 		/>
