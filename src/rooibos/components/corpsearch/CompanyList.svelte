@@ -164,7 +164,7 @@
 <div class="company-list-wrapper fixed bottom-0 left-0 right-0 top-[50px] bg-gray-50 shadow-lg rounded-t-2xl transition-all duration-300"
 	 class:sidebar-margin={$showSidebar}
 	 class:mobile-layout={$mobile}>
-	<div class="p-4 bg-gray-80 border-gray-300 flex flex-wrap items-center gap-2">
+	<div class="p-4 pb-0 bg-gray-80 border-gray-300 flex flex-wrap items-center gap-2">
 		<input type="text" placeholder="키워드" bind:value={filters.keyword} class="filter-input" />
 		<input type="number" placeholder="임직원 수 (몇 명 이상)" bind:value={filters.minEmployees} class="filter-input" />
 		<input type="text" placeholder="업종" bind:value={filters.industry} class="filter-input" />
@@ -176,7 +176,7 @@
 		<input type="text" placeholder="연구소명/분야" bind:value={filters.labName} class="filter-input" />
 	</div>
 	<div class="list-container flex-1 overflow-y-auto">
-		<ul class="p-4 space-y-2">
+		<ul class="pt-2 p-4 space-y-2">
 			{#each sortedCompanies as result}
 				<li>
 					<div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
