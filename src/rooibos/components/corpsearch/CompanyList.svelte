@@ -89,7 +89,6 @@
 
 	let fullscreenStates: Record<string, boolean> = {};
 
-	// 필터 객체에 정렬 기준(sortBy) 추가
 	let filters = {
 		keyword: '',
 		industry: '',
@@ -243,7 +242,7 @@
 						{#if fullscreenStates[result.smtp_id]}
 							<div transition:slide class="border-t border-gray-200">
 								<div class="detail-scroll-container">
-									<CompanyDetail company={result} onClose={() => closeCompanyInfo(result.smtp_id)} />
+									<CompanyDetail company={result} />
 								</div>
 							</div>
 						{/if}

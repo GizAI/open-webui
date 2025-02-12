@@ -209,7 +209,6 @@
 
 		bookmark.files = [...(bookmark.files ?? []), fileItem];
 
-		// Check if the file is an audio file and transcribe/convert it to text file
 		if (['audio/mpeg', 'audio/wav', 'audio/ogg', 'audio/x-m4a'].includes(file['type'])) {
 			const res = await transcribeAudio(localStorage.token, file).catch((error) => {
 				toast.error(error);
@@ -471,20 +470,6 @@
 				toast.error($i18n.t('Please fill in all fields.'));
 				return;
 			}
-
-			// const res = await updateKnowledgeById(localStorage.token, id, {
-			// 	...bookmark,
-			// 	name: bookmark?.company_name,
-			// 	description: bookmark?.description,
-			// 	access_control: bookmark.access_control
-			// }).catch((e) => {
-			// 	toast.error(e);
-			// });
-
-			// if (res) {
-			// 	toast.success($i18n.t('bookmark updated successfully'));
-			// 	_knowledge.set(await getKnowledgeBases(localStorage.token));
-			// }
 		}, 1000);
 	};
 
@@ -499,7 +484,6 @@
 	const onDragOver = (e: any) => {
 		e.preventDefault();
 
-		// Check if a file is being draggedOver.
 		if (e.dataTransfer?.types?.includes('Files')) {
 			dragged = true;
 		} else {
@@ -531,13 +515,11 @@
 	};
 
 	onMount(async () => {
-		// listen to resize 1024px
 		mediaQuery = window.matchMedia('(min-width: 1024px)');
 
 		mediaQuery.addEventListener('change', handleMediaQuery);
 		handleMediaQuery(mediaQuery);
 
-		// Select the container element you want to observe
 		const container = document.getElementById('collection-container');
 
 		minSize = !largeScreen ? 100 : Math.floor((300 / container.clientWidth) * 100);
@@ -694,16 +676,13 @@
   		class:mobile={$mobile}
 	>
 	{#if bookmark}
-		<!-- 상단 고정 영역 -->
-		<div class="top-0 z-10 shrink-0 px-4 pt-2 pb-1">	
-			<!-- 회사명 / 닫기 버튼 -->
+		<div class="top-0 z-10 shrink-0 px-4 pt-2 pb-1">
 			<div class="flex items-center justify-between w-full mb-1">
 				<h1 class="{$mobile ? 'sm:text-xl' : 'text-xl'} font-semibold mb-1 truncate">
 					{bookmark.company_name}
 				</h1>
 			
 				<div class="flex items-center space-x-1">
-					<!-- 기업 액션 버튼 -->
 					<ActionButtons companyInfo={bookmark}/>				
 					
 					<button class="hover:bg-gray-100 rounded-full" on:click={closeCompanyInfo}>
@@ -717,7 +696,7 @@
 		</div>
 
 		<div class="flex-1 px-4 pb-4">
-			<CompanyDetail company={bookmark} onClose={() => null} />				
+			<CompanyDetail company={bookmark} />
 		</div>
 	{:else}
 		<Spinner />

@@ -1,25 +1,11 @@
 <!-- companydetail.svelte -->
 <script lang="ts">
-	import { MapPin, Briefcase, Microscope, Award, Users, DollarSign, ChevronDown, ChevronUp } from 'lucide-svelte';
-	import { goto } from '$app/navigation';
-	import { onMount } from 'svelte';
+	import { MapPin, Briefcase, Microscope, Award, Users, DollarSign } from 'lucide-svelte';
 	import { WEBUI_API_BASE_URL } from '$lib/constants';
   
-	// 회사 정보(혹은 북마크)와 재무 데이터를 prop으로 받습니다.
 	export let company: any;
-	export let financialData: any = null;
-	export let onClose: () => void;
+	export let financialData: any = null;  
   
-	// 리스트 모드 여부 (기본값 false – 모달/전체보기 모드)
-	export let isListMode: boolean = false;
-  
-	// 리스트 모드일 경우 내부 토글 상태 (기본 collapsed)
-	let expanded = false;
-	function toggleExpand() {
-		expanded = !expanded;
-	}
-  
-	// 헬퍼 함수들
 	const hasBasicInfo = (c: any) =>
 	  c.business_registration_number ||
 	  c.corporate_number ||
@@ -57,14 +43,13 @@
 	  return String(dateStr).replace(/(\d{4})(\d{2})(\d{2})/, '$1-$2-$3');
 	}
   
-	// 재무 데이터에서 연도 목록 계산 (내림차순 정렬)
 	$: years = financialData && Array.isArray(financialData)
 		 ? [...new Set(financialData.map(d => String(d.year)))].sort().reverse()
 		 : [];
 
-  onMount(async () => {
-		fetchFinancialData(company.smtp_id);
-	});   
+  $: if (company && company.smtp_id) {
+      fetchFinancialData(company.smtp_id);
+  }  
 
   async function fetchFinancialData(smtp_id: string) {
 		try {
