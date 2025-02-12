@@ -3,7 +3,7 @@
 	import { toast } from 'svelte-sonner';
 	import { v4 as uuidv4 } from 'uuid';
 
-	import { onMount, getContext, onDestroy, tick } from 'svelte';
+	import { onMount, getContext, onDestroy } from 'svelte';
 	const i18n = getContext('i18n');
 
 	import { page } from '$app/stores';
@@ -25,16 +25,11 @@
 	import RichTextInput from '$lib/components/common/RichTextInput.svelte';
 	import Drawer from '$lib/components/common/Drawer.svelte';
 	import ChevronLeft from '$lib/components/icons/ChevronLeft.svelte';
-	import LockClosed from '$lib/components/icons/LockClosed.svelte';
 	import AccessControlModal from '$lib/components/workspace/common/AccessControlModal.svelte';
 	import { WEBUI_API_BASE_URL } from '$lib/constants';
-	import { Briefcase, MapPin, Users, Phone, Globe, Calendar, DollarSign, List, Award, Building2, FlaskConical, CalendarCheck, Microscope, ClipboardList } from 'lucide-svelte';
-	import BookOpen from '$lib/components/icons/BookOpen.svelte';
-	import { selectedCompanyInfo } from '$rooibos/stores';
 	import { goto } from '$app/navigation';
-	import { get } from 'svelte/store';
-	import Bookmark from '$lib/components/icons/Bookmark.svelte';
 	import ActionButtons from '../common/ActionButtons.svelte';
+	import CompanyDetail from '../corpinfo/CompanyDetail.svelte';
 
 
 	let largeScreen = true;
@@ -611,43 +606,12 @@
 		dropZone?.removeEventListener('dragleave', onDragLeave);
 	});
 
-	const years = ['2023', '2022', '2021'];
-
 	export let isFullscreen = false;
-
-	function toggleFullscreen() {
-		isFullscreen = !isFullscreen;
-	}
 
 	function closeCompanyInfo() {
 		isFullscreen = false;
 		goto('/rooibos/corpbookmarks');
 	}
-	
-	const hasIndustryInfo = (info: Bookmark) => {
-		return info.industry || info.main_product;
-	};
-
-	const hasLabInfo = (info: Bookmark) => {
-		return info.lab_name ||
-			info.research_field ||
-			info.division ||
-			info.first_approval_date ||
-			info.lab_location
-		;
-	};
-
-	const hasCertificationInfo = (info: Bookmark) => {
-		return info.venture_confirmation_type ||
-			info.sme_type ||
-			info.certificate_expiry_date ||
-			info.venture_valid_from
-		;
-	};
-
-	const hasShareholderInfo = (info: Bookmark) => {
-		return info.family_shareholder_yn == 'Y' || info.external_shareholder_yn == 'Y';
-	};
 	
 </script>
 
@@ -725,10 +689,10 @@
 				changeDebounceHandler();
 			}}
 		/>
-		<div 
-  class="company-info-wrapper active {isFullscreen ? 'fullscreen' : ''} flex flex-col w-full mt-4 h-[calc(100vh-8rem)]"
-  class:mobile={$mobile}
->
+	<div 
+  		class="company-info-wrapper active {isFullscreen ? 'fullscreen' : ''} flex flex-col w-full mt-4 h-[calc(100vh-8rem)]"
+  		class:mobile={$mobile}
+	>
 	{#if bookmark}
 		<!-- 상단 고정 영역 -->
 		<div class="top-0 z-10 shrink-0 px-4 pt-2 pb-1">	
@@ -752,384 +716,8 @@
 			</div>
 		</div>
 
-		<!-- 스크롤 영역(섹션들) -->
 		<div class="flex-1 px-4 pb-4">
-			<!-- 섹션들을 묶을 컨테이너 -->
-			<div class="space-y-6 mt-2">
-				<!-- 기본 정보 섹션 -->
-				<div
-					id="basic"
-					class="space-y-2 border-b border-gray-100 pb-4"
-				>
-					<h3 class="text-sm font-semibold text-gray-700 flex items-center gap-2">
-						<MapPin size={16} class="text-blue-500" />
-						기본 정보
-					</h3>
-					<div class="space-y-1">
-						{#if bookmark.business_registration_number}
-							<p class="text-sm text-gray-600 flex items-center justify-between">
-								<span>사업자 등록 번호</span>
-								<span>{bookmark.business_registration_number}</span>
-							</p>
-						{/if}
-						{#if bookmark.corporate_number}
-							<p class="text-sm text-gray-600 flex items-center justify-between">
-								<span>법인등록번호</span>
-								<span>{bookmark.corporate_number}</span>
-							</p>
-						{/if}
-						{#if bookmark.representative}
-							<p class="text-sm text-gray-600 flex items-center justify-between">
-								<span>대표이사</span>
-								<span>
-									{bookmark.representative}
-									{#if bookmark.birth_year}
-										({bookmark.birth_year})
-									{/if}
-								</span>
-							</p>
-						{/if}
-						{#if bookmark.address}
-							<p class="text-sm text-gray-600 flex items-center justify-between">
-								<span>주소</span>
-								<span>{bookmark.address}</span>
-							</p>
-						{/if}
-						{#if bookmark.cri_company_size}
-							<p class="text-sm text-gray-600 flex items-center justify-between">
-								<span>기업규모</span>
-								<span>{bookmark.cri_company_size}</span>
-							</p>
-						{/if}
-						{#if bookmark.phone_number}
-							<p class="text-sm text-gray-600 flex items-center justify-between">
-								<span>전화번호</span>
-								<span>{bookmark.phone_number}</span>
-							</p>
-						{/if}
-						{#if bookmark.establishment_date}
-							<p class="text-sm text-gray-600 flex items-center justify-between">
-								<span>설립일</span>
-								<span>{String(bookmark.establishment_date).replace(/(\d{4})(\d{2})(\d{2})/, '$1-$2-$3')}</span>
-							</p>
-						{/if}
-						{#if bookmark.employee_count}
-							<p class="text-sm text-gray-600 flex items-center justify-between">
-								<span>임직원 수</span>
-								<span>{bookmark.employee_count}명</span>
-							</p>
-						{/if}
-						{#if bookmark.fiscal_month}
-							<p class="text-sm text-gray-600 flex items-center justify-between">
-								<span>결산월</span>
-								<span>{bookmark.fiscal_month}월</span>
-							</p>
-						{/if}
-						{#if bookmark.main_bank}
-							<p class="text-sm text-gray-600 flex items-center justify-between">
-								<span>주거래은행</span>
-								<span>{bookmark.main_bank}</span>
-							</p>
-						{/if}
-						{#if bookmark.website}
-							<p class="text-sm text-gray-600 flex items-center justify-between">
-								<span>웹사이트</span>
-								<a
-									href={bookmark.website.startsWith("http") ? bookmark.website : `https://${bookmark.website}`}
-									target="_blank"
-									rel="noopener noreferrer"
-									class="text-blue-500 underline"
-								>
-									{bookmark.website.startsWith("http") ? bookmark.website : `https://${bookmark.website}`}
-								</a>
-							</p>
-						{/if}
-					</div>
-				</div>
-
-				<!-- 업종 정보 섹션 -->
-				{#if hasIndustryInfo(bookmark)}
-				<div
-					id="industry"
-					class="space-y-2 border-b border-gray-100 pb-4"
-				>
-					<h3 class="text-sm font-semibold text-gray-700 flex items-center gap-2">
-						<Briefcase size={16} class="text-blue-500" />
-						업종 정보
-					</h3>
-					<div class="space-y-1">
-						{#if bookmark.industry}
-							<p class="text-sm text-gray-600 flex items-center justify-between">
-								<span>업종</span>
-								<span>{bookmark.industry}</span>
-							</p>
-						{/if}
-						{#if bookmark.main_product}
-							<p class="text-sm text-gray-600 flex items-center justify-between">
-								<span>주요상품</span>
-								<span>{bookmark.main_product}</span>
-							</p>
-						{/if}
-					</div>
-				</div>
-				{/if}
-
-				<!-- 연구소 정보 섹션 -->
-				{#if hasLabInfo(bookmark)}
-				<div
-					id="lab"
-					class="space-y-2 border-b border-gray-100 pb-4"
-				>
-					<h3 class="text-sm font-semibold text-gray-700 flex items-center gap-2">
-						<Microscope size={16} class="text-indigo-500" />
-						연구소 정보
-					</h3>
-					<div class="space-y-1">
-						{#if bookmark.lab_name}
-							<p class="text-sm text-gray-600 flex items-center justify-between">
-								<span>연구소명</span>
-								<span>{bookmark.lab_name}</span>
-							</p>
-						{/if}
-						{#if bookmark.research_field}
-							<p class="text-sm text-gray-600 flex items-center justify-between">
-								<span>연구분야</span>
-								<span>{bookmark.research_field}</span>
-							</p>
-						{/if}
-						{#if bookmark.first_approval_date}
-							<p class="text-sm text-gray-600 flex items-center justify-between">
-								<span>최초인정일</span>
-								<span>{bookmark.first_approval_date}</span>
-							</p>
-						{/if}
-						{#if bookmark.lab_location}
-							<p class="text-sm text-gray-600 flex items-center justify-between">
-								<span>연구소 위치</span>
-								<span>{bookmark.lab_location}</span>
-							</p>
-						{/if}
-						{#if bookmark.division}
-							<p class="text-sm text-gray-600 flex items-center justify-between">
-								<span>연구소 구분</span>
-								<span>{bookmark.division}</span>
-							</p>
-						{/if}
-					</div>
-				</div>
-				{/if}
-
-				<!-- 인증 정보 섹션 -->
-				{#if hasCertificationInfo(bookmark)}
-				<div
-					id="certification"
-					class="space-y-2 border-b border-gray-100 pb-4"
-				>
-					<h3 class="text-sm font-semibold text-gray-700 flex items-center gap-2">
-						<Award size={16} class="text-purple-500" />
-						인증 정보
-					</h3>
-					<div class="space-y-1">
-						{#if bookmark.sme_type}
-							<p class="text-sm text-gray-600 flex items-center justify-between">
-								<span>인증 유형</span>
-								<span>{bookmark.sme_type}</span>
-							</p>
-						{/if}
-						{#if bookmark.certificate_expiry_date}
-							<p class="text-sm text-gray-600 flex items-center justify-between">
-								<span>인증 만료일</span>
-								<span>{bookmark.certificate_expiry_date}</span>
-							</p>
-						{/if}
-						{#if bookmark.venture_confirmation_type}
-							<p class="text-sm text-gray-600 flex items-center justify-between">
-								<span>벤처기업 인증</span>
-								<span>{bookmark.venture_confirmation_type}</span>
-							</p>
-						{/if}
-						{#if bookmark.venture_valid_from || bookmark.venture_valid_until || bookmark.confirming_authority || bookmark.new_reconfirmation_code}
-							<p class="text-sm text-gray-600 flex items-center justify-between">
-								<span>벤처 유효기간</span>
-								<span>{bookmark.venture_valid_from} ~ {bookmark.venture_valid_until}</span>
-							</p>
-							<p class="text-sm text-gray-600 flex items-center justify-between">
-								<span>확인기관</span>
-								<span>{bookmark.confirming_authority}</span>
-							</p>
-							<p class="text-sm text-gray-600 flex items-center justify-between">
-								<span>재확인코드</span>
-								<span>{bookmark.new_reconfirmation_code}</span>
-							</p>
-						{/if}
-					</div>
-				</div>
-				{/if}
-
-				<!-- 주주 정보 섹션 -->
-				{#if hasShareholderInfo(bookmark)}
-				<div
-					id="shareholders"
-					class="space-y-2 border-b border-gray-100 pb-4"
-				>
-					<h3 class="text-sm font-semibold text-gray-700 flex items-center gap-2">
-						<Users size={16} class="text-yellow-500" />
-						주주 정보
-					</h3>
-					<div class="space-y-1">
-						{#if bookmark.family_shareholder_yn}
-							<p class="text-sm text-gray-600 flex items-center justify-between">
-								<span>가족주주</span>
-								<span>{bookmark.family_shareholder_yn === 'Y' ? '있음' : '없음'}</span>
-							</p>
-						{/if}
-						{#if bookmark.external_shareholder_yn}
-							<p class="text-sm text-gray-600 flex items-center justify-between">
-								<span>외부주주</span>
-								<span>{bookmark.external_shareholder_yn === 'Y' ? '있음' : '없음'}</span>
-							</p>
-						{/if}
-					</div>
-				</div>
-				{/if}
-
-				<script>
-					$: years = financialData && Array.isArray(financialData) 
-						? [...new Set(financialData.map(d => String(d.year)))].sort().reverse()
-						: [];
-				</script>
-				
-				{#if financialData && Array.isArray(financialData) && financialData.length > 0}
-				<div class="space-y-4 border-b border-gray-100 pb-4">
-					<div class="space-y-2">
-					<h3 class="text-sm font-semibold text-gray-700 flex items-center gap-2">
-						<DollarSign size={16} class="text-green-500" />
-						재무분석 <div class="inline-block text-xs text-gray-500">단위: 백만원</div>
-					</h3>
-					<table class="w-full text-sm">
-						<thead>
-						<tr class="border-b border-gray-200">
-							<th class="text-left px-2 font-medium text-gray-600 py-2">
-							<div class="inline-block ext-sm font-semibold text-gray-700 flex items-center gap-2">손익계산서</div>
-							</th>
-							{#each years as year}
-							<th class="w-1/5 text-right px-2 py-2 font-medium text-gray-600 whitespace-nowrap">
-								{year}년
-							</th>
-							{/each}
-						</tr>
-						</thead>
-						<tbody class="text-gray-600">
-						{#each [
-							{ name: '매출액', key: 'revenue' },
-							{ name: '매출원가', key: 'sales_cost' },
-							{ name: '매출총이익', key: 'sales_profit' },
-							{ name: '판매관리비', key: 'sga' },
-							{ name: '영업이익', key: 'operating_income' },
-							{ name: '기타수익', key: 'other_income' },
-							{ name: '기타비용', key: 'other_expenses' },
-							{ name: '세전이익', key: 'pre_tax_income' },
-							{ name: '법인세', key: 'corporate_tax' },
-							{ name: '당기순이익', key: 'net_income' }
-						] as metric}
-							<tr class="border-b border-gray-100 hover:bg-gray-50">
-							<td class="w-1/3 px-2 py-2 font-medium">{metric.name}</td>
-							{#each years as year}
-								{@const yearData = financialData.find(d => String(d.year) === year)}
-								<td class="w-1/5 text-right px-2 py-2">
-								{#if yearData && yearData[metric.key] != null}
-									<span class={`${yearData[metric.key] < 0 ? 'text-red-500' : ''} whitespace-nowrap`}>
-									{new Intl.NumberFormat('ko-KR').format(yearData[metric.key])}
-									</span>
-								{:else}
-									-
-								{/if}
-								</td>
-							{/each}
-							</tr>
-						{/each}
-						</tbody>
-					</table>
-					</div>
-				
-					<!-- 재무상태표 섹션 -->
-					<div class="space-y-2">
-					<table class="w-full text-sm">
-						<thead>
-						<tr class="border-b border-gray-200">
-							<th class="text-left px-2 font-medium text-gray-600 py-2">
-							<div class="inline-block ext-sm font-semibold text-gray-700 flex items-center gap-2">재무상태표</div>
-							</th>
-							{#each years as year}
-							<th class="w-1/5 text-right px-2 py-2 font-medium text-gray-600 whitespace-nowrap">
-								{year}년
-							</th>
-							{/each}
-						</tr>
-						</thead>
-						<tbody class="text-gray-600">
-						<!-- 자산 -->
-						<tr class="bg-gray-50">
-							<td colspan={years.length + 1} class="px-2 py-1 font-semibold">자산</td>
-						</tr>
-						{#each [
-							{ name: '유동자산', key: 'current_assets' },
-							{ name: '• 당좌자산', key: 'quick_assets' },
-							{ name: '• 재고자산', key: 'inventory' },
-							{ name: '비유동자산', key: 'non_current_assets' },
-							{ name: '• 투자자산', key: 'investment_assets' },
-							{ name: '• 유형자산', key: 'tangible_assets' },
-							{ name: '• 무형자산', key: 'intangible_assets' }
-						] as metric}
-							<tr class="border-b border-gray-100 hover:bg-gray-50">
-							<td class="w-1/3 px-2 py-2 font-medium">{metric.name}</td>
-							{#each years as year}
-								{@const yearData = financialData.find(d => String(d.year) === year)}
-								<td class="w-1/5 text-right px-2 py-2">
-								{#if yearData && yearData[metric.key] != null}
-									<span class="whitespace-nowrap">
-									{new Intl.NumberFormat('ko-KR').format(yearData[metric.key])}
-									</span>
-								{:else}
-									-
-								{/if}
-								</td>
-							{/each}
-							</tr>
-						{/each}
-						
-						<!-- 부채와 자본 -->
-						<tr class="bg-gray-50">
-							<td colspan={years.length + 1} class="px-2 py-1 font-semibold">부채와 자본</td>
-						</tr>
-						{#each [
-							{ name: '유동부채', key: 'current_liabilities' },
-							{ name: '비유동부채', key: 'non_current_liabilities' },
-							{ name: '자본금', key: 'capital_stock' },
-							{ name: '총이익잉여금', key: 'retained_earnings' }
-						] as metric}
-							<tr class="border-b border-gray-100 hover:bg-gray-50">
-							<td class="w-1/3 px-2 py-2 font-medium">{metric.name}</td>
-							{#each years as year}
-								{@const yearData = financialData.find(d => String(d.year) === year)}
-								<td class="w-1/5 text-right px-2 py-2">
-								{#if yearData && yearData[metric.key] != null}
-									<span class="whitespace-nowrap">
-									{new Intl.NumberFormat('ko-KR').format(yearData[metric.key])}
-									</span>
-								{:else}
-									-
-								{/if}
-								</td>
-							{/each}
-							</tr>
-						{/each}
-						</tbody>
-					</table>
-					</div>
-				</div>
-				{/if}
-			</div>
+			<CompanyDetail company={bookmark} onClose={() => null} />				
 		</div>
 	{:else}
 		<Spinner />
@@ -1253,13 +841,13 @@
 
 		<div
 			class="{largeScreen ? 'flex-shrink-0 w-72 max-w-72' : 'flex-1'}
-		flex
-		py-2
-		rounded-2xl
-		border
-		border-gray-50
-		h-full
-		dark:border-gray-850"
+			flex
+			py-2
+			rounded-2xl
+			border
+			border-gray-50
+			h-full
+			dark:border-gray-850"
 		>
 			<div class=" flex flex-col w-full space-x-2 rounded-lg h-full">
 				<div class="w-full h-full flex flex-col">
