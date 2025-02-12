@@ -3,7 +3,7 @@
 	import { slide } from 'svelte/transition';
 	import ChevronDown from '$lib/components/icons/ChevronDown.svelte';
 	import ChevronUp from '$lib/components/icons/ChevronUp.svelte';
-	import CompanyDetail from '../corpinfo/CompanyDetail.svelte';
+	import CompanyDetail from '../company/CompanyDetail.svelte';
 
 	interface SearchResult {
 		smtp_id: string;

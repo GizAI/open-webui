@@ -29,7 +29,7 @@
 	import { WEBUI_API_BASE_URL } from '$lib/constants';
 	import { goto } from '$app/navigation';
 	import ActionButtons from '../common/ActionButtons.svelte';
-	import CompanyDetail from '../corpinfo/CompanyDetail.svelte';
+	import CompanyDetail from '../company/CompanyDetail.svelte';
 
 
 	let largeScreen = true;

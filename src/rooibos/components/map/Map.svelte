@@ -5,14 +5,14 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { get } from 'svelte/store';
-	import SearchBar from './SearchBar.svelte';
-	import { excludedGroupIds, onFilterChange } from './filterdata';
+	import SearchBar from '../corpsearch/SearchBar.svelte';
+	import { excludedGroupIds, onFilterChange } from '../corpsearch/filterdata';
 	import { mobile } from '$lib/stores';
 	import { showSidebar, user, WEBUI_NAME } from '$lib/stores';
 	import { WEBUI_API_BASE_URL } from '$lib/constants';
-	import CorpInfo from '../corpinfo/CorpInfo.svelte';
 	import { getMarkerContent } from './marker';
-	import CompanyList from './CompanyList.svelte';
+	import CompanyList from '../company/CompanyList.svelte';
+	import CompanyInfo from '../company/CompanyInfo.svelte';
 
 	type MapInstance = {
 		map: any;
@@ -600,7 +600,7 @@
 
 {#if showCompanyInfo && companyInfo}
 	<div class:sidebar-visible={$showSidebar}>
-		<CorpInfo {companyInfo} onClose={closeCompanyInfo} bind:isFullscreen />
+		<CompanyInfo {companyInfo} onClose={closeCompanyInfo} bind:isFullscreen />
 	</div>
 {/if}
 
