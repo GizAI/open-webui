@@ -699,14 +699,14 @@ Cluster.prototype = {
 	 * 클러스터를 구성하는 마커를 노출합니다. 이때에는 클러스터 마커를 노출하지 않습니다.
 	 * @private
 	 */
-	_showMember: function (membersToShow) {
-		var markers = membersToShow || this._clusterMember;
-		// 이벤트 발생을 비동기로 처리하여 첫 클릭 시 전체 목록으로 갱신되는 문제를 방지함
-		setTimeout(() => {
+	_showMember: function () {
+		if (!this._clicked) return;
+		var markers = this.getClusterMember();
+		setTimeout(function () {
 			var event = new CustomEvent('clusterClick', { detail: { markers: markers } });
 			window.dispatchEvent(event);
 		}, 0);
-	},
+	},	
 
 	enableClickZoom: function () {
 		if (this._relation) return;

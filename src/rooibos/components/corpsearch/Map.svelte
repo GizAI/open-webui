@@ -6,13 +6,13 @@
 	import { onMount } from 'svelte';
 	import { get } from 'svelte/store';
 	import SearchBar from './SearchBar.svelte';
-	import { excludedGroupIds, filterGroups, onFilterChange } from './filterdata';
+	import { excludedGroupIds, onFilterChange } from './filterdata';
 	import { mobile } from '$lib/stores';
 	import { showSidebar, user, WEBUI_NAME } from '$lib/stores';
-	import SearchCompanyList from './SearchCompanyList.svelte';
 	import { WEBUI_API_BASE_URL } from '$lib/constants';
 	import CorpInfo from '../corpinfo/CorpInfo.svelte';
 	import { getMarkerContent } from './marker';
+	import CompanyList from './CompanyList.svelte';
 
 	type MapInstance = {
 		map: any;
@@ -523,7 +523,7 @@
 
 		initialize();
 
-    window.addEventListener('clusterClick', (e: CustomEvent) => {
+    	window.addEventListener('clusterClick', (e: CustomEvent) => {
 			companyList =  e.detail.markers.map(marker => marker.company_info);
 			resultViewMode = 'list';
 			showCompanyInfo = false;
@@ -550,7 +550,7 @@
 
 		if (selectedMarker) {
 			selectedMarker.setIcon({
-				content: getMarkerContent(selectedMarker.searchResult),
+				content: getMarkerContent(selectedMarker.company_info),
 				anchor: new naver.maps.Point(50, 30)
 			});
 			selectedMarker = null;
@@ -612,7 +612,7 @@
 
 {#if resultViewMode != 'map'}
 	<div class="company-list-wrapper w-full" class:sidebar-visible={$showSidebar}>
-		<SearchCompanyList
+		<CompanyList
 			{companyList}
 			onResultClick={handleResultClick}
 			bind:isFullscreen
