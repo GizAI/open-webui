@@ -4,6 +4,7 @@ from rooibos.config_extension import init_extended_config
 from rooibos.routers import (
     corpsearch,
     corpbookmarks,
+    categories,
 )
 class CustomHeaderMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request, call_next):
@@ -21,6 +22,7 @@ def extend_app(app: FastAPI):
 
     app.include_router(corpsearch.router, prefix="/api/v1/rooibos/corpsearch", tags=["corpsearch"])
     app.include_router(corpbookmarks.router, prefix="/api/v1/rooibos/corpbookmarks", tags=["corpbookmarks"])
+    app.include_router(categories.router, prefix="/api/v1/rooibos/categories", tags=["categories"])
 
     # Initialize extended configurations
     init_extended_config(app)
