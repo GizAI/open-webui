@@ -152,7 +152,11 @@
 	});
 
 	function toggleFullscreen(smtp_id: string) {
-		fullscreenStates = { ...fullscreenStates, [smtp_id]: !fullscreenStates[smtp_id] };
+		if (fullscreenStates[smtp_id]) {
+			fullscreenStates = { ...fullscreenStates, [smtp_id]: false };
+		} else {
+			fullscreenStates = { [smtp_id]: true };
+		}
 	}
 
 	function closeCompanyInfo(smtp_id: string) {
@@ -165,13 +169,13 @@
 	 class:sidebar-margin={$showSidebar}
 	 class:mobile-layout={$mobile}>
 	<div class="p-4 pb-0 bg-gray-80 border-gray-300 flex flex-wrap items-center gap-2">
-		<input type="text" placeholder="키워드" bind:value={filters.keyword} class="filter-input" />
-		<input type="number" placeholder="임직원 수 (몇 명 이상)" bind:value={filters.minEmployees} class="filter-input" />
-		<input type="text" placeholder="업종" bind:value={filters.industry} class="filter-input" />
 		<select bind:value={filters.radius} class="filter-input">
 			<option value="near">가까운거리</option>
 			<option value="far">먼거리</option>
 		</select>
+		<input type="text" placeholder="키워드" bind:value={filters.keyword} class="filter-input" />
+		<input type="number" placeholder="임직원 수 (몇 명 이상)" bind:value={filters.minEmployees} class="filter-input" />
+		<input type="text" placeholder="업종" bind:value={filters.industry} class="filter-input" />
 		<input type="text" placeholder="인증/유형" bind:value={filters.smeType} class="filter-input" />
 		<input type="text" placeholder="연구소명/분야" bind:value={filters.labName} class="filter-input" />
 	</div>
@@ -202,7 +206,7 @@
 									{/if}
 									{#if result.representative && !fullscreenStates[result.smtp_id]}
 										<div class="text-sm text-gray-500 mt-1">
-											대표자: {result.representative} | 거리: {result.distance_from_location} m
+											대표자: {result.representative} | 거리: {result.distance_from_user} m
 										</div>
 									{/if}
 								</div>
@@ -210,9 +214,12 @@
 						</div>
 						{#if fullscreenStates[result.smtp_id]}
 							<div transition:slide class="border-t border-gray-200">
-								<CompanyDetail company={result} onClose={() => closeCompanyInfo(result.smtp_id)} />
+								<div class="detail-scroll-container">
+									<CompanyDetail company={result} onClose={() => closeCompanyInfo(result.smtp_id)} />
+								</div>
 							</div>
 						{/if}
+
 					</div>
 				</li>
 			{/each}
@@ -221,6 +228,10 @@
 </div>
 
 <style>
+	.detail-scroll-container {
+		max-height: 400px;
+		overflow-y: auto;
+	}
 	.company-list-wrapper {
 		display: flex;
 		flex-direction: column;
