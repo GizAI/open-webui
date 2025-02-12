@@ -188,7 +188,7 @@
 	let selectedMarker: any = null;
 	let mapInstance: MapInstance | null = null;
 	let searchResults: SearchResult[] = [];
-  let companyList: SearchResult[] = [];
+    let companyList: SearchResult[] = [];
 	let location: Location | null = null;
 	let error: string | null = null;
 	let loading = true;
@@ -201,7 +201,7 @@
 	let showCompanyInfo = false;
 	let zoom = 18;
 	let isFullscreen = false;
-  let markerClustering: any;
+    let markerClustering: any;
 	let companyInfo: CompanyInfo = {
 		id: '',
 		company_id: '',
@@ -322,12 +322,7 @@
 		return marker;
 	}
 
-	export const handleSearch = async (searchValue: string, filters: any) => {
-		console.log('Searching for:', searchValue, 'with filters:', filters);
-
-		activeFilterGroup = null;
-		isListIconVisible = true;
-
+	async function fetchSearchResults(searchValue: string, filters: any): Promise<SearchResult[]> {
 		try {
 			const currentUser = get(user);
 			const queryParams = new URLSearchParams({
@@ -357,7 +352,20 @@
 			}
 
 			const data = await response.json();
-			searchResults = data.data;
+			return data.data;
+		} catch (error) {
+			console.error('서버 통신 중 오류 발생:', error);
+			throw error;
+		}
+	}
+
+	export const handleSearch = async (searchValue: string, filters: any) => {
+		console.log('Searching for:', searchValue, 'with filters:', filters);
+		activeFilterGroup = null;
+		isListIconVisible = true;
+
+		try {
+			searchResults = await fetchSearchResults(searchValue, filters);
 
 			if (!searchResults.length) {
 				clearMarkers();
@@ -447,33 +455,24 @@
 		}
 	};
 
-	const handleSearchResultClick = (result: SearchResult) => {
+	const handleSearchResults = (results: SearchResult | SearchResult[]) => {
 		if (!mapInstance) return;
 
-		const point = createLatLng(result.latitude, result.longitude);
-		mapInstance.map.setCenter(point);
-		mapInstance.map.setZoom(zoom);
-
-		const marker = createCompanyMarker(result, 300, true);
-		mapInstance.companyMarkers.push(marker);
-	};
-
-	const handleSearchAddressListClick = (searchAddressList: SearchResult[]) => {
-		if (!mapInstance) return;
-
-		const firstResult = searchAddressList[0];
+		const resultArray = Array.isArray(results) ? results : [results];
+		const firstResult = resultArray[0];
 		const point = createLatLng(firstResult.latitude, firstResult.longitude);
 
 		mapInstance.map.setCenter(point);
 		mapInstance.map.setZoom(zoom);
 
-		searchAddressList.forEach((result) => {
-			if (mapInstance) {
-				const marker = createCompanyMarker(result, 300, false);
-				mapInstance.companyMarkers.push(marker);
-			}
+		const isSingle = !Array.isArray(results);
+
+		resultArray.forEach((result) => {
+			const marker = createCompanyMarker(result, 300, isSingle);
+			mapInstance.companyMarkers.push(marker);
 		});
 	};
+
 
 	const handleShowCompanyListClick = (viewMode: any) => {
 		resultViewMode = viewMode;
@@ -569,7 +568,6 @@
 </svelte:head>
 
 {#if !($showSidebar && $mobile) && (!showCompanyInfo || !isFullscreen)}
-
 	<div class="search-bar-wrapper w-full" class:sidebar-visible={$showSidebar}>
 		<SearchBar
 			onSearch={handleSearch}
@@ -583,8 +581,8 @@
 			{resultViewMode}
 			on:showCompanyInfo={(e) => (showCompanyInfo = e.detail)}
 			on:filterGroupChange={(e) => (activeFilterGroup = e.detail)}
-			on:searchResultClick={(e) => handleSearchResultClick(e.detail)}
-			on:addressResultClick={(e) => handleSearchAddressListClick(e.detail)}
+			on:searchResultClick={(e) => handleSearchResults(e.detail)}
+			on:addressResultClick={(e) => handleSearchResults(e.detail)}
 			on:showCompanyListClick={(e) => handleShowCompanyListClick(e.detail)}
 		/>
 	</div>
