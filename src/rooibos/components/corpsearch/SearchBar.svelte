@@ -86,14 +86,15 @@
 		searchByRepresentative = false;
 		searchByBizNumber = false;
 		searchByLocation = false;
+		activeFilterGroup = null;
 		isSearchMode = !isSearchMode;
 		if (!isSearchMode) {
 			searchValue = '';
 			searchResults = [];
 			addressList = [];
 		}
-    resultViewMode = 'list';
-    toggleViewMode();
+		resultViewMode = 'list';
+		toggleViewMode();
 	}
 
 	// If '지명' is selected, clear other checkboxes.
@@ -269,7 +270,7 @@
 
 	function toggleViewMode() {
 		resultViewMode = resultViewMode === 'map' ? 'list' : 'map';
-    dispatch('showCompanyListClick', resultViewMode);
+    	dispatch('showCompanyListClick', resultViewMode);
 	}
 </script>
 

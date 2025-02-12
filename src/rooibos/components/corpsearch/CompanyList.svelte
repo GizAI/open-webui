@@ -84,6 +84,7 @@
 	}
 
 	import { showSidebar, mobile } from '$lib/stores';
+	import ActionButtons from '../common/ActionButtons.svelte';
 	export let companyList: SearchResult[] = [];
 
 	let fullscreenStates: Record<string, boolean> = {};
@@ -93,12 +94,11 @@
 		keyword: '',
 		industry: '',
 		radius: 'near',
-		sortBy: 'distanceAscending', // 기본 정렬: 가까운거리 순
+		sortBy: 'distanceAscending',
 		smeType: false,
 		labName: false
 	};
 
-	// 필터링 로직
 	$: filteredCompanies = companyList.filter(company => {
 		let pass = true;
 		if (filters.keyword) {
@@ -138,7 +138,6 @@
 		return pass;
 	});
 
-	// 정렬 로직
 	$: sortedCompanies = [...filteredCompanies].sort((a, b) => {
 		switch (filters.sortBy) {
 			case 'distanceAscending':
@@ -213,30 +212,34 @@
 							on:click={() => toggleFullscreen(result.smtp_id)}
 							on:keydown={(e) => { if(e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleFullscreen(result.smtp_id); } }}
 							class="w-full text-left p-4 hover:bg-gray-50 transition-colors duration-200">
-							<div class="flex items-start justify-between">
-								<div class="flex-1">
-									<div class="flex items-center">
-										<span class="font-semibold text-gray-900">{result.company_name}</span>
-										<span class="ml-1">({result.business_registration_number})</span>
-										<button type="button" on:click|stopPropagation={() => toggleFullscreen(result.smtp_id)} class="ml-2">
-											{#if fullscreenStates[result.smtp_id]}
-												<ChevronUp size={20} strokeWidth="2.5"/>
-											{:else}
-												<ChevronDown size={20} strokeWidth="2.5"/>
-											{/if}
-										</button>
-									</div>
-									{#if result.address && !fullscreenStates[result.smtp_id]}
-										<div class="text-sm text-gray-600 mt-1.5">{result.address}</div>
-									{/if}
-									{#if result.representative && !fullscreenStates[result.smtp_id]}
-										<div class="text-sm text-gray-500 mt-1">
-											대표자: {result.representative} | 거리: {result.distance_from_user} m
-										</div>
-									{/if}
+							<div class="flex items-center justify-between">
+								<div class="flex items-center">
+									<span class="font-semibold text-gray-900">{result.company_name}</span>
+									<span class="ml-1">({result.business_registration_number})</span>
+									<button type="button" on:click|stopPropagation={() => toggleFullscreen(result.smtp_id)} class="ml-2">
+										{#if fullscreenStates[result.smtp_id]}
+											<ChevronUp size={20} strokeWidth="2.5"/>
+										{:else}
+											<ChevronDown size={20} strokeWidth="2.5"/>
+										{/if}
+									</button>
 								</div>
+								{#if fullscreenStates[result.smtp_id]}
+									<ActionButtons
+									companyInfo={result}
+									/>
+								{/if}
 							</div>
+							{#if result.address && !fullscreenStates[result.smtp_id]}
+								<div class="text-sm text-gray-600 mt-1.5">{result.address}</div>
+							{/if}
+							{#if result.representative && !fullscreenStates[result.smtp_id]}
+								<div class="text-sm text-gray-500 mt-1">
+									대표자: {result.representative} | 거리: {result.distance_from_user} m
+								</div>
+							{/if}
 						</div>
+
 						{#if fullscreenStates[result.smtp_id]}
 							<div transition:slide class="border-t border-gray-200">
 								<div class="detail-scroll-container">

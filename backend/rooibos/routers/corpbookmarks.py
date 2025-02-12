@@ -167,7 +167,7 @@ async def get_corpbookmark_by_id(id: str):
     try:
         sql_query = """        
         SELECT DISTINCT
-            f.id,
+            f.id as bookmark_id,
             f.created_at,
             f.updated_at,
             f.company_id,
