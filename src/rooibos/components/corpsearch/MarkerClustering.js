@@ -1,18 +1,3 @@
-/**
- * Copyright 2016 NAVER Corp.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 const naver = window.naver;
 /**
  * 마커 클러스터링을 정의합니다.
@@ -428,20 +413,30 @@ naver.maps.Util.ClassExtend(MarkerClustering, naver.maps.OverlayView, {
 	 * @return {Cluster} 클러스터
 	 */
 	_getClosestCluster: function (position) {
-		var proj = this.getProjection(),
-			clusters = this._clusters,
-			closestCluster = null,
-			distance = Infinity;
+		var map = this.getMap();
+		var proj = this.getProjection();
+		var clusters = this._clusters;
+		var closestCluster = null;
+		var minPixelDistance = Infinity;
+		var currentZoom = map.getZoom();
+		var gridSize = this.getGridSize();
+		var maxZoom = this.getMaxZoom();
+		// 줌 인 시에는 매우 작은 임계값(예: 2px)으로 설정하여,
+		// 마커들이 거의 정확하게 겹쳐있지 않으면 클러스터로 묶이지 않도록 합니다.
+		var threshold = currentZoom >= maxZoom ? 2 : gridSize / 2;
+		var markerPx = proj.fromCoordToOffset(position);
 
 		for (var i = 0, ii = clusters.length; i < ii; i++) {
-			var cluster = clusters[i],
-				center = cluster.getCenter();
-
+			var cluster = clusters[i];
 			if (cluster.isInBounds(position)) {
-				var delta = proj.getDistance(center, position);
+				var center = cluster.getCenter();
+				var clusterPx = proj.fromCoordToOffset(center);
+				var dx = markerPx.x - clusterPx.x;
+				var dy = markerPx.y - clusterPx.y;
+				var pixelDistance = Math.sqrt(dx * dx + dy * dy);
 
-				if (delta < distance) {
-					distance = delta;
+				if (pixelDistance < threshold && pixelDistance < minPixelDistance) {
+					minPixelDistance = pixelDistance;
 					closestCluster = cluster;
 				}
 			}
@@ -454,6 +449,9 @@ naver.maps.Util.ClassExtend(MarkerClustering, naver.maps.OverlayView, {
 
 		return closestCluster;
 	},
+
+
+
 
 	/**
 	 * 지도의 Idle 상태 이벤트 핸들러입니다.
@@ -623,27 +621,52 @@ Cluster.prototype = {
 	 * 조건에 따라 클러스터 마커를 노출하거나, 노출하지 않습니다.
 	 */
 	checkByZoomAndMinClusterSize: function () {
-		// 클러스터가 이미 클릭되어 개별 마커를 노출한 경우엔 재설정하지 않음
-		if (this._clicked) {
-			this._showMember();
+		var clusterer   = this._markerClusterer,
+			maxZoom     = clusterer.getMaxZoom(),
+			currentZoom = clusterer.getMap().getZoom(),
+			map         = clusterer.getMap();
+	
+		// 단일 마커인 경우: 항상 개별 마커를 표시
+		if (this.getCount() === 1) {
+			var marker = this._clusterMember[0];
+			marker.setMap(map);
+			if (this._clusterMarker) {
+				this._clusterMarker.setMap(null);
+			}
 			return;
 		}
-
-		var clusterer = this._markerClusterer,
-			minClusterSize = clusterer.getMinClusterSize(),
-			maxZoom = clusterer.getMaxZoom(),
-			currentZoom = clusterer.getMap().getZoom();
-
-		if (this.getCount() < minClusterSize) {
-			// this._showMember();
+	
+		// 줌인 시: 현재 줌 레벨이 maxZoom 이상일 때
+		if (currentZoom >= maxZoom) {
+			// 클러스터 내 마커 수가 10개 미만이면 개별 마커 표시
+			if (this.getCount() < 10) {
+				this._clusterMember.forEach(function (marker) {
+					marker.setMap(map);
+				});
+				if (this._clusterMarker) {
+					this._clusterMarker.setMap(null);
+				}
+			} else {
+				// 클러스터 내 마커 수가 10개 이상이면 기존 클러스터(숫자 마커) 유지
+				this._clusterMember.forEach(function (marker) {
+					marker.setMap(null);
+				});
+				if (this._clusterMarker && !this._clusterMarker.getMap()) {
+					this._clusterMarker.setMap(map);
+				}
+			}
 		} else {
-			this._hideMember();
-
-			if (maxZoom <= currentZoom) {
-				this._showMember();
+			// 줌 아웃 시에는 항상 개별 마커 숨기고 클러스터(숫자 마커) 표시
+			this._clusterMember.forEach(function (marker) {
+				marker.setMap(null);
+			});
+			if (this._clusterMarker && !this._clusterMarker.getMap()) {
+				this._clusterMarker.setMap(map);
 			}
 		}
 	},
+	
+	
 
 	/**
 	 * 클러스터를 구성하는 마커 수를 갱신합니다.

@@ -1,0 +1,403 @@
+<!-- companydetail.svelte -->
+<script lang="ts">
+	import { MapPin, Briefcase, Microscope, Award, Users, DollarSign, ChevronDown, ChevronUp } from 'lucide-svelte';
+	import { goto } from '$app/navigation';
+  
+	// 회사 정보(혹은 북마크)와 재무 데이터를 prop으로 받습니다.
+	export let company: any;
+	export let financialData: any = null;
+	export let onClose: () => void;
+  
+	// 리스트 모드 여부 (기본값 false – 모달/전체보기 모드)
+	export let isListMode: boolean = false;
+  
+	// 리스트 모드일 경우 내부 토글 상태 (기본 collapsed)
+	let expanded = false;
+	function toggleExpand() {
+		expanded = !expanded;
+	}
+  
+	// 헬퍼 함수들
+	const hasBasicInfo = (c: any) =>
+	  c.business_registration_number ||
+	  c.corporate_number ||
+	  c.representative ||
+	  c.address ||
+	  c.cri_company_size ||
+	  c.phone_number ||
+	  c.establishment_date ||
+	  c.employee_count ||
+	  c.fiscal_month ||
+	  c.main_bank ||
+	  c.website;
+  
+	const hasIndustryInfo = (c: any) =>
+	  c.industry || c.main_product;
+  
+	const hasLabInfo = (c: any) =>
+	  c.lab_name ||
+	  c.research_field ||
+	  c.first_approval_date ||
+	  c.lab_location ||
+	  c.division;
+  
+	const hasCertificationInfo = (c: any) =>
+	  c.sme_type ||
+	  c.certificate_expiry_date ||
+	  c.venture_confirmation_type ||
+	  c.venture_valid_from;
+  
+	const hasShareholderInfo = (c: any) =>
+	  c.family_shareholder_yn === 'Y' || c.external_shareholder_yn === 'Y';
+  
+	function formatDate(dateStr: any) {
+	  if (!dateStr) return '';
+	  return String(dateStr).replace(/(\d{4})(\d{2})(\d{2})/, '$1-$2-$3');
+	}
+  
+	// 재무 데이터에서 연도 목록 계산 (내림차순 정렬)
+	$: years = financialData && Array.isArray(financialData)
+		 ? [...new Set(financialData.map(d => String(d.year)))].sort().reverse()
+		 : [];
+</script>
+
+<div class="company-info-wrapper active flex flex-col w-full overflow-hidden">
+  <div class="flex-1 px-4 pb-4">
+    <div class="space-y-6 mt-2">
+      {#if hasBasicInfo(company)}
+      <div id="basic" class="space-y-2 border-b border-gray-100 pb-4">
+        <h3 class="text-sm font-semibold text-gray-700 flex items-center gap-2">
+          <MapPin size={16} class="text-blue-500" />
+          기본 정보
+        </h3>
+        <div class="space-y-1">
+          {#if company.business_registration_number}
+            <p class="text-sm text-gray-600 flex items-center justify-between">
+              <span>사업자 등록 번호</span>
+              <span>{company.business_registration_number}</span>
+            </p>
+          {/if}
+          {#if company.corporate_number}
+            <p class="text-sm text-gray-600 flex items-center justify-between">
+              <span>법인등록번호</span>
+              <span>{company.corporate_number}</span>
+            </p>
+          {/if}
+          {#if company.representative}
+            <p class="text-sm text-gray-600 flex items-center justify-between">
+              <span>대표이사</span>
+              <span>
+                {company.representative} {company.birth_year ? `(${company.birth_year})` : ''}
+              </span>
+            </p>
+          {/if}
+          {#if company.address}
+            <p class="text-sm text-gray-600 flex items-center justify-between">
+              <span>주소</span>
+              <span>{company.address}</span>
+            </p>
+          {/if}
+          {#if company.cri_company_size}
+            <p class="text-sm text-gray-600 flex items-center justify-between">
+              <span>기업규모</span>
+              <span>{company.cri_company_size}</span>
+            </p>
+          {/if}
+          {#if company.phone_number}
+            <p class="text-sm text-gray-600 flex items-center justify-between">
+              <span>전화번호</span>
+              <span>{company.phone_number}</span>
+            </p>
+          {/if}
+          {#if company.establishment_date}
+            <p class="text-sm text-gray-600 flex items-center justify-between">
+              <span>설립일</span>
+              <span>{formatDate(company.establishment_date)}</span>
+            </p>
+          {/if}
+          {#if company.employee_count}
+            <p class="text-sm text-gray-600 flex items-center justify-between">
+              <span>임직원 수</span>
+              <span>{company.employee_count}명</span>
+            </p>
+          {/if}
+          {#if company.fiscal_month}
+            <p class="text-sm text-gray-600 flex items-center justify-between">
+              <span>결산월</span>
+              <span>{company.fiscal_month}월</span>
+            </p>
+          {/if}
+          {#if company.main_bank}
+            <p class="text-sm text-gray-600 flex items-center justify-between">
+              <span>주거래은행</span>
+              <span>{company.main_bank}</span>
+            </p>
+          {/if}
+          {#if company.website}
+            <p class="text-sm text-gray-600 flex items-center justify-between">
+              <span>웹사이트</span>
+              <a href={company.website.startsWith('http') ? company.website : `https://${company.website}`}
+                 target="_blank" rel="noopener noreferrer"
+                 class="text-blue-500 underline">
+                {company.website.startsWith('http') ? company.website : `https://${company.website}`}
+              </a>
+            </p>
+          {/if}
+        </div>
+      </div>
+      {/if}
+  
+      {#if hasIndustryInfo(company)}
+      <div id="industry" class="space-y-2 border-b border-gray-100 pb-4">
+        <h3 class="text-sm font-semibold text-gray-700 flex items-center gap-2">
+          <Briefcase size={16} class="text-blue-500" />
+          업종 정보
+        </h3>
+        <div class="space-y-1">
+          {#if company.industry}
+            <p class="text-sm text-gray-600 flex items-center justify-between">
+              <span>업종</span>
+              <span>{company.industry}</span>
+            </p>
+          {/if}
+          {#if company.main_product}
+            <p class="text-sm text-gray-600 flex items-center justify-between">
+              <span>주요상품</span>
+              <span>{company.main_product}</span>
+            </p>
+          {/if}
+        </div>
+      </div>
+      {/if}
+  
+      {#if hasLabInfo(company)}
+      <div id="lab" class="space-y-2 border-b border-gray-100 pb-4">
+        <h3 class="text-sm font-semibold text-gray-700 flex items-center gap-2">
+          <Microscope size={16} class="text-indigo-500" />
+          연구소 정보
+        </h3>
+        <div class="space-y-1">
+          {#if company.lab_name}
+            <p class="text-sm text-gray-600 flex items-center justify-between">
+              <span>연구소명</span>
+              <span>{company.lab_name}</span>
+            </p>
+          {/if}
+          {#if company.research_field}
+            <p class="text-sm text-gray-600 flex items-center justify-between">
+              <span>연구분야</span>
+              <span>{company.research_field}</span>
+            </p>
+          {/if}
+          {#if company.first_approval_date}
+            <p class="text-sm text-gray-600 flex items-center justify-between">
+              <span>최초인정일</span>
+              <span>{company.first_approval_date}</span>
+            </p>
+          {/if}
+          {#if company.lab_location}
+            <p class="text-sm text-gray-600 flex items-center justify-between">
+              <span>연구소 위치</span>
+              <span>{company.lab_location}</span>
+            </p>
+          {/if}
+          {#if company.division}
+            <p class="text-sm text-gray-600 flex items-center justify-between">
+              <span>연구소 구분</span>
+              <span>{company.division}</span>
+            </p>
+          {/if}
+        </div>
+      </div>
+      {/if}
+  
+      {#if hasCertificationInfo(company)}
+      <div id="certification" class="space-y-2 border-b border-gray-100 pb-4">
+        <h3 class="text-sm font-semibold text-gray-700 flex items-center gap-2">
+          <Award size={16} class="text-purple-500" />
+          인증 정보
+        </h3>
+        <div class="space-y-1">
+          {#if company.sme_type}
+            <p class="text-sm text-gray-600 flex items-center justify-between">
+              <span>인증 유형</span>
+              <span>{company.sme_type}</span>
+            </p>
+          {/if}
+          {#if company.certificate_expiry_date}
+            <p class="text-sm text-gray-600 flex items-center justify-between">
+              <span>인증 만료일</span>
+              <span>{company.certificate_expiry_date}</span>
+            </p>
+          {/if}
+          {#if company.venture_confirmation_type}
+            <p class="text-sm text-gray-600 flex items-center justify-between">
+              <span>벤처기업 인증</span>
+              <span>{company.venture_confirmation_type}</span>
+            </p>
+          {/if}
+          {#if company.venture_valid_from || company.venture_valid_until || company.confirming_authority || company.new_reconfirmation_code}
+            <p class="text-sm text-gray-600 flex items-center justify-between">
+              <span>벤처 유효기간</span>
+              <span>{company.venture_valid_from} ~ {company.venture_valid_until}</span>
+            </p>
+            <p class="text-sm text-gray-600 flex items-center justify-between">
+              <span>확인기관</span>
+              <span>{company.confirming_authority}</span>
+            </p>
+            <p class="text-sm text-gray-600 flex items-center justify-between">
+              <span>재확인코드</span>
+              <span>{company.new_reconfirmation_code}</span>
+            </p>
+          {/if}
+        </div>
+      </div>
+      {/if}
+  
+      {#if hasShareholderInfo(company)}
+      <div id="shareholders" class="space-y-2 border-b border-gray-100 pb-4">
+        <h3 class="text-sm font-semibold text-gray-700 flex items-center gap-2">
+          <Users size={16} class="text-yellow-500" />
+          주주 정보
+        </h3>
+        <div class="space-y-1">
+          {#if company.family_shareholder_yn}
+            <p class="text-sm text-gray-600 flex items-center justify-between">
+              <span>가족주주</span>
+              <span>{company.family_shareholder_yn === 'Y' ? '있음' : '없음'}</span>
+            </p>
+          {/if}
+          {#if company.external_shareholder_yn}
+            <p class="text-sm text-gray-600 flex items-center justify-between">
+              <span>외부주주</span>
+              <span>{company.external_shareholder_yn === 'Y' ? '있음' : '없음'}</span>
+            </p>
+          {/if}
+        </div>
+      </div>
+      {/if}
+  
+      {#if financialData && Array.isArray(financialData) && financialData.length > 0}
+      <div class="space-y-4 border-b border-gray-100 pb-4">
+        <!-- 손익계산서 -->
+        <div class="space-y-2">
+          <h3 class="text-sm font-semibold text-gray-700 flex items-center gap-2">
+            <DollarSign size={16} class="text-green-500" />
+            재무분석 <span class="inline-block text-xs text-gray-500">단위: 백만원</span>
+          </h3>
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="border-b border-gray-200">
+                <th class="text-left px-2 font-medium text-gray-600 py-2">손익계산서</th>
+                {#each years as year}
+                  <th class="w-1/5 text-right px-2 py-2 font-medium text-gray-600 whitespace-nowrap">{year}년</th>
+                {/each}
+              </tr>
+            </thead>
+            <tbody class="text-gray-600">
+              {#each [
+                { name: '매출액', key: 'revenue' },
+                { name: '매출원가', key: 'sales_cost' },
+                { name: '매출총이익', key: 'sales_profit' },
+                { name: '판매관리비', key: 'sga' },
+                { name: '영업이익', key: 'operating_income' },
+                { name: '기타수익', key: 'other_income' },
+                { name: '기타비용', key: 'other_expenses' },
+                { name: '세전이익', key: 'pre_tax_income' },
+                { name: '법인세', key: 'corporate_tax' },
+                { name: '당기순이익', key: 'net_income' }
+              ] as metric}
+                <tr class="border-b border-gray-100 hover:bg-gray-50">
+                  <td class="w-1/3 px-2 py-2 font-medium">{metric.name}</td>
+                  {#each years as year}
+                    {@const yearData = financialData.find(d => String(d.year) === year)}
+                    <td class="w-1/5 text-right px-2 py-2">
+                      {#if yearData && yearData[metric.key] != null}
+                        <span class="{yearData[metric.key] < 0 ? 'text-red-500' : ''} whitespace-nowrap">
+                          {new Intl.NumberFormat('ko-KR').format(yearData[metric.key])}
+                        </span>
+                      {:else}
+                        -
+                      {/if}
+                    </td>
+                  {/each}
+                </tr>
+              {/each}
+            </tbody>
+          </table>
+        </div>
+        <!-- 재무상태표 -->
+        <div class="space-y-2">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="border-b border-gray-200">
+                <th class="text-left px-2 font-medium text-gray-600 py-2">재무상태표</th>
+                {#each years as year}
+                  <th class="w-1/5 text-right px-2 py-2 font-medium text-gray-600 whitespace-nowrap">{year}년</th>
+                {/each}
+              </tr>
+            </thead>
+            <tbody class="text-gray-600">
+              <!-- 자산 부분 -->
+              <tr class="bg-gray-50">
+                <td colspan={years.length + 1} class="px-2 py-1 font-semibold">자산</td>
+              </tr>
+              {#each [
+                { name: '유동자산', key: 'current_assets' },
+                { name: '• 당좌자산', key: 'quick_assets' },
+                { name: '• 재고자산', key: 'inventory' },
+                { name: '비유동자산', key: 'non_current_assets' },
+                { name: '• 투자자산', key: 'investment_assets' },
+                { name: '• 유형자산', key: 'tangible_assets' },
+                { name: '• 무형자산', key: 'intangible_assets' }
+              ] as metric}
+                <tr class="border-b border-gray-100 hover:bg-gray-50">
+                  <td class="w-1/3 px-2 py-2 font-medium">{metric.name}</td>
+                  {#each years as year}
+                    {@const yearData = financialData.find(d => String(d.year) === year)}
+                    <td class="w-1/5 text-right px-2 py-2">
+                      {#if yearData && yearData[metric.key] != null}
+                        <span class="whitespace-nowrap">
+                          {new Intl.NumberFormat('ko-KR').format(yearData[metric.key])}
+                        </span>
+                      {:else}
+                        -
+                      {/if}
+                    </td>
+                  {/each}
+                </tr>
+              {/each}
+              <!-- 부채와 자본 부분 -->
+              <tr class="bg-gray-50">
+                <td colspan={years.length + 1} class="px-2 py-1 font-semibold">부채와 자본</td>
+              </tr>
+              {#each [
+                { name: '유동부채', key: 'current_liabilities' },
+                { name: '비유동부채', key: 'non_current_liabilities' },
+                { name: '자본금', key: 'capital_stock' },
+                { name: '총이익잉여금', key: 'retained_earnings' }
+              ] as metric}
+                <tr class="border-b border-gray-100 hover:bg-gray-50">
+                  <td class="w-1/3 px-2 py-2 font-medium">{metric.name}</td>
+                  {#each years as year}
+                    {@const yearData = financialData.find(d => String(d.year) === year)}
+                    <td class="w-1/5 text-right px-2 py-2">
+                      {#if yearData && yearData[metric.key] != null}
+                        <span class="whitespace-nowrap">
+                          {new Intl.NumberFormat('ko-KR').format(yearData[metric.key])}
+                        </span>
+                      {:else}
+                        -
+                      {/if}
+                    </td>
+                  {/each}
+                </tr>
+              {/each}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      {/if}
+    </div>
+  </div>
+</div>
