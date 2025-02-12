@@ -30,40 +30,30 @@
 			}
 			const data = await response.json();
 			categories = data.data.categories;
+			// 카테고리 데이터가 로드된 후 다음 프레임에서 높이 업데이트
+			setTimeout(updateHeight, 0);
 		} catch (error) {
 			console.error('카테고리 데이터 로딩 에러:', error);
-			// 에러 처리 로직 추가 가능
 		}
 	}
 
-	onMount(() => {
-		fetchCategories();
-	});
-
-	// 현재 선택된 대분류 인덱스 (기본값 0)
-	let activeCategoryIndex: number = 0;
-
-	// 모바일 여부: 창 너비가 768px 미만이면 모바일로 간주
-	let isMobile = false;
-	let containerHeight = 0;
-	let parentHeight = 0;
+	function updateHeight() {
+		const parent = document.documentElement;
+		parentHeight = parent.clientHeight;
+		const container = document.querySelector('.categories-container');
+		if (container) {
+			containerHeight = container.clientHeight;
+		}
+	}
 
 	onMount(() => {
 		const checkMobile = () => {
 			isMobile = window.innerWidth < 768;
 		};
-		
-		const updateHeight = () => {
-			const parent = document.documentElement;
-			parentHeight = parent.clientHeight;
-			const container = document.querySelector('.categories-container');
-			if (container) {
-				containerHeight = container.clientHeight;
-			}
-		};
 
 		checkMobile();
-		updateHeight();
+		fetchCategories();
+		
 		window.addEventListener('resize', () => {
 			checkMobile();
 			updateHeight();
@@ -74,6 +64,21 @@
 			window.removeEventListener('resize', updateHeight);
 		};
 	});
+
+	// categories가 변경될 때마다 높이 업데이트
+	$: {
+		if (categories.length > 0) {
+			setTimeout(updateHeight, 0);
+		}
+	}
+
+	// 현재 선택된 대분류 인덱스 (기본값 0)
+	let activeCategoryIndex: number = 0;
+
+	// 모바일 여부: 창 너비가 768px 미만이면 모바일로 간주
+	let isMobile = false;
+	let containerHeight = 0;
+	let parentHeight = 0;
 
 	$: topMargin = !isMobile ? Math.max(0, (parentHeight - containerHeight) / 4) : 0;
 
