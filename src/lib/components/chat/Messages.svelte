@@ -339,11 +339,11 @@
 
 <div class={className}>
 	{#if Object.keys(history?.messages ?? {}).length == 0}
-	
 		<div class="w-full flex gap-1.5">
-			<ChatCategories />
+			<ChatCategories on:select={(event) => {
+				dispatch('modelChange', event.detail);
+			}} />
 		</div>
-	
 	{:else}
 		<div class="w-full pt-2">
 			{#key chatId}

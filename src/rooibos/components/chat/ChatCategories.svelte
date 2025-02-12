@@ -16,6 +16,7 @@
 	type Category = {
 		title: string;
 		items: SubItem[];
+        model_id: string;
 	};
 
 	// 카테고리 데이터를 저장할 변수
