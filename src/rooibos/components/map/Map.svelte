@@ -5,12 +5,12 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { get } from 'svelte/store';
-	import SearchBar from '../corpsearch/SearchBar.svelte';
 	import { excludedGroupIds, onFilterChange } from '../corpsearch/filterdata';
 	import { mobile } from '$lib/stores';
 	import { showSidebar, user, WEBUI_NAME } from '$lib/stores';
 	import { WEBUI_API_BASE_URL } from '$lib/constants';
 	import { getMarkerContent } from './marker';
+	import SearchBar from '../corpsearch/SearchBar.svelte';
 	import CompanyList from '../company/CompanyList.svelte';
 	import CompanyInfo from '../company/CompanyInfo.svelte';
 

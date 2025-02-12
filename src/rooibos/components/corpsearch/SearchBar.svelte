@@ -143,7 +143,6 @@
 			const data = await response.json();
 
 			if (searchByLocation) {
-				// When '지명' is selected, store results in addressList.
 				addressList = data.data;
 				searchResults = [];
 			} else {
@@ -195,7 +194,6 @@
 		localStorage.setItem('searchHistory', JSON.stringify(searchHistory));
 	}
 
-	// New: Send the selected address's x and y coordinates to the server.
 	async function sendAddressCoordinates(x: string, y: string) {
 		try {
 			const queryParams = new URLSearchParams({
