@@ -404,7 +404,10 @@
 		}
 		const mapOptions = {
 			center: createLatLng(position.lat, position.lng),
-			zoom: zoom
+			zoom: zoom,
+			scaleControl: false,
+			logoControl: false,
+			mapDataControl: false 
 		};
 
 		const map = new naver.maps.Map(mapContainer, mapOptions);
