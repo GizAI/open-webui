@@ -115,10 +115,21 @@
 		}		
 		
 		if (filters.smeType) {
-			pass = pass && Boolean(company.sme_type);
+			pass = pass && (
+				Boolean(company.venture_confirmation_type) ||
+				Boolean(company.sme_type) ||
+				Boolean(company.certificate_expiry_date) ||
+				Boolean(company.venture_valid_from)
+			);
 		}
 		if (filters.labName) {
-			pass = pass && (Boolean(company.lab_name) || Boolean(company.research_field));
+			pass = pass && (
+				Boolean(company.lab_name) ||
+				Boolean(company.research_field) ||
+				Boolean(company.division) ||
+				Boolean(company.first_approval_date) ||
+				Boolean(company.lab_location)
+			);
 		}
 		
 		return pass;
