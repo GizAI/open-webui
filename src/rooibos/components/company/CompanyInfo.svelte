@@ -107,7 +107,7 @@
 			if (isFullscreen) {
 				isFullscreen = false;
 			} else {
-				closeCompanyInfo();
+				// closeCompanyInfo();
 			}
 		} else if (dragOffset < -threshold) {
 			isFullscreen = true;
@@ -126,7 +126,7 @@
 
 	$: mobileHeight = (() => {
 		if (!$mobile) return '';
-		const fullHeight = `calc(90vh - env(safe-area-inset-top) - env(safe-area-inset-bottom))`;
+		const fullHeight = `calc(88vh - env(safe-area-inset-top) - env(safe-area-inset-bottom))`;
 		const initialHeight = `20vh`;
 		if (isDragging) {
 			if (!isFullscreen && dragOffset < 0) {
@@ -252,6 +252,11 @@
 		padding-top: env(safe-area-inset-top);
 		padding-bottom: env(safe-area-inset-bottom);
 		transform-origin: bottom;
+	  }
+
+	  .company-info-wrapper.mobile.fullscreen.active {
+		border-top-left-radius: 0;
+		border-top-right-radius: 0;
 	  }
 
 	  .company-info-wrapper.mobile.active {
