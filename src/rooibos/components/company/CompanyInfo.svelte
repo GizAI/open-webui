@@ -150,6 +150,10 @@
 				: 'margin-top: 1rem;'
 			}
 >
+{#if $mobile && isFullscreen}
+  <div class="safe-area-spacer" style="height: env(safe-area-inset-top);"></div>
+{/if}
+
 	{#if companyInfo}
 		<!-- Modified header: In mobile fullscreen, offset the header by env(safe-area-inset-top) so it isn’t hidden behind the browser's address bar -->
 		<div class="bg-gray-50 sticky z-10 shrink-0 px-4 pt-2 pb-1 border-b bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-gray-200" style="top: 0;">
