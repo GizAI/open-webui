@@ -126,17 +126,19 @@
 
 	$: mobileHeight = (() => {
 		if (!$mobile) return '';
-		const fullHeight = `calc(88vh - env(safe-area-inset-top) - env(safe-area-inset-bottom))`;
+		// 주소창 영역과 자연스럽게 이어지도록 fullHeight 값을 수정 (상단 safe area 제외)
+		const fullHeight = `calc(100vh - env(safe-area-inset-bottom))`;
 		const initialHeight = `20vh`;
 		if (isDragging) {
 			if (!isFullscreen && dragOffset < 0) {
-				return `calc(20vh  ${-dragOffset}px)`;
+				return `calc(20vh + ${-dragOffset}px)`;
 			} else if (isFullscreen && dragOffset > 0) {
 				return `calc(${fullHeight} - ${dragOffset}px)`;
 			}
 		}
 		return isFullscreen ? fullHeight : initialHeight;
 	})();
+
 </script>
 
 <div 
