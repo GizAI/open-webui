@@ -590,7 +590,7 @@
 	</div>
 {/if}
 
-{#if resultViewMode != 'map'}
+{#if resultViewMode != 'map' && !($showSidebar && $mobile)}
 	<div class="company-list-wrapper w-full" class:sidebar-visible={$showSidebar}>
 		<CompanyList
 			{companyList}
@@ -598,7 +598,7 @@
 	</div>
 {/if}
 
-{#if showCompanyInfo && companyInfo}
+{#if showCompanyInfo && companyInfo && !($showSidebar && $mobile)}
 	<div class:sidebar-visible={$showSidebar}>
 		<CompanyInfo {companyInfo} onClose={closeCompanyInfo} />
 	</div>
