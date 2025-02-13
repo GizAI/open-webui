@@ -149,7 +149,7 @@
 	class:mobile={$mobile}
 	style={$mobile
 		? (isFullscreen
-			? `height: ${mobileHeight}; transition: ${isDragging ? 'none' : 'height 0.3s ease'}; top: auto; bottom: env(safe-area-inset-bottom);`
+			? `height: ${mobileHeight}; transition: ${isDragging ? 'none' : 'height 0.3s ease'}; top: env(safe-area-inset-top); bottom: auto;`
 			: `height: ${mobileHeight}; transition: ${isDragging ? 'none' : 'height 0.3s ease'}; top: auto; bottom: 0;`
 		  )
 		: 'margin-top: 1rem;'
