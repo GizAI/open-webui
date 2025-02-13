@@ -9,7 +9,7 @@
 	import { mobile } from '$lib/stores';
 	import { showSidebar, user, WEBUI_NAME } from '$lib/stores';
 	import { WEBUI_API_BASE_URL } from '$lib/constants';
-	import { getMarkerContent } from './marker';
+	import { darkStyle, getMarkerContent } from './marker';
 	import SearchBar from '../corpsearch/SearchBar.svelte';
 	import CompanyList from '../company/CompanyList.svelte';
 	import CompanyInfo from '../company/CompanyInfo.svelte';
@@ -413,9 +413,11 @@
 		const mapOptions = {
 			center: createLatLng(position.lat, position.lng),
 			zoom: zoom,
-			scaleControl: false,
-			logoControl: false,
-			mapDataControl: false 
+			// styles: darkStyle,
+			// mapTypeControl: true,
+			// scaleControl: false,
+			// logoControl: false,
+			// mapDataControl: false 
 		};
 
 		const map = new naver.maps.Map(mapContainer, mapOptions);

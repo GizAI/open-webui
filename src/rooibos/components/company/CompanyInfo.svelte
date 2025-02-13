@@ -87,17 +87,19 @@
 	let isDragging = false;
 
 	function handleTouchStart(e: TouchEvent) {
+		if (isFullscreen) return;
 		startY = e.touches[0].clientY;
 		isDragging = true;
 	}
 
 	function handleTouchMove(e: TouchEvent) {
-		if (!isDragging) return;
+		if (isFullscreen || !isDragging) return;
 		const currentY = e.touches[0].clientY;
 		dragOffset = currentY - startY;
 	}
 
 	function handleTouchEnd(e: TouchEvent) {
+		if (isFullscreen) return;
 		isDragging = false;
 		const threshold = 50;
 		if (dragOffset > threshold) {
@@ -141,7 +143,7 @@
 	class:mobile={$mobile}
 	style={$mobile 
 		? (isFullscreen
-			? `height: ${mobileHeight}; transition: ${isDragging ? 'none' : 'height 0.3s ease'}; top: env(safe-area-inset-top); bottom: env(safe-area-inset-bottom);`
+			? `height: ${mobileHeight}; transition: ${isDragging ? 'none' : 'height 0.3s ease'}; top: auto; bottom: env(safe-area-inset-bottom);`
 			: `height: ${mobileHeight}; transition: ${isDragging ? 'none' : 'height 0.3s ease'}; top: auto; bottom: 0;`
 		  )
 		: 'margin-top: 1rem;'
@@ -153,15 +155,19 @@
 			{#if $mobile && !isFullscreen}
 				<div
 					class="drag-handle"
-					on:touchstart={handleTouchStart}
-					on:touchmove={handleTouchMove}
-					on:touchend={handleTouchEnd}>
+					on:touchstart|preventDefault|stopPropagation={handleTouchStart}
+					on:touchmove|preventDefault|stopPropagation={handleTouchMove}
+					on:touchend|preventDefault|stopPropagation={handleTouchEnd}>
 					<div class="handle-bar"></div>
 				</div>
 			{/if}
 			
 			<div class="flex items-center justify-between w-full mb-1 ">
-				<h1 class="{$mobile ? 'sm:text-xl' : 'text-xl'} font-semibold mb-1 truncate text-gray-900 dark:text-gray-200">
+				<h1
+					class="{$mobile ? 'sm:text-xl' : 'text-xl'} font-semibold mb-1 truncate text-gray-900 dark:text-gray-200"
+					on:touchstart|preventDefault|stopPropagation={handleTouchStart}
+					on:touchmove|preventDefault|stopPropagation={handleTouchMove}
+					on:touchend|preventDefault|stopPropagation={handleTouchEnd}>
 					{companyInfo.company_name}
 				</h1>
 			
@@ -235,13 +241,12 @@
 	  }
 
 	  .company-info-wrapper.mobile.fullscreen {
-		/* Ensure fullscreen starts flush below the browser address bar */
-		top: env(safe-area-inset-top);
+		top: auto;
 		bottom: env(safe-area-inset-bottom);
-		height: auto;
 		max-height: calc(100vh - env(safe-area-inset-top) - env(safe-area-inset-bottom));
 		padding-top: env(safe-area-inset-top);
 		padding-bottom: env(safe-area-inset-bottom);
+		transform-origin: bottom;
 	  }
 
 	  .company-info-wrapper.mobile.active {

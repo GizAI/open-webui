@@ -46,3 +46,48 @@ export function getMarkerContent(result: any, selected: boolean = false): string
             </div>
             `;
 }
+
+export const darkStyle = [
+    {
+        "featureType": "all",
+        "elementType": "geometry",
+        "stylers": [
+            { "color": "#2c2c2c" }
+        ]
+    },
+    {
+        "featureType": "all",
+        "elementType": "labels.text.fill",
+        "stylers": [
+            { "color": "#ffffff" }
+        ]
+    },
+    {
+        "featureType": "landscape",
+        "elementType": "geometry.fill",
+        "stylers": [
+            { "color": "#222222" }
+        ]
+    },
+    {
+        "featureType": "poi",
+        "elementType": "geometry.fill",
+        "stylers": [
+            { "color": "#333333" }
+        ]
+    },
+    {
+        "featureType": "road",
+        "elementType": "geometry",
+        "stylers": [
+            { "color": "#444444" }
+        ]
+    },
+    {
+        "featureType": "water",
+        "elementType": "geometry.fill",
+        "stylers": [
+            { "color": "#000000" }
+        ]
+    }
+];
