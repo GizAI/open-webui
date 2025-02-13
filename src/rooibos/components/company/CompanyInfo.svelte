@@ -1,5 +1,6 @@
 <!-- CompanyInfo.svelte -->
 <script lang="ts">
+	// (기존 스크립트 내용은 그대로 유지)
 	import Spinner from '$lib/components/common/Spinner.svelte';
 	import ActionButtons from '../common/ActionButtons.svelte';
 	import CompanyDetail from './CompanyDetail.svelte';
@@ -88,7 +89,6 @@
 	let isDragging = false;
 
 	function handleTouchStart(e: TouchEvent) {
-		// 풀스크린 상태에서는 드래그 제스처 비활성
 		if (isFullscreen) return;
 		startY = e.touches[0].clientY;
 		isDragging = true;
@@ -105,14 +105,12 @@
 		isDragging = false;
 		const threshold = 50;
 		if (dragOffset > threshold) {
-			// 아래로 드래그가 threshold 이상일 때
 			if (isFullscreen) {
 				isFullscreen = false;
 			} else {
-				// closeCompanyInfo(); // 필요시 사용
+				// 필요시 closeCompanyInfo() 호출
 			}
 		} else if (dragOffset < -threshold) {
-			// 위로 드래그가 threshold 이상일 때
 			isFullscreen = true;
 		}
 		dragOffset = 0;
@@ -127,57 +125,46 @@
 		onClose();
 	}
 
-	// 모바일에서 높이를 계산하는 로직
+	// 모바일 높이 계산 (safe area 반영)
 	$: mobileHeight = (() => {
 		if (!$mobile) return '';
 
-		// 주소창 영역에 가리지 않도록 상단/하단 safe area 모두 반영
 		const fullHeight = `calc(100vh - env(safe-area-inset-top) - env(safe-area-inset-bottom))`;
 		const initialHeight = `20vh`;
 
 		if (isDragging) {
-			// 드래그 중 높이 실시간 변경
 			if (!isFullscreen && dragOffset < 0) {
 				return `calc(20vh + ${-dragOffset}px)`;
 			} else if (isFullscreen && dragOffset > 0) {
 				return `calc(${fullHeight} - ${dragOffset}px)`;
 			}
 		}
-		// 풀스크린 여부에 따라 높이 결정
 		return isFullscreen ? fullHeight : initialHeight;
 	})();
 </script>
 
-<!--
-  Wrapper가 mobile + active + fullscreen이 되면
-  화면 전체를 덮으면서도 safe-area를 고려하여
-  주소창 영역에 가려지지 않도록 함
--->
+<!-- 외부 컨테이너: 모바일 풀스크린일 경우 top을 safe-area-inset-top으로 설정 -->
 <div
 	class="company-info-wrapper active {isFullscreen ? 'fullscreen' : ''} flex flex-col w-full bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-white-200"
 	class:mobile={$mobile}
 	style={$mobile
 		? (isFullscreen
-			? `height: ${mobileHeight}; transition: ${isDragging ? 'none' : 'height 0.3s ease'}; top: auto; bottom: env(safe-area-inset-bottom);`
+			? `height: ${mobileHeight}; transition: ${isDragging ? 'none' : 'height 0.3s ease'}; top: env(safe-area-inset-top); bottom: auto;`
 			: `height: ${mobileHeight}; transition: ${isDragging ? 'none' : 'height 0.3s ease'}; top: auto; bottom: 0;`
 		  )
 		: 'margin-top: 1rem;'
 	}
 >
-	<!-- 풀스크린 모드에서는 safe-area-spacer 사용 X (중복 적용 방지) -->
 	{#if $mobile && isFullscreen}
-		<!-- 필요하다면 spacer 높이를 0으로 처리
-		     <div class="safe-area-spacer" style="height: 0;"></div>
-		-->
+		<!-- 풀스크린일 때 safe area spacer는 불필요 -->
 	{/if}
 
 	{#if companyInfo}
-		<!-- 헤더 영역 -->
-		<!-- sticky header 에서 top 값을 0 대신, fullscreen 모드에서는 env(safe-area-inset-top) 적용 -->
+		<!-- 헤더 영역: 모바일 풀스크린에서는 부모 컨테이너의 safe area를 사용하므로 top은 0 -->
 		<div 
-  class="header-container sticky z-10 shrink-0 px-4 pt-2 pb-1 border-b bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-gray-200" 
-  style="top: {isFullscreen ? 'env(safe-area-inset-top)' : '0'};"
->
+			class="header-container sticky z-10 shrink-0 px-4 pt-2 pb-1 border-b bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-gray-200" 
+			style="top: {$mobile && isFullscreen ? '0' : (isFullscreen ? 'env(safe-area-inset-top)' : '0')};"
+		>
 			{#if $mobile && !isFullscreen}
 				<div
 					class="drag-handle"
@@ -269,11 +256,11 @@
 			margin-top: 0;
 		}
 
+		/* 수정: 풀스크린 모드에서 부모 컨테이너를 safe area 내에 표시 */
 		.company-info-wrapper.mobile.fullscreen {
-			/* 풀스크린 모드에서 safe area 처리 */
-			top: auto;
-			bottom: env(safe-area-inset-bottom);
-			max-height: calc(100vh - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+			top: env(safe-area-inset-top);
+			bottom: auto;
+			height: calc(100vh - env(safe-area-inset-top) - env(safe-area-inset-bottom));
 			padding-bottom: env(safe-area-inset-bottom);
 			transform-origin: bottom;
 		}
@@ -290,9 +277,9 @@
 			border-top-right-radius: 20px;
 		}
 
-		/* 풀스크린 모드에서 sticky 헤더가 주소창 뒤로 숨지지 않도록 보정 */
+		/* 수정: 모바일 풀스크린 시 헤더는 컨테이너의 상단에 고정 */
 		.company-info-wrapper.mobile.fullscreen .header-container {
-			top: env(safe-area-inset-top) !important;
+			top: 0 !important;
 		}
 	}
 
