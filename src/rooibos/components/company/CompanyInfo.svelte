@@ -250,6 +250,9 @@
 		border-top-left-radius: 20px;
 		border-top-right-radius: 20px;
 	  }
+	  .company-info-wrapper.mobile.fullscreen .sticky {
+		top: env(safe-area-inset-top) !important;
+	  }
 	}
 	
 	.drag-handle {
