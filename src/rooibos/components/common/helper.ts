@@ -27,3 +27,15 @@ export function formatBusinessNumber(bn: any) {
 	// xxx-xx-xxxxx 형식으로 변환
 	return `${digits.slice(0, 3)}-${digits.slice(3, 5)}-${digits.slice(5)}`;
 }
+
+export function formatCorporateNumber(corpNumber: any) {
+	if (!corpNumber) return "정보없음";
+	// 숫자만 추출
+	const digits = corpNumber.toString().replace(/\D/g, '');
+	// 13자리 숫자일 경우, 6자리-7자리 형식으로 포맷팅
+	if (digits.length === 13) {
+		return `${digits.slice(0, 6)}-${digits.slice(6)}`;
+	}
+	// 13자리가 아니면 그대로 반환하거나 다른 처리 가능
+	return corpNumber;
+}
