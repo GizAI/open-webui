@@ -12,7 +12,7 @@
 	export let selectedFilters: any = {};
 	export let searchCompanyResults: any = {};
 	export let activeFilterGroup: string | null = null;
-  export let resultViewMode = 'map';
+	export let resultViewMode = 'map';
 	export let onSearch: (searchValue: string, selectedFilters: any) => Promise<void>;
 	export let onReset: () => void;
 	export let onApply: () => void;
@@ -140,7 +140,7 @@
 					}
 				}
 			);
-      
+
 			const data = await response.json();
 
 			if (searchByLocation) {
@@ -214,7 +214,7 @@
 					}
 				}
 			);
-      
+
 			const data = await response.json();
 			const list = data.data;
 			dispatch('addressResultClick', list);
@@ -269,11 +269,14 @@
 
 	function toggleViewMode() {
 		resultViewMode = resultViewMode === 'map' ? 'list' : 'map';
-    	dispatch('showCompanyListClick', resultViewMode);
+		dispatch('showCompanyListClick', resultViewMode);
 	}
 </script>
 
-<div bind:this={filterContainerRef} class="overflow-y-auto bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-white-200">
+<div
+	bind:this={filterContainerRef}
+	class="overflow-y-auto bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-white-200"
+>
 	<div class="flex items-center py-1">
 		<div class="{$showSidebar ? 'hidden' : ''} flex items-center">
 			<button
@@ -291,33 +294,53 @@
 		</div>
 		<div class="text-xl font-semibold text-gray-800 dark:text-gray-400 px-2">기업찾기</div>
 		{#if searchCompanyResults.length >= 2 && !isSearchMode}
-      <button
-        type="button"
-        on:click={toggleViewMode}
-        class="ml-4 px-3 py-1 text-sm font-medium hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-100 rounded-full inline-flex items-center gap-1"
-      >
-        {#if resultViewMode === 'list'}
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <polygon points="3 7.5 3 18.5 12 22 21 18.5 21 7.5 12 4 3 7.5"/>
-            <path d="M12 22V4"/>
-            <path d="M3 7.5L21 7.5"/>
-          </svg>
-          지도보기
-        {:else}
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <rect width="18" height="18" x="3" y="3" rx="2" ry="2"/>
-            <path d="M3 15h18"/>
-            <path d="M3 9h18"/>
-          </svg>
-          목록보기
-        {/if}
-      </button>
-    {/if}
+			<button
+				type="button"
+				on:click={toggleViewMode}
+				class="ml-4 px-3 py-1 text-sm font-medium hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-100 rounded-full inline-flex items-center gap-1"
+			>
+				{#if resultViewMode === 'list'}
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						width="16"
+						height="16"
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="2"
+						stroke-linecap="round"
+						stroke-linejoin="round"
+					>
+						<polygon points="3 7.5 3 18.5 12 22 21 18.5 21 7.5 12 4 3 7.5" />
+						<path d="M12 22V4" />
+						<path d="M3 7.5L21 7.5" />
+					</svg>
+					지도보기
+				{:else}
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						width="16"
+						height="16"
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="2"
+						stroke-linecap="round"
+						stroke-linejoin="round"
+					>
+						<rect width="18" height="18" x="3" y="3" rx="2" ry="2" />
+						<path d="M3 15h18" />
+						<path d="M3 9h18" />
+					</svg>
+					목록보기
+				{/if}
+			</button>
+		{/if}
 
 		<button
 			type="button"
 			on:click={toggleSearchMode}
-			class="text-blue-600 hover:text-blue-800 px-4 ml-auto"
+			class="text-blue-600 dark:text-gray-400 hover:text-blue-800 px-4 ml-auto"
 			aria-label={isSearchMode ? '닫기' : '검색'}
 		>
 			{#if isSearchMode}
@@ -398,7 +421,7 @@
 					<input
 						type="text"
 						bind:value={searchValue}
-						class="w-full pl-4 pr-16 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+						class="w-full pl-4 pr-16 py-2 dark:bg-gray-950 dark:text-gray-200 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
 						bind:this={inputRef}
 					/>
 
@@ -492,9 +515,7 @@
 	{:else}
 		<div class="relative">
 			{#if showLeftArrow}
-				<div
-					class="absolute left-0 top-1/2 -translate-y-1/2 z-10 to-transparent pr-8 pl-2"
-				>
+				<div class="absolute left-0 top-1/2 -translate-y-1/2 z-10 to-transparent pr-8 pl-2">
 					<button
 						class="rounded-full p-0.5 bg-white dark:bg-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800"
 						on:click={scrollLeft}
@@ -552,7 +573,7 @@
 			</div>
 
 			<div
-				class="absolute right-0 top-1/2 -translate-y-1/2 z-10 flex items-center  to-transparent pl-8 pr-2"
+				class="absolute right-0 top-1/2 -translate-y-1/2 z-10 flex items-center to-transparent pl-8 pr-2"
 			>
 				{#if showRightArrow}
 					<button
