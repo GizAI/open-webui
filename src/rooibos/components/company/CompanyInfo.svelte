@@ -218,7 +218,7 @@
 	  right: 0;
 	  width: 30%;
 	  height: calc(100vh - 60px);
-	  z-index: 40;
+	  z-index: 60;
 	  box-shadow: -2px 0 5px rgba(0, 0, 0, 0.1);
 	  overflow-y: auto;
 	  transition: all 0.3s ease;
