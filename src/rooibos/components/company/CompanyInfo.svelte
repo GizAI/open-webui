@@ -126,7 +126,7 @@
 
 	$: mobileHeight = (() => {
 		if (!$mobile) return '';
-		const fullHeight = `calc(100vh - env(safe-area-inset-top) - env(safe-area-inset-bottom))`;
+		const fullHeight = `calc(90vh - env(safe-area-inset-top) - env(safe-area-inset-bottom))`;
 		const initialHeight = `20vh`;
 		if (isDragging) {
 			if (!isFullscreen && dragOffset < 0) {
