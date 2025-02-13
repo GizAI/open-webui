@@ -496,7 +496,7 @@
 					class="absolute left-0 top-1/2 -translate-y-1/2 z-10 to-transparent pr-8 pl-2"
 				>
 					<button
-						class="rounded-full p-2 bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-800"
+						class="rounded-full p-0.5 bg-white dark:bg-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800"
 						on:click={scrollLeft}
 						aria-label="왼쪽으로 스크롤"
 					>
@@ -556,7 +556,7 @@
 			>
 				{#if showRightArrow}
 					<button
-						class="rounded-full p-2 bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-800"
+						class="rounded-full p-0.5 bg-white dark:bg-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800"
 						on:click={scrollRight}
 						aria-label="오른쪽으로 스크롤"
 					>
