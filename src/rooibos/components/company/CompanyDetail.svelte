@@ -74,7 +74,7 @@
   <div class="flex-1 px-4 pb-4">
     <div class="space-y-6 mt-2">
       {#if hasBasicInfo(company)}
-      <div id="basic" class="space-y-2 border-b border-gray-100 pb-4 text-gray-900 dark:text-gray-500">
+      <div id="basic" class="space-y-2 border-gray-100 pb-4 text-gray-900 dark:text-gray-500">
         <h3 class="text-sm font-semibold text-gray-400 flex items-center gap-2">
           <MapPin size={16} class="text-blue-500" />
           기본 정보
@@ -157,7 +157,7 @@
       {/if}
   
       {#if hasIndustryInfo(company)}
-      <div id="industry" class="space-y-2 border-b border-gray-100 pb-4 text-gray-900 dark:text-gray-400">
+      <div id="industry" class="space-y-2 border-t border-gray-100 pt-6 text-gray-900 dark:text-gray-400">
         <h3 class="text-sm font-semibold text-gray-400 flex items-center gap-2">
           <Briefcase size={16} class="text-blue-500" />
           업종 정보
@@ -180,7 +180,7 @@
       {/if}
   
       {#if hasLabInfo(company)}
-      <div id="lab" class="space-y-2 border-b border-gray-100 pb-4 text-gray-900 dark:text-gray-400">
+      <div id="lab" class="space-y-2 border-t border-gray-100 pt-6 text-gray-900 dark:text-gray-400">
         <h3 class="text-sm font-semibold text-gray-400 flex items-center gap-2">
           <Microscope size={16} class="text-indigo-500" />
           연구소 정보
@@ -221,7 +221,7 @@
       {/if}
   
       {#if hasCertificationInfo(company)}
-      <div id="certification" class="space-y-2 border-b border-gray-100 pb-4 text-gray-900 dark:text-gray-400">
+      <div id="certification" class="space-y-2 border-t border-gray-100 pt-6 text-gray-900 dark:text-gray-400">
         <h3 class="text-sm font-semibold text-gray-400 flex items-center gap-2">
           <Award size={16} class="text-purple-500" />
           인증 정보
@@ -264,7 +264,7 @@
       {/if}
   
       {#if hasShareholderInfo(company)}
-      <div id="shareholders" class="space-y-2 border-b border-gray-100 pb-4">
+      <div id="shareholders" class="space-y-2 border-t border-gray-100 pt-6">
         <h3 class="text-sm font-semibold text-gray-400 flex items-center gap-2">
           <Users size={16} class="text-yellow-500" />
           주주 정보
@@ -287,7 +287,7 @@
       {/if}
   
       {#if financialData && Array.isArray(financialData) && financialData.length > 0}
-      <div class="space-y-4 border-b border-gray-100 pb-4">
+      <div class="space-y-4 border-t border-gray-100 pt-6">
         <!-- 손익계산서 -->
         <div class="space-y-2">
           <h3 class="text-sm font-semibold text-gray-400 flex items-center gap-2">
@@ -386,7 +386,7 @@
                 { name: '자본금', key: 'capital_stock' },
                 { name: '총이익잉여금', key: 'retained_earnings' }
               ] as metric}
-                <tr class="border-b border-gray-100 hover:bg-gray-100 dark:hover:bg-gray-800">
+                <tr class="border-gray-100 hover:bg-gray-100 dark:hover:bg-gray-800">
                   <td class="w-1/3 px-2 py-2 font-medium">{metric.name}</td>
                   {#each years as year}
                     {@const yearData = financialData.find(d => String(d.year) === year)}
