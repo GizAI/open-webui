@@ -1,6 +1,6 @@
 <script lang="ts">
 	import Spinner from '$lib/components/common/Spinner.svelte';
-	import { mobile} from '$lib/stores';
+	import { mobile } from '$lib/stores';
 	import ActionButtons from '../common/ActionButtons.svelte';
 	import CompanyDetail from './CompanyDetail.svelte';
 
@@ -118,7 +118,7 @@
 
 	function closeCompanyInfo() {
 		isFullscreen = false;
-		onClose()
+		onClose();
 	}
 
 	$: mobileHeight = (() => {
@@ -134,20 +134,22 @@
 		}
 		return isFullscreen ? fullHeight : initialHeight;
 	})();
-
 </script>
 
 <div 
 	class="company-info-wrapper active {isFullscreen ? 'fullscreen' : ''} flex flex-col w-full bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-white-200"
 	class:mobile={$mobile}
 	style={$mobile 
-		? `height: ${mobileHeight}; transition: ${isDragging ? 'none' : 'height 0.3s ease'}; bottom: 0; top: auto;`
+		? (isFullscreen
+			? `height: ${mobileHeight}; transition: ${isDragging ? 'none' : 'height 0.3s ease'}; top: env(safe-area-inset-top); bottom: env(safe-area-inset-bottom);`
+			: `height: ${mobileHeight}; transition: ${isDragging ? 'none' : 'height 0.3s ease'}; top: auto; bottom: 0;`
+		  )
 		: 'margin-top: 1rem;'
 	}
 >
-
 	{#if companyInfo}
-		<div class="bg-gray-50 sticky top-0 z-10 shrink-0 px-4 pt-2 pb-1 border-b bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-white-200">	
+		<!-- Modified header: In mobile fullscreen, offset the header by env(safe-area-inset-top) so it isn’t hidden behind the browser's address bar -->
+		<div class="bg-gray-50 sticky z-10 shrink-0 px-4 pt-2 pb-1 border-b bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-gray-200" style="top: {$mobile && isFullscreen ? 'env(safe-area-inset-top)' : '0'};">
 			{#if $mobile && !isFullscreen}
 				<div
 					class="drag-handle"
@@ -164,9 +166,7 @@
 				</h1>
 			
 				<div class="flex items-center space-x-1 text-gray-900 dark:text-white-200">
-					
 					<ActionButtons companyInfo={companyInfo}/>
-
 					{#if !$mobile}
 						<button class="hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full" on:click={closeCompanyInfo}>
 							<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -234,8 +234,8 @@
 		margin-top: 0;
 	  }
 
-	  
 	  .company-info-wrapper.mobile.fullscreen {
+		/* Ensure fullscreen starts flush below the browser address bar */
 		top: env(safe-area-inset-top);
 		bottom: env(safe-area-inset-bottom);
 		height: auto;
@@ -268,5 +268,4 @@
 		background-color: #ccc;
 		border-radius: 2px;
 	}
-	
-  </style>
+</style>
