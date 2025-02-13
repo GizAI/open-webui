@@ -53,7 +53,7 @@
   <div class="flex items-center space-x-1">
     <!-- 저장 버튼 -->
     <button 
-      class="flex flex-col items-center hover:bg-gray-100 rounded-lg"
+      class="flex flex-col items-center hover:bg-gray-300 rounded-lg"
       on:click={() => saveCompany(companyInfo)}
     >
       <svg 
@@ -78,7 +78,7 @@
   
     <!-- AI채팅 버튼 -->
     <button 
-      class="flex flex-col items-center hover:bg-gray-100 rounded-lg"
+      class="flex flex-col items-center hover:bg-gray-300 rounded-lg"
       on:click={() => openAIChat(companyInfo)}
     >
       <svg 
@@ -96,7 +96,7 @@
   
     <!-- 네이버지도 버튼 -->
     <button 
-      class="flex flex-col items-center hover:bg-gray-100 rounded-lg"
+      class="flex flex-col items-center hover:bg-gray-300 rounded-lg"
       on:click={() => searchNaver(companyInfo)}
     >
       <svg 

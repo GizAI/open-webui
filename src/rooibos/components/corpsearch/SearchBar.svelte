@@ -293,7 +293,7 @@
       <button
         type="button"
         on:click={toggleViewMode}
-        class="ml-4 px-3 py-1 text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-100 rounded-full inline-flex items-center gap-1"
+        class="ml-4 px-3 py-1 text-sm font-medium hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-100 rounded-full inline-flex items-center gap-1"
       >
         {#if resultViewMode === 'list'}
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
