@@ -70,6 +70,7 @@
 		postal_code?: string;
 	};
 
+	export let isFullscreen = false;
 	export let onClose: () => void;
 	export let companyInfo: CompanyInfo = {
 		id: '',
@@ -111,8 +112,6 @@
 		dragOffset = 0;
 	}
 
-	export let isFullscreen = false;
-
 	function toggleFullscreen() {
 		isFullscreen = !isFullscreen;
 	}
@@ -148,7 +147,6 @@
 >
 
 	{#if companyInfo}
-		<!-- 상단 고정 영역 -->
 		<div class="bg-gray-50 sticky top-0 z-10 shrink-0 px-4 pt-2 pb-1 border-b border-gray-200">	
 			{#if $mobile && !isFullscreen}
 				<div
@@ -159,15 +157,16 @@
 					<div class="handle-bar"></div>
 				</div>
 			{/if}
-			<!-- 회사명 / 닫기 버튼 -->
+			
 			<div class="flex items-center justify-between w-full mb-1">
 				<h1 class="{$mobile ? 'sm:text-xl' : 'text-xl'} font-semibold mb-1 truncate">
 					{companyInfo.company_name}
 				</h1>
 			
-				<!-- 기업 저장 버튼 -->
 				<div class="flex items-center space-x-1">
-					<ActionButtons companyInfo={companyInfo}/>				
+					
+					<ActionButtons companyInfo={companyInfo}/>
+
 					{#if !$mobile}
 						<button class="hover:bg-gray-100 rounded-full" on:click={closeCompanyInfo}>
 							<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
