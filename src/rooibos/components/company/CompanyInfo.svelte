@@ -174,7 +174,10 @@
 	{#if companyInfo}
 		<!-- 헤더 영역 -->
 		<!-- sticky header 에서 top 값을 0 대신, fullscreen 모드에서는 env(safe-area-inset-top) 적용 -->
-		<div class="header-container sticky z-10 shrink-0 px-4 pt-2 pb-1 border-b bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-gray-200" style="top: 0;">
+		<div 
+  class="header-container sticky z-10 shrink-0 px-4 pt-2 pb-1 border-b bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-gray-200" 
+  style="top: {isFullscreen ? 'env(safe-area-inset-top)' : '0'};"
+>
 			{#if $mobile && !isFullscreen}
 				<div
 					class="drag-handle"
@@ -271,7 +274,6 @@
 			top: auto;
 			bottom: env(safe-area-inset-bottom);
 			max-height: calc(100vh - env(safe-area-inset-top) - env(safe-area-inset-bottom));
-			padding-top: env(safe-area-inset-top);
 			padding-bottom: env(safe-area-inset-bottom);
 			transform-origin: bottom;
 		}
