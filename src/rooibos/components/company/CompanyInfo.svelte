@@ -258,8 +258,8 @@
 
 		/* 수정: 풀스크린 모드에서 부모 컨테이너를 safe area 내에 표시 */
 		.company-info-wrapper.mobile.fullscreen {
-			top: auto;
-			bottom: env(safe-area-inset-bottom);
+			top: env(safe-area-inset-top);
+			bottom: auto;
 			height: calc(100vh - env(safe-area-inset-top) - env(safe-area-inset-bottom));
 			padding-bottom: env(safe-area-inset-bottom);
 			transform-origin: bottom;
