@@ -138,7 +138,7 @@
 </script>
 
 <div 
-	class="company-info-wrapper active {isFullscreen ? 'fullscreen' : ''} flex flex-col w-full bg-gray-50"
+	class="company-info-wrapper active {isFullscreen ? 'fullscreen' : ''} flex flex-col w-full bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-white-200"
 	class:mobile={$mobile}
 	style={$mobile 
 		? `height: ${mobileHeight}; transition: ${isDragging ? 'none' : 'height 0.3s ease'}; bottom: 0; top: auto;`
@@ -147,7 +147,7 @@
 >
 
 	{#if companyInfo}
-		<div class="bg-gray-50 sticky top-0 z-10 shrink-0 px-4 pt-2 pb-1 border-b border-gray-200">	
+		<div class="bg-gray-50 sticky top-0 z-10 shrink-0 px-4 pt-2 pb-1 border-b bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-white-200">	
 			{#if $mobile && !isFullscreen}
 				<div
 					class="drag-handle"
@@ -158,24 +158,24 @@
 				</div>
 			{/if}
 			
-			<div class="flex items-center justify-between w-full mb-1">
-				<h1 class="{$mobile ? 'sm:text-xl' : 'text-xl'} font-semibold mb-1 truncate">
+			<div class="flex items-center justify-between w-full mb-1 ">
+				<h1 class="{$mobile ? 'sm:text-xl' : 'text-xl'} font-semibold mb-1 truncate text-gray-900 dark:text-gray-200">
 					{companyInfo.company_name}
 				</h1>
 			
-				<div class="flex items-center space-x-1">
+				<div class="flex items-center space-x-1 text-gray-900 dark:text-white-200">
 					
 					<ActionButtons companyInfo={companyInfo}/>
 
 					{#if !$mobile}
-						<button class="hover:bg-gray-100 rounded-full" on:click={closeCompanyInfo}>
+						<button class="hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full" on:click={closeCompanyInfo}>
 							<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
 								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
 							</svg>
 						</button>
 					{:else}
 						<button 
-							class="hover:bg-gray-100 rounded-full" 
+							class="hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full" 
 							on:click={isFullscreen ? closeCompanyInfo : toggleFullscreen}
 						>
 							<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -192,7 +192,7 @@
 			</div>
 		</div>
 
-		<div class="flex-1 px-4 pb-4">
+		<div class="flex-1 px-4 pb-4 bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-white-200">
 			<CompanyDetail company={companyInfo} />
 		</div>
 	{:else}
@@ -208,7 +208,6 @@
 	  width: 30%;
 	  height: calc(100vh - 60px);
 	  z-index: 40;
-	  background: white;
 	  box-shadow: -2px 0 5px rgba(0, 0, 0, 0.1);
 	  overflow-y: auto;
 	  transition: all 0.3s ease;
