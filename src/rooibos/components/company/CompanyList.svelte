@@ -85,6 +85,7 @@
 
 	import { showSidebar, mobile } from '$lib/stores';
 	import ActionButtons from '../common/ActionButtons.svelte';
+	import { formatBusinessNumber, formatDate } from '../common/helper';
 	export let companyList: SearchResult[] = [];
 
 	let fullscreenStates: Record<string, boolean> = {};
@@ -215,7 +216,7 @@
 								<div class="flex items-center">
 									<span class="font-semibold text-gray-900 dark:text-gray-200">{result.company_name}</span>
 									{#if !fullscreenStates[result.smtp_id]}
-										<span class="ml-1 text-gray-900 dark:text-gray-200">({result.business_registration_number})</span>
+										<span class="ml-1 text-gray-900 dark:text-gray-200">({formatBusinessNumber(result.business_registration_number)})</span>
 									{/if}
 									<button type="button" on:click|stopPropagation={() => toggleFullscreen(result.smtp_id)} class="ml-2 text-gray-900 dark:text-gray-200">
 										{#if fullscreenStates[result.smtp_id]}
@@ -236,9 +237,11 @@
 							{/if}
 							{#if result.representative && !fullscreenStates[result.smtp_id]}
 								<div class="text-sm text-gray-500 mt-1">
-									대표자: {result.representative} | 거리: {result.distance_from_user} m
+									대표자: {result.representative ?? "정보없음"} | 거리: {result.distance_from_user ?? "정보없음"} m
+									| 설립연도:  {formatDate(result.establishment_date)} | 직원수: {result.employee_count ?? "정보없음"}
 								</div>
 							{/if}
+
 						</div>
 
 						{#if fullscreenStates[result.smtp_id]}

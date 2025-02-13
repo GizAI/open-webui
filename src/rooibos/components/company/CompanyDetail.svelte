@@ -2,6 +2,7 @@
 <script lang="ts">
 	import { MapPin, Briefcase, Microscope, Award, Users, DollarSign } from 'lucide-svelte';
 	import { WEBUI_API_BASE_URL } from '$lib/constants';
+	import { formatBusinessNumber } from '../common/helper';
   
 	export let company: any;
 	export let financialData: any = null;  
@@ -83,7 +84,7 @@
           {#if company.business_registration_number}
             <p class="text-sm flex items-center justify-between">
               <span>사업자 등록 번호</span>
-              <span>{company.business_registration_number}</span>
+              <span>{formatBusinessNumber(company.business_registration_number)}</span>
             </p>
           {/if}
           {#if company.corporate_number}

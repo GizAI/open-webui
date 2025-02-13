@@ -600,7 +600,7 @@
 
 {#if showCompanyInfo && companyInfo}
 	<div class:sidebar-visible={$showSidebar}>
-		<CompanyInfo {companyInfo} onClose={closeCompanyInfo} bind:isFullscreen />
+		<CompanyInfo {companyInfo} onClose={closeCompanyInfo} />
 	</div>
 {/if}
 
