@@ -1,3 +1,4 @@
+<!-- SearchBar.svelte-->
 <script lang="ts">
 	import { onMount, createEventDispatcher, afterUpdate } from 'svelte';
 	import { filterGroups, filterActions } from './filterdata';

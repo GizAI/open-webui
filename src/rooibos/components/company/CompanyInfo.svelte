@@ -1,3 +1,4 @@
+<!-- CompanyInfo.svelte -->
 <script lang="ts">
 	import Spinner from '$lib/components/common/Spinner.svelte';
 	import { mobile } from '$lib/stores';
@@ -129,7 +130,7 @@
 		const initialHeight = `20vh`;
 		if (isDragging) {
 			if (!isFullscreen && dragOffset < 0) {
-				return `calc(20vh + ${-dragOffset}px)`;
+				return `calc(20vh  ${-dragOffset}px)`;
 			} else if (isFullscreen && dragOffset > 0) {
 				return `calc(${fullHeight} - ${dragOffset}px)`;
 			}
@@ -142,16 +143,16 @@
 	class="company-info-wrapper active {isFullscreen ? 'fullscreen' : ''} flex flex-col w-full bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-white-200"
 	class:mobile={$mobile}
 	style={$mobile 
-		? (isFullscreen
-			? `height: ${mobileHeight}; transition: ${isDragging ? 'none' : 'height 0.3s ease'}; top: auto; bottom: env(safe-area-inset-bottom);`
-			: `height: ${mobileHeight}; transition: ${isDragging ? 'none' : 'height 0.3s ease'}; top: auto; bottom: 0;`
-		  )
-		: 'margin-top: 1rem;'
-	}
+				? (isFullscreen
+					? `height: ${mobileHeight}; transition: ${isDragging ? 'none' : 'height 0.3s ease'}; top: auto; bottom: env(safe-area-inset-bottom);`
+					: `height: ${mobileHeight}; transition: ${isDragging ? 'none' : 'height 0.3s ease'}; top: auto; bottom: 0;`
+				  )
+				: 'margin-top: 1rem;'
+			}
 >
 	{#if companyInfo}
 		<!-- Modified header: In mobile fullscreen, offset the header by env(safe-area-inset-top) so it isn’t hidden behind the browser's address bar -->
-		<div class="bg-gray-50 sticky z-10 shrink-0 px-4 pt-2 pb-1 border-b bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-gray-200" style="top: {$mobile && isFullscreen ? 'env(safe-area-inset-top)' : '0'};">
+		<div class="bg-gray-50 sticky z-10 shrink-0 px-4 pt-2 pb-1 border-b bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-gray-200" style="top: 0;">
 			{#if $mobile && !isFullscreen}
 				<div
 					class="drag-handle"
