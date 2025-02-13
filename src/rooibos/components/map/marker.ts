@@ -39,7 +39,7 @@ export function getMarkerContent(result: any, selected: boolean = false): string
                     border-top: 8px solid ${selected ? "#fbc02d" : "#888"};
                     z-index: -1;
                 "></div>
-                <div style="font-weight: bold;">${result.company_name}(${result.business_registration_number})</div>
+                <div style="font-weight: bold; color: #666;">${result.company_name}(${result.business_registration_number})</div>
                 <div style="font-size: 11px; color: #666; margin-top: 2px;">
                     ${result.representative || '대표자 미상'}
                 </div>
