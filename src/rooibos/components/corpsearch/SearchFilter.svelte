@@ -75,15 +75,15 @@
 
 {#if group}
   <div>
-    <div class="bg-white rounded-lg shadow-sm {$mobile ? 'p-2' : 'p-4'}">
+    <div class="bg-white rounded-lg shadow-sm {$mobile ? 'p-2' : 'p-4'} text-gray-900 dark:bg-gray-950 dark:text-gray-200">
       <div class="filter-group-title flex items-center justify-between mb-3"> 
-        <h3 class="font-semibold text-gray-800 text-sm">{group.title}</h3>
+        <h3 class="font-semibold text-gray-800 dark:text-gray-200 text-sm">{group.title}</h3>
         {#if shouldShowApplyButton(group.id)}
           <button 
             on:click={() => {
               checkFilter(group)
             }}
-            class="p-1.5 hover:bg-blue-50 rounded-md transition-all text-gray-600"
+            class="p-1.5 hover:bg-blue-50 rounded-md transition-all text-gray-800 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800"
             aria-label="적용"
           >
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
@@ -94,75 +94,75 @@
       </div>
       <div>
         {#if group.id === 'representative_age'}
-          <div class="border rounded-lg p-7 bg-gray-50"> 
+          <div class="border rounded-lg p-7 text-gray-900 dark:bg-gray-950 dark:text-gray-200"> 
             <div class="flex items-center gap-2">
               <input
                 type="number"
                 placeholder="나이 입력"
                 bind:value={ageValue}
-                class="w-20 px-2 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all" 
+                class="w-20 px-2 py-1.5 text-sm text-gray-900 dark:bg-gray-950 dark:text-gray-200 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all" 
               />
-              <span class="text-sm text-gray-600 ml-1">세 이상</span>
+              <span class="text-sm text-gray-800 dark:text-gray-200 ml-1">세 이상</span>
             </div>
           </div>
 
         {:else if group.id === 'gender'}
-          <div class="border rounded-lg p-7 bg-gray-50">
+          <div class="border rounded-lg p-7 text-gray-900 dark:bg-gray-950 dark:text-gray-200">
             <div class="flex items-center gap-2"> 
               {#each group.options as option}
-                <label class="flex items-center hover:bg-white p-1.5 rounded-md transition-all">
+                <label class="flex items-center hover:bg-gray-100 dark:hover:bg-gray-800 p-1.5 rounded-md transition-all">
                   <input
                     type="radio"
                     name="gender"
                     checked={selectedFilters[group.id]?.value === option.id || option.id == ''}
                     on:change={async () => await filterChange(group.id, option.id, option.id)}
-                    class="w-4 h-4 text-blue-600 mr-2"
+                    class="w-4 h-4 text-blue-600 mr-2 text-gray-900 dark:bg-gray-950 dark:text-gray-200"
                   />
-                  <span class="text-sm text-gray-700">{option.label}</span>
+                  <span class="text-sm text-gray-800 dark:text-gray-200">{option.label}</span>
                 </label>
               {/each}
             </div>
           </div>
         {:else if group.id === 'establishment_year'}
-        <div class="border rounded-lg p-7 bg-gray-50"> 
+        <div class="border rounded-lg p-7 text-gray-900 dark:bg-gray-950 dark:text-gray-200"> 
           <div class="flex items-center gap-2">
             <input
               type="number"
               placeholder="연도 입력"
               bind:value={establishmentYearValue}
               on:input={(e) => establishmentYearValue = e.currentTarget.value}
-              class="w-20 px-2 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all" 
+              class="w-20 px-2 py-1.5 text-sm text-gray-900 dark:bg-gray-950 dark:text-gray-200 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all" 
             />
-            <span class="text-sm text-gray-600 ml-1">년 이상</span>
+            <span class="text-sm text-gray-800 dark:text-gray-200 ml-1">년 이상</span>
           </div>
         </div> 
 
         {:else}
-          <div class="border rounded-lg {shouldShowApplyButton(group.id) ? 'p-6' : 'p-3'} bg-gray-50">
+          <div class="border rounded-lg {shouldShowApplyButton(group.id) ? 'p-6' : 'p-3'} text-gray-900 dark:bg-gray-950 dark:text-gray-200">
             <div class="grid {shouldShowApplyButton(group.id) ? 'grid-cols-1 gap-1' : 'grid-cols-2 gap-2'}">
              
               {#if ['employee_count', 'sales', 'profit', 'net_profit', 'unallocated_profit'].includes(group.id)}
-                <div class="flex items-center gap-1">
-                  <label class="flex items-center hover:bg-white rounded-md transition-all">
-                    <span class="text-sm text-gray-700 mr-2">최소</span>
+                <div class="flex items-center gap-1 text-gray-900 dark:bg-gray-950 dark:text-gray-200">
+                  <label class="flex items-center hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md transition-all">
+                    <span class="text-sm text-gray-800 dark:text-gray-200 mr-2">최소</span>
                     <input
                       type="number"
                       name={`${group.id}-min`}
                       bind:value={rangeMin}
                       min={group.min}
-                      class="w-20 h-8 text-gray-700 border rounded-md p-1"
+                      class="w-20 h-8 text-gray-900 dark:bg-gray-950 dark:text-gray-200 border rounded-md p-1"
                     />
                   </label>
                   
-                  <label class="flex items-center hover:bg-white rounded-md transition-all">
-                    <span class="text-sm text-gray-700 mr-2">최대</span>
+                  <label class="flex items-center hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md transition-all">
+                    <span class="text-sm text-gray-800 dark:text-gray-200 mr-2">최대</span>
                     <input
                       type="number"
                       name={`${group.id}-max`}
                       bind:value={rangeMax}
                       min={group.min}
                       max={group.max}
-                      class="w-20 h-8 text-gray-700 border rounded-md p-1"
+                      class="w-20 h-8 text-gray-900 dark:bg-gray-950 dark:text-gray-200 border rounded-md p-1"
                     />
                   </label>
                 </div>
@@ -170,9 +170,9 @@
 
                 {#if group.options}
                 {#each group.options as option}
-                <div class="rounded-lg p-1 bg-gray-50"> 
+                <div class="rounded-lg p-1 text-gray-900 dark:bg-gray-950 dark:text-gray-200"> 
                   <div class="flex items-center gap-2">
-                    <label class="flex items-center hover:bg-white rounded-md transition-all"> 
+                    <label class="flex items-center hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md transition-all"> 
                       <input
                         type={group.isMulti ? 'checkbox' : 'radio'}
                         name={group.id}
@@ -187,9 +187,9 @@
                           option.id,
                           group.isMulti ? e.currentTarget?.checked : option.id
                         )}
-                        class="w-4 h-4 text-blue-600 mr-2"
+                        class="w-4 h-4 text-blue-600 mr-2 text-gray-900 dark:bg-gray-950 dark:text-gray-200"
                       />
-                      <span class="text-sm text-gray-700">{option.label}</span>
+                      <span class="text-sm text-gray-800 dark:text-gray-200">{option.label}</span>
                     </label>
                   </div>
                 </div>

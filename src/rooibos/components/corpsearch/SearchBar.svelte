@@ -272,7 +272,7 @@
 	}
 </script>
 
-<div bind:this={filterContainerRef} class="overflow-y-auto">
+<div bind:this={filterContainerRef} class="overflow-y-auto bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-white-200">
 	<div class="flex items-center py-1">
 		<div class="{$showSidebar ? 'hidden' : ''} flex items-center">
 			<button
@@ -288,12 +288,12 @@
 				</div>
 			</button>
 		</div>
-		<div class="text-xl font-semibold text-gray-800 px-2">기업찾기</div>
+		<div class="text-xl font-semibold text-gray-800 dark:text-gray-400 px-2">기업찾기</div>
 		{#if searchCompanyResults.length >= 2 && !isSearchMode}
       <button
         type="button"
         on:click={toggleViewMode}
-        class="ml-4 px-3 py-1 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-full inline-flex items-center gap-1"
+        class="ml-4 px-3 py-1 text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-100 rounded-full inline-flex items-center gap-1"
       >
         {#if resultViewMode === 'list'}
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -351,14 +351,13 @@
 		</button>
 	</div>
 	{#if isSearchMode}
-		<div class="px-4 py-2 h-[calc(100vh-50px)]">
+		<div class="px-4 py-2 h-[calc(100vh-50px)] text-gray-600 dark:text-gray-400">
 			<form on:submit={handleSearch} class="relative">
 				<div
 					class="flex items-center justify-between mb-2 flex-nowrap overflow-x-auto gap-2"
 					style="white-space: nowrap; font-size: {$mobile ? '0.875rem' : '1rem'};"
 				>
 					<div class="flex gap-4">
-						<!-- Updated 체크박스들 with change handlers -->
 						<label class="flex items-center">
 							<input
 								type="checkbox"
@@ -493,10 +492,10 @@
 		<div class="relative">
 			{#if showLeftArrow}
 				<div
-					class="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-gradient-to-r from-gray-50 to-transparent pr-8 pl-2"
+					class="absolute left-0 top-1/2 -translate-y-1/2 z-10 to-transparent pr-8 pl-2"
 				>
 					<button
-						class="rounded-full p-2 bg-white"
+						class="rounded-full p-2 bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-800"
 						on:click={scrollLeft}
 						aria-label="왼쪽으로 스크롤"
 					>
@@ -526,7 +525,7 @@
 								selectedFilters[group.id].min ||
 								selectedFilters[group.id].max)
 								? 'font-bold text-blue-700'
-								: 'font-medium text-gray-700'} whitespace-nowrap rounded-full"
+								: 'font-medium text-gray-600 dark:text-gray-400'} whitespace-nowrap rounded-full"
 							on:click={(e) => toggleFilter(group.id, e)}
 						>
 							{group.isMulti
@@ -552,11 +551,11 @@
 			</div>
 
 			<div
-				class="absolute right-0 top-1/2 -translate-y-1/2 z-10 flex items-center bg-gradient-to-l from-gray-50 to-transparent pl-8 pr-2"
+				class="absolute right-0 top-1/2 -translate-y-1/2 z-10 flex items-center  to-transparent pl-8 pr-2"
 			>
 				{#if showRightArrow}
 					<button
-						class="rounded-full p-2 bg-white"
+						class="rounded-full p-2 bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-800"
 						on:click={scrollRight}
 						aria-label="오른쪽으로 스크롤"
 					>
@@ -574,7 +573,7 @@
 				{#each filterActions.filter((a) => a.action === 'reset') as action}
 					<button
 						type="button"
-						class="text-sm px-3 py-2 font-medium text-gray-700 hover:bg-gray-100 rounded-full whitespace-nowrap"
+						class="text-sm px-3 py-2 font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full"
 						on:click={() => onReset()}
 					>
 						{action.label}
