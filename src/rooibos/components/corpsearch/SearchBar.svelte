@@ -226,7 +226,7 @@
 
 	async function handleAddressSelect(address: any) {
 		await sendAddressCoordinates(address.x, address.y);
-		// toggleSearchMode();
+		toggleSearchMode();
 	}
 
 	onMount(() => {
@@ -500,7 +500,7 @@
 					{#each addressList as address}
 						<button
 							type="button"
-							class="w-full p-4 border-b text-left hover:bg-gray-100"
+							class="w-full p-4 border-b text-left hover:bg-gray-100 dark:hover:bg-gray-800"
 							on:click={() => handleAddressSelect(address)}
 						>
 							<h3 class="font-medium font-semibold">{address.roadAddress}</h3>

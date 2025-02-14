@@ -479,6 +479,8 @@
 			const marker = createCompanyMarker(result, 300, isSingle);
 			mapInstance.companyMarkers.push(marker);
 		});
+
+		searchResults = resultArray;
 	};
 
 	const handleShowCompanyListClick = (viewMode: any) => {
