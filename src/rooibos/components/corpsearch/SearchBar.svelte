@@ -546,7 +546,7 @@
 							(selectedFilters[group.id].value ||
 								selectedFilters[group.id].min ||
 								selectedFilters[group.id].max)
-								? 'font-bold text-blue-700'
+								? 'font-bold text-blue-700 dark:text-yellow-700'
 								: 'font-medium text-gray-600 dark:text-gray-400'} whitespace-nowrap rounded-full"
 							on:click={(e) => toggleFilter(group.id, e)}
 						>
