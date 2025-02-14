@@ -635,7 +635,7 @@
 					</div>
 
 					<div class="flex self-center">
-						<div class="self-center font-medium text-sm font-primary">±â¾÷Ã£±â</div>
+						<div class="self-center font-medium text-sm font-primary">ê¸°ì—… ì°¾ê¸°</div>
 					</div>
 				</a>
 			</div>
@@ -671,7 +671,7 @@
 					</div>
 
 					<div class="flex self-center">
-						<div class="self-center font-medium text-sm font-primary">³ªÀÇ±â¾÷</div>
+						<div class="self-center font-medium text-sm font-primary">ë‚˜ì˜ ê¸°ì—…</div>
 					</div>
 				</a>
 			</div>
