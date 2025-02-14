@@ -24,7 +24,7 @@
 		recent_profit?: number;
 		website?: string;
 		distance_from_user?: number;
-		bookmark_id?: string | null;    
+		bookmark_id?: string | null;
 		fax_number?: string;
 		email?: string;
 		company_type?: string;
@@ -99,42 +99,44 @@
 		labName: false
 	};
 
-	$: filteredCompanies = companyList.filter(company => {
+	$: filteredCompanies = companyList.filter((company) => {
 		let pass = true;
 		if (filters.keyword) {
 			const keyword = filters.keyword.toLowerCase();
-			pass = pass && (
-				company.company_name.toLowerCase().includes(keyword) ||
-				(company.address && company.address.toLowerCase().includes(keyword)) ||
-				(company.business_registration_number && company.business_registration_number.toLowerCase().includes(keyword)) ||
-				(company.representative && company.representative.toLowerCase().includes(keyword))
-			);
+			pass =
+				pass &&
+				(company.company_name.toLowerCase().includes(keyword) ||
+					(company.address && company.address.toLowerCase().includes(keyword)) ||
+					(company.business_registration_number &&
+						company.business_registration_number.toLowerCase().includes(keyword)) ||
+					(company.representative && company.representative.toLowerCase().includes(keyword)));
 		}
-		
+
 		if (filters.industry) {
-			pass = pass && (
-				company.industry && company.industry.toLowerCase().includes(filters.industry.toLowerCase())
-			);
-		}		
-		
+			pass =
+				pass &&
+				company.industry &&
+				company.industry.toLowerCase().includes(filters.industry.toLowerCase());
+		}
+
 		if (filters.smeType) {
-			pass = pass && (
-				Boolean(company.venture_confirmation_type) ||
-				Boolean(company.sme_type) ||
-				Boolean(company.certificate_expiry_date) ||
-				Boolean(company.venture_valid_from)
-			);
+			pass =
+				pass &&
+				(Boolean(company.venture_confirmation_type) ||
+					Boolean(company.sme_type) ||
+					Boolean(company.certificate_expiry_date) ||
+					Boolean(company.venture_valid_from));
 		}
 		if (filters.labName) {
-			pass = pass && (
-				Boolean(company.lab_name) ||
-				Boolean(company.research_field) ||
-				Boolean(company.division) ||
-				Boolean(company.first_approval_date) ||
-				Boolean(company.lab_location)
-			);
+			pass =
+				pass &&
+				(Boolean(company.lab_name) ||
+					Boolean(company.research_field) ||
+					Boolean(company.division) ||
+					Boolean(company.first_approval_date) ||
+					Boolean(company.lab_location));
 		}
-		
+
 		return pass;
 	});
 
@@ -178,11 +180,18 @@
 	}
 </script>
 
-<div class="company-list-wrapper fixed bottom-0 left-0 right-0 top-[50px] bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-white-200 shadow-lg rounded-t-2xl transition-all duration-300"
-	 class:sidebar-margin={$showSidebar}
-	 class:mobile-layout={$mobile}>
-	<div class="p-4 pb-0 bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-white-200 border-gray-300 flex flex-wrap items-center gap-2">
-		<select bind:value={filters.sortBy} class="filter-input bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-200">
+<div
+	class="company-list-wrapper fixed bottom-0 left-0 right-0 top-[50px] bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-white-200 shadow-lg rounded-t-2xl transition-all duration-300"
+	class:sidebar-margin={$showSidebar}
+	class:mobile-layout={$mobile}
+>
+	<div
+		class="p-4 pb-0 bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-white-200 border-gray-300 flex flex-wrap items-center gap-2"
+	>
+		<select
+			bind:value={filters.sortBy}
+			class="filter-input bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-200"
+		>
 			<option value="distanceAscending">거리 (가까운 순)</option>
 			<option value="distanceDescending">거리 (먼 순)</option>
 			<option value="nameAscending">회사명 (오름차순)</option>
@@ -192,14 +201,32 @@
 			<option value="employeeCountAscending">직원 수 (적은 순)</option>
 			<option value="employeeCountDescending">직원 수 (많은 순)</option>
 		</select>
-		<input type="text" placeholder="키워드" bind:value={filters.keyword} class="filter-input bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-200" />
-		<input type="text" placeholder="업종" bind:value={filters.industry} class="filter-input bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-200" />
+		<input
+			type="text"
+			placeholder="키워드"
+			bind:value={filters.keyword}
+			class="filter-input bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-200"
+		/>
+		<input
+			type="text"
+			placeholder="업종"
+			bind:value={filters.industry}
+			class="filter-input bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-200"
+		/>
 		<label class="text-gray-900 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800">
-			<input type="checkbox" bind:checked={filters.smeType} class="text-gray-900 dark:text-gray-200" />
+			<input
+				type="checkbox"
+				bind:checked={filters.smeType}
+				class="text-gray-900 dark:text-gray-200"
+			/>
 			벤처인증
 		</label>
 		<label class="text-gray-900 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800">
-			<input type="checkbox" bind:checked={filters.labName} class="text-gray-900 dark:text-gray-200"/>
+			<input
+				type="checkbox"
+				bind:checked={filters.labName}
+				class="text-gray-900 dark:text-gray-200"
+			/>
 			연구소
 		</label>
 	</div>
@@ -207,29 +234,56 @@
 		<ul class="pt-2 p-4 space-y-2">
 			{#each sortedCompanies as result}
 				<li>
-					<div class="bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-white-200 rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-						<div role="button" tabindex="0"
+					<div
+						class="bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-white-200 rounded-lg shadow-sm border border-gray-200 overflow-hidden"
+					>
+						<div
+							role="button"
+							tabindex="0"
 							on:click={() => toggleFullscreen(result.smtp_id)}
-							on:keydown={(e) => { if(e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleFullscreen(result.smtp_id); } }}
-							class="w-full text-left p-4 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors duration-200">
+							on:keydown={(e) => {
+								if (e.key === 'Enter' || e.key === ' ') {
+									e.preventDefault();
+									toggleFullscreen(result.smtp_id);
+								}
+							}}
+							class="w-full text-left p-4 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors duration-200"
+						>
 							<div class="flex items-center justify-between">
 								<div class="flex items-center">
-									<span class="font-semibold text-gray-900 dark:text-gray-200">{result.company_name}</span>
+									<span class="font-semibold text-gray-900 dark:text-gray-200"
+										>{result.company_name}</span
+									>
 									{#if !fullscreenStates[result.smtp_id]}
-										<span class="ml-1 text-gray-900 dark:text-gray-200">({formatBusinessNumber(result.business_registration_number)})</span>
+										<span class="ml-1 text-gray-900 dark:text-gray-200"
+											>({formatBusinessNumber(result.business_registration_number)})</span
+										>
 									{/if}
-									<button type="button" on:click|stopPropagation={() => toggleFullscreen(result.smtp_id)} class="ml-2 text-gray-900 dark:text-gray-200">
+									<button
+										type="button"
+										on:click|stopPropagation={() => toggleFullscreen(result.smtp_id)}
+										class="ml-2 text-gray-900 dark:text-gray-200"
+									>
 										{#if fullscreenStates[result.smtp_id]}
-											<ChevronUp size={20} strokeWidth="2.5"/>
+											<ChevronUp size={20} strokeWidth="2.5" />
 										{:else}
-											<ChevronDown size={20} strokeWidth="2.5"/>
+											<ChevronDown size={20} strokeWidth="2.5" />
 										{/if}
 									</button>
 								</div>
 								{#if fullscreenStates[result.smtp_id]}
-									<ActionButtons
-									companyInfo={result}
-									/>
+									<div
+										role="button"
+										tabindex="0"
+										on:click|stopPropagation
+										on:keydown={(e) => {
+											if (e.key === 'Enter' || e.key === ' ') {
+												e.preventDefault();
+											}
+										}}
+									>
+										<ActionButtons companyInfo={result} />
+									</div>
 								{/if}
 							</div>
 							{#if result.address && !fullscreenStates[result.smtp_id]}
@@ -237,11 +291,11 @@
 							{/if}
 							{#if result.representative && !fullscreenStates[result.smtp_id]}
 								<div class="text-sm text-gray-500 mt-1">
-									대표자: {result.representative ?? "정보없음"} | 거리: {result.distance_from_user ?? "정보없음"} m
-									| 설립연도:  {formatDate(result.establishment_date)} | 직원수: {result.employee_count ?? "정보없음"}
+									대표자: {result.representative ?? '정보없음'} | 거리: {result.distance_from_user ??
+										'정보없음'} m | 설립연도: {formatDate(result.establishment_date)} | 직원수: {result.employee_count ??
+										'정보없음'}
 								</div>
 							{/if}
-
 						</div>
 
 						{#if fullscreenStates[result.smtp_id]}
@@ -276,7 +330,7 @@
 		border-top-left-radius: 20px;
 		border-top-right-radius: 20px;
 	}
-	
+
 	.filter-input {
 		width: 140px;
 		padding: 0.2rem;
