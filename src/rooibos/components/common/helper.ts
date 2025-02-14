@@ -1,6 +1,6 @@
 export function formatDate(date: any) {
-	if (!date) return "정보없음";
-	
+	if (!date) return '정보없음';
+
 	// yyyymmdd 형태인지 확인
 	if (/^\d{8}$/.test(date)) {
 		const yyyy = date.slice(0, 4);
@@ -11,7 +11,7 @@ export function formatDate(date: any) {
 
 	// 만약 다른 형식이라면 Date 객체로 처리
 	const d = new Date(date);
-	if (isNaN(d)) return "정보없음";
+	if (isNaN(d)) return '정보없음';
 	const yyyy = d.getFullYear();
 	const mm = String(d.getMonth() + 1).padStart(2, '0');
 	const dd = String(d.getDate()).padStart(2, '0');
@@ -19,7 +19,7 @@ export function formatDate(date: any) {
 }
 
 export function formatBusinessNumber(bn: any) {
-	if (!bn) return "정보없음";
+	if (!bn) return '정보없음';
 	// 숫자만 추출
 	const digits = bn.toString().replace(/\D/g, '');
 	// 10자리가 아니라면 그대로 반환하거나 "정보없음"을 반환할 수 있음
@@ -29,7 +29,7 @@ export function formatBusinessNumber(bn: any) {
 }
 
 export function formatCorporateNumber(corpNumber: any) {
-	if (!corpNumber) return "정보없음";
+	if (!corpNumber) return '정보없음';
 	// 숫자만 추출
 	const digits = corpNumber.toString().replace(/\D/g, '');
 	// 13자리 숫자일 경우, 6자리-7자리 형식으로 포맷팅
@@ -38,4 +38,11 @@ export function formatCorporateNumber(corpNumber: any) {
 	}
 	// 13자리가 아니면 그대로 반환하거나 다른 처리 가능
 	return corpNumber;
+}
+
+export function formatDistance(distance?: number): string {
+	if (distance === undefined || distance === null) return '정보없음';
+	if (distance < 100000) return `${distance.toLocaleString('ko-KR')} cm`;
+	const km = distance / 100000;
+	return `${km.toLocaleString('ko-KR', { maximumFractionDigits: 2 })} km`;
 }
