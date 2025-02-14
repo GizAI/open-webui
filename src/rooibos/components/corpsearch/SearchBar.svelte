@@ -83,6 +83,7 @@
 	}
 
 	function toggleSearchMode() {
+		dispatch('showCompanyInfo', false);
 		searchByCompany = true;
 		searchByRepresentative = false;
 		searchByBizNumber = false;
@@ -225,7 +226,7 @@
 
 	async function handleAddressSelect(address: any) {
 		await sendAddressCoordinates(address.x, address.y);
-		toggleSearchMode();
+		// toggleSearchMode();
 	}
 
 	onMount(() => {
@@ -454,7 +455,9 @@
 					<h2 class="text-base font-semibold mb-2">최근 검색 이력</h2>
 
 					{#each searchHistory as item}
-						<div class="flex items-center w-full text-left p-2 border-b hover:bg-gray-100">
+						<div
+							class="flex items-center w-full text-left p-2 border-b hover:bg-gray-100 dark:hover:bg-gray-800"
+						>
 							<button type="button" class="flex-grow text-left" on:click={() => repeatSearch(item)}>
 								{#each item.conditions as c}
 									[{c}]
@@ -478,16 +481,10 @@
 					{#each searchResults as result}
 						<button
 							type="button"
-							class="w-full p-4 border-b text-left hover:bg-gray-100"
+							class="w-full p-4 border-b text-left hover:bg-gray-100 dark:hover:bg-gray-800"
 							on:click={() => {
-								dispatch('searchResultClick', result);
 								toggleSearchMode();
-							}}
-							on:keydown={(e) => {
-								if (e.key === 'Enter' || e.key === ' ') {
-									dispatch('searchResultClick', result);
-									toggleSearchMode();
-								}
+								dispatch('searchResultClick', result);
 							}}
 						>
 							<h3 class="font-medium font-semibold">{result.company_name}</h3>

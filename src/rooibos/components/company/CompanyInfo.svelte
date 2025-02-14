@@ -1,6 +1,5 @@
 <!-- CompanyInfo.svelte -->
 <script lang="ts">
-	// (기존 스크립트 내용은 그대로 유지)
 	import Spinner from '$lib/components/common/Spinner.svelte';
 	import ActionButtons from '../common/ActionButtons.svelte';
 	import CompanyDetail from './CompanyDetail.svelte';
@@ -28,7 +27,7 @@
 		smtp_id: string;
 		latitude: string;
 		longitude: string;
-		bookmark_id?: string | null;    
+		bookmark_id?: string | null;
 		fax_number?: string;
 		email?: string;
 		company_type?: string;
@@ -70,7 +69,7 @@
 		confirming_authority?: string;
 		new_reconfirmation_code?: string;
 		postal_code?: string;
-	};
+	}
 
 	export let isFullscreen = false;
 	export let onClose: () => void;
@@ -145,15 +144,15 @@
 
 <!-- 외부 컨테이너: 모바일 풀스크린일 경우 top을 safe-area-inset-top으로 설정 -->
 <div
-	class="company-info-wrapper active {isFullscreen ? 'fullscreen' : ''} flex flex-col w-full bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-white-200"
+	class="company-info-wrapper active {isFullscreen
+		? 'fullscreen'
+		: ''} flex flex-col w-full bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-white-200"
 	class:mobile={$mobile}
 	style={$mobile
-		? (isFullscreen
+		? isFullscreen
 			? `height: ${mobileHeight}; transition: ${isDragging ? 'none' : 'height 0.3s ease'}; top: env(safe-area-inset-top); bottom: auto;`
 			: `height: ${mobileHeight}; transition: ${isDragging ? 'none' : 'height 0.3s ease'}; top: auto; bottom: 0;`
-		  )
-		: 'margin-top: 1rem;'
-	}
+		: 'margin-top: 1rem;'}
 >
 	{#if $mobile && isFullscreen}
 		<!-- 풀스크린일 때 safe area spacer는 불필요 -->
@@ -161,9 +160,13 @@
 
 	{#if companyInfo}
 		<!-- 헤더 영역: 모바일 풀스크린에서는 부모 컨테이너의 safe area를 사용하므로 top은 0 -->
-		<div 
-			class="header-container sticky z-10 shrink-0 px-4 pt-2 pb-1 border-b bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-gray-200" 
-			style="top: {$mobile && isFullscreen ? '0' : (isFullscreen ? 'env(safe-area-inset-top)' : '0')};"
+		<div
+			class="header-container sticky z-10 shrink-0 px-4 pt-2 pb-1 border-b bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-gray-200"
+			style="top: {$mobile && isFullscreen
+				? '0'
+				: isFullscreen
+					? 'env(safe-area-inset-top)'
+					: '0'};"
 		>
 			{#if $mobile && !isFullscreen}
 				<div
@@ -178,7 +181,9 @@
 
 			<div class="flex items-center justify-between w-full mb-1">
 				<h1
-					class="{$mobile ? 'sm:text-xl' : 'text-xl'} font-semibold mb-1 truncate text-gray-900 dark:text-gray-200"
+					class="{$mobile
+						? 'sm:text-xl'
+						: 'text-xl'} font-semibold mb-1 truncate text-gray-900 dark:text-gray-200"
 					on:touchstart|preventDefault|stopPropagation={handleTouchStart}
 					on:touchmove|preventDefault|stopPropagation={handleTouchMove}
 					on:touchend|preventDefault|stopPropagation={handleTouchEnd}
@@ -187,24 +192,44 @@
 				</h1>
 
 				<div class="flex items-center space-x-1 text-gray-900 dark:text-white-200">
-					<ActionButtons companyInfo={companyInfo}/>
+					<ActionButtons {companyInfo} />
 					{#if !$mobile}
-						<button class="hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full" on:click={closeCompanyInfo}>
-							<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+						<button
+							class="hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full"
+							on:click={closeCompanyInfo}
+						>
+							<svg
+								xmlns="http://www.w3.org/2000/svg"
+								class="h-5 w-5 text-gray-500"
+								fill="none"
+								viewBox="0 0 24 24"
+								stroke="currentColor"
+							>
+								<path
+									stroke-linecap="round"
+									stroke-linejoin="round"
+									stroke-width="2"
+									d="M6 18L18 6M6 6l12 12"
+								/>
 							</svg>
 						</button>
 					{:else}
-						<button 
-							class="hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full" 
+						<button
+							class="hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full"
 							on:click={isFullscreen ? closeCompanyInfo : toggleFullscreen}
 						>
-							<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-								<path 
-									stroke-linecap="round" 
-									stroke-linejoin="round" 
-									stroke-width="2" 
-									d={isFullscreen ? "M6 18L18 6M6 6l12 12" : "M5 15l7-7 7 7"}
+							<svg
+								xmlns="http://www.w3.org/2000/svg"
+								class="h-5 w-5 text-gray-500"
+								fill="none"
+								viewBox="0 0 24 24"
+								stroke="currentColor"
+							>
+								<path
+									stroke-linecap="round"
+									stroke-linejoin="round"
+									stroke-width="2"
+									d={isFullscreen ? 'M6 18L18 6M6 6l12 12' : 'M5 15l7-7 7 7'}
 								/>
 							</svg>
 						</button>
