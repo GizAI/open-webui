@@ -188,7 +188,7 @@
 	let selectedMarker: any = null;
 	let mapInstance: MapInstance | null = null;
 	let searchResults: SearchResult[] = [];
-    let companyList: SearchResult[] = [];
+	let companyList: SearchResult[] = [];
 	let location: Location | null = null;
 	let error: string | null = null;
 	let loading = true;
@@ -201,7 +201,7 @@
 	let showCompanyInfo = false;
 	let zoom = 18;
 	let isFullscreen = false;
-    let markerClustering: any;
+	let markerClustering: any;
 	let companyInfo: CompanyInfo = {
 		id: '',
 		company_id: '',
@@ -282,7 +282,11 @@
 		});
 	}
 
-	function createCompanyMarker(result: SearchResult, selectedZIndex: number = 300, autoSelect: boolean = false): any {
+	function createCompanyMarker(
+		result: SearchResult,
+		selectedZIndex: number = 300,
+		autoSelect: boolean = false
+	): any {
 		const point = createLatLng(result.latitude, result.longitude);
 		const marker = new naver.maps.Marker({
 			position: point,
@@ -296,7 +300,7 @@
 		});
 
 		marker.company_info = result;
-    	marker.company_name = result.company_name;
+		marker.company_name = result.company_name;
 		marker.business_registration_number = result.business_registration_number;
 		marker.representative = result.representative;
 
@@ -393,7 +397,9 @@
 	};
 
 	const handleReset = () => {
-		selectedFilters = {};
+		selectedFilters = {
+			radius: { checked: true, value: '200' }
+		};
 		handleSearch('', selectedFilters);
 	};
 
@@ -412,12 +418,12 @@
 		}
 		const mapOptions = {
 			center: createLatLng(position.lat, position.lng),
-			zoom: zoom,
+			zoom: zoom
 			// styles: darkStyle,
 			// mapTypeControl: true,
 			// scaleControl: false,
 			// logoControl: false,
-			// mapDataControl: false 
+			// mapDataControl: false
 		};
 
 		const map = new naver.maps.Map(mapContainer, mapOptions);
@@ -475,11 +481,10 @@
 		});
 	};
 
-
 	const handleShowCompanyListClick = (viewMode: any) => {
 		resultViewMode = viewMode;
-    	companyList = searchResults;
-		
+		companyList = searchResults;
+
 		if (resultViewMode != 'map') showCompanyInfo = false;
 	};
 
@@ -528,8 +533,8 @@
 
 		initialize();
 
-    	window.addEventListener('clusterClick', (e: CustomEvent) => {
-			companyList =  e.detail.markers.map(marker => marker.company_info);
+		window.addEventListener('clusterClick', (e: CustomEvent) => {
+			companyList = e.detail.markers.map((marker) => marker.company_info);
 			resultViewMode = 'list';
 			showCompanyInfo = false;
 		});
@@ -561,8 +566,8 @@
 			selectedMarker = null;
 		}
 	}
-
 </script>
+
 <svelte:head>
 	<title>
 		기업찾기 | {$WEBUI_NAME}
@@ -592,9 +597,7 @@
 
 {#if resultViewMode != 'map' && !($showSidebar && $mobile)}
 	<div class="company-list-wrapper w-full" class:sidebar-visible={$showSidebar}>
-		<CompanyList
-			{companyList}
-		/>
+		<CompanyList {companyList} />
 	</div>
 {/if}
 
