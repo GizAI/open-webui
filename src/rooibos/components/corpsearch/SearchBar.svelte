@@ -20,7 +20,7 @@
 
 	let isSearchMode = false;
 	let searchResults: any = [];
-	let addressList: any = []; // To store address search results when '지명' is selected
+	let addressList: any = [];
 	let filterScrollRef: HTMLDivElement | null = null;
 	let showLeftArrow = false;
 	let showRightArrow = false;
@@ -58,7 +58,7 @@
 		};
 
 		if (filterPosition.left + searchFilterWidth > containerRect.width) {
-			filterPosition.left = containerRect.width - searchFilterWidth - 20; // 여유 공간 16px
+			filterPosition.left = containerRect.width - searchFilterWidth - 20;
 		}
 
 		if (activeFilterGroup === groupId) {
@@ -99,7 +99,6 @@
 		toggleViewMode();
 	}
 
-	// If '지명' is selected, clear other checkboxes.
 	function handleLocationChange() {
 		if (searchByLocation) {
 			searchByCompany = false;
@@ -150,33 +149,34 @@
 			} else {
 				searchResults = data.data;
 				addressList = [];
-				const conditionNames = [];
-				if (searchByCompany) conditionNames.push('기업명');
-				if (searchByRepresentative) conditionNames.push('대표자명');
-				if (searchByBizNumber) conditionNames.push('사업자번호');
-
-				const newHistoryItem = {
-					query: searchValue,
-					conditions: conditionNames,
-					date: new Date().toLocaleDateString('ko-KR', {
-						year: 'numeric',
-						month: '2-digit',
-						day: '2-digit'
-					})
-				};
-
-				const duplicateIndex = searchHistory.findIndex((item) => {
-					if (item.query !== newHistoryItem.query) return false;
-					if (item.conditions.length !== newHistoryItem.conditions.length) return false;
-					return item.conditions.every((c) => newHistoryItem.conditions.includes(c));
-				});
-
-				if (duplicateIndex > -1) {
-					searchHistory.splice(duplicateIndex, 1);
-				}
-				searchHistory.unshift(newHistoryItem);
-				localStorage.setItem('searchHistory', JSON.stringify(searchHistory));
 			}
+			const conditionNames = [];
+			if (searchByCompany) conditionNames.push('기업명');
+			if (searchByRepresentative) conditionNames.push('대표자명');
+			if (searchByBizNumber) conditionNames.push('사업자번호');
+			if (searchByLocation) conditionNames.push('지명');
+
+			const newHistoryItem = {
+				query: searchValue,
+				conditions: conditionNames,
+				date: new Date().toLocaleDateString('ko-KR', {
+					year: 'numeric',
+					month: '2-digit',
+					day: '2-digit'
+				})
+			};
+
+			const duplicateIndex = searchHistory.findIndex((item) => {
+				if (item.query !== newHistoryItem.query) return false;
+				if (item.conditions.length !== newHistoryItem.conditions.length) return false;
+				return item.conditions.every((c) => newHistoryItem.conditions.includes(c));
+			});
+
+			if (duplicateIndex > -1) {
+				searchHistory.splice(duplicateIndex, 1);
+			}
+			searchHistory.unshift(newHistoryItem);
+			localStorage.setItem('searchHistory', JSON.stringify(searchHistory));
 		}
 	}
 
@@ -190,7 +190,7 @@
 		searchByCompany = item.conditions.includes('기업명');
 		searchByRepresentative = item.conditions.includes('대표자명');
 		searchByBizNumber = item.conditions.includes('사업자번호');
-		searchByLocation = false;
+		searchByLocation = item.conditions.includes('지명');
 
 		searchValue = item.query;
 
@@ -427,7 +427,7 @@
 					<input
 						type="text"
 						bind:value={searchValue}
-						class="w-full pl-4 pr-16 py-2 dark:bg-gray-950 dark:text-gray-200 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+						class="w-full pl-4 pr-16 py-2 dark:bg-gray-950 dark:text-gray-200 border border-gray-300 rounded-lg"
 						bind:this={inputRef}
 					/>
 

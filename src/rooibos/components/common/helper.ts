@@ -42,7 +42,7 @@ export function formatCorporateNumber(corpNumber: any) {
 
 export function formatDistance(distance?: number): string {
 	if (distance === undefined || distance === null) return '정보없음';
-	if (distance < 100000) return `${distance.toLocaleString('ko-KR')} cm`;
-	const km = distance / 100000;
+	if (distance < 1000) return `${distance.toLocaleString('ko-KR')} m`;
+	const km = distance / 1000;
 	return `${km.toLocaleString('ko-KR', { maximumFractionDigits: 2 })} km`;
 }

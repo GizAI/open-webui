@@ -251,6 +251,14 @@
 				location.lng = e.coord._lng;
 				showCompanyInfo = false;
 			}
+
+			if (selectedMarker) {
+				selectedMarker.setIcon({
+					content: getMarkerContent(selectedMarker.company_info),
+					anchor: new naver.maps.Point(50, 30)
+				});
+				selectedMarker = null;
+			}
 			activeFilterGroup = null;
 		});
 
