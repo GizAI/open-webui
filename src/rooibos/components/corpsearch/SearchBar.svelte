@@ -180,6 +180,12 @@
 		}
 	}
 
+	function clearSearch() {
+		searchValue = '';
+		searchResults = [];
+		addressList = [];
+	}
+
 	function repeatSearch(item: { query: string; conditions: string[] }) {
 		searchByCompany = item.conditions.includes('기업명');
 		searchByRepresentative = item.conditions.includes('대표자명');
@@ -314,7 +320,6 @@
 					>
 						<polygon points="3 7.5 3 18.5 12 22 21 18.5 21 7.5 12 4 3 7.5" />
 						<path d="M12 22V4" />
-						<path d="M3 7.5L21 7.5" />
 					</svg>
 					지도보기
 				{:else}
@@ -376,7 +381,7 @@
 		</button>
 	</div>
 	{#if isSearchMode}
-		<div class="px-4 py-2 h-[calc(100vh-50px)] text-gray-600 dark:text-gray-400">
+		<div class="px-4 py-2 h-screen text-gray-600 dark:text-gray-400">
 			<form on:submit={handleSearch} class="relative">
 				<div
 					class="flex items-center justify-between mb-2 flex-nowrap overflow-x-auto gap-2"
@@ -426,9 +431,45 @@
 						bind:this={inputRef}
 					/>
 
+					{#if searchValue}
+						<button
+							type="button"
+							class="absolute inset-y-0 right-10 flex items-center px-2 text-gray-400 hover:text-gray-600"
+							on:click={clearSearch}
+							aria-label="검색어 삭제"
+						>
+							<svg
+								xmlns="http://www.w3.org/2000/svg"
+								width="20"
+								height="20"
+								fill="none"
+								viewBox="0 0 24 24"
+								stroke="currentColor"
+								stroke-width="2"
+							>
+								<line
+									x1="18"
+									y1="6"
+									x2="6"
+									y2="18"
+									stroke-linecap="round"
+									stroke-linejoin="round"
+								/>
+								<line
+									x1="6"
+									y1="6"
+									x2="18"
+									y2="18"
+									stroke-linecap="round"
+									stroke-linejoin="round"
+								/>
+							</svg>
+						</button>
+					{/if}
+
 					<button
 						type="submit"
-						class="absolute inset-y-0 right-0 flex items-center px-3 text-gray-400 hover:bg-blue-700 rounded-r-lg"
+						class="absolute inset-y-0 right-0 flex items-center px-3 text-gray-400 hover:bg-blue-700 dark:hover:bg-gray-600 rounded-r-lg"
 						aria-label="검색"
 					>
 						<svg
