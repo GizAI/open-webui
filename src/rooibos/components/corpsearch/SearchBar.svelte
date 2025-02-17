@@ -145,8 +145,14 @@
 			const data = await response.json();
 
 			if (searchByLocation) {
+				if(data.data.length == 1) {
+					handleAddressSelect(data.data[0]);
+					return;
+				}
+				
 				addressList = data.data;
 				searchResults = [];
+
 			} else {
 				searchResults = data.data;
 				addressList = [];
@@ -227,6 +233,7 @@
 
 			const data = await response.json();
 			const list = data.data;
+			
 			dispatch('addressResultClick', list);
 		} catch (error) {
 			console.error('Error sending address coordinates:', error);

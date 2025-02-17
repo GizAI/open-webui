@@ -23,19 +23,32 @@ import requests
 import requests
 
 def search_place(query: str):
-    url = "https://naveropenapi.apigw.ntruss.com/map-place/v1/search"
+    url = "https://openapi.naver.com/v1/search/local.json"
     headers = {
-        "X-NCP-APIGW-API-KEY-ID": str(NAVER_MAP_CLIENT_ID).strip(),
-        "X-NCP-APIGW-API-KEY": str(NAVER_MAP_CLIENT_SECRET).strip(),
+        "X-Naver-Client-Id": str(NAVER_ID).strip(),
+        "X-Naver-Client-Secret": str(NAVER_CLIENT_SECRET).strip(),
     }
-    params = {"query": query}  # 강남역 좌표 기준으로 검색
+    params = {"query": query}
     response = requests.get(url, headers=headers, params=params)
+
+    if response.status_code != 200:
+        return {"error": response.json()}
+
     data = response.json()
-    
-    if data.get("places"):
-        return data["places"]
+
+    if data.get("items"):
+        for place in data["items"]:
+            if "mapx" in place and "mapy" in place:
+                try:
+                    place["x"] = float(place["mapx"]) / 1e7
+                    place["y"] = float(place["mapy"]) / 1e7
+                except Exception:
+                    place["x"] = None
+                    place["y"] = None
+        return data["items"]
     else:
         return {"error": "검색된 장소가 없습니다."}
+
 
 def get_coordinates(query: str):
     url = "https://naveropenapi.apigw.ntruss.com/map-geocode/v2/geocode"
@@ -87,11 +100,14 @@ async def search(request: Request):
 
 
     if "location" in categories and query:
-        coordinates_result = get_coordinates(query)
-        if coordinates_result:
+        if "역" in query:
+            location_result = search_place(query)
+        else:
+            location_result = get_coordinates(query)
+        if location_result:
             return {
                 "success": True,
-                "data": coordinates_result,
+                "data": location_result,
                 "total": 0,
                 "query": {
                     "search": query,
@@ -103,7 +119,7 @@ async def search(request: Request):
             return {
                 "success": False,
                 "error": "No location found",
-                "data": coordinates_result,
+                "data": location_result,
                 "total": 0,
                 "query": {"search": query, "filters": {}},
             }     

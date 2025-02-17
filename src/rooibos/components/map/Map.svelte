@@ -484,10 +484,9 @@
 		mapInstance.map.setCenter(point);
 		mapInstance.map.setZoom(zoom);
 
-		const isSingle = !Array.isArray(results);
-
 		resultArray.forEach((result) => {
-			const marker = createCompanyMarker(result, 300, isSingle);
+			const marker = createCompanyMarker(result, 300, false);
+			markerClustering.addMarker(marker);
 			mapInstance.companyMarkers.push(marker);
 		});
 
