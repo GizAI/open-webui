@@ -1,10 +1,13 @@
-<!-- ChatPlaceholder.svelte -->
+<!-- ChatCategories.svelte -->
 <script lang="ts">
 	import { createEventDispatcher, onMount } from 'svelte';
 	import { fade } from 'svelte/transition';
     import { WEBUI_API_BASE_URL } from '$lib/constants';
+	import Modal from '$lib/components/common/Modal.svelte';
 
 	const dispatch = createEventDispatcher();
+
+	export let show = false;
 
 	// 하위 아이템 타입
 	type SubItem = {
@@ -86,74 +89,95 @@
 	// 하위 아이템 클릭 시 상위에 이벤트 전달
 	function selectSubItem(item: SubItem) {
 		dispatch('select', item);
+		show = false;
 	}
 </script>
 
-<!-- HTML 부분은 categories 배열이 로드되었을 때만 표시되도록 수정 -->
-{#if categories.length > 0}
-	<div 
-		class="m-auto w-full max-w-6xl px-8 lg:px-20 py-6 categories-container" 
-		style="margin-top: {topMargin}px;"
-	>
-		<!-- 헤더 -->
-		<div class="mb-4">
-			<h2 class="text-2xl font-bold text-gray-800 dark:text-gray-100">카테고리 선택</h2>
-			<p class="text-gray-600 dark:text-gray-400 text-sm">원하는 항목을 선택하세요.</p>
+<Modal size="xl" bind:show>
+	<div class="text-gray-700 dark:text-gray-100">
+		<div class="flex justify-between dark:text-gray-300 px-5 pt-4 pb-1">
+			<div class="text-lg font-medium self-center">카테고리 선택</div>
+			<button
+				class="self-center"
+				on:click={() => {
+					show = false;
+				}}
+			>
+				<svg
+					xmlns="http://www.w3.org/2000/svg"
+					viewBox="0 0 20 20"
+					fill="currentColor"
+					class="w-5 h-5"
+				>
+					<path
+						d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z"
+					/>
+				</svg>
+			</button>
 		</div>
 
-		<!-- flex 컨테이너 -->
-		<div class="flex flex-col md:flex-row gap-4 items-start md:min-h-[500px]">
-			<!-- 대분류 목록 (1단계) -->
-			<div class="md:w-1/3 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden md:max-h-[500px] md:overflow-y-auto">
-				{#each categories as category, index}
-					<button
-						type="button"
-						class="w-full text-left p-4 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 transition {activeCategoryIndex === index ? 'bg-gray-100 dark:bg-gray-800' : ''}"
-						on:mouseenter={() => { if (!isMobile) activeCategoryIndex = index; }}
-						on:click={() => activeCategoryIndex = index}
-					>
-						<div class="font-semibold text-gray-800 dark:text-gray-100">{category.title}</div>
-					</button>
-				{/each}
-			</div>
+		{#if categories.length > 0}
+			<div class="m-auto w-full px-8 lg:px-20 py-6 categories-container">
+				<!-- 헤더 -->
+				<div class="mb-4">
+					<p class="text-gray-600 dark:text-gray-400 text-sm">원하는 항목을 선택하세요.</p>
+				</div>
 
-			<!-- 중분류 목록 (2단계) -->
-			<div class="md:w-2/3 md:max-h-[500px] md:overflow-y-auto">
-				{#if isMobile}
-					{#key activeCategoryIndex}
-						<div class="grid grid-cols-1 sm:grid-cols-2 gap-4 p-1" in:fade out:fade>
-							{#each categories[activeCategoryIndex].items as item (item.title)}
-								<button
-									class="w-full text-left p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition"
-									on:click={() => selectSubItem(item)}
-								>
-									<div class="font-medium text-gray-800 dark:text-gray-100">{item.title}</div>
-									<div class="mt-1 text-xs text-gray-500 dark:text-gray-400">{item.description}</div>
-								</button>
-							{/each}
-						</div>
-					{/key}
-				{:else}
-					<div class="grid grid-cols-1 sm:grid-cols-2 gap-4 p-1">
-						{#each categories[activeCategoryIndex].items as item (item.title)}
+				<!-- flex 컨테이너 -->
+				<div class="flex flex-col md:flex-row gap-4 items-start md:min-h-[500px]">
+					<!-- 대분류 목록 (1단계) -->
+					<div class="md:w-1/3 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden md:max-h-[500px] md:overflow-y-auto">
+						{#each categories as category, index}
 							<button
-								class="w-full text-left p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition"
-								on:click={() => selectSubItem(item)}
+								type="button"
+								class="w-full text-left p-4 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 transition {activeCategoryIndex === index ? 'bg-gray-100 dark:bg-gray-800' : ''}"
+								on:mouseenter={() => { if (!isMobile) activeCategoryIndex = index; }}
+								on:click={() => activeCategoryIndex = index}
 							>
-								<div class="font-medium text-gray-800 dark:text-gray-100">{item.title}</div>
-								<div class="mt-1 text-xs text-gray-500 dark:text-gray-400">{item.description}</div>
+								<div class="font-semibold text-gray-800 dark:text-gray-100">{category.title}</div>
 							</button>
 						{/each}
 					</div>
-				{/if}
+
+					<!-- 중분류 목록 (2단계) -->
+					<div class="md:w-2/3 md:max-h-[500px] md:overflow-y-auto">
+						{#if isMobile}
+							{#key activeCategoryIndex}
+								<div class="grid grid-cols-1 sm:grid-cols-2 gap-4 p-1" in:fade out:fade>
+									{#each categories[activeCategoryIndex].items as item (item.title)}
+										<button
+											class="w-full text-left p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition"
+											on:click={() => selectSubItem(item)}
+										>
+											<div class="font-medium text-gray-800 dark:text-gray-100">{item.title}</div>
+											<div class="mt-1 text-xs text-gray-500 dark:text-gray-400">{item.description}</div>
+										</button>
+									{/each}
+								</div>
+							{/key}
+						{:else}
+							<div class="grid grid-cols-1 sm:grid-cols-2 gap-4 p-1">
+								{#each categories[activeCategoryIndex].items as item (item.title)}
+									<button
+										class="w-full text-left p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition"
+										on:click={() => selectSubItem(item)}
+									>
+										<div class="font-medium text-gray-800 dark:text-gray-100">{item.title}</div>
+										<div class="mt-1 text-xs text-gray-500 dark:text-gray-400">{item.description}</div>
+									</button>
+								{/each}
+							</div>
+						{/if}
+					</div>
+				</div>
 			</div>
-		</div>
+		{:else}
+			<div class="flex justify-center items-center h-full p-8">
+				<p class="text-gray-600 dark:text-gray-400">카테고리를 불러오는 중...</p>
+			</div>
+		{/if}
 	</div>
-{:else}
-	<div class="flex justify-center items-center h-full">
-		<p class="text-gray-600 dark:text-gray-400">카테고리를 불러오는 중...</p>
-	</div>
-{/if}
+</Modal>
 
 <style>
 	/* 필요에 따라 추가적인 커스텀 스타일 작성 */

@@ -2,6 +2,7 @@
 	import { toast } from 'svelte-sonner';
 	import { v4 as uuidv4 } from 'uuid';
 	import { createPicker, getAuthToken } from '$lib/utils/google-drive-picker';
+	import ChatCategories from '$rooibos/components/chat/ChatCategories.svelte';
 
 	import { onMount, tick, getContext, createEventDispatcher, onDestroy } from 'svelte';
 	const dispatch = createEventDispatcher();
@@ -82,6 +83,7 @@
 	});
 
 	let loaded = false;
+	let showCategoryModal = false;
 	let recording = false;
 
 	let chatInputContainerElement;
@@ -1134,14 +1136,13 @@
 										<div class="flex gap-0.5 items-center overflow-x-auto scrollbar-none flex-1">
 											{#if $_user}
 												{#if $config?.features?.enable_web_search && ($_user.role === 'admin' || $_user?.permissions?.features?.web_search)}
-													<Tooltip content={$i18n.t('Search the internet')} placement="top">
+													<Tooltip content={$i18n.t('Web Search')} placement="top">
 														<button
 															on:click|preventDefault={() => (webSearchEnabled = !webSearchEnabled)}
 															type="button"
-															class="px-1.5 @sm:px-2.5 py-1.5 flex gap-1.5 items-center text-sm rounded-full font-medium transition-colors duration-300 focus:outline-none max-w-full overflow-hidden {webSearchEnabled ||
-															($settings?.webSearch ?? false) === 'always'
-																? 'bg-blue-100 dark:bg-blue-500/20 text-blue-500 dark:text-blue-400'
-																: 'bg-transparent text-gray-600 dark:text-gray-400 border-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800'}"
+															class={webSearchEnabled || ($settings?.webSearch ?? false) === 'always'
+																? 'px-1.5 @sm:px-2.5 py-1.5 flex gap-1.5 items-center text-sm rounded-full font-medium transition-colors duration-300 focus:outline-none max-w-full overflow-hidden bg-blue-100 dark:bg-blue-500/20 text-blue-500 dark:text-blue-400'
+																: 'px-1.5 @sm:px-2.5 py-1.5 flex gap-1.5 items-center text-sm rounded-full font-medium transition-colors duration-300 focus:outline-none max-w-full overflow-hidden bg-transparent text-gray-600 dark:text-gray-400 border-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800'}
 														>
 															<GlobeAlt className="size-5" strokeWidth="1.75" />
 															<span
@@ -1189,6 +1190,23 @@
 														</button>
 													</Tooltip>
 												{/if}
+
+												
+												<Tooltip content={$i18n.t('카테고리 선택')} placement="top">
+													<button
+														on:click|preventDefault={() => (showCategoryModal = true)}
+														type="button"
+														class="px-1.5 @sm:px-2.5 py-1.5 flex gap-1.5 items-center text-sm rounded-full font-medium transition-colors duration-300 focus:outline-none max-w-full overflow-hidden bg-transparent text-gray-600 dark:text-gray-400 border-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800"
+													>
+														<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="size-5">
+															<path d="M10 2a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0v-1.5A.75.75 0 0110 2zM10 15a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0v-1.5A.75.75 0 0110 15zM10 7a3 3 0 100 6 3 3 0 000-6zM15.657 5.404a.75.75 0 10-1.06-1.06l-1.061 1.06a.75.75 0 001.06 1.06l1.06-1.06zM6.464 14.596a.75.75 0 10-1.06-1.06l-1.06 1.06a.75.75 0 001.06 1.06l1.06-1.06zM18 10a.75.75 0 01-.75.75h-1.5a.75.75 0 010-1.5h1.5A.75.75 0 0118 10zM5 10a.75.75 0 01-.75.75h-1.5a.75.75 0 010-1.5h1.5A.75.75 0 015 10zM14.596 15.657a.75.75 0 001.06-1.06l-1.06-1.061a.75.75 0 10-1.06 1.06l1.06 1.06zM5.404 6.464a.75.75 0 001.06-1.06l-1.06-1.06a.75.75 0 10-1.06 1.06l1.06 1.06z" />
+														</svg>
+														<span class="hidden @sm:block whitespace-nowrap overflow-hidden text-ellipsis translate-y-[0.5px] mr-0.5">
+															{$i18n.t('카테고리')}
+														</span>
+													</button>
+												</Tooltip>
+											
 											{/if}
 										</div>
 									</div>
@@ -1371,4 +1389,34 @@
 			</div>
 		</div>
 	</div>
+
+	<ChatCategories 
+		bind:show={showCategoryModal} 
+		on:select={(e) => {
+			const item = e.detail;
+			prompt = `${item.title}\n${item.description}`;
+		}}
+	/>
 {/if}
+
+<style>
+	input::-webkit-outer-spin-button,
+	input::-webkit-inner-spin-button {
+		/* display: none; <- Crashes Chrome on hover */
+		-webkit-appearance: none;
+		margin: 0; /* <-- Apparently some margin are still there even though it's hidden */
+	}
+
+	.tabs::-webkit-scrollbar {
+		display: none; /* for Chrome, Safari and Opera */
+	}
+
+	.tabs {
+		-ms-overflow-style: none; /* IE and Edge */
+		scrollbar-width: none; /* Firefox */
+	}
+
+	input[type='number'] {
+		-moz-appearance: textfield; /* Firefox */
+	}
+</style>
