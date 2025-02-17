@@ -39,6 +39,9 @@
 		conditions: string[];
 	}> = [];
 
+	// 검색 실행 여부를 확인하기 위한 변수
+	let hasSearched = false;
+
 	const dispatch = createEventDispatcher();
 
 	function handleSubmit(event: SubmitEvent) {
@@ -108,7 +111,7 @@
 		}
 	}
 
-	// If any non-'지명' checkbox is selected, uncheck '지명'
+	// 만약 '지명' 이외의 체크박스가 선택되면 '지명' 체크 해제
 	function handleNonLocationChange(event: Event) {
 		const target = event.target as HTMLInputElement;
 		if (target.checked) {
@@ -144,19 +147,23 @@
 
 			const data = await response.json();
 
-			if (searchByLocation) {
-				if(data.data.length == 1) {
-					handleAddressSelect(data.data[0]);
-					return;
-				}
-				
-				addressList = data.data;
-				searchResults = [];
+			if(data.data.length < 1) {
+				hasSearched = true; 
+				return;
+			}
 
+			if (searchByLocation) {
+				if (data.data.length == 1) {
+					handleAddressSelect(data.data[0]);
+				} else {
+					addressList = data.data;
+					searchResults = [];
+				}
 			} else {
 				searchResults = data.data;
 				addressList = [];
 			}
+
 			const conditionNames = [];
 			if (searchByCompany) conditionNames.push('기업명');
 			if (searchByRepresentative) conditionNames.push('대표자명');
@@ -191,6 +198,7 @@
 		searchValue = '';
 		searchResults = [];
 		addressList = [];
+		hasSearched = false;
 	}
 
 	function repeatSearch(item: { query: string; conditions: string[] }) {
@@ -501,10 +509,42 @@
 				</div>
 			</form>
 
-			{#if searchHistory.length > 0 && searchResults.length == 0 && addressList.length == 0}
+			{#if addressList.length > 0}
+				<div class="mt-2 h-full overflow-y-auto pb-20">
+					{#each addressList as address}
+						<button
+							type="button"
+							class="w-full p-4 border-b text-left hover:bg-gray-100 dark:hover:bg-gray-800"
+							on:click={() => handleAddressSelect(address)}
+						>
+							<h3 class="font-medium font-semibold">{address.roadAddress}</h3>
+						</button>
+					{/each}
+				</div>
+			{:else if searchResults.length > 0}
+				<div class="mt-2 h-full overflow-y-auto pb-20">
+					{#each searchResults as result}
+						<button
+							type="button"
+							class="w-full p-4 border-b text-left hover:bg-gray-100 dark:hover:bg-gray-800"
+							on:click={() => {
+								toggleSearchMode();
+								dispatch('searchResultClick', result);
+							}}
+						>
+							<h3 class="font-medium font-semibold">{result.company_name}</h3>
+							<p class="text-sm text-gray-600">{result.representative}</p>
+							<p class="text-sm text-gray-600">{result.address}</p>
+						</button>
+					{/each}
+				</div>
+				{:else if searchValue.trim() !== '' && hasSearched}
+				<div class="mt-2 pb-4">
+					<p class="text-center text-gray-600">조건에 맞는 업체가 없습니다.</p>
+				</div>
+			{:else if !searchValue.trim() && searchHistory.length > 0}
 				<div class="mt-2 pb-20">
 					<h2 class="text-base font-semibold mb-2">최근 검색 이력</h2>
-
 					{#each searchHistory as item}
 						<div
 							class="flex items-center w-full text-left p-2 border-b hover:bg-gray-100 dark:hover:bg-gray-800"
@@ -523,39 +563,6 @@
 								X
 							</button>
 						</div>
-					{/each}
-				</div>
-			{/if}
-
-			{#if searchResults.length > 0 && addressList.length == 0}
-				<div class="mt-2 h-full overflow-y-auto pb-20">
-					{#each searchResults as result}
-						<button
-							type="button"
-							class="w-full p-4 border-b text-left hover:bg-gray-100 dark:hover:bg-gray-800"
-							on:click={() => {
-								toggleSearchMode();
-								dispatch('searchResultClick', result);
-							}}
-						>
-							<h3 class="font-medium font-semibold">{result.company_name}</h3>
-							<p class="text-sm text-gray-600">{result.representative}</p>
-							<p class="text-sm text-gray-600">{result.address}</p>
-						</button>
-					{/each}
-				</div>
-			{/if}
-
-			{#if addressList.length > 0}
-				<div class="mt-2 h-full overflow-y-auto pb-20">
-					{#each addressList as address}
-						<button
-							type="button"
-							class="w-full p-4 border-b text-left hover:bg-gray-100 dark:hover:bg-gray-800"
-							on:click={() => handleAddressSelect(address)}
-						>
-							<h3 class="font-medium font-semibold">{address.roadAddress}</h3>
-						</button>
 					{/each}
 				</div>
 			{/if}
