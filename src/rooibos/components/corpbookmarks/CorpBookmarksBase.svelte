@@ -710,7 +710,7 @@
 				</div>
 
 				<!-- attach file -->
-				<div class="flex flex-row flex-1 h-1/2 max-h-1/2 pb-2.5 gap-3">
+				<div class="flex flex-row pb-2.5 gap-3">
 					{#if largeScreen}
 						<div class="flex-1 flex justify-start w-full h-full max-h-full">
 							{#if selectedFile}
