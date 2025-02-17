@@ -3,10 +3,11 @@
 	import { onMount, createEventDispatcher, afterUpdate } from 'svelte';
 	import { filterGroups, filterActions } from './filterdata';
 	import SearchFilter from './SearchFilter.svelte';
-	import { mobile } from '$lib/stores';
+	import { mobile, user } from '$lib/stores';
 	import { showSidebar } from '$lib/stores';
 	import MenuLines from '$lib/components/icons/MenuLines.svelte';
 	import { WEBUI_API_BASE_URL } from '$lib/constants';
+	import { get } from 'svelte/store';
 
 	export let searchValue: string;
 	export let selectedFilters: any = {};
@@ -127,7 +128,7 @@
 			if (searchByRepresentative) queryCategories.push('representative');
 			if (searchByBizNumber) queryCategories.push('bizNumber');
 			if (searchByLocation) queryCategories.push('location');
-
+			
 			const queryParams = new URLSearchParams({
 				query: searchValue,
 				queryCategories: queryCategories.join(',')
@@ -219,12 +220,14 @@
 
 	async function sendAddressCoordinates(x: string, y: string) {
 		try {
+			const currentUser = get(user);
 			const queryParams = new URLSearchParams({
 				query: '',
 				latitude: y,
 				longitude: x,
 				userLatitude: currentLocation?.lat?.toString() || '',
-				userLongitude: currentLocation?.lng?.toString() || ''
+				userLongitude: currentLocation?.lng?.toString() || '',
+				user_id: currentUser?.id ? currentUser.id : ''				
 			});
 
 			const response = await fetch(
