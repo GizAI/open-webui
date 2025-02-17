@@ -202,7 +202,6 @@
 		overflow-y: auto;
 		transition: all 0.3s ease;
 		transform: translateX(100%);
-		border-left: 1px solid #e5e7eb;
 	}
 
 	.company-info-wrapper.active {
