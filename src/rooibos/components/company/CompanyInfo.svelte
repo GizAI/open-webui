@@ -277,11 +277,10 @@ style={$mobile
 			margin-top: 0;
 		}
 
-		/* 수정: 풀스크린 모드에서 부모 컨테이너를 safe area 내에 표시 */
 		.company-info-wrapper.mobile.fullscreen {
-			top: 50px;
+			top: env(safe-area-inset-top);
 			bottom: auto;
-			height: calc(100vh - 50px - env(safe-area-inset-bottom));
+			height: calc(100vh - env(safe-area-inset-top) - env(safe-area-inset-bottom));
 			padding-bottom: env(safe-area-inset-bottom);
 			transform-origin: bottom;
 		}
@@ -298,7 +297,6 @@ style={$mobile
 			border-top-right-radius: 20px;
 		}
 
-		/* 수정: 모바일 풀스크린 시 헤더는 컨테이너의 상단에 고정 */
 		.company-info-wrapper.mobile.fullscreen .header-container {
 			top: 0 !important;
 		}
