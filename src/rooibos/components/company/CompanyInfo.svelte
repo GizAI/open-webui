@@ -141,28 +141,23 @@
 		}
 		return isFullscreen ? fullHeight : initialHeight;
 	})();
-
 </script>
 
+<!-- 루트 컨테이너 -->
 <div
-class="company-info-wrapper active {isFullscreen ? 'fullscreen' : ''} flex flex-col w-full bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-white-200"
-class:mobile={$mobile}
-style={$mobile
-	? isFullscreen
-		? `height: ${mobileHeight}; transition: ${isDragging ? 'none' : 'height 0.3s ease'}; top: 20px; bottom: 0;`
-		: `height: ${mobileHeight}; transition: ${isDragging ? 'none' : 'height 0.3s ease'}; top: auto; bottom: 0;`
-	: 'margin-top: 1rem;'}
+	class="company-info-wrapper active {isFullscreen ? 'fullscreen' : ''} flex flex-col w-full bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-white-200"
+	class:mobile={$mobile}
+	style={$mobile
+		? isFullscreen
+			? `height: ${mobileHeight}; transition: ${isDragging ? 'none' : 'height 0.3s ease'}; top: env(safe-area-inset-top); bottom: auto;`
+			: `height: ${mobileHeight}; transition: ${isDragging ? 'none' : 'height 0.3s ease'}; top: auto; bottom: 0;`
+		: 'margin-top: 1rem;'}
 >
-
 
 	{#if companyInfo}
 		<div
 			class="header-container sticky z-10 shrink-0 px-4 pt-2 pb-1 border-b bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-gray-200"
-			style="top: {$mobile && isFullscreen
-				? '0'
-				: isFullscreen
-					? 'env(safe-area-inset-top)'
-					: '0'};"
+			style="top: {$mobile && isFullscreen ? 'env(safe-area-inset-top)' : '0'};"
 		>
 			{#if $mobile && !isFullscreen}
 				<div
@@ -177,9 +172,7 @@ style={$mobile
 
 			<div class="flex items-center justify-between w-full mb-1">
 				<h1
-					class="{$mobile
-						? 'sm:text-xl'
-						: 'text-xl'} font-semibold mb-1 truncate text-gray-900 dark:text-gray-200"
+					class="{$mobile ? 'sm:text-xl' : 'text-xl'} font-semibold mb-1 truncate text-gray-900 dark:text-gray-200"
 					on:touchstart|preventDefault|stopPropagation={handleTouchStart}
 					on:touchmove|preventDefault|stopPropagation={handleTouchMove}
 					on:touchend|preventDefault|stopPropagation={handleTouchEnd}
