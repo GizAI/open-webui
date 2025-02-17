@@ -142,24 +142,15 @@
 	})();
 </script>
 
-<!-- 외부 컨테이너: 모바일 풀스크린일 경우 top을 safe-area-inset-top으로 설정 -->
 <div
-	class="company-info-wrapper active {isFullscreen
-		? 'fullscreen'
-		: ''} flex flex-col w-full bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-white-200"
+	class="company-info-wrapper active {isFullscreen ? 'fullscreen' : ''} flex flex-col w-full bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-white-200"
 	class:mobile={$mobile}
 	style={$mobile
-		? isFullscreen
-			? `height: ${mobileHeight}; transition: ${isDragging ? 'none' : 'height 0.3s ease'}; top: env(safe-area-inset-top); bottom: auto;`
-			: `height: ${mobileHeight}; transition: ${isDragging ? 'none' : 'height 0.3s ease'}; top: auto; bottom: 0;`
+		? `height: ${mobileHeight}; transition: ${isDragging ? 'none' : 'height 0.3s ease'}; top: auto; bottom: 0;`
 		: 'margin-top: 1rem;'}
 >
-	{#if $mobile && isFullscreen}
-		<!-- 풀스크린일 때 safe area spacer는 불필요 -->
-	{/if}
 
 	{#if companyInfo}
-		<!-- 헤더 영역: 모바일 풀스크린에서는 부모 컨테이너의 safe area를 사용하므로 top은 0 -->
 		<div
 			class="header-container sticky z-10 shrink-0 px-4 pt-2 pb-1 border-b bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-gray-200"
 			style="top: {$mobile && isFullscreen
