@@ -1,53 +1,58 @@
 import os
 import pandas as pd
+import csv
 
-def merge_excel_files(output_file="merged.xlsx"):
-    # 현재 폴더의 모든 엑셀 파일 목록 가져오기
-    excel_files = [file for file in os.listdir() if file.endswith(".xlsx") or file.endswith(".xls")]
-    
-    if not excel_files:
-        print("엑셀 파일이 없습니다.")
+def merge_excel_to_csv(root_dir='.'):
+    all_data = []            # 각 파일의 DataFrame을 저장할 리스트
+    total_excel_rows = 0     # 모든 엑셀 파일의 데이터 행 수 누적
+    file_count = 0           # 처리한 엑셀 파일 수
+
+    # 현재 폴더 및 하위 폴더의 모든 파일 순회
+    for dirpath, _, filenames in os.walk(root_dir):
+        for filename in filenames:
+            if filename.lower().endswith(('.xlsx', '.xls')):
+                file_path = os.path.join(dirpath, filename)
+                file_count += 1
+                print(f"Processing file: {file_path}")
+                
+                try:
+                    # 첫 번째 시트만 읽음 (첫 행은 header)
+                    df = pd.read_excel(file_path, sheet_name=0, dtype=str)
+                except Exception as e:
+                    print(f"Failed to read {file_path}: {e}")
+                    continue
+
+                # 엑셀 데이터의 행 수 (header는 제외됨)
+                num_rows = df.shape[0]
+                total_excel_rows += num_rows
+
+                # company_type 컬럼: 파일명에 "개인"이 있으면 "개인", 아니면 빈 문자열
+                company_type = "개인" if "개인" in filename else ""
+                df["company_type"] = company_type
+
+                # file_name 컬럼: 해당 엑셀 파일의 전체 경로
+                df["file_name"] = file_path
+
+                all_data.append(df)
+
+    if not all_data:
+        print("No Excel files found.")
         return
-    
-    merged_data = []
-    header = None
-    total_rows = 0
-    
-    for file in excel_files:
-        try:
-            # 첫 번째 시트 읽기 (모든 값을 문자열로 변환)
-            df = pd.read_excel(file, sheet_name=0, dtype=str)
-            
-            if header is None:
-                header = df.iloc[0].tolist()  # 첫 번째 파일의 헤더 저장
-            
-            # 첫 번째 행(헤더) 제외하고 데이터 추가
-            df = df.iloc[1:]
-            merged_data.append(df)
-            total_rows += len(df)
-            print(f"{file} 파일 추가 완료 (행 개수: {len(df)})")
-        except Exception as e:
-            print(f"{file} 파일 처리 중 오류 발생: {e}")
-    
-    if merged_data:
-        # 모든 데이터프레임 병합 (빈 데이터프레임 제외)
-        merged_data = [df for df in merged_data if not df.empty]
-        if merged_data:
-            merged_df = pd.concat(merged_data, ignore_index=True)
-            # 첫 번째 파일의 헤더 추가
-            merged_df.columns = header
-            # 병합된 데이터 저장
-            merged_df.to_excel(output_file, index=False)
-            print(f"모든 엑셀 파일이 {output_file} 파일로 병합되었습니다. (총 행 개수: {len(merged_df)})")
-            # 데이터 검증
-            if len(merged_df) == total_rows:
-                print("모든 데이터가 정상적으로 병합되었습니다.")
-            else:
-                print(f"경고: 예상 행 개수({total_rows})와 실제 병합된 행 개수({len(merged_df)})가 일치하지 않습니다.")
-        else:
-            print("병합할 데이터가 없습니다.")
+
+    # 모든 데이터 병합
+    merged_df = pd.concat(all_data, ignore_index=True)
+
+    # 행 수 검증: 각 파일의 데이터 행 수 총합과 최종 병합 데이터 행 수 비교
+    merged_rows = merged_df.shape[0]
+    if merged_rows != total_excel_rows:
+        print(f"Row count mismatch! Total Excel rows: {total_excel_rows}, Merged CSV rows: {merged_rows}")
     else:
-        print("병합할 데이터가 없습니다.")
+        print(f"Row count validation passed: {merged_rows} rows merged from {file_count} Excel files.")
+
+    # CSV 저장: 모든 필드를 더블 쿼테이션 처리 ("")
+    output_csv = "merged_output.csv"
+    merged_df.to_csv(output_csv, index=False, quoting=csv.QUOTE_ALL, encoding='utf-8-sig')
+    print(f"CSV file '{output_csv}' created successfully.")
 
 if __name__ == "__main__":
-    merge_excel_files()
+    merge_excel_to_csv('.')
