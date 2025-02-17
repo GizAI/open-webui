@@ -294,7 +294,7 @@
 									대표자: {result.representative ?? '정보없음'} | 설립연도: {formatDate(
 										result.establishment_date
 									)} | 직원수: {result.employee_count ?? '정보없음'} | 거리: {formatDistance(
-										result.distance_from_user
+										result.distance_from_location
 									)}
 								</div>
 							{/if}
