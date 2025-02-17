@@ -145,15 +145,13 @@
 </script>
 
 <div
-	class="company-info-wrapper active {isFullscreen
-		? 'fullscreen'
-		: ''} flex flex-col w-full bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-white-200"
-	class:mobile={$mobile}
-	style={$mobile
-		? isFullscreen
-			? `height: ${mobileHeight}; transition: ${isDragging ? 'none' : 'height 0.3s ease'}; top: auto; bottom: 0; padding-top: env(safe-area-inset-top);`
-			: `height: ${mobileHeight}; transition: ${isDragging ? 'none' : 'height 0.3s ease'}; top: auto; bottom: 0;`
-		: 'margin-top: 1rem;'}
+class="company-info-wrapper active {isFullscreen ? 'fullscreen' : ''} flex flex-col w-full bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-white-200"
+class:mobile={$mobile}
+style={$mobile
+	? isFullscreen
+		? `height: ${mobileHeight}; transition: ${isDragging ? 'none' : 'height 0.3s ease'}; top: auto; bottom: 0; padding-top: env(safe-area-inset-top);`
+		: `height: ${mobileHeight}; transition: ${isDragging ? 'none' : 'height 0.3s ease'}; top: auto; bottom: 0;`
+	: 'margin-top: 1rem;'}
 >
 
 
@@ -281,9 +279,9 @@
 
 		/* 수정: 풀스크린 모드에서 부모 컨테이너를 safe area 내에 표시 */
 		.company-info-wrapper.mobile.fullscreen {
-			top: env(safe-area-inset-top);
+			top: 50px;
 			bottom: auto;
-			height: calc(100vh - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+			height: calc(100vh - 50px - env(safe-area-inset-bottom));
 			padding-bottom: env(safe-area-inset-bottom);
 			transform-origin: bottom;
 		}
