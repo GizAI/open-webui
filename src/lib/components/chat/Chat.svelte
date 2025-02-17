@@ -1983,9 +1983,6 @@
 									{chatActionHandler}
 									{addMessages}
 									bottomPadding={files.length > 0}
-									on:modelChange={async (event) => {
-										selectedModels = [event.detail.model_id.toString()];
-									}}
 								/>
 							</div>
 						</div>
@@ -2033,6 +2030,9 @@
 										);
 									}
 								}}
+								on:modelChange={async (event) => {
+									selectedModels = [event.detail.model_id.toString()];
+								}}
 							/>
 
 							<div
@@ -2075,6 +2075,9 @@
 												: e.detail
 										);
 									}
+								}}
+								on:modelChange={async (event) => {
+									selectedModels = [event.detail.model_id.toString()];
 								}}
 							/>
 						</div>

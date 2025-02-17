@@ -46,6 +46,7 @@
 	import Photo from '../icons/Photo.svelte';
 	import CommandLine from '../icons/CommandLine.svelte';
 	import { KokoroWorker } from '$lib/workers/KokoroWorker';
+	import { selectedCompanyInfo } from '$rooibos/stores';
 
 	const i18n = getContext('i18n');
 
@@ -77,7 +78,7 @@
 	$: onChange({
 		prompt,
 		files,
-		selectedToolIds,
+		selectedToolIds,	
 		imageGenerationEnabled,
 		webSearchEnabled
 	});
@@ -1134,6 +1135,22 @@
 										</InputMenu>
 
 										<div class="flex gap-0.5 items-center overflow-x-auto scrollbar-none flex-1">
+											{#if $selectedCompanyInfo?.company_name}
+												<Tooltip content={'지식모델 선택'} placement="top">
+													<button
+														on:click|preventDefault={() => (showCategoryModal = true)}
+														type="button"
+														class="px-1.5 @sm:px-2.5 py-1.5 flex gap-1.5 items-center text-sm rounded-full font-medium transition-colors duration-300 focus:outline-none max-w-full overflow-hidden bg-transparent text-gray-600 dark:text-gray-400 border-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800"
+													>
+														
+														<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-bot "><path d="M12 8V4H8"></path><rect width="16" height="12" x="4" y="8" rx="2"></rect><path d="M2 14h2"></path><path d="M20 14h2"></path><path d="M15 13v2"></path><path d="M9 13v2"></path></svg>
+														<span class="hidden @sm:block whitespace-nowrap overflow-hidden text-ellipsis translate-y-[0.5px] mr-0.5">
+															{'지식모델 선택'}
+														</span>
+													</button>
+												</Tooltip>
+											{/if}
+
 											{#if $_user}
 												{#if $config?.features?.enable_web_search && ($_user.role === 'admin' || $_user?.permissions?.features?.web_search)}
 													<Tooltip content={$i18n.t('Web Search')} placement="top">
@@ -1190,23 +1207,6 @@
 														</button>
 													</Tooltip>
 												{/if}
-
-												
-												<Tooltip content={$i18n.t('카테고리 선택')} placement="top">
-													<button
-														on:click|preventDefault={() => (showCategoryModal = true)}
-														type="button"
-														class="px-1.5 @sm:px-2.5 py-1.5 flex gap-1.5 items-center text-sm rounded-full font-medium transition-colors duration-300 focus:outline-none max-w-full overflow-hidden bg-transparent text-gray-600 dark:text-gray-400 border-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800"
-													>
-														<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="size-5">
-															<path d="M10 2a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0v-1.5A.75.75 0 0110 2zM10 15a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0v-1.5A.75.75 0 0110 15zM10 7a3 3 0 100 6 3 3 0 000-6zM15.657 5.404a.75.75 0 10-1.06-1.06l-1.061 1.06a.75.75 0 001.06 1.06l1.06-1.06zM6.464 14.596a.75.75 0 10-1.06-1.06l-1.06 1.06a.75.75 0 001.06 1.06l1.06-1.06zM18 10a.75.75 0 01-.75.75h-1.5a.75.75 0 010-1.5h1.5A.75.75 0 0118 10zM5 10a.75.75 0 01-.75.75h-1.5a.75.75 0 010-1.5h1.5A.75.75 0 015 10zM14.596 15.657a.75.75 0 001.06-1.06l-1.06-1.061a.75.75 0 10-1.06 1.06l1.06 1.06zM5.404 6.464a.75.75 0 001.06-1.06l-1.06-1.06a.75.75 0 10-1.06 1.06l1.06 1.06z" />
-														</svg>
-														<span class="hidden @sm:block whitespace-nowrap overflow-hidden text-ellipsis translate-y-[0.5px] mr-0.5">
-															{$i18n.t('카테고리')}
-														</span>
-													</button>
-												</Tooltip>
-											
 											{/if}
 										</div>
 									</div>
@@ -1392,9 +1392,8 @@
 
 	<ChatCategories 
 		bind:show={showCategoryModal} 
-		on:select={(e) => {
-			const item = e.detail;
-			prompt = `${item.title}\n${item.description}`;
+		on:select={async(e) => {
+			dispatch('modelChange', e.detail);
 		}}
 	/>
 {/if}

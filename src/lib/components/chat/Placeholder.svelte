@@ -206,6 +206,9 @@
 					on:submit={(e) => {
 						dispatch('submit', e.detail);
 					}}
+					on:modelChange={(e) => {
+						dispatch('modelChange', e.detail);
+					}}
 				/>
 			</div>
 		</div>
