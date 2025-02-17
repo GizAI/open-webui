@@ -325,6 +325,9 @@
 			companyInfo = result;
 			showCompanyInfo = true;
 			activeFilterGroup = null;
+			if ($mobile) { // Immediately switch to fullscreen on mobile
+				isFullscreen = true;
+			}
 		});
 
 		if (autoSelect) {
@@ -584,7 +587,7 @@
 	</title>
 </svelte:head>
 
-{#if !($showSidebar && $mobile) && (!showCompanyInfo || !isFullscreen)}
+{#if !($showSidebar && $mobile)}
 	<div class="search-bar-wrapper w-full" class:sidebar-visible={$showSidebar}>
 		<SearchBar
 			onSearch={handleSearch}
@@ -614,7 +617,7 @@
 
 {#if showCompanyInfo && companyInfo && !($showSidebar && $mobile)}
 	<div class:sidebar-visible={$showSidebar}>
-		<CompanyInfo {companyInfo} onClose={closeCompanyInfo} />
+		<CompanyInfo {companyInfo} onClose={closeCompanyInfo} {isFullscreen}/>
 	</div>
 {/if}
 
