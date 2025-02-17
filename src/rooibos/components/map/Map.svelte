@@ -692,7 +692,6 @@
 		transition: margin-left 0.3s ease-in-out;
 		box-sizing: border-box;
 		background-color: white;
-		border-bottom: 1px solid #e5e7eb;
 	}
 
 	.company-list-wrapper.sidebar-visible {
