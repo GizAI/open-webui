@@ -13,6 +13,7 @@
 	export let searchCompanyResults: any = {};
 	export let activeFilterGroup: string | null = null;
 	export let resultViewMode = 'map';
+	export let currentLocation: any = {};
 	export let onSearch: (searchValue: string, selectedFilters: any) => Promise<void>;
 	export let onReset: () => void;
 	export let onApply: () => void;
@@ -207,7 +208,9 @@
 			const queryParams = new URLSearchParams({
 				query: '',
 				latitude: y,
-				longitude: x
+				longitude: x,
+				userLatitude: currentLocation?.lat?.toString() || '',
+				userLongitude: currentLocation?.lng?.toString() || ''
 			});
 
 			const response = await fetch(

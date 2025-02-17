@@ -129,37 +129,33 @@
 		if (!$mobile) return '';
 
 		const fullHeight = `calc(100vh - env(safe-area-inset-top) - env(safe-area-inset-bottom))`;
-		const initialHeight = `20vh`;
+		// 기존 20vh에서 주소창을 피하도록 safe-area-inset-top을 추가
+		const initialHeight = `calc(20vh + env(safe-area-inset-top))`;
 
 		if (isDragging) {
 			if (!isFullscreen && dragOffset < 0) {
-				return `calc(20vh + ${-dragOffset}px)`;
+				return `calc(20vh + env(safe-area-inset-top) + ${-dragOffset}px)`;
 			} else if (isFullscreen && dragOffset > 0) {
 				return `calc(${fullHeight} - ${dragOffset}px)`;
 			}
 		}
 		return isFullscreen ? fullHeight : initialHeight;
 	})();
+
 </script>
 
-<!-- 외부 컨테이너: 모바일 풀스크린일 경우 top을 safe-area-inset-top으로 설정 -->
 <div
-	class="company-info-wrapper active {isFullscreen
-		? 'fullscreen'
-		: ''} flex flex-col w-full bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-white-200"
-	class:mobile={$mobile}
-	style={$mobile
-		? isFullscreen
-			? `height: ${mobileHeight}; transition: ${isDragging ? 'none' : 'height 0.3s ease'}; top: env(safe-area-inset-top); bottom: auto;`
-			: `height: ${mobileHeight}; transition: ${isDragging ? 'none' : 'height 0.3s ease'}; top: auto; bottom: 0;`
-		: 'margin-top: 1rem;'}
+class="company-info-wrapper active {isFullscreen ? 'fullscreen' : ''} flex flex-col w-full bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-white-200"
+class:mobile={$mobile}
+style={$mobile
+	? isFullscreen
+		? `height: ${mobileHeight}; transition: ${isDragging ? 'none' : 'height 0.3s ease'}; top: auto; bottom: 0; padding-top: env(safe-area-inset-top);`
+		: `height: ${mobileHeight}; transition: ${isDragging ? 'none' : 'height 0.3s ease'}; top: auto; bottom: 0;`
+	: 'margin-top: 1rem;'}
 >
-	{#if $mobile && isFullscreen}
-		<!-- 풀스크린일 때 safe area spacer는 불필요 -->
-	{/if}
+
 
 	{#if companyInfo}
-		<!-- 헤더 영역: 모바일 풀스크린에서는 부모 컨테이너의 safe area를 사용하므로 top은 0 -->
 		<div
 			class="header-container sticky z-10 shrink-0 px-4 pt-2 pb-1 border-b bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-gray-200"
 			style="top: {$mobile && isFullscreen
@@ -283,9 +279,9 @@
 
 		/* 수정: 풀스크린 모드에서 부모 컨테이너를 safe area 내에 표시 */
 		.company-info-wrapper.mobile.fullscreen {
-			top: env(safe-area-inset-top);
+			top: 50px;
 			bottom: auto;
-			height: calc(100vh - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+			height: calc(100vh - 50px - env(safe-area-inset-bottom));
 			padding-bottom: env(safe-area-inset-bottom);
 			transform-origin: bottom;
 		}
