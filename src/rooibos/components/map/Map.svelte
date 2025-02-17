@@ -658,17 +658,16 @@
 
 <style>
 	.search-bar-wrapper {
-		position: fixed;
-		top: 0;
-		left: 0;
-		right: 0;
-		width: 100%;
-		z-index: 50;
-		transition: margin-left 0.3s ease-in-out;
-		box-sizing: border-box;
-		background-color: white;
-		border-bottom: 1px solid #e5e7eb;
-	}
+	position: fixed;
+	top: 0;
+	left: 0;
+	width: 100%;
+	z-index: 100; /* z-index 높임 */
+	transition: transform 0.3s ease-in-out;
+	box-sizing: border-box;
+	background-color: white;
+	border-bottom: 1px solid #e5e7eb;
+}
 
 	.search-bar-wrapper.sidebar-visible {
 		margin-left: 260px;
