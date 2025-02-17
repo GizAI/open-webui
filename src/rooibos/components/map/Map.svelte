@@ -662,7 +662,7 @@
 	top: 0;
 	left: 0;
 	width: 100%;
-	z-index: 100; /* z-index 높임 */
+	z-index: 50; /* z-index 높임 */
 	transition: transform 0.3s ease-in-out;
 	box-sizing: border-box;
 	background-color: white;
