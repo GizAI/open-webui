@@ -596,6 +596,7 @@
 			{filterChange}
 			{selectedFilters}
 			{resultViewMode}
+			currentLocation={location}
 			on:showCompanyInfo={(e) => (showCompanyInfo = e.detail)}
 			on:filterGroupChange={(e) => (activeFilterGroup = e.detail)}
 			on:searchResultClick={(e) => handleSearchResults(e.detail)}
