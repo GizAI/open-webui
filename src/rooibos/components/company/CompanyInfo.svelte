@@ -143,12 +143,15 @@
 </script>
 
 <div
-	class="company-info-wrapper active {isFullscreen ? 'fullscreen' : ''} flex flex-col w-full bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-white-200"
-	class:mobile={$mobile}
-	style={$mobile
-		? `height: ${mobileHeight}; transition: ${isDragging ? 'none' : 'height 0.3s ease'}; top: auto; bottom: 0;`
-		: 'margin-top: 1rem;'}
+class="company-info-wrapper active {isFullscreen ? 'fullscreen' : ''} flex flex-col w-full bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-white-200"
+class:mobile={$mobile}
+style={$mobile
+	? isFullscreen
+		? `height: ${mobileHeight}; transition: ${isDragging ? 'none' : 'height 0.3s ease'}; top: auto; bottom: 0; padding-top: env(safe-area-inset-top);`
+		: `height: ${mobileHeight}; transition: ${isDragging ? 'none' : 'height 0.3s ease'}; top: auto; bottom: 0;`
+	: 'margin-top: 1rem;'}
 >
+
 
 	{#if companyInfo}
 		<div
