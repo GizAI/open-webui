@@ -149,7 +149,7 @@ class="company-info-wrapper active {isFullscreen ? 'fullscreen' : ''} flex flex-
 class:mobile={$mobile}
 style={$mobile
 	? isFullscreen
-		? `height: ${mobileHeight}; transition: ${isDragging ? 'none' : 'height 0.3s ease'}; top: 50px; bottom: 0;`
+		? `height: ${mobileHeight}; transition: ${isDragging ? 'none' : 'height 0.3s ease'}; top: 20px; bottom: 0;`
 		: `height: ${mobileHeight}; transition: ${isDragging ? 'none' : 'height 0.3s ease'}; top: auto; bottom: 0;`
 	: 'margin-top: 1rem;'}
 >
