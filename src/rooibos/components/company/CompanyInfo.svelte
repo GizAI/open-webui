@@ -129,17 +129,19 @@
 		if (!$mobile) return '';
 
 		const fullHeight = `calc(100vh - env(safe-area-inset-top) - env(safe-area-inset-bottom))`;
-		const initialHeight = `20vh`;
+		// 기존 20vh에서 주소창을 피하도록 safe-area-inset-top을 추가
+		const initialHeight = `calc(20vh + env(safe-area-inset-top))`;
 
 		if (isDragging) {
 			if (!isFullscreen && dragOffset < 0) {
-				return `calc(20vh + ${-dragOffset}px)`;
+				return `calc(20vh + env(safe-area-inset-top) + ${-dragOffset}px)`;
 			} else if (isFullscreen && dragOffset > 0) {
 				return `calc(${fullHeight} - ${dragOffset}px)`;
 			}
 		}
 		return isFullscreen ? fullHeight : initialHeight;
 	})();
+
 </script>
 
 <div
