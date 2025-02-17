@@ -156,14 +156,10 @@ style={$mobile
 
 
 	{#if companyInfo}
-		<div
-			class="header-container sticky z-10 shrink-0 px-4 pt-2 pb-1 border-b bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-gray-200"
-			style="top: {$mobile && isFullscreen
-				? '0'
-				: isFullscreen
-					? 'env(safe-area-inset-top)'
-					: '0'};"
-		>
+	<div
+	class="header-container sticky z-10 shrink-0 px-4 pt-2 pb-1 border-b bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-gray-200"
+	style="top: {$mobile && isFullscreen ? 'env(safe-area-inset-top)' : '0'};"
+  >
 			{#if $mobile && !isFullscreen}
 				<div
 					class="drag-handle"
