@@ -87,34 +87,6 @@
 	let dragOffset = 0;
 	let isDragging = false;
 
-	function handleTouchStart(e: TouchEvent) {
-		if (isFullscreen) return;
-		startY = e.touches[0].clientY;
-		isDragging = true;
-	}
-
-	function handleTouchMove(e: TouchEvent) {
-		if (isFullscreen || !isDragging) return;
-		const currentY = e.touches[0].clientY;
-		dragOffset = currentY - startY;
-	}
-
-	function handleTouchEnd(e: TouchEvent) {
-		if (isFullscreen) return;
-		isDragging = false;
-		const threshold = 50;
-		if (dragOffset > threshold) {
-			if (isFullscreen) {
-				isFullscreen = false;
-			} else {
-				// 필요시 closeCompanyInfo() 호출
-			}
-		} else if (dragOffset < -threshold) {
-			isFullscreen = true;
-		}
-		dragOffset = 0;
-	}
-
 	function toggleFullscreen() {
 		isFullscreen = !isFullscreen;
 	}
@@ -124,12 +96,10 @@
 		onClose();
 	}
 
-	// 모바일 높이 계산 (safe area 반영)
 	$: mobileHeight = (() => {
 		if (!$mobile) return '';
 
 		const fullHeight = `calc(100vh - env(safe-area-inset-top) - env(safe-area-inset-bottom))`;
-		// 기존 20vh에서 주소창을 피하도록 safe-area-inset-top을 추가
 		const initialHeight = `calc(20vh + env(safe-area-inset-top))`;
 
 		if (isDragging) {
@@ -141,49 +111,26 @@
 		}
 		return isFullscreen ? fullHeight : initialHeight;
 	})();
-
 </script>
 
 <div
-class="company-info-wrapper active {isFullscreen ? 'fullscreen' : ''} flex flex-col w-full bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-white-200"
-class:mobile={$mobile}
-style={$mobile
-	? isFullscreen
-		? `height: ${mobileHeight}; transition: ${isDragging ? 'none' : 'height 0.3s ease'}; top: auto; bottom: 0; padding-top: env(safe-area-inset-top);`
-		: `height: ${mobileHeight}; transition: ${isDragging ? 'none' : 'height 0.3s ease'}; top: auto; bottom: 0;`
-	: 'margin-top: 1rem;'}
+	class="company-info-wrapper active {isFullscreen ? 'fullscreen' : ''} flex flex-col w-full bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-white-200"
+	class:mobile={$mobile}
+	style={$mobile
+		? isFullscreen
+			? `height: ${mobileHeight}; transition: ${isDragging ? 'none' : 'height 0.3s ease'}; top: env(safe-area-inset-top); bottom: auto;`
+			: `height: ${mobileHeight}; transition: ${isDragging ? 'none' : 'height 0.3s ease'}; top: auto; bottom: 0;`
+		: 'margin-top: 1rem;'}
 >
-
 
 	{#if companyInfo}
 		<div
 			class="header-container sticky z-10 shrink-0 px-4 pt-2 pb-1 border-b bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-gray-200"
-			style="top: {$mobile && isFullscreen
-				? '0'
-				: isFullscreen
-					? 'env(safe-area-inset-top)'
-					: '0'};"
+			style="top: {$mobile && isFullscreen ? 'env(safe-area-inset-top)' : '0'};"
 		>
-			{#if $mobile && !isFullscreen}
-				<div
-					class="drag-handle"
-					on:touchstart|preventDefault|stopPropagation={handleTouchStart}
-					on:touchmove|preventDefault|stopPropagation={handleTouchMove}
-					on:touchend|preventDefault|stopPropagation={handleTouchEnd}
-				>
-					<div class="handle-bar"></div>
-				</div>
-			{/if}
 
 			<div class="flex items-center justify-between w-full mb-1">
-				<h1
-					class="{$mobile
-						? 'sm:text-xl'
-						: 'text-xl'} font-semibold mb-1 truncate text-gray-900 dark:text-gray-200"
-					on:touchstart|preventDefault|stopPropagation={handleTouchStart}
-					on:touchmove|preventDefault|stopPropagation={handleTouchMove}
-					on:touchend|preventDefault|stopPropagation={handleTouchEnd}
-				>
+				<h1 class="{$mobile ? 'sm:text-xl' : 'text-xl'} font-semibold mb-1 truncate text-gray-900 dark:text-gray-200">
 					{companyInfo.company_name}
 				</h1>
 
@@ -277,11 +224,10 @@ style={$mobile
 			margin-top: 0;
 		}
 
-		/* 수정: 풀스크린 모드에서 부모 컨테이너를 safe area 내에 표시 */
 		.company-info-wrapper.mobile.fullscreen {
-			top: 50px;
+			top: env(safe-area-inset-top);
 			bottom: auto;
-			height: calc(100vh - 50px - env(safe-area-inset-bottom));
+			height: calc(100vh - env(safe-area-inset-top) - env(safe-area-inset-bottom));
 			padding-bottom: env(safe-area-inset-bottom);
 			transform-origin: bottom;
 		}
@@ -298,7 +244,6 @@ style={$mobile
 			border-top-right-radius: 20px;
 		}
 
-		/* 수정: 모바일 풀스크린 시 헤더는 컨테이너의 상단에 고정 */
 		.company-info-wrapper.mobile.fullscreen .header-container {
 			top: 0 !important;
 		}
