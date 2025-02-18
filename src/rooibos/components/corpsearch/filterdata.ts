@@ -34,7 +34,7 @@ export const filterGroups = [
 	},
 	{
 		id: 'sales',
-		title: '매출 관련',
+		title: '최근 매출액',
 		isMulti: false,
 		checked: false,
 		min: 0,
