@@ -358,12 +358,12 @@ async def search(request: Request):
 
         if not query:
             if sales_min not in [None, '']:
-                sql_query += f" AND (rmc.sales_amount)::numeric >= ${param_count}"
+                sql_query += f" AND (rmc.recent_sales)::numeric >= ${param_count}"
                 params.append(sales_min)
                 param_count += 1
 
             if sales_max not in [None, '']:
-                sql_query += f" AND (rmc.sales_amount)::numeric <= ${param_count}"
+                sql_query += f" AND (rmc.recent_sales)::numeric <= ${param_count}"
                 params.append(sales_max)
                 param_count += 1
 
@@ -416,11 +416,11 @@ async def search(request: Request):
             if certification:
                 conditions = []
                 if 'innobiz' in certification:
-                    conditions.append(f"rmc.sme_type = '기술혁신'")
+                    conditions.append("rmc.sme_type @> '[{\"sme_type\": \"기술혁신\"}]'")
                 if 'mainbiz' in certification:
-                    conditions.append(f"rmc.sme_type = '경영혁신'")
+                    conditions.append("rmc.sme_type @> '[{\"sme_type\": \"경영혁신\"}]'")
                 if 'research_institute' in certification:
-                    conditions.append(f"rmc.research_info = '연구소'")
+                    conditions.append("(rmc.research_info @> '[{\"division\": \"연구소\"}]' OR rmc.research_info @> '[{\"division\": \"전담부서\"}]')")
                 if 'venture' in certification:
                     conditions.append(f"rmc.confirming_authority = '벤처기업확인기관'")
                 
@@ -439,7 +439,7 @@ async def search(request: Request):
                 param_count += 1
 
             if representative_age is not None:
-                sql_query += f" AND (EXTRACT(YEAR FROM CURRENT_DATE) - rmc.birth_year) >= ${param_count}"
+                sql_query += f" AND (EXTRACT(YEAR FROM CURRENT_DATE) - rmc.representative_birth::int) >= ${param_count}"
                 params.append(representative_age)
                 param_count += 1
 
