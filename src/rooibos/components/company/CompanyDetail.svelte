@@ -22,14 +22,13 @@
 
 	const hasIndustryInfo = (c: any) => c.industry || c.main_product;
 
-	const hasLabInfo = (c: any) =>
-		c.lab_name || c.research_field || c.first_approval_date || c.lab_location || c.division;
+	const hasLabInfo = (c: any) => c.research_info;
 
-	const hasCertificationInfo = (c: any) =>
-		c.sme_type || c.certificate_expiry_date || c.venture_confirmation_type || c.venture_valid_from;
+	const hasCertificationInfo = (c: any) => c.sme_type;
+	
+	const hasVentureInfo = (c: any) => c.venture_confirmation_type || c.venture_valid_from;	
 
-	const hasShareholderInfo = (c: any) =>
-		c.is_family_shareholder === 'Y' || c.is_non_family_shareholder === 'Y';
+	const hasShareholderInfo = (c: any) => c.is_family_shareholder === 'Y' || c.is_non_family_shareholder === 'Y';
 
 	function formatDate(dateStr: any) {
 		if (!dateStr) return '';
@@ -197,36 +196,31 @@
 						연구소 정보
 					</h3>
 					<div class="space-y-1">
-						{#if company.lab_name}
-							<p class="text-sm flex items-center justify-between">
-								<span>연구소명</span>
-								<span>{company.lab_name}</span>
-							</p>
+						{#if company.research_info}
+							{#each company.research_info as info}
+								<p class="text-sm flex items-center justify-between">
+									<span>구분</span>
+									<span>{info.division}</span>
+								</p>
+								<p class="text-sm flex items-center justify-between">
+									<span>연구소명</span>
+									<span>{info.lab_name}</span>
+								</p>
+								<p class="text-sm flex items-center justify-between">
+									<span>연구분야</span>
+									<span>{info.research_field}</span>
+								</p>
+								<p class="text-sm flex items-center justify-between">
+									<span>최초인정일</span>
+									<span>{info.first_approval_date}</span>
+								</p>
+								<p class="text-sm flex items-center justify-between">
+									<span>연구소 위치</span>
+									<span>{info.lab_location}</span>
+								</p>
+							{/each}
 						{/if}
-						{#if company.research_field}
-							<p class="text-sm flex items-center justify-between">
-								<span>연구분야</span>
-								<span>{company.research_field}</span>
-							</p>
-						{/if}
-						{#if company.first_approval_date}
-							<p class="text-sm flex items-center justify-between">
-								<span>최초인정일</span>
-								<span>{company.first_approval_date}</span>
-							</p>
-						{/if}
-						{#if company.lab_location}
-							<p class="text-sm flex items-center justify-between">
-								<span>연구소 위치</span>
-								<span>{company.lab_location}</span>
-							</p>
-						{/if}
-						{#if company.division}
-							<p class="text-sm flex items-center justify-between">
-								<span>연구소 구분</span>
-								<span>{company.division}</span>
-							</p>
-						{/if}
+
 					</div>
 				</div>
 			{/if}
@@ -242,17 +236,31 @@
 					</h3>
 					<div class="space-y-1">
 						{#if company.sme_type}
-							<p class="text-sm flex items-center justify-between">
-								<span>인증 유형</span>
-								<span>{company.sme_type}</span>
-							</p>
+							{#each company.sme_type as sm}
+								<p class="text-sm flex items-center justify-between">
+									<span>인증 유형</span>
+									<span>{sm.sme_type}</span>
+								</p>
+								<p class="text-sm flex items-center justify-between">
+									<span>인증 만료일</span>
+									<span>{sm.certificate_expiry_date}</span>
+								</p>
+							{/each}
 						{/if}
-						{#if company.certificate_expiry_date}
-							<p class="text-sm flex items-center justify-between">
-								<span>인증 만료일</span>
-								<span>{company.certificate_expiry_date}</span>
-							</p>
-						{/if}
+					</div>
+				</div>
+			{/if}
+
+			{#if hasVentureInfo(company)}
+				<div
+					id="certification"
+					class="space-y-2 border-t border-gray-100 pt-6 text-gray-900 dark:text-gray-400"
+				>
+					<h3 class="text-sm font-semibold text-gray-400 flex items-center gap-2">
+						<Award size={16} class="text-purple-500" />
+						벤처기업 정보
+					</h3>
+					<div class="space-y-1">
 						{#if company.venture_confirmation_type}
 							<p class="text-sm flex items-center justify-between">
 								<span>벤처기업 인증</span>

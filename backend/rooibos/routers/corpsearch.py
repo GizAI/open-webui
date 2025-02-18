@@ -217,7 +217,7 @@ async def search(request: Request):
                 rmc.latitude,
                 rmc.longitude,
                 rmc.sme_type,
-                rmc.division,
+                rmc.research_info,
                 rmc.representative_birth ,
                 rmc.is_family_shareholder s_ha,
                 rmc.is_non_family_shareholder ,
@@ -420,7 +420,7 @@ async def search(request: Request):
                 if 'mainbiz' in certification:
                     conditions.append(f"rmc.sme_type = '경영혁신'")
                 if 'research_institute' in certification:
-                    conditions.append(f"rmc.division = '연구소'")
+                    conditions.append(f"rmc.research_info = '연구소'")
                 if 'venture' in certification:
                     conditions.append(f"rmc.confirming_authority = '벤처기업확인기관'")
                 

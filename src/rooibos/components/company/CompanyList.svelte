@@ -57,19 +57,13 @@
 		industry_major?: string;
 		industry_middle?: string;
 		industry_small?: string;
-		sme_type?: string;
-		cri_company_size?: string;
-		lab_name?: string;
-		first_approval_date?: string;
-		lab_location?: string;
-		research_field?: string;
-		division?: string;
+		sme_type?: {sme_type: string, certificate_expiry_date: string}[];
+		research_info?: {lab_name: string, lab_location: string, first_approval_date: string, research_field: string; division: string }[];
 		birth_year?: string;
 		foundation_year?: string;
 		is_family_shareholder?: string;
 		is_non_family_shareholder?: string;
 		financial_statement_year?: string;
-		employees?: number;
 		total_assets?: number;
 		total_equity?: number;
 		sales_amount?: number;
@@ -130,7 +124,7 @@
 				pass &&
 				(Boolean(company.lab_name) ||
 					Boolean(company.research_field) ||
-					Boolean(company.division) ||
+					Boolean(company.research_info) ||
 					Boolean(company.first_approval_date) ||
 					Boolean(company.lab_location));
 		}
