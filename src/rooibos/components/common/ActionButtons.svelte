@@ -20,7 +20,7 @@
 			},
 			body: JSON.stringify({ 
 				userId: currentUser?.id, 
-				companyId: company.smtp_id, 
+				companyId: company.master_id, 
 				business_registration_number: company.business_registration_number 
 			}),
 			});    

@@ -6,7 +6,7 @@
 	import CompanyDetail from '../company/CompanyDetail.svelte';
 
 	interface SearchResult {
-		smtp_id: string;
+		master_id: string;
 		company_name: string;
 		address: string;
 		latitude: string;
@@ -57,7 +57,6 @@
 		industry_major?: string;
 		industry_middle?: string;
 		industry_small?: string;
-		certificate_expiry_date?: string;
 		sme_type?: string;
 		cri_company_size?: string;
 		lab_name?: string;
@@ -124,7 +123,6 @@
 				pass &&
 				(Boolean(company.venture_confirmation_type) ||
 					Boolean(company.sme_type) ||
-					Boolean(company.certificate_expiry_date) ||
 					Boolean(company.venture_valid_from));
 		}
 		if (filters.labName) {
@@ -167,16 +165,16 @@
 		}
 	});
 
-	function toggleFullscreen(smtp_id: string) {
-		if (fullscreenStates[smtp_id]) {
-			fullscreenStates = { ...fullscreenStates, [smtp_id]: false };
+	function toggleFullscreen(master_id: string) {
+		if (fullscreenStates[master_id]) {
+			fullscreenStates = { ...fullscreenStates, [master_id]: false };
 		} else {
-			fullscreenStates = { [smtp_id]: true };
+			fullscreenStates = { [master_id]: true };
 		}
 	}
 
-	function closeCompanyInfo(smtp_id: string) {
-		fullscreenStates = { ...fullscreenStates, [smtp_id]: false };
+	function closeCompanyInfo(master_id: string) {
+		fullscreenStates = { ...fullscreenStates, [master_id]: false };
 	}
 </script>
 
@@ -240,11 +238,11 @@
 						<div
 							role="button"
 							tabindex="0"
-							on:click={() => toggleFullscreen(result.smtp_id)}
+							on:click={() => toggleFullscreen(result.master_id)}
 							on:keydown={(e) => {
 								if (e.key === 'Enter' || e.key === ' ') {
 									e.preventDefault();
-									toggleFullscreen(result.smtp_id);
+									toggleFullscreen(result.master_id);
 								}
 							}}
 							class="w-full text-left p-4 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors duration-200"
@@ -261,17 +259,17 @@
 									{/if}
 									<button
 										type="button"
-										on:click|stopPropagation={() => toggleFullscreen(result.smtp_id)}
+										on:click|stopPropagation={() => toggleFullscreen(result.master_id)}
 										class="ml-2 text-gray-900 dark:text-gray-200"
 									>
-										{#if fullscreenStates[result.smtp_id]}
+										{#if fullscreenStates[result.master_id]}
 											<ChevronUp size={20} strokeWidth="2.5" />
 										{:else}
 											<ChevronDown size={20} strokeWidth="2.5" />
 										{/if}
 									</button>
 								</div>
-								{#if fullscreenStates[result.smtp_id]}
+								{#if fullscreenStates[result.master_id]}
 									<div
 										role="button"
 										tabindex="0"
@@ -286,10 +284,10 @@
 									</div>
 								{/if}
 							</div>
-							{#if result.address && !fullscreenStates[result.smtp_id]}
+							{#if result.address && !fullscreenStates[result.master_id]}
 								<div class="text-sm text-gray-600 mt-1.5">{result.address}</div>
 							{/if}
-							{#if result.representative && !fullscreenStates[result.smtp_id]}
+							{#if result.representative && !fullscreenStates[result.master_id]}
 								<div class="text-sm text-gray-500 mt-1">
 									대표자: {result.representative ?? '정보없음'} | 설립연도: {formatDate(
 										result.establishment_date
@@ -300,7 +298,7 @@
 							{/if}
 						</div>
 
-						{#if fullscreenStates[result.smtp_id]}
+						{#if fullscreenStates[result.master_id]}
 							<div transition:slide class="border-t border-gray-200">
 								<div class="detail-scroll-container">
 									<CompanyDetail company={result} />

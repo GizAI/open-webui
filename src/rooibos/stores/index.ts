@@ -32,7 +32,7 @@ function createCompanyStore(): Writable<CompanySettings> {
 export const selectedCompanyInfo = createCompanyStore();
 
 type CompanySettings = {
-    smtp_id?: string;
+    master_id?: string;
     company_name?: string;
     address?: string;
     latitude?: string;
@@ -83,7 +83,6 @@ type CompanySettings = {
     industry_major?: string;
     industry_middle?: string;
     industry_small?: string;
-    certificate_expiry_date?: string;
     sme_type?: string;
     cri_company_size?: string;
     lab_name?: string;
@@ -110,9 +109,8 @@ type CompanySettings = {
 };
 
 export function formatCompanyInfo(companyInfo: CompanySettings): string {
-    // 기업 분석에 필요한 필드 목록
     const allowedFields = [
-        "smtp_id",
+        "master_id",
         "company_name",
         "representative",
         "postal_code",

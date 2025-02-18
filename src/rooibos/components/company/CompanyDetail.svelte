@@ -41,14 +41,14 @@
 			? [...new Set(financialData.map((d) => String(d.year)))].sort().reverse()
 			: [];
 
-	$: if (company && company.smtp_id) {
-		fetchFinancialData(company.smtp_id);
+	$: if (company && company.master_id) {
+		fetchFinancialData(company.master_id);
 	}
 
-	async function fetchFinancialData(smtp_id: string) {
+	async function fetchFinancialData(master_id: string) {
 		try {
 			const financialResponse = await fetch(
-				`${WEBUI_API_BASE_URL}/rooibos/corpbookmarks/${smtp_id}/financialData`,
+				`${WEBUI_API_BASE_URL}/rooibos/corpbookmarks/${master_id}/financialData`,
 				{
 					method: 'GET',
 					headers: {

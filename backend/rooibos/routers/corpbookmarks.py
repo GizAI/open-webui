@@ -41,12 +41,12 @@ async def get_corpbookmarks(user_id: str):
                 f.created_at,
                 f.updated_at,
                 f.company_id,
-                mci.smtp_id,
+                mci.master_id,
                 mci.company_name,
                 mci.address
             FROM corp_bookmark f
             INNER JOIN master_company_info mci
-                ON f.company_id = mci.smtp_id
+                ON f.company_id = mci.master_id
             WHERE f.user_id = $1
             ORDER BY f.updated_at DESC
         """
@@ -110,7 +110,7 @@ async def get_corp_financialData(id: str):
                 ON mci.company_name = sfc.company_name
             JOIN smtp_financial_data sfd 
                 ON sfc.id = sfd.financial_company_id
-            WHERE mci.smtp_id = $1
+            WHERE mci.master_id = $1
             GROUP BY 
                 sfd.financial_company_id,
                 sfd.year,
@@ -189,7 +189,7 @@ async def get_corpbookmark_by_id(id: str):
                     ELSE NULL 
                 END
             ) FILTER (WHERE f.data IS NOT NULL) AS files,
-            mci.smtp_id,
+            mci.master_id,
             mci.company_name,
             mci.representative,
             mci.postal_code,
@@ -236,7 +236,6 @@ async def get_corpbookmark_by_id(id: str):
             mci.industry_small,
             mci.latitude,
             mci.longitude,
-            mci.certificate_expiry_date,
             mci.sme_type,
             mci.cri_company_size,
             mci.lab_name,
@@ -264,7 +263,7 @@ async def get_corpbookmark_by_id(id: str):
             me.birth_date,
             fc.industry
         FROM corp_bookmark f
-        INNER JOIN master_company_info mci ON f.company_id = mci.smtp_id
+        INNER JOIN master_company_info mci ON f.company_id = mci.master_id
         LEFT JOIN smtp_financial_company fc 
             ON mci.company_name = fc.company_name
         LEFT JOIN smtp_executives me
@@ -277,7 +276,7 @@ async def get_corpbookmark_by_id(id: str):
         WHERE f.id = :id
         GROUP BY 
             f.id, f.created_at, f.updated_at, f.company_id,
-            mci.smtp_id, mci.company_name, mci.representative, mci.postal_code, mci.address,
+            mci.master_id, mci.company_name, mci.representative, mci.postal_code, mci.address,
             mci.phone_number, mci.fax_number, mci.website, mci.email, mci.company_type,
             mci.establishment_date, mci.founding_date, mci.employee_count, mci.industry_code1,
             mci.industry_code2, mci.industry, mci.main_product, mci.main_bank, mci.main_branch,
@@ -287,7 +286,7 @@ async def get_corpbookmark_by_id(id: str):
             mci.asset_year, mci.recent_total_assets, mci.debt_year, mci.recent_total_debt, mci.equity_year,
             mci.recent_total_equity, mci.capital_year, mci.recent_capital, mci.region1, mci.region2,
             mci.industry_major, mci.industry_middle, mci.industry_small, mci.latitude, mci.longitude,
-            mci.certificate_expiry_date, mci.sme_type, mci.cri_company_size, mci.lab_name, mci.first_approval_date,
+            mci.sme_type, mci.cri_company_size, mci.lab_name, mci.first_approval_date,
             mci.lab_location, mci.research_field, mci.division, mci.birth_year, mci.foundation_year,
             mci.family_shareholder_yn, mci.external_shareholder_yn, mci.financial_statement_year, mci.employees,
             mci.total_assets, mci.total_equity, mci.sales_amount, mci.net_income, mci.venture_confirmation_type,

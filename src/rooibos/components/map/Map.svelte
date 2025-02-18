@@ -32,7 +32,7 @@
 	};
 
 	type SearchResult = {
-		smtp_id: string;
+		master_id: string;
 		company_name: string;
 		address: string;
 		latitude: string;
@@ -83,7 +83,6 @@
 		industry_major?: string;
 		industry_middle?: string;
 		industry_small?: string;
-		certificate_expiry_date?: string;
 		sme_type?: string;
 		cri_company_size?: string;
 		lab_name?: string;
@@ -137,7 +136,7 @@
 		created_at?: string;
 		updated_at?: string;
 		files: any[];
-		smtp_id: string;
+		master_id: string;
 		latitude: string;
 		longitude: string;
 		bookmark_id?: string | null;
@@ -161,7 +160,6 @@
 		industry_major?: string;
 		industry_middle?: string;
 		industry_small?: string;
-		certificate_expiry_date?: string;
 		sme_type?: string;
 		cri_company_size?: string;
 		lab_name?: string;
@@ -207,7 +205,7 @@
 		company_id: '',
 		company_name: '',
 		files: [],
-		smtp_id: '',
+		master_id: '',
 		latitude: '',
 		longitude: ''
 	};
