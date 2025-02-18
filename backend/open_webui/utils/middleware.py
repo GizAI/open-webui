@@ -39,7 +39,10 @@ from open_webui.routers.tasks import (
 )
 from open_webui.routers.retrieval import process_web_search, SearchForm
 from open_webui.routers.images import image_generations, GenerateImageForm
-
+from open_webui.routers.pipelines import (
+    process_pipeline_inlet_filter,
+    process_pipeline_outlet_filter,
+)
 
 from open_webui.utils.webhook import post_webhook
 
@@ -255,7 +258,6 @@ async def chat_completion_tools_handler(
     return body, {"sources": sources}
 
 
-
 async def chat_web_search_handler(
     request: Request, form_data: dict, extra_params: dict, user
 ):
@@ -299,7 +301,6 @@ async def chat_web_search_handler(
             response = response[bracket_start:bracket_end]
             queries = json.loads(response)
             queries = queries.get("queries", [])
-            queries = list(dict.fromkeys(queries))
         except Exception as e:
             queries = [response]
 
@@ -319,56 +320,59 @@ async def chat_web_search_handler(
             }
         )
         return form_data
-    
-    searchQueries = queries
-    if not request.app.state.config.ENABLE_MULTIPLE_WEB_SEARCH_QUERIES:
-        searchQueries = [queries[0]]
 
-    for searchQuery in searchQueries:
-        await event_emitter(
-            {
-                "type": "status",
-                "data": {
-                    "action": "web_search",
-                    "description": f'Searching "{searchQuery}"',
+    searchQuery = queries[0]
+
+    await event_emitter(
+        {
+            "type": "status",
+            "data": {
+                "action": "web_search",
+                "description": 'Searching "{{searchQuery}}"',
+                "query": searchQuery,
+                "done": False,
+            },
+        }
+    )
+
+    try:
+
+        results = await process_web_search(
+            request,
+            SearchForm(
+                **{
                     "query": searchQuery,
-                    "done": False,
-                },
-            }
+                }
+            ),
+            user,
         )
 
-        try:
-            # Offload process_web_search to a separate thread
-            loop = asyncio.get_running_loop()
-            with ThreadPoolExecutor() as executor:
-                results = await loop.run_in_executor(
-                    executor,
-                    lambda: process_web_search(
-                        request,
-                        SearchForm(
-                            **{
-                                "query": searchQuery,
-                            }
-                        ),
-                        user,
-                    ),
-                )
+        if results:
+            await event_emitter(
+                {
+                    "type": "status",
+                    "data": {
+                        "action": "web_search",
+                        "description": "Searched {{count}} sites",
+                        "query": searchQuery,
+                        "urls": results["filenames"],
+                        "done": True,
+                    },
+                }
+            )
 
-            if results:
-                await event_emitter(
+            files = form_data.get("files", [])
+
+            if request.app.state.config.RAG_WEB_SEARCH_FULL_CONTEXT:
+                files.append(
                     {
-                        "type": "status",
-                        "data": {
-                            "action": "web_search",
-                            "description": f'Searched {len(results["filenames"])} sites for "{searchQuery}"',
-                            "query": searchQuery,
-                            "urls": results["filenames"],
-                            "done": True,
-                        },
+                        "docs": results.get("docs", []),
+                        "name": searchQuery,
+                        "type": "web_search_docs",
+                        "urls": results["filenames"],
                     }
                 )
-
-                files = form_data.get("files", [])
+            else:
                 files.append(
                     {
                         "collection_name": results["collection_name"],
@@ -377,34 +381,34 @@ async def chat_web_search_handler(
                         "urls": results["filenames"],
                     }
                 )
-                form_data["files"] = files
-            else:
-                await event_emitter(
-                    {
-                        "type": "status",
-                        "data": {
-                            "action": "web_search",
-                            "description": f'No search results found for "{searchQuery}"',
-                            "query": searchQuery,
-                            "done": True,
-                            "error": True,
-                        },
-                    }
-                )
-        except Exception as e:
-            log.exception(e)
+            form_data["files"] = files
+        else:
             await event_emitter(
                 {
                     "type": "status",
                     "data": {
                         "action": "web_search",
-                        "description": f'Error searching "{searchQuery}"',
+                        "description": "No search results found",
                         "query": searchQuery,
                         "done": True,
                         "error": True,
                     },
                 }
             )
+    except Exception as e:
+        log.exception(e)
+        await event_emitter(
+            {
+                "type": "status",
+                "data": {
+                    "action": "web_search",
+                    "description": 'Error searching "{{searchQuery}}"',
+                    "query": searchQuery,
+                    "done": True,
+                    "error": True,
+                },
+            }
+        )
 
     return form_data
 
@@ -541,8 +545,6 @@ async def chat_completion_files_handler(
             queries = [get_last_user_message(body["messages"])]
 
         try:
-            print("files =========================================== ", files)
-            print("queries =========================================== ", queries)
             # Offload get_sources_from_files to a separate thread
             loop = asyncio.get_running_loop()
             with ThreadPoolExecutor() as executor:
@@ -688,6 +690,25 @@ async def process_chat_payload(request, form_data, metadata, user, model):
 
     variables = form_data.pop("variables", None)
 
+    # Process the form_data through the pipeline
+    try:
+        form_data = await process_pipeline_inlet_filter(
+            request, form_data, user, models
+        )
+    except Exception as e:
+        raise e
+
+    try:
+        form_data, flags = await process_filter_functions(
+            request=request,
+            filter_ids=get_sorted_filter_ids(model),
+            filter_type="inlet",
+            form_data=form_data,
+            extra_params=extra_params,
+        )
+    except Exception as e:
+        raise Exception(f"Error: {e}")
+
     features = form_data.pop("features", None)
     if features:
         if "web_search" in features and features["web_search"]:
@@ -709,17 +730,6 @@ async def process_chat_payload(request, form_data, metadata, user, model):
                 ),
                 form_data["messages"],
             )
-
-    try:
-        form_data, flags = await process_filter_functions(
-            request=request,
-            filter_ids=get_sorted_filter_ids(model),
-            filter_type="inlet",
-            form_data=form_data,
-            extra_params=extra_params,
-        )
-    except Exception as e:
-        raise Exception(f"Error: {e}")
 
     tool_ids = form_data.pop("tool_ids", None)
     files = form_data.pop("files", None)
@@ -784,7 +794,7 @@ async def process_chat_payload(request, form_data, metadata, user, model):
 
             if "document" in source:
                 for doc_idx, doc_context in enumerate(source["document"]):
-                    context_string += f"<source><source_id>{doc_idx}</source_id><source_context>{doc_context}</source_context></source>\n"
+                    context_string += f"<source><source_id>{source_idx}</source_id><source_context>{doc_context}</source_context></source>\n"
 
         context_string = context_string.strip()
         prompt = get_last_user_message(form_data["messages"])
@@ -801,7 +811,7 @@ async def process_chat_payload(request, form_data, metadata, user, model):
 
         # Workaround for Ollama 2.0+ system prompt issue
         # TODO: replace with add_or_update_system_message
-        if model["owned_by"] == "ollama":
+        if model.get("owned_by") == "ollama":
             form_data["messages"] = prepend_to_first_user_message_content(
                 rag_template(
                     request.app.state.config.RAG_TEMPLATE, context_string, prompt
@@ -1009,6 +1019,7 @@ async def process_chat_response(
                         webhook_url = Users.get_user_webhook_url_by_id(user.id)
                         if webhook_url:
                             post_webhook(
+                                request.app.state.WEBUI_NAME,
                                 webhook_url,
                                 f"{title} - {request.app.state.config.WEBUI_URL}/c/{metadata['chat_id']}\n\n{content}",
                                 {
@@ -1347,7 +1358,14 @@ async def process_chat_response(
             )
 
             tool_calls = []
-            content = message.get("content", "") if message else ""
+
+            last_assistant_message = get_last_assistant_message(form_data["messages"])
+            content = (
+                message.get("content", "")
+                if message
+                else last_assistant_message if last_assistant_message else ""
+            )
+
             content_blocks = [
                 {
                     "type": "text",
@@ -1874,6 +1892,7 @@ async def process_chat_response(
                     webhook_url = Users.get_user_webhook_url_by_id(user.id)
                     if webhook_url:
                         post_webhook(
+                            request.app.state.WEBUI_NAME,
                             webhook_url,
                             f"{title} - {request.app.state.config.WEBUI_URL}/c/{metadata['chat_id']}\n\n{content}",
                             {
