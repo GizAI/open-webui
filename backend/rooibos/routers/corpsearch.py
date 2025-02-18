@@ -168,7 +168,7 @@ async def search(request: Request):
         param_count = 1
 
         sql_query = """
-            SELECT DISTINCT
+            SELECT 
                 rmc.master_id,
                 rmc.company_name,
                 rmc.representative,

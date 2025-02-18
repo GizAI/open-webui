@@ -29,7 +29,7 @@
 		c.sme_type || c.certificate_expiry_date || c.venture_confirmation_type || c.venture_valid_from;
 
 	const hasShareholderInfo = (c: any) =>
-		c.family_shareholder_yn === 'Y' || c.external_shareholder_yn === 'Y';
+		c.is_family_shareholder === 'Y' || c.is_non_family_shareholder === 'Y';
 
 	function formatDate(dateStr: any) {
 		if (!dateStr) return '';
@@ -284,16 +284,16 @@
 						주주 정보
 					</h3>
 					<div class="space-y-1 text-gray-900 dark:text-gray-400">
-						{#if company.family_shareholder_yn}
+						{#if company.is_family_shareholder}
 							<p class="text-sm flex items-center justify-between">
 								<span>가족주주</span>
-								<span>{company.family_shareholder_yn === 'Y' ? '있음' : '없음'}</span>
+								<span>{company.is_family_shareholder === 'Y' ? '있음' : '없음'}</span>
 							</p>
 						{/if}
-						{#if company.external_shareholder_yn}
+						{#if company.is_non_family_shareholder}
 							<p class="text-sm flex items-center justify-between">
 								<span>외부주주</span>
-								<span>{company.external_shareholder_yn === 'Y' ? '있음' : '없음'}</span>
+								<span>{company.is_non_family_shareholder === 'Y' ? '있음' : '없음'}</span>
 							</p>
 						{/if}
 					</div>

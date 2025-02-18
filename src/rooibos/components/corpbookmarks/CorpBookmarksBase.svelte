@@ -89,8 +89,8 @@
 		division?: string;
 		birth_year?: string;
 		foundation_year?: string;
-		family_shareholder_yn?: string;
-		external_shareholder_yn?: string;
+		is_family_shareholder?: string;
+		is_non_family_shareholder?: string;
 		financial_statement_year?: string;
 		employees?: number;
 		venture_confirmation_type?: string;
