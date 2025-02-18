@@ -116,17 +116,13 @@
 			pass =
 				pass &&
 				(Boolean(company.venture_confirmation_type) ||
-					Boolean(company.sme_type) ||
+					Boolean(company.confirming_authority) ||
 					Boolean(company.venture_valid_from));
 		}
 		if (filters.labName) {
 			pass =
 				pass &&
-				(Boolean(company.lab_name) ||
-					Boolean(company.research_field) ||
-					Boolean(company.research_info) ||
-					Boolean(company.first_approval_date) ||
-					Boolean(company.lab_location));
+				(Boolean(company.research_info) );
 		}
 
 		return pass;
