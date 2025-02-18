@@ -255,6 +255,7 @@ async def chat_completion_tools_handler(
     return body, {"sources": sources}
 
 
+
 async def chat_web_search_handler(
     request: Request, form_data: dict, extra_params: dict, user
 ):
@@ -318,7 +319,7 @@ async def chat_web_search_handler(
             }
         )
         return form_data
-
+    
     searchQueries = queries
     if not request.app.state.config.ENABLE_MULTIPLE_WEB_SEARCH_QUERIES:
         searchQueries = [queries[0]]
@@ -337,15 +338,21 @@ async def chat_web_search_handler(
         )
 
         try:
-            results = await process_web_search(
-                request,
-                SearchForm(
-                    **{
-                        "query": searchQuery,
-                    }
-                ),
-                user,
-            )
+            # Offload process_web_search to a separate thread
+            loop = asyncio.get_running_loop()
+            with ThreadPoolExecutor() as executor:
+                results = await loop.run_in_executor(
+                    executor,
+                    lambda: process_web_search(
+                        request,
+                        SearchForm(
+                            **{
+                                "query": searchQuery,
+                            }
+                        ),
+                        user,
+                    ),
+                )
 
             if results:
                 await event_emitter(
@@ -353,7 +360,7 @@ async def chat_web_search_handler(
                         "type": "status",
                         "data": {
                             "action": "web_search",
-                            "description": "Searched {{count}} sites",
+                            "description": f'Searched {len(results["filenames"])} sites for "{searchQuery}"',
                             "query": searchQuery,
                             "urls": results["filenames"],
                             "done": True,
@@ -377,7 +384,7 @@ async def chat_web_search_handler(
                         "type": "status",
                         "data": {
                             "action": "web_search",
-                            "description": "No search results found",
+                            "description": f'No search results found for "{searchQuery}"',
                             "query": searchQuery,
                             "done": True,
                             "error": True,
@@ -391,7 +398,7 @@ async def chat_web_search_handler(
                     "type": "status",
                     "data": {
                         "action": "web_search",
-                        "description": "No search results found",
+                        "description": f'Error searching "{searchQuery}"',
                         "query": searchQuery,
                         "done": True,
                         "error": True,
