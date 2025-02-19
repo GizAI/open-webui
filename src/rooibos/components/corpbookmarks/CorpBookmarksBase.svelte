@@ -890,7 +890,7 @@
 
 				<!-- 채팅 리스트 추가 -->
 				{#if chatList.length > 0}
-					<div class="{largeScreen ? 'flex-shrink-0 w-60 max-w-60 border-l border-gray-200 dark:border-gray-700' : 'hidden'} flex flex-col">
+				<div class="{largeScreen ? 'flex-shrink-0 w-60 max-w-60 border-l border-gray-200 dark:border-gray-700' : 'w-1/2'} flex flex-col">
 						<div class="px-2 py-1 border-b border-gray-200 dark:border-gray-700">
 							<h2 class="text-xs">채팅</h2>
 						</div>
