@@ -76,8 +76,8 @@
 		industry_major?: string;
 		industry_middle?: string;
 		industry_small?: string;
-		sme_type?: {sme_type: string, certificate_expiry_date: string}[];
-		research_info?: {lab_name: string, lab_location: string, first_approval_date: string, research_field: string; division: string }[];
+		sme_type?: { sme_type: string, certificate_expiry_date: string }[];
+		research_info?: { lab_name: string, lab_location: string, first_approval_date: string, research_field: string; division: string }[];
 		birth_year?: string;
 		foundation_year?: string;
 		is_family_shareholder?: string;
@@ -153,7 +153,7 @@
 		filteredItems = query
 			? fuse.search(query).map((e: any) => {
 					return e.item;
-				})
+			  })
 			: (bookmark?.files ?? []);
 	}
 
@@ -578,6 +578,11 @@
 		isFullscreen = false;
 		goto('/rooibos/corpbookmarks');
 	}
+
+	function moveToExistingChat(chat: any) {
+		goto(`/c/${chat.id}`);
+	}
+
 </script>
 
 {#if dragged}
@@ -809,13 +814,7 @@
 
 					<div
 						class="{largeScreen ? 'flex-shrink-0 w-72 max-w-72' : 'flex-1'}
-						flex
-						py-2
-						rounded-2xl
-						border
-						border-gray-50
-						h-full
-						dark:border-gray-850"
+						flex py-2 rounded-2xl border border-gray-50 h-full dark:border-gray-850"
 					>
 						<div class=" flex flex-col w-full space-x-2 rounded-lg h-full">
 							<div class="w-full h-full flex flex-col">
@@ -888,6 +887,29 @@
 							</div>
 						</div>
 					</div>
+
+					<!-- 채팅 리스트 추가 -->
+					{#if chatList.length > 0}
+						<div class="{largeScreen ? 'flex-shrink-0 w-60 max-w-60 border-l border-gray-200 dark:border-gray-700' : 'hidden'} flex flex-col">
+							<div class="px-2 py-1 border-b border-gray-200 dark:border-gray-700">
+								<h2 class="text-xs">채팅</h2>
+							</div>
+							<div class="flex-1 overflow-y-auto p-1 max-h-[100px]">
+								{#each chatList as chat}
+									<button 
+										type="button"
+										on:click={() => moveToExistingChat(chat)}
+										class="mb-1 w-full text-left rounded bg-gray-100 dark:bg-gray-800 p-1 cursor-pointer text-xs"
+									>
+										{chat.title}
+									</button>
+								{/each}
+							</div>
+						</div>
+					{/if}
+
+
+
 				</div>
 
 				<div class="flex-1 px-4 pb-4">
