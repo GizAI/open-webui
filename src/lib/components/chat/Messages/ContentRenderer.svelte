@@ -120,8 +120,7 @@
 		sourceIds={(sources ?? []).reduce((acc, s) => {
 			let ids = [];
 			s.document.forEach((document, index) => {
-
-				if(model?.info?.meta?.capabilities?.citations == false) {
+				if (model?.info?.meta?.capabilities?.citations == false) {
 					ids.push('N/A');
 					return ids;
 				}
