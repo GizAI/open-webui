@@ -3,6 +3,8 @@
 	import { MapPin, Briefcase, Microscope, Award, Users, DollarSign } from 'lucide-svelte';
 	import { WEBUI_API_BASE_URL } from '$lib/constants';
 	import { formatBusinessNumber } from '../common/helper';
+	import { get } from 'svelte/store';
+	import { user } from '$lib/stores';
 
 	export let company: any;
 	export let financialData: any = null;
@@ -46,8 +48,9 @@
 
 	async function fetchFinancialData(master_id: string) {
 		try {
+
 			const financialResponse = await fetch(
-				`${WEBUI_API_BASE_URL}/rooibos/corpbookmarks/${master_id}/financialData`,
+				`${WEBUI_API_BASE_URL}/rooibos/corpsearch/${master_id}/financialData`,
 				{
 					method: 'GET',
 					headers: {
@@ -58,7 +61,7 @@
 				}
 			);
 			const data = await financialResponse.json();
-			financialData = data.data;
+			financialData = data.financial_data;
 		} catch (error) {
 			console.error('재무 데이터 로딩 실패:', error);
 			financialData = null;

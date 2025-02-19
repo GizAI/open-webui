@@ -491,3 +491,96 @@ async def search(request: Request):
                 "message": str(e)
             }
         )
+    
+@router.get("/{id}/financialData")
+async def get_corp_financialData(id: str):
+    try:
+        params = [id]
+
+        sql_query = """
+            SELECT 
+                sfd.financial_company_id,
+                sfd.year,
+                sfd.revenue,
+                sfd.net_income,
+                sfd.operating_income,
+                sfd.total_assets,
+                sfd.total_liabilities,
+                sfd.total_equity,
+                sfd.capital_stock,
+                sfd.corporate_tax,
+                sfd.current_assets,
+                sfd.quick_assets,
+                sfd.inventory,
+                sfd.non_current_assets,
+                sfd.investment_assets,
+                sfd.tangible_assets,
+                sfd.intangible_assets,
+                sfd.current_liabilities,
+                sfd.non_current_liabilities,
+                sfd.retained_earnings,
+                sfd.profit,
+                sfd.sales_cost,
+                sfd.sales_profit,
+                sfd.sga,
+                sfd.other_income,
+                sfd.other_expenses,
+                sfd.pre_tax_income
+            FROM rb_master_company rmc
+            JOIN smtp_financial_company sfc 
+                ON rmc.company_name = sfc.company_name
+            JOIN smtp_financial_data sfd 
+                ON sfc.id = sfd.financial_company_id
+            WHERE rmc.master_id = $1
+            GROUP BY 
+                sfd.financial_company_id,
+                sfd.year,
+                sfd.revenue,
+                sfd.net_income,
+                sfd.operating_income,
+                sfd.total_assets,
+                sfd.total_liabilities,
+                sfd.total_equity,
+                sfd.capital_stock,
+                sfd.corporate_tax,
+                sfd.current_assets,
+                sfd.quick_assets,
+                sfd.inventory,
+                sfd.non_current_assets,
+                sfd.investment_assets,
+                sfd.tangible_assets,
+                sfd.intangible_assets,
+                sfd.current_liabilities,
+                sfd.non_current_liabilities,
+                sfd.retained_earnings,
+                sfd.profit,
+                sfd.sales_cost,
+                sfd.sales_profit,
+                sfd.sga,
+                sfd.other_income,
+                sfd.other_expenses,
+                sfd.pre_tax_income
+            ORDER BY sfd.year DESC
+        """
+
+        query = get_executable_query(sql_query, params)
+
+        with get_db() as db:
+            # 실제 실행되는 재무 데이터 쿼리 로깅
+            log.info(f"Executing Financial Data Query: {query}")
+            result = db.execute(text(query))
+            financial_data = [row._mapping for row in result.fetchall()]        
+
+        return {
+            "success": True,
+            "financial_data": financial_data,
+            "total": len(financial_data),
+        }
+    except Exception as e:
+        log.error("Financial Data API error: %s", e)
+        return {
+            "success": False,
+            "error": "Failed to fetch financial data",
+            "message": str(e)
+        }
+

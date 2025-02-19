@@ -1,3 +1,4 @@
+<!-- CorpBookmarksBase.svelte -->
 <script lang="ts">
 	import Fuse from 'fuse.js';
 	import { toast } from 'svelte-sonner';
@@ -30,12 +31,7 @@
 	import { goto } from '$app/navigation';
 	import ActionButtons from '../common/ActionButtons.svelte';
 	import CompanyDetail from '../company/CompanyDetail.svelte';
-
-	let largeScreen = true;
-
-	let pane: any;
-	let showSidepanel = true;
-	let minSize = 0;
+	import { get } from 'svelte/store';
 
 	type Bookmark = {
 		id: string;
@@ -126,18 +122,27 @@
 		pre_tax_income?: number;
 	};
 
-	let id: any = null;
+	let largeScreen = true;
+	let pane: any;
+	let showSidepanel = true;
+	let minSize = 0;
 	let bookmark: Bookmark | null = null;
 	let financialData: FinancialData | null = null;
 	let query = '';
-
 	let showAddTextContentModal = false;
 	let showSyncConfirmModal = false;
 	let showAccessControlModal = false;
-
+	let chatList: any = null;
 	let inputFiles: any = null;
-
 	let filteredItems: any = [];
+	let selectedFile: any = null;
+	let selectedFileId: any = null;
+	let fuse: any = null;
+	let debounceTimeout: any = null;
+	let mediaQuery: any;
+	let dragged = false;
+	let id: any = null;
+
 	$: if (bookmark && bookmark.files) {
 		fuse = new Fuse(bookmark.files, {
 			keys: ['meta.name', 'meta.description']
@@ -152,9 +157,6 @@
 			: (bookmark?.files ?? []);
 	}
 
-	let selectedFile: any = null;
-	let selectedFileId: any = null;
-
 	$: if (selectedFileId) {
 		const file = (bookmark?.files ?? []).find((file) => file.id === selectedFileId);
 		if (file) {
@@ -166,11 +168,6 @@
 	} else {
 		selectedFile = null;
 	}
-
-	let fuse: any = null;
-	let debounceTimeout: any = null;
-	let mediaQuery: any;
-	let dragged = false;
 
 	const createFileFromText = (name: string, content: string) => {
 		const blob = new Blob([content], { type: 'text/plain' });
@@ -378,7 +375,6 @@
 		}
 	};
 
-	// Helper function to maintain file paths within zip
 	const syncDirectoryHandler = async () => {
 		if ((bookmark?.files ?? []).length > 0) {
 			const res = await fetch(`${WEBUI_API_BASE_URL}/rooibos/corpbookmarks/${id}/file/reset`, {
@@ -539,8 +535,15 @@
 		}
 
 		id = $page.params.id;
+		const currentUser = get(user);
+		const queryParams = new URLSearchParams({
+			business_registration_number: bookmark?.business_registration_number !== undefined
+				? bookmark?.business_registration_number.toString()
+				: '',
+			user_id: currentUser?.id ?? ''
+		});
 
-		const response = await fetch(`${WEBUI_API_BASE_URL}/rooibos/corpbookmarks/${id}`, {
+		const response = await fetch(`${WEBUI_API_BASE_URL}/rooibos/corpbookmarks/${id}?${queryParams.toString()}`, {
 			method: 'GET',
 			headers: {
 				Accept: 'application/json',
@@ -549,24 +552,9 @@
 			}
 		});
 
-		const company_id = $page.url.searchParams.get('company_id');
-		const financialResponse = await fetch(
-			`${WEBUI_API_BASE_URL}/rooibos/corpbookmarks/${company_id}/financialData`,
-			{
-				method: 'GET',
-				headers: {
-					Accept: 'application/json',
-					'Content-Type': 'application/json',
-					authorization: `Bearer ${localStorage.token}`
-				}
-			}
-		);
-
 		const data = await response.json();
-		bookmark = data.data[0];
-
-		const filnancial = await financialResponse.json();
-		financialData = filnancial.data;
+		bookmark = data.bookmark[0];
+		chatList = data.chatList;	
 
 		filteredItems = bookmark?.files ?? [];
 
@@ -658,7 +646,7 @@
 />
 
 <div class="flex flex-col w-full translate-y-1" id="collection-container">
-	{#if id && bookmark}
+	{#if bookmark}
 		<AccessControlModal
 			bind:show={showAccessControlModal}
 			bind:accessControl={bookmark.access_control}
@@ -903,7 +891,7 @@
 				</div>
 
 				<div class="flex-1 px-4 pb-4">
-					<CompanyDetail company={bookmark} />
+					<CompanyDetail company={bookmark} bind:financialData={financialData} />
 				</div>
 			{:else}
 				<Spinner />

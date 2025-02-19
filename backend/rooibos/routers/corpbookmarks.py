@@ -3,8 +3,13 @@ from typing import Optional
 
 from open_webui.internal.db import get_db
 from sqlalchemy import text
+from open_webui.env import SRC_LOG_LEVELS
 
 import json
+import logging
+
+log = logging.getLogger(__name__)
+log.setLevel(SRC_LOG_LEVELS["COMFYUI"])
 
 router = APIRouter()
 
@@ -69,103 +74,11 @@ async def get_corpbookmarks(user_id: str):
             "error": "Search failed",
             "message": str(e)
         }
-
-@router.get("/{id}/financialData")
-async def get_corp_financialData(id: str):
-    try:
-        params = [id]
-        param_count = 1
-
-        sql_query = """
-            SELECT 
-                sfd.financial_company_id,
-                sfd.year,
-                sfd.revenue,
-                sfd.net_income,
-                sfd.operating_income,
-                sfd.total_assets,
-                sfd.total_liabilities,
-                sfd.total_equity,
-                sfd.capital_stock,
-                sfd.corporate_tax,
-                sfd.current_assets,
-                sfd.quick_assets,
-                sfd.inventory,
-                sfd.non_current_assets,
-                sfd.investment_assets,
-                sfd.tangible_assets,
-                sfd.intangible_assets,
-                sfd.current_liabilities,
-                sfd.non_current_liabilities,
-                sfd.retained_earnings,
-                sfd.profit,
-                sfd.sales_cost,
-                sfd.sales_profit,
-                sfd.sga,
-                sfd.other_income,
-                sfd.other_expenses,
-                sfd.pre_tax_income
-            FROM rb_master_company rmc
-            JOIN smtp_financial_company sfc 
-                ON rmc.company_name = sfc.company_name
-            JOIN smtp_financial_data sfd 
-                ON sfc.id = sfd.financial_company_id
-            WHERE rmc.master_id = $1
-            GROUP BY 
-                sfd.financial_company_id,
-                sfd.year,
-                sfd.revenue,
-                sfd.net_income,
-                sfd.operating_income,
-                sfd.total_assets,
-                sfd.total_liabilities,
-                sfd.total_equity,
-                sfd.capital_stock,
-                sfd.corporate_tax,
-                sfd.current_assets,
-                sfd.quick_assets,
-                sfd.inventory,
-                sfd.non_current_assets,
-                sfd.investment_assets,
-                sfd.tangible_assets,
-                sfd.intangible_assets,
-                sfd.current_liabilities,
-                sfd.non_current_liabilities,
-                sfd.retained_earnings,
-                sfd.profit,
-                sfd.sales_cost,
-                sfd.sales_profit,
-                sfd.sga,
-                sfd.other_income,
-                sfd.other_expenses,
-                sfd.pre_tax_income
-            ORDER BY sfd.year DESC
-        """
-
-        query = get_executable_query(sql_query, params)
-
-        with get_db() as db:
-            result = db.execute(text(query))
-            financial_data = [row._mapping for row in result.fetchall()]
-
-        return {
-            "success": True,
-            "data": financial_data,
-            "total": len(financial_data),
-        }
-    except Exception as e:
-        print("Financial Data API error:", e)
-        return {
-            "success": False,
-            "error": "Failed to fetch financial data",
-            "message": str(e)
-        }
-
     
 @router.get("/{id}")
-async def get_corpbookmark_by_id(id: str):    
+async def get_corpbookmark_by_id(id: str, request: Request):
     try:
-        sql_query = """        
+        bookmark_sql_query = """
         SELECT DISTINCT
             f.id as bookmark_id,
             f.created_at,
@@ -190,66 +103,66 @@ async def get_corpbookmark_by_id(id: str):
                 END
             ) FILTER (WHERE f.data IS NOT NULL) AS files,
             rmc.master_id,
-                rmc.company_name,
-                rmc.representative,
-                rmc.postal_code,
-                rmc.address,
-                rmc.phone_number,
-                rmc.fax_number,
-                rmc.website,
-                rmc.email,
-                rmc.company_type,
-                rmc.establishment_date,
-                rmc.founding_date,
-                rmc.employee_count,
-                rmc.industry_code1,
-                rmc.industry_code2,
-                rmc.industry,
-                rmc.main_product,
-                rmc.main_bank,
-                rmc.main_branch,
-                rmc.group_name,
-                rmc.stock_code,
-                rmc.business_registration_number,
-                rmc.corporate_number,
-                rmc.english_name,
-                rmc.trade_name,
-                rmc.fiscal_month,
-                rmc.sales_year,
-                rmc.recent_sales,
-                rmc.profit_year,
-                rmc.recent_profit,
-                rmc.operating_profit_year,
-                rmc.recent_operating_profit,
-                rmc.asset_year,
-                rmc.recent_total_assets,
-                rmc.debt_year,
-                rmc.recent_total_debt,
-                rmc.equity_year,
-                rmc.recent_total_equity,
-                rmc.capital_year,
-                rmc.recent_capital,
-                rmc.region1,
-                rmc.region2,
-                rmc.industry_major,
-                rmc.industry_middle,
-                rmc.industry_small,
-                rmc.latitude,
-                rmc.longitude,
-                rmc.sme_type,
-                rmc.research_info,
-                rmc.representative_birth ,
-                rmc.is_family_shareholder,
-                rmc.is_non_family_shareholder ,
-                rmc.financial_statement_year,
-                rmc.total_assets,
-                rmc.total_equity,
-                rmc.net_income,
-                rmc.venture_confirmation_type,
-                rmc.venture_valid_from,
-                rmc.venture_valid_until,
-                rmc.confirming_authority,
-                rmc.new_reconfirmation_code
+            rmc.company_name,
+            rmc.representative,
+            rmc.postal_code,
+            rmc.address,
+            rmc.phone_number,
+            rmc.fax_number,
+            rmc.website,
+            rmc.email,
+            rmc.company_type,
+            rmc.establishment_date,
+            rmc.founding_date,
+            rmc.employee_count,
+            rmc.industry_code1,
+            rmc.industry_code2,
+            rmc.industry,
+            rmc.main_product,
+            rmc.main_bank,
+            rmc.main_branch,
+            rmc.group_name,
+            rmc.stock_code,
+            rmc.business_registration_number,
+            rmc.corporate_number,
+            rmc.english_name,
+            rmc.trade_name,
+            rmc.fiscal_month,
+            rmc.sales_year,
+            rmc.recent_sales,
+            rmc.profit_year,
+            rmc.recent_profit,
+            rmc.operating_profit_year,
+            rmc.recent_operating_profit,
+            rmc.asset_year,
+            rmc.recent_total_assets,
+            rmc.debt_year,
+            rmc.recent_total_debt,
+            rmc.equity_year,
+            rmc.recent_total_equity,
+            rmc.capital_year,
+            rmc.recent_capital,
+            rmc.region1,
+            rmc.region2,
+            rmc.industry_major,
+            rmc.industry_middle,
+            rmc.industry_small,
+            rmc.latitude,
+            rmc.longitude,
+            rmc.sme_type,
+            rmc.research_info,
+            rmc.representative_birth,
+            rmc.is_family_shareholder,
+            rmc.is_non_family_shareholder,
+            rmc.financial_statement_year,
+            rmc.total_assets,
+            rmc.total_equity,
+            rmc.net_income,
+            rmc.venture_confirmation_type,
+            rmc.venture_valid_from,
+            rmc.venture_valid_until,
+            rmc.confirming_authority,
+            rmc.new_reconfirmation_code
         FROM corp_bookmark f
         INNER JOIN rb_master_company rmc ON f.company_id::text = rmc.master_id::text
         LEFT JOIN smtp_financial_company fc 
@@ -260,88 +173,111 @@ async def get_corpbookmark_by_id(id: str):
         LEFT JOIN file fi
             ON fi.id::text = ANY(ARRAY(
                 SELECT jsonb_array_elements_text(f.data::jsonb->'file_ids')
-            ))     
+            ))
         WHERE f.id = :id
         GROUP BY 
             f.id, f.created_at, f.updated_at, f.company_id,
             rmc.master_id,
-                rmc.company_name,
-                rmc.representative,
-                rmc.postal_code,
-                rmc.address,
-                rmc.phone_number,
-                rmc.fax_number,
-                rmc.website,
-                rmc.email,
-                rmc.company_type,
-                rmc.establishment_date,
-                rmc.founding_date,
-                rmc.employee_count,
-                rmc.industry_code1,
-                rmc.industry_code2,
-                rmc.industry,
-                rmc.main_product,
-                rmc.main_bank,
-                rmc.main_branch,
-                rmc.group_name,
-                rmc.stock_code,
-                rmc.business_registration_number,
-                rmc.corporate_number,
-                rmc.english_name,
-                rmc.trade_name,
-                rmc.fiscal_month,
-                rmc.sales_year,
-                rmc.recent_sales,
-                rmc.profit_year,
-                rmc.recent_profit,
-                rmc.operating_profit_year,
-                rmc.recent_operating_profit,
-                rmc.asset_year,
-                rmc.recent_total_assets,
-                rmc.debt_year,
-                rmc.recent_total_debt,
-                rmc.equity_year,
-                rmc.recent_total_equity,
-                rmc.capital_year,
-                rmc.recent_capital,
-                rmc.region1,
-                rmc.region2,
-                rmc.industry_major,
-                rmc.industry_middle,
-                rmc.industry_small,
-                rmc.latitude,
-                rmc.longitude,
-                rmc.sme_type,
-                rmc.research_info,
-                rmc.representative_birth ,
-                rmc.is_family_shareholder,
-                rmc.is_non_family_shareholder ,
-                rmc.financial_statement_year,
-                rmc.total_assets,
-                rmc.total_equity,
-                rmc.net_income,
-                rmc.venture_confirmation_type,
-                rmc.venture_valid_from,
-                rmc.venture_valid_until,
-                rmc.confirming_authority,
-                rmc.new_reconfirmation_code
+            rmc.company_name,
+            rmc.representative,
+            rmc.postal_code,
+            rmc.address,
+            rmc.phone_number,
+            rmc.fax_number,
+            rmc.website,
+            rmc.email,
+            rmc.company_type,
+            rmc.establishment_date,
+            rmc.founding_date,
+            rmc.employee_count,
+            rmc.industry_code1,
+            rmc.industry_code2,
+            rmc.industry,
+            rmc.main_product,
+            rmc.main_bank,
+            rmc.main_branch,
+            rmc.group_name,
+            rmc.stock_code,
+            rmc.business_registration_number,
+            rmc.corporate_number,
+            rmc.english_name,
+            rmc.trade_name,
+            rmc.fiscal_month,
+            rmc.sales_year,
+            rmc.recent_sales,
+            rmc.profit_year,
+            rmc.recent_profit,
+            rmc.operating_profit_year,
+            rmc.recent_operating_profit,
+            rmc.asset_year,
+            rmc.recent_total_assets,
+            rmc.debt_year,
+            rmc.recent_total_debt,
+            rmc.equity_year,
+            rmc.recent_total_equity,
+            rmc.capital_year,
+            rmc.recent_capital,
+            rmc.region1,
+            rmc.region2,
+            rmc.industry_major,
+            rmc.industry_middle,
+            rmc.industry_small,
+            rmc.latitude,
+            rmc.longitude,
+            rmc.sme_type,
+            rmc.research_info,
+            rmc.representative_birth,
+            rmc.is_family_shareholder,
+            rmc.is_non_family_shareholder,
+            rmc.financial_statement_year,
+            rmc.total_assets,
+            rmc.total_equity,
+            rmc.net_income,
+            rmc.venture_confirmation_type,
+            rmc.venture_valid_from,
+            rmc.venture_valid_until,
+            rmc.confirming_authority,
+            rmc.new_reconfirmation_code
         ORDER BY f.updated_at DESC
         """
         with get_db() as db:
-            result = db.execute(text(sql_query), {"id": id})
-            data = [row._mapping for row in result.fetchall()]
-        
-        if not data:
-            return {
-                "success": False,
-                "error": "Not Found",
-                "message": f"Bookmark with id '{id}' does not exist."
-            }
+            # Bookmark 데이터 조회
+            bookmark_result = db.execute(text(bookmark_sql_query), {"id": id})
+            bookmark_data = [row._mapping for row in bookmark_result.fetchall()]
+            
+            if not bookmark_data:
+                return {
+                    "success": False,
+                    "error": "Not Found",
+                    "message": f"Bookmark with id '{id}' does not exist."
+                }
+            
+            # Chat List 조회
+            search_params = request.query_params
+            user_id = search_params.get("user_id")
+            
+            business_reg_json = json.dumps({
+                "selectedCompany": {
+                    "business_registration_number": bookmark_data[0].business_registration_number
+                }
+            })
+            
+            conditions = []
+            conditions.append("user_id = " + format_parameter(user_id))
+            conditions.append("c.chat::jsonb @> " + format_parameter(business_reg_json) + "::jsonb")
+            chat_query = "SELECT * FROM chat c WHERE " + " AND ".join(conditions)
+            chat_query = get_executable_query(chat_query, [])
+            
+            log.info(f"Executing Chat Query: {chat_query}")
+            chat_result = db.execute(text(chat_query))
+            chat_list = [row._mapping for row in chat_result.fetchall()]
         
         return {
             "success": True,
-            "data": data,
-            "total": len(data)
+            "bookmark": bookmark_data,
+            "bookmark_total": len(bookmark_data),
+            "chatList": chat_list,
+            "chat_total": len(chat_list)
         }
     except Exception as e:
         print("Get CorpBookmark by ID error:", e)
@@ -349,7 +285,8 @@ async def get_corpbookmark_by_id(id: str):
             "success": False,
             "error": "Fetch failed",
             "message": str(e)
-        }    
+        }
+
 
 @router.delete("/{id}/delete")
 async def delete_corpbookmark(id: str):
@@ -596,7 +533,6 @@ async def file_reset_corpbookmark_by_id(id: str):
             "error": "Reset failed",
             "message": str(e)
         }
-
 
 
 
