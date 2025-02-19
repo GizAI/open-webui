@@ -491,6 +491,52 @@ async def search(request: Request):
                 "message": str(e)
             }
         )
+
+@router.get("/industries")
+async def get_industries(query: str = ""):
+    """
+    rb_master_company 테이블에서 중복되지 않는 industry 값을 오름차순으로 조회합니다.
+    query 파라미터가 전달되면, 해당 문자열을 포함하는 업종만 필터링하여 반환합니다.
+    각 항목은 { id: industry, industry: industry } 형태로 반환됩니다.
+    """
+    try:
+        with get_db() as db:
+            base_query = """
+                SELECT DISTINCT industry 
+                FROM rb_master_company 
+                WHERE industry IS NOT NULL AND industry != ''
+            """
+            params = {}
+            if query:
+                base_query += " AND industry ILIKE :q"
+                params["q"] = f"%{query}%"
+            base_query += " ORDER BY industry ASC"
+
+            result = db.execute(text(base_query), params)
+            # 각 행의 첫번째 컬럼이 industry 값임
+            industries = [row[0] for row in result.fetchall()]
+
+        # 문자열 배열을 객체 배열로 변환
+        industries_objs = [{"id": industry, "industry": industry} for industry in industries]
+
+        return {
+            "success": True,
+            "industries": industries_objs,
+            "total": len(industries_objs)
+        }
+    except Exception as e:
+        log.error("Failed to fetch industries: %s", e)
+        raise HTTPException(
+            status_code=500,
+            detail={
+                "success": False,
+                "error": "Failed to fetch industries",
+                "message": str(e)
+            }
+        )
+
+
+
     
 @router.get("/{id}/financialData")
 async def get_corp_financialData(id: str):

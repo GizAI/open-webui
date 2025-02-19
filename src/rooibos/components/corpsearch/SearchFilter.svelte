@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { filterGroups } from './filterdata';
 	import { mobile } from '$lib/stores';
+	import IndustrySearch from './IndustrySearch.svelte';
 
 	type FilterValue =
 		| string
@@ -195,7 +196,7 @@
 								</div>
 							{/if}
 
-							{#if group.options}
+							{#if group.options && group.id != 'excluded_industries'}
 								{#each group.options as option}
 									<div class="rounded-lg p-1 text-gray-900 dark:bg-gray-950 dark:text-gray-200">
 										<div class="flex items-center gap-2">
@@ -222,6 +223,9 @@
 										</div>
 									</div>
 								{/each}
+							{/if}
+							{#if group.id == 'excluded_industries'}
+									<IndustrySearch/>
 							{/if}
 						</div>
 					</div>

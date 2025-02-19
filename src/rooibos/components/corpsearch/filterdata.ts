@@ -103,7 +103,7 @@ export const filterGroups = [
 	// },
 	{
 		id: 'excluded_industries',
-		title: '제외 업종',
+		title: '업종',
 		isMulti: true,
 		checked: false,
 		options: [
