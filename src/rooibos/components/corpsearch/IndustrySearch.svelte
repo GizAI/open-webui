@@ -10,10 +10,12 @@
 	let options: Array<{ id: string; industry: string }> = [];
 	let selectedIndustries: Array<{ id: string; industry: string }> = [];
 
+    export let selectedFilters: any = null;
+
 	async function fetchIndustries(query: string) {
 		const response = await fetch(`${WEBUI_API_BASE_URL}/rooibos/corpsearch/industries?query=${query}`);
 		const data = await response.json();
-		options = data.industries;        
+		options = data.industries;     
 	}
 
 	const debouncedFetch = debounce((query: string) => {
@@ -26,23 +28,47 @@
 		options = [];
 	}
 
+    $: if (selectedFilters && selectedFilters.included_industries) {
+        let industriesArr = [];
+
+        if (Array.isArray(selectedFilters.included_industries)) {
+            industriesArr = selectedFilters.included_industries;
+        } 
+        
+        else if (typeof selectedFilters.included_industries === 'object' && selectedFilters.included_industries.value) {
+            industriesArr = selectedFilters.included_industries.value.split(',').map(item => item.trim());
+        }
+
+        const newIndustries = industriesArr.map((value: string) => ({
+            id: value.replace(/[^가-힣]/g, ''), // 한글만 남김
+            industry: value.trim()
+        }));
+
+        if (JSON.stringify(newIndustries) !== JSON.stringify(selectedIndustries)) {
+            selectedIndustries = newIndustries;
+        }
+    }
+
+
 	function selectIndustry(option: { id: string; industry: string }) {
 		if (!selectedIndustries.find((item) => item.id === option.id)) {
-			selectedIndustries = [...selectedIndustries, option];
-			dispatch('filterChange', { groupId: 'included_industries', value: selectedIndustries });
+			const updatedIndustries = [...selectedIndustries, option];
+			selectedIndustries = updatedIndustries;
+			dispatch('filterChange', { groupId: 'included_industries', value: updatedIndustries });
 		}
 		searchTerm = '';
 		options = [];
 	}
 
+
 	function removeIndustry(id: string) {
-		selectedIndustries = selectedIndustries.filter((item) => item.id !== id);
-		dispatch('filterChange', { groupId: 'included_industries', value: selectedIndustries });
+		const updatedIndustries = selectedIndustries.filter((item) => item.id !== id);
+		selectedIndustries = updatedIndustries;
+		dispatch('filterChange', { groupId: 'included_industries', value: updatedIndustries });
 	}
 </script>
 
 <div class="industry-search">
-	<!-- input과 옵션 리스트를 감싸는 래퍼 추가 -->
 	<div class="input-wrapper">
 		<input
 			type="text"

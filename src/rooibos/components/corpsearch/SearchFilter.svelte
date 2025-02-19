@@ -225,7 +225,7 @@
 								{/each}
 							{/if}
 							{#if group.id == 'included_industries'}
-								<IndustrySearch on:filterChange={(e) => filterChange(e.detail.groupId, '', e.detail.value)}/>
+								<IndustrySearch {selectedFilters} on:filterChange={(e) => filterChange(e.detail.groupId, '', e.detail.value)}/>
 							{/if}
 
 						</div>
