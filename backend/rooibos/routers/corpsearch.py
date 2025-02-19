@@ -428,9 +428,13 @@ async def search(request: Request):
                     sql_query += " AND (" + " AND ".join(conditions) + ")"             
 
             if included_industries:
-                sql_query += f" AND rmc.industry in (${param_count})"
-                params.append(included_industries)
-                param_count += 1
+                industry_list = included_industries.split(", ")  # 문자열을 리스트로 변환
+                industry_conditions = " OR ".join([f"rmc.industry = ${param_count + i}" for i in range(len(industry_list))])
+
+                sql_query += f" AND ({industry_conditions})"
+                params.extend(industry_list)
+                param_count += len(industry_list)
+
 
             if gender:
                 sql_query += f" AND me.gender = ${param_count}"
