@@ -9,8 +9,21 @@
 	let searchTerm = '';
 	let options: Array<{ id: string; industry: string }> = [];
 	let selectedIndustries: Array<{ id: string; industry: string }> = [];
+    let dropdownOpen = false;
 
     export let selectedFilters: any = null;
+
+	function closeDropdown(event: MouseEvent) {
+		if (!(event.target as HTMLElement).closest('.input-wrapper')) {
+			dropdownOpen = false;
+		}
+	}
+
+	document.addEventListener('click', closeDropdown);
+
+	$: if (options.length > 0) {
+		dropdownOpen = true;
+	}
 
 	async function fetchIndustries(query: string) {
 		const response = await fetch(`${WEBUI_API_BASE_URL}/rooibos/corpsearch/industries?query=${query}`);
@@ -19,8 +32,11 @@
 	}
 
 	const debouncedFetch = debounce((query: string) => {
-		fetchIndustries(query);
-	}, 200);
+        if (query.length >= 2) {
+            fetchIndustries(query);
+        }
+    }, 150);
+
 
 	$: if (searchTerm) {
 		debouncedFetch(searchTerm);
@@ -40,7 +56,7 @@
         }
 
         const newIndustries = industriesArr.map((value: string) => ({
-            id: value.replace(/[^가-힣]/g, ''), // 한글만 남김
+            id: value.replace(/[^가-힣]/g, ''),
             industry: value.trim()
         }));
 
@@ -77,17 +93,18 @@
 			class="border p-2 rounded-md"
 		/>
 		{#if options.length > 0}
-			<ul class="options-list border mt-1 rounded-md bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-white-200">
-				{#each options as option}
-					<li
-						on:click={() => selectIndustry(option)}
-						class="p-2 cursor-pointer bg-gray-50 text-gray-900 dark:text-gray-400 dark:bg-gray-950"
-					>
-						{option.industry}
-					</li>
-				{/each}
-			</ul>
-		{/if}
+            <ul class="options-list border mt-1 rounded-md bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-white-200" 
+                class:hidden={!dropdownOpen}>
+                {#each options as option}
+                    <li
+                        on:click={() => selectIndustry(option)}
+                        class="p-2 cursor-pointer bg-gray-50 text-gray-900 dark:text-gray-400 dark:bg-gray-950"
+                    >
+                        {option.industry}
+                    </li>
+                {/each}
+            </ul>
+        {/if}
 	</div>
 
 	{#if selectedIndustries.length > 0}
@@ -114,12 +131,18 @@
 	}
 
 	.options-list {
-		position: absolute;
-		top: 100%;
-		left: 0;
-		width: 100%;
-		z-index: 10;
-	}
+        position: absolute;
+        top: 100%;
+        left: 0;
+        width: 100%;
+        z-index: 10;
+        max-height: 300px;
+        overflow-y: auto;
+        scrollbar-width: thin;
+        scrollbar-color: #999 transparent;
+    }
+
+
 </style>
 
 
