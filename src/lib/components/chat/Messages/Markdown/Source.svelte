@@ -2,7 +2,7 @@
 	export let token;
 	export let onClick: Function = () => {};
 
-	let attributes: Record<string, string> = {};
+	let attributes: Record<string, string | undefined> = {};
 
 	function extractAttributes(input: string): Record<string, string> {
 		const regex = /(\w+)="([^"]*)"/g;
@@ -35,7 +35,7 @@
 	$: attributes = extractAttributes(token.text);
 </script>
 
-{#if attributes.title !== "N/A"}
+{#if attributes.title !== 'N/A'}
 	<button
 		class="text-xs font-medium w-fit translate-y-[2px] px-2 py-0.5 dark:bg-white/5 dark:text-white/60 dark:hover:text-white bg-gray-50 text-black/60 hover:text-black transition rounded-lg"
 		on:click={() => {
@@ -43,7 +43,7 @@
 		}}
 	>
 		<span class="line-clamp-1">
-			{formattedTitle(attributes.title)}
+			{attributes.title ? formattedTitle(attributes.title) : ''}
 		</span>
 	</button>
 {/if}
