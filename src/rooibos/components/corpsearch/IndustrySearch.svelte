@@ -1,3 +1,4 @@
+<!-- industrySearch.svelte -->
 <script lang="ts">
 	import { WEBUI_API_BASE_URL } from '$lib/constants';
 	import { debounce } from 'lodash';
@@ -26,20 +27,17 @@
 	}
 
 	function selectIndustry(option: { id: string; industry: string }) {
-		// 중복 선택 방지
 		if (!selectedIndustries.find((item) => item.id === option.id)) {
 			selectedIndustries = [...selectedIndustries, option];
-			// 선택된 필터를 부모 컴포넌트에 전달
-			dispatch('filterChange', { groupId: 'industry', value: selectedIndustries });
+			dispatch('filterChange', { groupId: 'included_industries', value: selectedIndustries });
 		}
-		// 검색어 및 옵션 초기화
 		searchTerm = '';
 		options = [];
 	}
 
 	function removeIndustry(id: string) {
 		selectedIndustries = selectedIndustries.filter((item) => item.id !== id);
-		dispatch('filterChange', { groupId: 'industry', value: selectedIndustries });
+		dispatch('filterChange', { groupId: 'included_industries', value: selectedIndustries });
 	}
 </script>
 

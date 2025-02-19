@@ -140,7 +140,7 @@ async def search(request: Request):
 
     establishment_year = filters.get("establishment_year", {}).get("value") if filters.get("establishment_year") else None
 
-    excluded_industries = filters.get("excluded_industries", {}).get("value") if filters.get("excluded_industries") else None
+    included_industries = filters.get("included_industries", {}).get("value") if filters.get("included_industries") else None
 
     gender_raw = filters.get("gender", {}).get("value") if filters.get("gender") else None
     gender = "남" if gender_raw == "male" else ("여" if gender_raw == "female" else None)
@@ -427,10 +427,9 @@ async def search(request: Request):
                 if conditions:
                     sql_query += " AND (" + " AND ".join(conditions) + ")"             
 
-            if excluded_industries:
-                sql_query += f" AND rmc.industry_code1 != ALL(${param_count}::text[])"
-                array_value = "{" + ",".join(excluded_industries) + "}"
-                params.append(array_value)
+            if included_industries:
+                sql_query += f" AND rmc.industry in (${param_count})"
+                params.append(included_industries)
                 param_count += 1
 
             if gender:

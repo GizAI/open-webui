@@ -102,16 +102,9 @@ export const filterGroups = [
 	//   ],
 	// },
 	{
-		id: 'excluded_industries',
+		id: 'included_industries',
 		title: '업종',
-		isMulti: true,
-		checked: false,
-		options: [
-			{ id: 'L6812', label: '임대업' },
-			{ id: 'L6810', label: '부동산업' },
-			{ id: 'F4', label: '건설업' },
-			{ id: 'I5621', label: '유통업' }
-		]
+		checked: false
 	}
 ];
 
@@ -178,6 +171,12 @@ export function onFilterChange(selectedFilters: any, groupId: string, optionId: 
 			...((newFilters[groupId] as any) || {}),
 			...checked
 		};
+	} else if (groupId === 'included_industries') {
+		newFilters[groupId] = {
+			...((newFilters[groupId] as any) || {}),
+			value: checked.map((item: { id: string; industry: string }) => item.industry).join(', ')
+		};
+				
 	} else if (typeof checked === 'string') {
 		newFilters[groupId] = {
 			...((newFilters[groupId] as any) || {}),

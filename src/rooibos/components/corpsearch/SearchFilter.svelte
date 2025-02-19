@@ -196,7 +196,7 @@
 								</div>
 							{/if}
 
-							{#if group.options && group.id != 'excluded_industries'}
+							{#if group.options }
 								{#each group.options as option}
 									<div class="rounded-lg p-1 text-gray-900 dark:bg-gray-950 dark:text-gray-200">
 										<div class="flex items-center gap-2">
@@ -224,9 +224,10 @@
 									</div>
 								{/each}
 							{/if}
-							{#if group.id == 'excluded_industries'}
-									<IndustrySearch/>
+							{#if group.id == 'included_industries'}
+								<IndustrySearch on:filterChange={(e) => filterChange(e.detail.groupId, '', e.detail.value)}/>
 							{/if}
+
 						</div>
 					</div>
 				{/if}
