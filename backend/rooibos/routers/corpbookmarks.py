@@ -85,7 +85,7 @@ async def get_corpbookmark_by_id(id: str, request: Request):
             f.id as bookmark_id,
             f.created_at,
             f.updated_at,
-            f.company_id,
+            f.company_id, f.user_id as bookmark_user_id,
             jsonb_agg(DISTINCT
                 CASE
                     WHEN f.data IS NOT NULL
@@ -182,7 +182,7 @@ async def get_corpbookmark_by_id(id: str, request: Request):
             OR (f.access_control::jsonb->'user_ids') ? :userId
           )
         GROUP BY
-            f.id, f.created_at, f.updated_at, f.company_id,
+            f.id, f.created_at, f.updated_at, f.company_id, f.user_id,
             rmc.master_id,
             rmc.company_name,
             rmc.representative,
@@ -346,7 +346,6 @@ async def add_corpbookmark(request: Request):
 
         return {
             "success": True,
-            "data": {"id": bookmark_id},
             "message": "Bookmark successfully added."
         }
     except Exception as e:

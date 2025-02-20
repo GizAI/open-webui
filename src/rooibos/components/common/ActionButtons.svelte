@@ -8,9 +8,10 @@
   
     export let companyInfo: any = {};
 
+    const currentUser = get(user)
+
     const saveCompany = async (company: any) => {	
-		if(!company.bookmark_id) {
-			const currentUser = get(user);
+		if(!company.bookmark_user_id) {
 			const response = await fetch(`${WEBUI_API_BASE_URL}/rooibos/corpbookmarks/add`, {
 			method: 'POST',
 			headers: {
@@ -24,8 +25,7 @@
 			}),
 			});    
 			
-			const data = await response.json();
-			companyInfo.bookmark_id = data.data.id;
+			companyInfo.bookmark_user_id = currentUser?.id;
 		}else {
 			await fetch(`${WEBUI_API_BASE_URL}/rooibos/corpbookmarks/${companyInfo.bookmark_id}/delete`, {
 				method: 'DELETE',
@@ -33,7 +33,7 @@
 					'Content-Type': 'application/json',
 				},
 			});
-			companyInfo.bookmark_id = null;     
+			companyInfo.bookmark_user_id = null;     
 		}
 	}
 
@@ -61,15 +61,15 @@
         fill="none" 
         viewBox="0 0 24 24" 
         stroke="currentColor"
-        class:text-yellow-500={companyInfo.bookmark_id}
-        class:text-gray-500={!companyInfo.bookmark_id}
+        class:text-yellow-500={companyInfo.bookmark_user_id == currentUser?.id}
+        class:text-gray-500={companyInfo.bookmark_user_id != currentUser?.id}
       >
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5v14l7-7 7 7V5z" />
       </svg>
       <span 
         class="text-xs mt-1 whitespace-nowrap transition-colors duration-200"
-        class:text-yellow-500={companyInfo.bookmark_id}
-        class:text-gray-500={!companyInfo.bookmark_id}
+        class:text-yellow-500={companyInfo.bookmark_user_id == currentUser?.id}
+        class:text-gray-500={companyInfo.bookmark_user_id != currentUser?.id}
       >
         저장
       </span>
