@@ -118,7 +118,7 @@
 		<div class="flex gap-2.5 items-center mb-1">
 			<div>
 				<div class="p-2 bg-black/5 dark:bg-white/5 rounded-full">
-					{#if accessControl !== null}
+					{#if accessUsers.length > 0}
 						<!-- private 아이콘 -->
 						<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
 							<path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
@@ -135,13 +135,12 @@
 				<select
 					id="models"
 					class="outline-hidden bg-transparent text-sm font-medium rounded-lg block w-fit pr-10 max-w-full placeholder-gray-400"
-					value={accessControl !== null ? 'private' : 'public'}
+					value={accessUsers.length > 0 ? 'private' : 'public'}
 					on:change={(e) => {
 						if (e.target.value === 'public') {
 							accessControl = null;
 						} else {
 							accessControl = { user_ids: [] };
-							// private 모드이면 access_control 유저 fetch
 							fetchAccessUsers();
 						}
 						onChange(accessControl);
@@ -151,7 +150,7 @@
 					<option class="text-gray-700" value="public" selected>Public</option>
 				</select>
 				<div class="text-xs text-gray-400 font-medium">
-					{#if accessControl !== null}
+					{#if accessUsers.length > 0 }
 						{$i18n.t('Only select users with permission can access')}
 					{:else}
 						{$i18n.t('Accessible to all users')}
@@ -161,7 +160,7 @@
 		</div>
 	</div>
 
-	{#if accessControl !== null}
+	{#if accessUsers.length > 0 }
 		<!-- 사용자 UI -->
 		<div>
 			<div class="flex justify-between mb-1.5">
@@ -175,10 +174,11 @@
 								class="outline-hidden bg-transparent text-sm rounded-lg block w-full pr-10 max-w-full {selectedUserId ? '' : 'text-gray-500'} dark:placeholder-gray-500"
 								bind:value={selectedUserId}
 							>
-								<option class="text-gray-700" value="" disabled selected>{$i18n.t('Select a user')}</option>
-								{#each users.filter((user) => !accessControl.user_ids.includes(user.id)) as user}
-									<option class="text-gray-700" value={user.id}>{user.name}</option>
-								{/each}
+							<option class="text-gray-700" value="" disabled selected>{$i18n.t('Select a user')}</option>
+							{#each users.filter((user) => !(accessControl?.user_ids || []).includes(user.id)) as user}
+								<option class="text-gray-700" value={user.id}>{user.name}</option>
+							{/each}
+							
 							</select>
 						</div>
 					</div>
@@ -199,7 +199,6 @@
 								<button
 									type="button"
 									on:click={() => {
-										// 필요 시 write 권한 토글 로직 구현
 									}}
 								>
 									<Badge type={'info'} content={$i18n.t('Read')} />

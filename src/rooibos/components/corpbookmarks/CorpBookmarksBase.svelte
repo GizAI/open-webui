@@ -26,13 +26,13 @@
 	import RichTextInput from '$lib/components/common/RichTextInput.svelte';
 	import Drawer from '$lib/components/common/Drawer.svelte';
 	import ChevronLeft from '$lib/components/icons/ChevronLeft.svelte';
-	import AccessControlModal from '$lib/components/workspace/common/AccessControlModal.svelte';
 	import { WEBUI_API_BASE_URL } from '$lib/constants';
 	import { goto } from '$app/navigation';
 	import ActionButtons from '../common/ActionButtons.svelte';
 	import CompanyDetail from '../company/CompanyDetail.svelte';
 	import { get } from 'svelte/store';
 	import LockClosed from '$lib/components/icons/LockClosed.svelte';
+	import RooibosAccessControlModal from '../common/RooibosAccessControlModal.svelte';
 
 	type Bookmark = {
 		id: string;
@@ -658,7 +658,7 @@
 		</h1>
 
 		<div class="flex items-center space-x-1">
-			<!-- <div class="self-center shrink-0">
+			<div class="self-center shrink-0">
 				<button
 					class="bg-gray-50 hover:bg-gray-100 text-black dark:bg-gray-850 dark:hover:bg-gray-800 dark:text-white transition px-2 py-1 rounded-full flex gap-1 items-center"
 					type="button"
@@ -672,7 +672,7 @@
 						{$i18n.t('Access')}
 					</div>
 				</button>
-			</div> -->
+			</div>
 			<ActionButtons companyInfo={bookmark} />
 
 			<button class="hover:bg-gray-100 rounded-full" on:click={closeCompanyInfo}>
@@ -698,12 +698,10 @@
 
 <div class="flex flex-col w-full translate-y-1" id="collection-container">
 	{#if bookmark}
-		<AccessControlModal
+		<RooibosAccessControlModal
 			bind:show={showAccessControlModal}
 			bind:accessControl={bookmark.access_control}
-			onChange={() => {
-				changeDebounceHandler();
-			}}
+			bind:bookmarkId={bookmark.bookmark_id}			
 			accessRoles={['read', 'write']}
 		/>
 		<div
