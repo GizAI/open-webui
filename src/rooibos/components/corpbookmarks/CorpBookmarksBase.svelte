@@ -32,6 +32,7 @@
 	import ActionButtons from '../common/ActionButtons.svelte';
 	import CompanyDetail from '../company/CompanyDetail.svelte';
 	import { get } from 'svelte/store';
+	import LockClosed from '$lib/components/icons/LockClosed.svelte';
 
 	type Bookmark = {
 		id: string;
@@ -650,13 +651,28 @@
 	}}
 />
 {#if bookmark}
-<div class="sticky border-b top-0 z-10 shrink-0 px-4 pt-2 pb-1 bg-white dark:bg-gray-900">
+<div class="sticky border-b border-gray-200 top-0 z-10 shrink-0 px-4 pt-2 pb-1 bg-white dark:bg-gray-900">
 	<div class="flex items-center justify-between w-full mb-1">
 		<h1 class="{$mobile ? 'sm:text-xl' : 'text-xl'} font-semibold mb-1 truncate">
 			{bookmark.company_name}
 		</h1>
 
 		<div class="flex items-center space-x-1">
+			<!-- <div class="self-center shrink-0">
+				<button
+					class="bg-gray-50 hover:bg-gray-100 text-black dark:bg-gray-850 dark:hover:bg-gray-800 dark:text-white transition px-2 py-1 rounded-full flex gap-1 items-center"
+					type="button"
+					on:click={() => {
+						showAccessControlModal = true;
+					}}
+				>
+					<LockClosed strokeWidth="2.5" className="size-3.5" />
+
+					<div class="text-sm font-medium shrink-0">
+						{$i18n.t('Access')}
+					</div>
+				</button>
+			</div> -->
 			<ActionButtons companyInfo={bookmark} />
 
 			<button class="hover:bg-gray-100 rounded-full" on:click={closeCompanyInfo}>
@@ -688,6 +704,7 @@
 			onChange={() => {
 				changeDebounceHandler();
 			}}
+			accessRoles={['read', 'write']}
 		/>
 		<div
 			class="company-info-wrapper active {isFullscreen
@@ -899,7 +916,7 @@
 								<button 
 									type="button"
 									on:click={() => moveToExistingChat(chat)}
-									class="mb-1 w-full text-left rounded bg-gray-100 dark:bg-gray-800 p-1 cursor-pointer text-xs"
+									class="mb-1 w-full text-left rounded bg-gray-50 dark:bg-gray-800 p-1 cursor-pointer text-xs"
 								>
 									{chat.title}
 								</button>

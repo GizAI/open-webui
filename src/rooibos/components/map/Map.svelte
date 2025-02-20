@@ -360,7 +360,7 @@
 		}
 	}
 
-	export const handleSearch = async (searchValue: string, filters: any) => {
+	const handleSearch = async (searchValue: string, filters: any) => {
 		console.log('Searching for:', searchValue, 'with filters:', filters);
 		activeFilterGroup = null;
 		isListIconVisible = true;
