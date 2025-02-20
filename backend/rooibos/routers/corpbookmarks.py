@@ -1,5 +1,4 @@
 from fastapi import APIRouter, Request, HTTPException
-from typing import Optional
 
 from open_webui.internal.db import get_db
 from sqlalchemy import text
@@ -72,11 +71,13 @@ async def get_corpbookmarks(user_id: str):
             "error": "Search failed",
             "message": str(e)
         }
+
     
 @router.get("/{id}")
 async def get_corpbookmark_by_id(id: str, request: Request):
     search_params = request.query_params
     user_id = search_params.get("user_id")
+    
     try:
         bookmark_sql_query = """
         SELECT DISTINCT
@@ -84,9 +85,9 @@ async def get_corpbookmark_by_id(id: str, request: Request):
             f.created_at,
             f.updated_at,
             f.company_id,
-            jsonb_agg(DISTINCT 
-                CASE 
-                    WHEN f.data IS NOT NULL 
+            jsonb_agg(DISTINCT
+                CASE
+                    WHEN f.data IS NOT NULL
                     THEN jsonb_build_object(
                         'id', fi.id,
                         'user_id', fi.user_id,
@@ -99,7 +100,7 @@ async def get_corpbookmark_by_id(id: str, request: Request):
                         'path', fi."path",
                         'access_control', fi.access_control
                     )
-                    ELSE NULL 
+                    ELSE NULL
                 END
             ) FILTER (WHERE f.data IS NOT NULL) AS files,
             rmc.master_id,
@@ -165,7 +166,7 @@ async def get_corpbookmark_by_id(id: str, request: Request):
             rmc.new_reconfirmation_code
         FROM corp_bookmark f
         INNER JOIN rb_master_company rmc ON f.company_id::text = rmc.master_id::text
-        LEFT JOIN smtp_financial_company fc 
+        LEFT JOIN smtp_financial_company fc
             ON rmc.company_name = fc.company_name
         LEFT JOIN smtp_executives me
             ON rmc.business_registration_number = me.business_registration_number
@@ -174,8 +175,12 @@ async def get_corpbookmark_by_id(id: str, request: Request):
             ON fi.id::text = ANY(ARRAY(
                 SELECT jsonb_array_elements_text(f.data::jsonb->'file_ids')
             ))
-        WHERE f.id = :id and f.user_id = :userId
-        GROUP BY 
+        WHERE f.id = :id 
+          AND (
+            f.user_id = :userId
+            OR (f.access_control::jsonb->'user_ids') ? :userId
+          )
+        GROUP BY
             f.id, f.created_at, f.updated_at, f.company_id,
             rmc.master_id,
             rmc.company_name,
@@ -240,16 +245,22 @@ async def get_corpbookmark_by_id(id: str, request: Request):
             rmc.new_reconfirmation_code
         ORDER BY f.updated_at DESC
         """
-        log.info(f"Executing query: {bookmark_sql_query} with parameters: id={id}, userId={user_id}")
+        
+        stmt = text(bookmark_sql_query)
+        params = {"id": id, "userId": user_id}
+        
         with get_db() as db:
-            bookmark_result = db.execute(text(bookmark_sql_query), {"id": id, "userId": user_id})
+            compiled_query = stmt.compile(dialect=db.bind.dialect, compile_kwargs={"literal_binds": True})
+            log.info(f"Final executed bookmark query: {compiled_query} | Parameters: {params}")
+            
+            bookmark_result = db.execute(stmt, params)
             bookmark_data = [row._mapping for row in bookmark_result.fetchall()]
             
             if not bookmark_data:
                 return {
                     "success": False,
-                    "error": "Not Found",
-                    "message": f"Bookmark with id '{id}' does not exist."
+                    "error": "권한 없음",
+                    "message": f"Bookmark with id '{id}' 에 대한 접근 권한이 없습니다."
                 }
             
             # Chat List 조회
@@ -264,7 +275,8 @@ async def get_corpbookmark_by_id(id: str, request: Request):
             conditions.append("c.chat::jsonb @> " + format_parameter(business_reg_json) + "::jsonb")
             chat_query = "SELECT * FROM chat c WHERE " + " AND ".join(conditions)
             chat_query = get_executable_query(chat_query, [])
-            log.info(f"Executing Chat Query: {chat_query}")
+            
+            log.info(f"Final executed chat query: {chat_query}")
             chat_result = db.execute(text(chat_query))
             chat_list = [row._mapping for row in chat_result.fetchall()]
         
@@ -282,6 +294,8 @@ async def get_corpbookmark_by_id(id: str, request: Request):
             "error": "Fetch failed",
             "message": str(e)
         }
+
+
 
 @router.delete("/{id}/delete")
 async def delete_corpbookmark(id: str):
