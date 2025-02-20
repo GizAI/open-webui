@@ -4,7 +4,6 @@
 	import { WEBUI_API_BASE_URL } from "$lib/constants";
 	import { user } from "$lib/stores";
 	import { selectedCompanyInfo } from "$rooibos/stores";
-	import { onMount } from "svelte";
 	import { get } from "svelte/store";
   
     export let companyInfo: any = {};
