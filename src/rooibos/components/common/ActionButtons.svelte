@@ -25,7 +25,8 @@
 					business_registration_number: company.business_registration_number
 				})
 			});
-
+			const data = await response.json();
+			companyInfo.bookmark_id = data.id;
 			companyInfo.bookmark_user_id = currentUser?.id;
 		} else {
 			await fetch(`${WEBUI_API_BASE_URL}/rooibos/corpbookmarks/${companyInfo.bookmark_id}/delete`, {
@@ -39,14 +40,10 @@
 	};
 
 	const openAIChat = async (company: any) => {
-		console.log(financialData);
 		selectedCompanyInfo.set({
 			...companyInfo,
 			financialData: financialData
 		});
-		console.log($selectedCompanyInfo);
-		console.log($selectedCompanyInfo.company_name);
-		console.log($selectedCompanyInfo.financialData);
 		await goto('/');
 	};
 

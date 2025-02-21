@@ -339,15 +339,28 @@ async def add_corpbookmark(request: Request):
         VALUES (:user_id, :company_id, :business_registration_number, now(), now())
         RETURNING id
         """
-        log.info(f"Executing query: {sql_query} with parameters: user_id={user_id}, company_id={company_id}, business_registration_number={business_registration_number}")
+        log.info(
+            f"Executing query: {sql_query} with parameters: user_id={user_id}, company_id={company_id}, business_registration_number={business_registration_number}"
+        )
         with get_db() as db:
-            result = db.execute(text(sql_query), {"user_id": user_id, "company_id": company_id, "business_registration_number": business_registration_number})
-            bookmark_id = result.fetchone()[0]
+            result = db.execute(
+                text(sql_query),
+                {
+                    "user_id": user_id,
+                    "company_id": company_id,
+                    "business_registration_number": business_registration_number,
+                },
+            )
+            row = result.fetchone()  # 한 번만 fetch하여 결과를 받아옵니다.
+            if row is None:
+                raise HTTPException(status_code=500, detail="Insertion failed, no ID returned.")
+            bookmark_id = row[0]
             db.commit()
 
         return {
             "success": True,
-            "message": "Bookmark successfully added."
+            "message": "Bookmark successfully added.",
+            "id": bookmark_id  # 삽입된 id를 반환합니다.
         }
     except Exception as e:
         log.error("Add Bookmark API error: " + str(e))
@@ -356,6 +369,7 @@ async def add_corpbookmark(request: Request):
             "error": "Add failed",
             "message": str(e)
         }
+
 
 @router.post("/{id}/file/add")
 async def add_file_to_bookmark_by_id(request: Request, id: str):

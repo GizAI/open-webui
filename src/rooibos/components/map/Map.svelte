@@ -50,7 +50,7 @@
 		recent_profit?: number;
 		website?: string;
 		distance_from_user?: number;
-		bookmark_id?: string | null;
+		bookmark_id?: string;
 		fax_number?: string;
 		email?: string;
 		company_type?: string;
@@ -83,8 +83,14 @@
 		industry_major?: string;
 		industry_middle?: string;
 		industry_small?: string;
-		sme_type?: {sme_type: string, certificate_expiry_date: string}[];
-		research_info?: {lab_name: string, lab_location: string, first_approval_date: string, research_field: string; division: string }[];
+		sme_type?: { sme_type: string; certificate_expiry_date: string }[];
+		research_info?: {
+			lab_name: string;
+			lab_location: string;
+			first_approval_date: string;
+			research_field: string;
+			division: string;
+		}[];
 		birth_year?: string;
 		foundation_year?: string;
 		is_family_shareholder?: string;
@@ -154,8 +160,14 @@
 		industry_major?: string;
 		industry_middle?: string;
 		industry_small?: string;
-		sme_type?: {sme_type: string, certificate_expiry_date: string}[];
-		research_info?: {lab_name: string, lab_location: string, first_approval_date: string, research_field: string; division: string }[];
+		sme_type?: { sme_type: string; certificate_expiry_date: string }[];
+		research_info?: {
+			lab_name: string;
+			lab_location: string;
+			first_approval_date: string;
+			research_field: string;
+			division: string;
+		}[];
 		birth_year?: string;
 		foundation_year?: string;
 		is_family_shareholder?: string;
@@ -311,7 +323,8 @@
 			companyInfo = result;
 			showCompanyInfo = true;
 			activeFilterGroup = null;
-			if ($mobile) { // Immediately switch to fullscreen on mobile
+			if ($mobile) {
+				// Immediately switch to fullscreen on mobile
 				isFullscreen = true;
 			}
 		});
@@ -353,6 +366,7 @@
 			}
 
 			const data = await response.json();
+
 			return data.data;
 		} catch (error) {
 			console.error('서버 통신 중 오류 발생:', error);
@@ -602,7 +616,7 @@
 
 {#if showCompanyInfo && companyInfo && !($showSidebar && $mobile)}
 	<div class:sidebar-visible={$showSidebar}>
-		<CompanyInfo {companyInfo} onClose={closeCompanyInfo} {isFullscreen}/>
+		<CompanyInfo {companyInfo} onClose={closeCompanyInfo} {isFullscreen} />
 	</div>
 {/if}
 
@@ -647,16 +661,16 @@
 
 <style>
 	.search-bar-wrapper {
-	position: fixed;
-	top: 0;
-	left: 0;
-	width: 100%;
-	z-index: 50; /* z-index 높임 */
-	transition: transform 0.3s ease-in-out;
-	box-sizing: border-box;
-	background-color: white;
-	border-bottom: 1px solid #e5e7eb;
-}
+		position: fixed;
+		top: 0;
+		left: 0;
+		width: 100%;
+		z-index: 50; /* z-index 높임 */
+		transition: transform 0.3s ease-in-out;
+		box-sizing: border-box;
+		background-color: white;
+		border-bottom: 1px solid #e5e7eb;
+	}
 
 	.search-bar-wrapper.sidebar-visible {
 		margin-left: 260px;

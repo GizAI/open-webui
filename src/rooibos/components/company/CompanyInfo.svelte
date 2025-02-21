@@ -27,7 +27,7 @@
 		master_id: string;
 		latitude: string;
 		longitude: string;
-		bookmark_id?: string | null;
+		bookmark_id?: string;
 		fax_number?: string;
 		email?: string;
 		company_type?: string;
@@ -72,15 +72,7 @@
 
 	export let isFullscreen = false;
 	export let onClose: () => void;
-	export let companyInfo: CompanyInfo = {
-		id: '',
-		company_id: '',
-		company_name: '',
-		files: [],
-		master_id: '',
-		latitude: '',
-		longitude: ''
-	};
+	export let companyInfo: any = {};
 
 	let startY = 0;
 	let dragOffset = 0;
