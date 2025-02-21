@@ -49,6 +49,8 @@
 	import { selectedCompanyInfo } from '$rooibos/stores';
 	import { goto } from '$app/navigation';
 
+	import CompanyHistoryModal from '$rooibos/components/company/CompanyHistoryModal.svelte';
+
 	const i18n = getContext('i18n');
 
 	export let transparentBackground = false;
@@ -87,6 +89,7 @@
 	let loaded = false;
 	let showCategoryModal = false;
 	let recording = false;
+	let showCompanyHistoryModal = false;
 
 	let chatInputContainerElement;
 	let chatInputElement;
@@ -1175,13 +1178,7 @@
 														if ($selectedCompanyInfo?.company_name) {
 															selectedCompanyInfo.clearCompany();
 														} else {
-															console.log(selectedCompanyInfo.getHistory());
-															const lastSelected = selectedCompanyInfo.getLastSelected();
-															if (lastSelected?.company_name) {
-																selectedCompanyInfo.set(lastSelected);
-															} else {
-																goto('/rooibos/corpsearch');
-															}
+															showCompanyHistoryModal = true;
 														}
 													}}
 													type="button"
@@ -1441,6 +1438,13 @@
 		bind:show={showCategoryModal} 
 		on:select={async(e) => {
 			dispatch('modelChange', e.detail);
+		}}
+	/>
+
+	<CompanyHistoryModal 
+		bind:show={showCompanyHistoryModal}
+		onClose={() => {
+			showCompanyHistoryModal = false;
 		}}
 	/>
 {/if}
