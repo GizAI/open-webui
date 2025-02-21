@@ -1158,7 +1158,13 @@
 											
 											<Tooltip content={'지식전문봇'} placement="top">
 												<button
-													on:click|preventDefault={() => (showCategoryModal = true)}
+													on:click|preventDefault={() => {
+														if(atSelectedModel == undefined){
+															showCategoryModal = true
+														}	else{
+															atSelectedModel = undefined;
+														}								
+													}}
 													type="button"
 													class="px-1.5 @sm:px-2.5 py-1.5 flex gap-1.5 items-center text-sm rounded-full font-medium transition-colors duration-300 focus:outline-none max-w-full overflow-hidden {atSelectedModel !== undefined
 														? 'bg-blue-100 dark:bg-blue-500/20 text-blue-500 dark:text-blue-400'
