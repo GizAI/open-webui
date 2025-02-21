@@ -178,7 +178,8 @@
 					year: 'numeric',
 					month: '2-digit',
 					day: '2-digit'
-				})
+				}),
+				timestamp: Date.now()
 			};
 
 			const duplicateIndex = searchHistory.findIndex((item) => {
@@ -259,7 +260,10 @@
 	onMount(() => {
 		const savedHistory = localStorage.getItem('searchHistory');
 		if (savedHistory) {
-			searchHistory = JSON.parse(savedHistory);
+			const sevenDays = 7 * 24 * 60 * 60 * 1000;
+			const now = Date.now();
+			searchHistory = JSON.parse(savedHistory).filter((item) => now - item.timestamp <= sevenDays);
+			localStorage.setItem('searchHistory', JSON.stringify(searchHistory));
 		}
 
 		filterGroups.forEach((group) => {
@@ -301,9 +305,7 @@
 	}
 </script>
 
-<!-- 외부 최상위 컨테이너 (배경 등은 기존과 동일) -->
 <div class="bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-white-200">
-	<!-- 항상 표시되는 헤더 영역 (기업찾기, 사이드바 토글, 검색 모드 토글 등) -->
 	<div class="flex items-center py-1">
 		<div class="{$showSidebar ? 'hidden' : ''} flex items-center">
 			<button
@@ -327,10 +329,8 @@
 				class="ml-4 px-3 py-1 text-sm font-medium hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-400 rounded-full inline-flex items-center gap-1"
 			>
 				{#if resultViewMode === 'list'}
-					<!-- 지도보기 아이콘 -->
 					지도보기
 				{:else}
-					<!-- 목록보기 아이콘 -->
 					목록보기
 				{/if}
 			</button>
@@ -342,7 +342,6 @@
 			aria-label={isSearchMode ? '닫기' : '검색'}
 		>
 			{#if isSearchMode}
-				<!-- 닫기 아이콘 -->
 				<svg
 					xmlns="http://www.w3.org/2000/svg"
 					width="24"
@@ -355,7 +354,6 @@
 					<path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
 				</svg>
 			{:else}
-				<!-- 검색 아이콘 -->
 				<svg
 					xmlns="http://www.w3.org/2000/svg"
 					width="24"
@@ -375,10 +373,8 @@
 		</button>
 	</div>
 
-	<!-- 검색모드일 경우, 상단 검색 옵션(체크박스, 입력폼) 고정 + 결과 영역만 스크롤 -->
 	{#if isSearchMode}
 		<div class="flex flex-col h-[calc(100vh-56px)] text-gray-600 dark:text-gray-400">
-			<!-- 고정 영역: 검색 옵션 -->
 			<div class="px-4 py-2 flex-shrink-0">
 				<form on:submit={handleSearch} class="relative">
 					<div
@@ -392,7 +388,6 @@
 									bind:checked={searchByCompany}
 									on:change={handleNonLocationChange}
 								/>
-								<!-- 기존 텍스트 색상 유지 -->
 								<span class="ml-1">기업명</span>
 							</label>
 							<label class="flex items-center">
