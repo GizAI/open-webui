@@ -179,6 +179,7 @@ async def get_corpbookmark_by_id(id: str, request: Request):
         WHERE f.id = :id 
           AND (
             f.user_id = :userId
+            OR f.access_control IS NULL
             OR (f.access_control::jsonb->'user_ids') ? :userId
           )
         GROUP BY
