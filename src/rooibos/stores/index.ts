@@ -4,6 +4,8 @@ interface CompanyStore extends Writable<CompanySettings> {
 	getLastSelected: () => CompanySettings;
 	getHistory: () => CompanySettings[];
 	clearCompany: () => void;
+	clearHistory: () => void;
+	removeFromHistory: (masterId: string) => void;
 }
 
 // sessionStorage에서 초기 데이터를 불러오는 함수
@@ -70,6 +72,29 @@ function getCompanyHistory(): CompanySettings[] {
 	}
 }
 
+// 회사 정보 히스토리를 삭제하는 함수
+function clearCompanyHistory() {
+	try {
+		sessionStorage.removeItem('companyHistory');
+	} catch (error) {
+		console.error('Error clearing company history:', error);
+	}
+}
+
+// 특정 회사를 히스토리에서 삭제하는 함수
+function removeCompanyFromHistory(masterId: string) {
+	try {
+		const history = sessionStorage.getItem('companyHistory');
+		if (history) {
+			const historyList: CompanySettings[] = JSON.parse(history);
+			const filteredList = historyList.filter(item => item.master_id !== masterId);
+			sessionStorage.setItem('companyHistory', JSON.stringify(filteredList));
+		}
+	} catch (error) {
+		console.error('Error removing company from history:', error);
+	}
+}
+
 // 커스텀 store 생성
 function createCompanyStore(): CompanyStore {
 	const store = writable<CompanySettings>(getInitialCompanyInfo());
@@ -96,6 +121,12 @@ function createCompanyStore(): CompanyStore {
 		clearCompany: () => {
 			originalSet({});
 			sessionStorage.removeItem('selectedCompany');
+		},
+		clearHistory: () => {
+			clearCompanyHistory();
+		},
+		removeFromHistory: (masterId: string) => {
+			removeCompanyFromHistory(masterId);
 		}
 	};
 }
