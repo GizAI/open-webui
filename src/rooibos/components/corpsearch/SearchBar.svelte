@@ -128,7 +128,7 @@
 			if (searchByRepresentative) queryCategories.push('representative');
 			if (searchByBizNumber) queryCategories.push('bizNumber');
 			if (searchByLocation) queryCategories.push('location');
-			
+
 			const queryParams = new URLSearchParams({
 				query: searchValue,
 				queryCategories: queryCategories.join(',')
@@ -148,8 +148,8 @@
 
 			const data = await response.json();
 
-			if(data.data.length < 1) {
-				hasSearched = true; 
+			if (data.data.length < 1) {
+				hasSearched = true;
 				return;
 			}
 
@@ -227,7 +227,7 @@
 				longitude: x,
 				userLatitude: currentLocation?.lat?.toString() || '',
 				userLongitude: currentLocation?.lng?.toString() || '',
-				user_id: currentUser?.id ? currentUser.id : ''				
+				user_id: currentUser?.id ? currentUser.id : ''
 			});
 
 			const response = await fetch(
@@ -244,7 +244,7 @@
 
 			const data = await response.json();
 			const list = data.data;
-			
+
 			dispatch('addressResultClick', list);
 		} catch (error) {
 			console.error('Error sending address coordinates:', error);
@@ -301,10 +301,9 @@
 	}
 </script>
 
-<div
-	bind:this={filterContainerRef}
-	class="overflow-y-auto bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-white-200"
->
+<!-- 외부 최상위 컨테이너 (배경 등은 기존과 동일) -->
+<div class="bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-white-200">
+	<!-- 항상 표시되는 헤더 영역 (기업찾기, 사이드바 토글, 검색 모드 토글 등) -->
 	<div class="flex items-center py-1">
 		<div class="{$showSidebar ? 'hidden' : ''} flex items-center">
 			<button
@@ -325,45 +324,17 @@
 			<button
 				type="button"
 				on:click={toggleViewMode}
-				class="ml-4 px-3 py-1 text-sm font-medium hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-100 rounded-full inline-flex items-center gap-1"
+				class="ml-4 px-3 py-1 text-sm font-medium hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-400 rounded-full inline-flex items-center gap-1"
 			>
 				{#if resultViewMode === 'list'}
-					<svg
-						xmlns="http://www.w3.org/2000/svg"
-						width="16"
-						height="16"
-						viewBox="0 0 24 24"
-						fill="none"
-						stroke="currentColor"
-						stroke-width="2"
-						stroke-linecap="round"
-						stroke-linejoin="round"
-					>
-						<polygon points="3 7.5 3 18.5 12 22 21 18.5 21 7.5 12 4 3 7.5" />
-						<path d="M12 22V4" />
-					</svg>
+					<!-- 지도보기 아이콘 -->
 					지도보기
 				{:else}
-					<svg
-						xmlns="http://www.w3.org/2000/svg"
-						width="16"
-						height="16"
-						viewBox="0 0 24 24"
-						fill="none"
-						stroke="currentColor"
-						stroke-width="2"
-						stroke-linecap="round"
-						stroke-linejoin="round"
-					>
-						<rect width="18" height="18" x="3" y="3" rx="2" ry="2" />
-						<path d="M3 15h18" />
-						<path d="M3 9h18" />
-					</svg>
+					<!-- 목록보기 아이콘 -->
 					목록보기
 				{/if}
 			</button>
 		{/if}
-
 		<button
 			type="button"
 			on:click={toggleSearchMode}
@@ -371,6 +342,7 @@
 			aria-label={isSearchMode ? '닫기' : '검색'}
 		>
 			{#if isSearchMode}
+				<!-- 닫기 아이콘 -->
 				<svg
 					xmlns="http://www.w3.org/2000/svg"
 					width="24"
@@ -383,6 +355,7 @@
 					<path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
 				</svg>
 			{:else}
+				<!-- 검색 아이콘 -->
 				<svg
 					xmlns="http://www.w3.org/2000/svg"
 					width="24"
@@ -401,119 +374,124 @@
 			{/if}
 		</button>
 	</div>
+
+	<!-- 검색모드일 경우, 상단 검색 옵션(체크박스, 입력폼) 고정 + 결과 영역만 스크롤 -->
 	{#if isSearchMode}
-		<div class="px-4 py-2 h-screen text-gray-600 dark:text-gray-400">
-			<form on:submit={handleSearch} class="relative">
-				<div
-					class="flex items-center justify-between mb-2 flex-nowrap overflow-x-auto gap-2"
-					style="white-space: nowrap; font-size: {$mobile ? '0.875rem' : '1rem'};"
-				>
-					<div class="flex gap-4">
-						<label class="flex items-center">
-							<input
-								type="checkbox"
-								bind:checked={searchByCompany}
-								on:change={handleNonLocationChange}
-							/>
-							<span class="ml-1">기업명</span>
-						</label>
-						<label class="flex items-center">
-							<input
-								type="checkbox"
-								bind:checked={searchByRepresentative}
-								on:change={handleNonLocationChange}
-							/>
-							<span class="ml-1">대표자명</span>
-						</label>
-						<label class="flex items-center">
-							<input
-								type="checkbox"
-								bind:checked={searchByBizNumber}
-								on:change={handleNonLocationChange}
-							/>
-							<span class="ml-1">사업자번호</span>
-						</label>
-						<label class="flex items-center">
-							<input
-								type="checkbox"
-								bind:checked={searchByLocation}
-								on:change={handleLocationChange}
-							/>
-							<span class="ml-1">지명</span>
-						</label>
+		<div class="flex flex-col h-[calc(100vh-56px)] text-gray-600 dark:text-gray-400">
+			<!-- 고정 영역: 검색 옵션 -->
+			<div class="px-4 py-2 flex-shrink-0">
+				<form on:submit={handleSearch} class="relative">
+					<div
+						class="flex items-center justify-between mb-2 flex-nowrap overflow-x-auto gap-2"
+						style="white-space: nowrap; font-size: {$mobile ? '0.875rem' : '1rem'};"
+					>
+						<div class="flex gap-4">
+							<label class="flex items-center">
+								<input
+									type="checkbox"
+									bind:checked={searchByCompany}
+									on:change={handleNonLocationChange}
+								/>
+								<!-- 기존 텍스트 색상 유지 -->
+								<span class="ml-1">기업명</span>
+							</label>
+							<label class="flex items-center">
+								<input
+									type="checkbox"
+									bind:checked={searchByRepresentative}
+									on:change={handleNonLocationChange}
+								/>
+								<span class="ml-1">대표자명</span>
+							</label>
+							<label class="flex items-center">
+								<input
+									type="checkbox"
+									bind:checked={searchByBizNumber}
+									on:change={handleNonLocationChange}
+								/>
+								<span class="ml-1">사업자번호</span>
+							</label>
+							<label class="flex items-center">
+								<input
+									type="checkbox"
+									bind:checked={searchByLocation}
+									on:change={handleLocationChange}
+								/>
+								<span class="ml-1">지명</span>
+							</label>
+						</div>
 					</div>
-				</div>
-
-				<div class="relative">
-					<input
-						type="text"
-						bind:value={searchValue}
-						class="w-full pl-4 pr-16 py-2 dark:bg-gray-950 dark:text-gray-200 border border-gray-300 rounded-lg"
-						bind:this={inputRef}
-					/>
-
-					{#if searchValue}
+					<div class="relative">
+						<input
+							type="text"
+							bind:value={searchValue}
+							class="w-full pl-4 pr-16 py-2 dark:bg-gray-950 dark:text-gray-200 border border-gray-300 rounded-lg"
+							bind:this={inputRef}
+						/>
+						{#if searchValue}
+							<button
+								type="button"
+								class="absolute inset-y-0 right-10 flex items-center px-2 text-gray-400 hover:text-gray-600"
+								on:click={clearSearch}
+								aria-label="검색어 삭제"
+							>
+								<!-- 삭제 아이콘 -->
+								<svg
+									xmlns="http://www.w3.org/2000/svg"
+									width="20"
+									height="20"
+									fill="none"
+									viewBox="0 0 24 24"
+									stroke="currentColor"
+									stroke-width="2"
+								>
+									<line
+										x1="18"
+										y1="6"
+										x2="6"
+										y2="18"
+										stroke-linecap="round"
+										stroke-linejoin="round"
+									/>
+									<line
+										x1="6"
+										y1="6"
+										x2="18"
+										y2="18"
+										stroke-linecap="round"
+										stroke-linejoin="round"
+									/>
+								</svg>
+							</button>
+						{/if}
 						<button
-							type="button"
-							class="absolute inset-y-0 right-10 flex items-center px-2 text-gray-400 hover:text-gray-600"
-							on:click={clearSearch}
-							aria-label="검색어 삭제"
+							type="submit"
+							class="absolute inset-y-0 right-0 flex items-center px-3 text-gray-400 hover:bg-blue-700 dark:hover:bg-gray-600 rounded-r-lg"
+							aria-label="검색"
 						>
+							<!-- 검색 아이콘 -->
 							<svg
 								xmlns="http://www.w3.org/2000/svg"
-								width="20"
-								height="20"
+								width="24"
+								height="24"
 								fill="none"
 								viewBox="0 0 24 24"
 								stroke="currentColor"
 								stroke-width="2"
 							>
-								<line
-									x1="18"
-									y1="6"
-									x2="6"
-									y2="18"
+								<path
 									stroke-linecap="round"
 									stroke-linejoin="round"
-								/>
-								<line
-									x1="6"
-									y1="6"
-									x2="18"
-									y2="18"
-									stroke-linecap="round"
-									stroke-linejoin="round"
+									d="M21 21l-4.35-4.35M10 18a8 8 0 100-16 8 8 0 000 16z"
 								/>
 							</svg>
 						</button>
-					{/if}
-
-					<button
-						type="submit"
-						class="absolute inset-y-0 right-0 flex items-center px-3 text-gray-400 hover:bg-blue-700 dark:hover:bg-gray-600 rounded-r-lg"
-						aria-label="검색"
-					>
-						<svg
-							xmlns="http://www.w3.org/2000/svg"
-							width="24"
-							height="24"
-							fill="none"
-							viewBox="0 0 24 24"
-							stroke="currentColor"
-							stroke-width="2"
-						>
-							<path
-								stroke-linecap="round"
-								stroke-linejoin="round"
-								d="M21 21l-4.35-4.35M10 18a8 8 0 100-16 8 8 0 000 16z"
-							/>
-						</svg>
-					</button>
-				</div>
-			</form>
-
-			{#if addressList.length > 0}
-				<div class="mt-2 h-full overflow-y-auto pb-20">
+					</div>
+				</form>
+			</div>
+			<!-- 스크롤 영역: 검색 결과, 주소 목록, 최근 검색 이력 -->
+			<div class="flex-1 overflow-y-auto px-4 pb-20 text-gray-600 dark:text-gray-400">
+				{#if addressList.length > 0}
 					{#each addressList as address}
 						<button
 							type="button"
@@ -523,9 +501,7 @@
 							<h3 class="font-medium font-semibold">{address.roadAddress}</h3>
 						</button>
 					{/each}
-				</div>
-			{:else if searchResults.length > 0}
-				<div class="mt-2 h-full overflow-y-auto pb-20">
+				{:else if searchResults.length > 0}
 					{#each searchResults as result}
 						<button
 							type="button"
@@ -540,38 +516,43 @@
 							<p class="text-sm text-gray-600">{result.address}</p>
 						</button>
 					{/each}
-				</div>
 				{:else if searchValue.trim() !== '' && hasSearched}
-				<div class="mt-2 pb-4">
-					<p class="text-center text-gray-600">조건에 맞는 업체가 없습니다.</p>
-				</div>
-			{:else if !searchValue.trim() && searchHistory.length > 0}
-				<div class="mt-2 pb-20">
-					<h2 class="text-base font-semibold mb-2">최근 검색 이력</h2>
-					{#each searchHistory as item}
-						<div
-							class="flex items-center w-full text-left p-2 border-b hover:bg-gray-100 dark:hover:bg-gray-800"
-						>
-							<button type="button" class="flex-grow text-left" on:click={() => repeatSearch(item)}>
-								{#each item.conditions as c}
-									[{c}]
-								{/each}
-								<span class="font-bold">{item.query}</span>
-							</button>
-							<button
-								type="button"
-								class="text-gray-400 hover:text-gray-600 ml-2"
-								on:click={() => removeHistoryItem(item)}
+					<div class="mt-2 pb-4">
+						<p class="text-center text-gray-600">조건에 맞는 업체가 없습니다.</p>
+					</div>
+				{:else if !searchValue.trim() && searchHistory.length > 0}
+					<div class="mt-2 pb-20">
+						<h2 class="text-base font-semibold mb-2">최근 검색 이력</h2>
+						{#each searchHistory as item}
+							<div
+								class="flex items-center w-full text-left p-2 border-b hover:bg-gray-100 dark:hover:bg-gray-800"
 							>
-								X
-							</button>
-						</div>
-					{/each}
-				</div>
-			{/if}
+								<button
+									type="button"
+									class="flex-grow text-left"
+									on:click={() => repeatSearch(item)}
+								>
+									{#each item.conditions as c}
+										[{c}]
+									{/each}
+									<span class="font-bold">{item.query}</span>
+								</button>
+								<button
+									type="button"
+									class="text-gray-400 hover:text-gray-600 ml-2"
+									on:click={() => removeHistoryItem(item)}
+								>
+									X
+								</button>
+							</div>
+						{/each}
+					</div>
+				{/if}
+			</div>
 		</div>
 	{:else}
-		<div class="relative">
+		<!-- 비검색 모드: 기존 필터 그룹 영역 (변경 없음) -->
+		<div class="relative" bind:this={filterContainerRef}>
 			{#if showLeftArrow}
 				<div class="absolute left-0 top-1/2 -translate-y-1/2 z-10 to-transparent pr-8 pl-2">
 					<button
@@ -663,6 +644,7 @@
 		</div>
 	{/if}
 </div>
+
 {#if activeFilterGroup}
 	<div
 		class={$mobile ? '' : 'search-filter-container'}
