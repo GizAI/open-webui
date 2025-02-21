@@ -1,5 +1,9 @@
 import { type Writable, writable } from 'svelte/store';
 
+interface CompanyStore extends Writable<CompanySettings> {
+	getLastSelected: () => CompanySettings;
+}
+
 // sessionStorage에서 초기 데이터를 불러오는 함수
 function getInitialCompanyInfo(): CompanySettings {
 	try {
@@ -11,8 +15,28 @@ function getInitialCompanyInfo(): CompanySettings {
 	}
 }
 
+// 마지막 선택 기업 정보를 저장하는 함수
+function saveLastSelectedCompany(companyInfo: CompanySettings) {
+	try {
+		sessionStorage.setItem('lastSelectedCompany', JSON.stringify(companyInfo));
+	} catch (error) {
+		console.error('Error saving last selected company:', error);
+	}
+}
+
+// 마지막 선택 기업 정보를 가져오는 함수
+function getLastSelectedCompany(): CompanySettings {
+	try {
+		const storedData = sessionStorage.getItem('lastSelectedCompany');
+		return storedData ? JSON.parse(storedData) : {};
+	} catch (error) {
+		console.error('Error loading last selected company:', error);
+		return {};
+	}
+}
+
 // 커스텀 store 생성
-function createCompanyStore(): Writable<CompanySettings> {
+function createCompanyStore(): CompanyStore {
 	const store = writable<CompanySettings>(getInitialCompanyInfo());
 	const { subscribe, set: originalSet, update } = store;
 
@@ -23,8 +47,12 @@ function createCompanyStore(): Writable<CompanySettings> {
 			originalSet(value);
 			if (value?.company_name) {
 				sessionStorage.setItem('selectedCompany', JSON.stringify(value));
+				saveLastSelectedCompany(value);
 				console.log('Company info saved to sessionStorage:', value);
 			}
+		},
+		getLastSelected: () => {
+			return getLastSelectedCompany();
 		}
 	};
 }
