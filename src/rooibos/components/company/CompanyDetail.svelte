@@ -27,10 +27,11 @@
 	const hasLabInfo = (c: any) => c.research_info;
 
 	const hasCertificationInfo = (c: any) => c.sme_type;
-	
-	const hasVentureInfo = (c: any) => c.venture_confirmation_type || c.venture_valid_from;	
 
-	const hasShareholderInfo = (c: any) => c.is_family_shareholder === 'Y' || c.is_non_family_shareholder === 'Y';
+	const hasVentureInfo = (c: any) => c.venture_confirmation_type || c.venture_valid_from;
+
+	const hasShareholderInfo = (c: any) =>
+		c.is_family_shareholder === 'Y' || c.is_non_family_shareholder === 'Y';
 
 	function formatDate(dateStr: any) {
 		if (!dateStr) return '';
@@ -48,7 +49,6 @@
 
 	async function fetchFinancialData(master_id: string) {
 		try {
-
 			const financialResponse = await fetch(
 				`${WEBUI_API_BASE_URL}/rooibos/corpsearch/${master_id}/financialData`,
 				{
@@ -70,7 +70,7 @@
 </script>
 
 <div class="company-info-wrapper active flex flex-col w-full overflow-hidden">
-	<div class="flex-1 px-4 pb-4">
+	<div class="flex-1 px-4 pb-16">
 		<div class="space-y-6 mt-2">
 			{#if hasBasicInfo(company)}
 				<div id="basic" class="space-y-2 border-gray-100 pb-4 text-gray-900 dark:text-gray-500">
@@ -223,7 +223,6 @@
 								</p>
 							{/each}
 						{/if}
-
 					</div>
 				</div>
 			{/if}
@@ -295,18 +294,15 @@
 						주주 정보
 					</h3>
 					<div class="space-y-1 text-gray-900 dark:text-gray-400">
-						
-							<p class="text-sm flex items-center justify-between">
-								<span>가족주주</span>
-								<span>{company.is_family_shareholder === 'Y' ? '있음' : '없음'}</span>
-							</p>
-						
-						
-							<p class="text-sm flex items-center justify-between">
-								<span>외부주주</span>
-								<span>{company.is_non_family_shareholder === 'Y' ? '있음' : '없음'}</span>
-							</p>
-						
+						<p class="text-sm flex items-center justify-between">
+							<span>가족주주</span>
+							<span>{company.is_family_shareholder === 'Y' ? '있음' : '없음'}</span>
+						</p>
+
+						<p class="text-sm flex items-center justify-between">
+							<span>외부주주</span>
+							<span>{company.is_non_family_shareholder === 'Y' ? '있음' : '없음'}</span>
+						</p>
 					</div>
 				</div>
 			{/if}

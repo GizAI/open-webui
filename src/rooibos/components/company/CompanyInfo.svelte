@@ -187,7 +187,7 @@
 
 		<!-- 기업 상세 내용 -->
 		<div class="flex-1 px-4 pb-4 bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-white-200">
-			<CompanyDetail company={companyInfo} {financialData} />
+			<CompanyDetail company={companyInfo} bind:financialData />
 		</div>
 	{:else}
 		<Spinner />
