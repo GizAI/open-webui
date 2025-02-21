@@ -3,8 +3,6 @@
 	import { MapPin, Briefcase, Microscope, Award, Users, DollarSign } from 'lucide-svelte';
 	import { WEBUI_API_BASE_URL } from '$lib/constants';
 	import { formatBusinessNumber } from '../common/helper';
-	import { get } from 'svelte/store';
-	import { user } from '$lib/stores';
 
 	export let company: any;
 	export let financialData: any = null;
