@@ -80,9 +80,6 @@
 						</button>
 					</Tooltip>
 				</div>
-				{#if $selectedCompanyInfo.company_name != null}
-				<div class="min-w-[200px] whitespace-nowrap font-bold">{$selectedCompanyInfo.company_name}</div>
-				{/if}
 			{:else}
 				<div
 					class="  self-center mx-1 disabled:text-gray-600 disabled:hover:text-gray-600 -translate-y-[0.5px]"

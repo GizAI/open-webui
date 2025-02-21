@@ -47,6 +47,7 @@
 	import CommandLine from '../icons/CommandLine.svelte';
 	import { KokoroWorker } from '$lib/workers/KokoroWorker';
 	import { selectedCompanyInfo } from '$rooibos/stores';
+	import { goto } from '$app/navigation';
 
 	const i18n = getContext('i18n');
 
@@ -397,7 +398,7 @@
 				</div>
 
 				<div class="w-full relative">
-					{#if atSelectedModel !== undefined || selectedToolIds.length > 0 || webSearchEnabled || ($settings?.webSearch ?? false) === 'always' || imageGenerationEnabled || codeInterpreterEnabled}
+					{#if atSelectedModel !== undefined || selectedToolIds.length > 0 || webSearchEnabled || ($settings?.webSearch ?? false) === 'always' || imageGenerationEnabled || codeInterpreterEnabled || $selectedCompanyInfo.company_name}
 						<div
 							class="px-3 pb-0.5 pt-1.5 text-left w-full flex flex-col absolute bottom-0 left-0 right-0 bg-linear-to-t from-white dark:from-gray-900 z-10"
 						>
@@ -445,6 +446,22 @@
 											</span>
 										</div>
 										<div class=" translate-y-[0.5px]">{$i18n.t('Search the internet')}</div>
+									</div>
+								</div>
+							{/if}
+
+							{#if $selectedCompanyInfo.company_name}
+								<div class="flex items-center justify-between w-full">
+									<div class="flex items-center gap-2.5 text-sm dark:text-gray-500">
+										<div class="pl-1">
+											<span class="relative flex size-2">
+												<span
+													class="animate-ping absolute inline-flex h-full w-full rounded-full bg-yellow-400 opacity-75"
+												/>
+												<span class="relative inline-flex rounded-full size-2 bg-yellow-500" />
+											</span>
+										</div>
+										<div class=" translate-y-[0.5px]">{$selectedCompanyInfo.company_name}</div>
 									</div>
 								</div>
 							{/if}
@@ -1137,21 +1154,48 @@
 										</InputMenu>
 
 										<div class="flex gap-0.5 items-center overflow-x-auto scrollbar-none flex-1">
-											{#if $selectedCompanyInfo?.company_name}
-												<Tooltip content={'지식모델 선택'} placement="top">
-													<button
-														on:click|preventDefault={() => (showCategoryModal = true)}
-														type="button"
-														class="px-1.5 @sm:px-2.5 py-1.5 flex gap-1.5 items-center text-sm rounded-full font-medium transition-colors duration-300 focus:outline-none max-w-full overflow-hidden bg-transparent text-gray-600 dark:text-gray-400 border-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800"
-													>
-														
-														<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-bot "><path d="M12 8V4H8"></path><rect width="16" height="12" x="4" y="8" rx="2"></rect><path d="M2 14h2"></path><path d="M20 14h2"></path><path d="M15 13v2"></path><path d="M9 13v2"></path></svg>
-														<span class="hidden @sm:block whitespace-nowrap overflow-hidden text-ellipsis translate-y-[0.5px] mr-0.5">
-															{'지식모델 선택'}
-														</span>
-													</button>
-												</Tooltip>
-											{/if}
+											
+											<Tooltip content={'지식모델'} placement="top">
+												<button
+													on:click|preventDefault={() => (showCategoryModal = true)}
+													type="button"
+													class="px-1.5 @sm:px-2.5 py-1.5 flex gap-1.5 items-center text-sm rounded-full font-medium transition-colors duration-300 focus:outline-none max-w-full overflow-hidden bg-transparent text-gray-600 dark:text-gray-400 border-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800"
+												>
+													
+													<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-bot "><path d="M12 8V4H8"></path><rect width="16" height="12" x="4" y="8" rx="2"></rect><path d="M2 14h2"></path><path d="M20 14h2"></path><path d="M15 13v2"></path><path d="M9 13v2"></path></svg>
+													<span class="hidden @sm:block whitespace-nowrap overflow-hidden text-ellipsis translate-y-[0.5px] mr-0.5">
+														{'지식모델 선택'}
+													</span>
+												</button>
+											</Tooltip>
+
+											<Tooltip content={'기업 선택'} placement="top">
+												<button
+													on:click|preventDefault={() => {
+														if ($selectedCompanyInfo?.company_name) {
+															selectedCompanyInfo.clearCompany();
+														} else {
+															console.log(selectedCompanyInfo.getHistory());
+															const lastSelected = selectedCompanyInfo.getLastSelected();
+															if (lastSelected?.company_name) {
+																selectedCompanyInfo.set(lastSelected);
+															} else {
+																goto('/rooibos/corpsearch');
+															}
+														}
+													}}
+													type="button"
+													class="px-1.5 @sm:px-2.5 py-1.5 flex gap-1.5 items-center text-sm rounded-full font-medium transition-colors duration-300 focus:outline-none max-w-full overflow-hidden {$selectedCompanyInfo?.company_name
+														? 'bg-blue-100 dark:bg-blue-500/20 text-blue-500 dark:text-blue-400'
+														: 'bg-transparent text-gray-600 dark:text-gray-300 border-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800'}"
+												>
+													<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-building-2"><path d="M6 22V4c0-.27 0-.55.07-.82a1.477 1.477 0 0 1 1.1-1.11C7.46 2 7.73 2 8 2h8c.27 0 .55 0 .82.07a1.477 1.477 0 0 1 1.11 1.1c.07.28.07.56.07.83v18H6Z"/><path d="M2 14v6c0 1.1.9 2 2 2h2V12H4c-1.1 0-2 .9-2 2Z"/><path d="M20 12h-2v10h2c1.1 0 2-.9 2-2v-6c0-1.1-.9-2-2-2Z"/><path d="M12 16v3"/><path d="M10 13v3"/><path d="M14 13v3"/><path d="M12 10v3"/><path d="M10 7v3"/><path d="M14 7v3"/></svg>
+													<span class="hidden @sm:block whitespace-nowrap overflow-hidden text-ellipsis translate-y-[0.5px] mr-0.5">
+														{'기업 선택'}
+													</span>
+												</button>
+											</Tooltip>
+										
 
 											{#if $_user}
 												{#if $config?.features?.enable_web_search && ($_user.role === 'admin' || $_user?.permissions?.features?.web_search)}
