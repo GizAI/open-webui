@@ -4,7 +4,6 @@
 	import { toast } from 'svelte-sonner';
 	import Selector from './ModelSelector/Selector.svelte';
 	import Tooltip from '../common/Tooltip.svelte';
-	import {selectedCompanyInfo} from '$rooibos/stores'
 
 	import { updateUserSettings } from '$lib/apis/users';
 	const i18n = getContext('i18n');

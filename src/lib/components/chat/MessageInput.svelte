@@ -47,8 +47,6 @@
 	import CommandLine from '../icons/CommandLine.svelte';
 	import { KokoroWorker } from '$lib/workers/KokoroWorker';
 	import { selectedCompanyInfo } from '$rooibos/stores';
-	import { goto } from '$app/navigation';
-
 	import CompanyHistoryModal from '$rooibos/components/company/CompanyHistoryModal.svelte';
 
 	const i18n = getContext('i18n');
