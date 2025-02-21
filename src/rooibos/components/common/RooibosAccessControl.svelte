@@ -208,13 +208,13 @@
 					<div class="flex flex-1 items-center">
 						<div class="w-full px-0.5">
 							<select
-								class="outline-hidden bg-transparent text-sm rounded-lg block w-full pr-10 max-w-full {selectedUserId
+								class="outline-hidden bg-transparent text-sm rounded-lg block w-full pr-10 max-w-full hover:bg-gray-50 dark:hover:bg-gray-800 {selectedUserId
 									? ''
-									: 'text-gray-500'} dark:placeholder-gray-500"
+									: 'text-gray-500'} hover:bg-gray-50 dark:hover:bg-gray-800"
 								bind:value={selectedUserId}
 							>
 								<option
-									class="text-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800"
+									class="text-gray-700 bg-gray-200 dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800"
 									value=""
 									disabled
 									selected>{$i18n.t('Select a user')}</option
