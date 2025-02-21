@@ -48,8 +48,14 @@
 		industry_major?: string;
 		industry_middle?: string;
 		industry_small?: string;
-		sme_type?: {sme_type: string, certificate_expiry_date: string}[];
-		research_info?: {lab_name: string, lab_location: string, first_approval_date: string, research_field: string; division: string }[];
+		sme_type?: { sme_type: string; certificate_expiry_date: string }[];
+		research_info?: {
+			lab_name: string;
+			lab_location: string;
+			first_approval_date: string;
+			research_field: string;
+			division: string;
+		}[];
 		birth_year?: string;
 		foundation_year?: string;
 		is_family_shareholder?: string;
@@ -79,6 +85,7 @@
 	let startY = 0;
 	let dragOffset = 0;
 	let isDragging = false;
+	let financialData: any = {};
 
 	function toggleFullscreen() {
 		isFullscreen = !isFullscreen;
@@ -107,7 +114,9 @@
 </script>
 
 <div
-	class="company-info-wrapper active {isFullscreen ? 'fullscreen' : ''} flex flex-col w-full bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-white-200"
+	class="company-info-wrapper active {isFullscreen
+		? 'fullscreen'
+		: ''} flex flex-col w-full bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-white-200"
 	class:mobile={$mobile}
 	style={$mobile
 		? isFullscreen
@@ -115,20 +124,22 @@
 			: `height: ${mobileHeight}; transition: ${isDragging ? 'none' : 'height 0.3s ease'}; top: auto; bottom: 0;`
 		: 'margin-top: 1rem;'}
 >
-
 	{#if companyInfo}
 		<div
 			class="header-container sticky z-10 shrink-0 px-4 pt-2 pb-1 border-b border-gray-200 bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-gray-200"
 			style="top: {$mobile && isFullscreen ? 'env(safe-area-inset-top)' : '0'};"
 		>
-
 			<div class="flex items-center justify-between w-full mb-1">
-				<h1 class="{$mobile ? 'sm:text-xl' : 'text-xl'} font-semibold mb-1 truncate text-gray-900 dark:text-gray-200">
+				<h1
+					class="{$mobile
+						? 'sm:text-xl'
+						: 'text-xl'} font-semibold mb-1 truncate text-gray-900 dark:text-gray-200"
+				>
 					{companyInfo.company_name}
 				</h1>
 
 				<div class="flex items-center space-x-1 text-gray-900 dark:text-white-200">
-					<ActionButtons {companyInfo} />
+					<ActionButtons {companyInfo} {financialData} />
 					{#if !$mobile}
 						<button
 							class="hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full"
@@ -176,7 +187,7 @@
 
 		<!-- 기업 상세 내용 -->
 		<div class="flex-1 px-4 pb-4 bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-white-200">
-			<CompanyDetail company={companyInfo} />
+			<CompanyDetail company={companyInfo} {financialData} />
 		</div>
 	{:else}
 		<Spinner />
