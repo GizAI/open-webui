@@ -1,9 +1,9 @@
-<!-- ChatCategories.svelte -->
 <script lang="ts">
 	import { createEventDispatcher, onMount } from 'svelte';
 	import { fade } from 'svelte/transition';
     import { WEBUI_API_BASE_URL } from '$lib/constants';
 	import Modal from '$lib/components/common/Modal.svelte';
+	import { getModelById } from '$lib/apis/models';
 
 	const dispatch = createEventDispatcher();
 
@@ -13,13 +13,13 @@
 	type SubItem = {
 		title: string;
 		description: string;
+		model_id: string;
 	};
 
 	// 카테고리 타입 (대분류)
 	type Category = {
 		title: string;
 		items: SubItem[];
-        model_id: string;
 	};
 
 	// 카테고리 데이터를 저장할 변수
@@ -84,11 +84,10 @@
 	let containerHeight = 0;
 	let parentHeight = 0;
 
-	$: topMargin = !isMobile ? Math.max(0, (parentHeight - containerHeight) / 4) : 0;
-
 	// 하위 아이템 클릭 시 상위에 이벤트 전달
-	function selectSubItem(item: SubItem) {
-		dispatch('select', item);
+	async function selectSubItem(item: SubItem) {
+		const selectedModel = await getModelById(localStorage.token, item.model_id);
+		dispatch('select', selectedModel);
 		show = false;
 	}
 </script>

@@ -97,6 +97,7 @@
 				await getModels(
 					localStorage.token,
 					$config?.features?.enable_direct_connections && ($settings?.directConnections ?? null)
+					,true
 				)
 			);
 			banners.set(await getBanners(localStorage.token));
