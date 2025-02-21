@@ -2,6 +2,8 @@ import { type Writable, writable } from 'svelte/store';
 
 interface CompanyStore extends Writable<CompanySettings> {
 	getLastSelected: () => CompanySettings;
+	getHistory: () => CompanySettings[];
+	clearCompany: () => void;
 }
 
 // sessionStorage에서 초기 데이터를 불러오는 함수
@@ -35,6 +37,39 @@ function getLastSelectedCompany(): CompanySettings {
 	}
 }
 
+// 회사 정보 히스토리를 저장하는 함수
+function saveCompanyHistory(companyInfo: CompanySettings) {
+	try {
+		const history = sessionStorage.getItem('companyHistory');
+		const historyList: CompanySettings[] = history ? JSON.parse(history) : [];
+		
+		// 중복 제거를 위해 같은 master_id가 있는지 확인
+		const isDuplicate = historyList.some(item => item.master_id === companyInfo.master_id);
+		
+		if (!isDuplicate && companyInfo.master_id) {
+			historyList.push(companyInfo);
+			// 최대 10개까지만 저장
+			if (historyList.length > 10) {
+				historyList.shift();
+			}
+			sessionStorage.setItem('companyHistory', JSON.stringify(historyList));
+		}
+	} catch (error) {
+		console.error('Error saving company history:', error);
+	}
+}
+
+// 회사 정보 히스토리를 가져오는 함수
+function getCompanyHistory(): CompanySettings[] {
+	try {
+		const history = sessionStorage.getItem('companyHistory');
+		return history ? JSON.parse(history) : [];
+	} catch (error) {
+		console.error('Error loading company history:', error);
+		return [];
+	}
+}
+
 // 커스텀 store 생성
 function createCompanyStore(): CompanyStore {
 	const store = writable<CompanySettings>(getInitialCompanyInfo());
@@ -48,11 +83,19 @@ function createCompanyStore(): CompanyStore {
 			if (value?.company_name) {
 				sessionStorage.setItem('selectedCompany', JSON.stringify(value));
 				saveLastSelectedCompany(value);
+				saveCompanyHistory(value);
 				console.log('Company info saved to sessionStorage:', value);
 			}
 		},
 		getLastSelected: () => {
 			return getLastSelectedCompany();
+		},
+		getHistory: () => {
+			return getCompanyHistory();
+		},
+		clearCompany: () => {
+			originalSet({});
+			sessionStorage.removeItem('selectedCompany');
 		}
 	};
 }

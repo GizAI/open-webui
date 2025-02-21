@@ -1173,8 +1173,9 @@
 												<button
 													on:click|preventDefault={() => {
 														if ($selectedCompanyInfo?.company_name) {
-															selectedCompanyInfo.set({});
+															selectedCompanyInfo.clearCompany();
 														} else {
+															console.log(selectedCompanyInfo.getHistory());
 															const lastSelected = selectedCompanyInfo.getLastSelected();
 															if (lastSelected?.company_name) {
 																selectedCompanyInfo.set(lastSelected);
