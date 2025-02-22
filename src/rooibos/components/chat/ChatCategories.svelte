@@ -3,7 +3,8 @@
 	import { fade } from 'svelte/transition';
     import { WEBUI_API_BASE_URL } from '$lib/constants';
 	import Modal from '$lib/components/common/Modal.svelte';
-	import { getModelById } from '$lib/apis/models';
+	import { models } from '$lib/stores';	
+	
 	import Fuse from 'fuse.js';
 
 	const dispatch = createEventDispatcher();
@@ -121,7 +122,7 @@
 
 	// 하위 아이템 클릭 시 상위에 이벤트 전달
 	async function selectSubItem(item: SubItem) {
-		const selectedModel = await getModelById(localStorage.token, item.model_id);
+		const selectedModel = $models.find(model => model.id === item.model_id.toString());
 		dispatch('select', selectedModel);
 		show = false;
 	}
