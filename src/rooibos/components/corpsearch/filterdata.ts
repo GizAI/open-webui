@@ -105,7 +105,7 @@ export const filterGroups = [
 		id: 'included_industries',
 		title: '업종',
 		checked: false
-	}
+	},
 ];
 
 export const filterActions = [
@@ -127,9 +127,6 @@ export const excludedGroupIds = [
 ];
 
 export function onFilterChange(selectedFilters: any, groupId: string, optionId: string, checked: boolean | string) {
-	const group = filterGroups.find((g) => g.id === groupId);
-	if (!group) return;
-
 	let newFilters = { ...selectedFilters };
 
 	if (optionId === 'checked') {
@@ -171,7 +168,7 @@ export function onFilterChange(selectedFilters: any, groupId: string, optionId: 
 			...((newFilters[groupId] as any) || {}),
 			...checked
 		};
-	} else if (groupId === 'included_industries') {
+	} else if (groupId === 'included_industries' || groupId === 'excluded_industries') {
 		newFilters[groupId] = {
 			...((newFilters[groupId] as any) || {}),
 			value: checked.map((item: { id: string; industry: string }) => item.industry).join(', ')

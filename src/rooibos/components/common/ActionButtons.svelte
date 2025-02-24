@@ -41,7 +41,7 @@
 
 	const openAIChat = async (company: any) => {
 		selectedCompanyInfo.set({
-			...companyInfo,
+			...company,
 			financialData: financialData
 		});
 		await goto('/');
