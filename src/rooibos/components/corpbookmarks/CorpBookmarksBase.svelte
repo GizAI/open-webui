@@ -143,6 +143,7 @@
 	let mediaQuery: any;
 	let dragged = false;
 	let id: any = null;
+	const currentUser = get(user);
 
 	$: if (bookmark && bookmark.files) {
 		fuse = new Fuse(bookmark.files, {
@@ -536,7 +537,7 @@
 		}
 
 		id = $page.params.id;
-		const currentUser = get(user);
+		
 		const queryParams = new URLSearchParams({
 			business_registration_number: bookmark?.business_registration_number !== undefined
 				? bookmark?.business_registration_number.toString()
@@ -658,6 +659,7 @@
 		</h1>
 
 		<div class="flex items-center space-x-1">
+			{#if bookmark.bookmark_user_id == currentUser.id}
 			<div class="self-center shrink-0">
 				<button
 					class="bg-gray-50 hover:bg-gray-100 text-black dark:bg-gray-850 dark:hover:bg-gray-800 dark:text-white transition px-2 py-1 rounded-full flex gap-1 items-center"
@@ -673,6 +675,7 @@
 					</div>
 				</button>
 			</div>
+			{/if}
 			<ActionButtons companyInfo={bookmark} />
 
 			<button class="hover:bg-gray-100 rounded-full" on:click={closeCompanyInfo}>

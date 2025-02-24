@@ -413,11 +413,11 @@ async def add_file_to_bookmark_by_id(request: Request, id: str):
             db.commit()
 
             # get_corpbookmark_by_id는 내부에서 쿼리 로그를 남기므로 그대로 호출
-            corp_bookmark_data = await get_corpbookmark_by_id(id)
+            # corp_bookmark_data = await get_corpbookmark_by_id(id)
                         
         return {
             "success": True,
-            "data": corp_bookmark_data["data"],
+            # "data": corp_bookmark_data["data"],
             "message": "File successfully added to bookmark."
         }
     except Exception as e:
