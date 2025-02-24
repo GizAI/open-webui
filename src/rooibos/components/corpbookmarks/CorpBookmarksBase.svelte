@@ -659,7 +659,8 @@
 		</h1>
 
 		<div class="flex items-center space-x-1">
-			{#if bookmark.bookmark_user_id == currentUser.id}
+			<!-- {#if bookmark.bookmark_user_id == currentUser.id} -->
+			{#if false}
 			<div class="self-center shrink-0">
 				<button
 					class="bg-gray-50 hover:bg-gray-100 text-black dark:bg-gray-850 dark:hover:bg-gray-800 dark:text-white transition px-2 py-1 rounded-full flex gap-1 items-center"

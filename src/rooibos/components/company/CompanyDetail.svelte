@@ -416,3 +416,14 @@
 		</div>
 	</div>
 </div>
+<style>
+	.company-info-wrapper p.text-sm.flex.items-center.justify-between {
+		display: flex !important;
+		align-items: center;
+		justify-content: space-between;
+		margin-bottom: 0.5rem;
+		margin-left: 1rem;
+		margin-right: 1rem;
+	}
+  </style>
+  
