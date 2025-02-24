@@ -305,7 +305,8 @@
 	}
 </script>
 
-<div class="bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-white-200">
+<div bind:this={filterContainerRef} 
+	class="overflow-y-auto bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-white-200">
 	<div class="flex items-center py-1">
 		<div class="{$showSidebar ? 'hidden' : ''} flex items-center">
 			<button
