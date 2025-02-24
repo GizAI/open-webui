@@ -158,9 +158,9 @@
 	{#if includedSelectedIndustries.length > 0}
 		<div class="selected-industries mt-2">
 			{#each includedSelectedIndustries as industry (industry.id)}
-				<span class="tag inline-block whitespace-nowrap bg-gray-50 text-gray-900 dark:text-gray-400 dark:bg-gray-950 px-2 py-1 rounded mr-1">
-					{industry.industry}
-					<button on:click={() => removeIncludedIndustry(industry.id)} class="ml-1">×</button>
+				<span class="tag inline-flex items-center bg-gray-50 text-gray-900 dark:text-gray-400 dark:bg-gray-950 px-2 py-1 rounded mr-1 max-w-full">
+					<span class="flex-1 truncate">{industry.industry}</span>
+					<button on:click={() => removeIncludedIndustry(industry.id)} class="ml-1 flex-shrink-0">×</button>
 				</span>
 			{/each}
 		</div>
@@ -191,9 +191,9 @@
 	{#if excludedSelectedIndustries.length > 0}
 		<div class="selected-industries mt-2">
 			{#each excludedSelectedIndustries as industry (industry.id)}
-				<span class="tag inline-block whitespace-nowrap bg-gray-50 text-gray-900 dark:text-gray-400 dark:bg-gray-950 px-2 py-1 rounded mr-1">
-					{industry.industry}
-					<button on:click={() => removeExcludedIndustry(industry.id)} class="ml-1">×</button>
+				<span class="tag inline-flex items-center bg-gray-50 text-gray-900 dark:text-gray-400 dark:bg-gray-950 px-2 py-1 rounded mr-1 max-w-full">
+					<span class="flex-1 truncate">{industry.industry}</span>
+					<button on:click={() => removeExcludedIndustry(industry.id)} class="ml-1 flex-shrink-0">×</button>
 				</span>
 			{/each}
 		</div>
@@ -222,4 +222,13 @@
 		scrollbar-width: thin;
 		scrollbar-color: #999 transparent;
 	}
+	.options-list li {
+		display: block;
+		width: 100%;
+		overflow: hidden;
+		white-space: nowrap;
+		text-overflow: ellipsis;
+	}
+
+
 </style>
