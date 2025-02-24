@@ -3,8 +3,6 @@
 	import { MapPin, Briefcase, Microscope, Award, Users, DollarSign } from 'lucide-svelte';
 	import { WEBUI_API_BASE_URL } from '$lib/constants';
 	import { formatBusinessNumber } from '../common/helper';
-	import { get } from 'svelte/store';
-	import { user } from '$lib/stores';
 
 	export let company: any;
 	export let financialData: any = null;
@@ -27,10 +25,11 @@
 	const hasLabInfo = (c: any) => c.research_info;
 
 	const hasCertificationInfo = (c: any) => c.sme_type;
-	
-	const hasVentureInfo = (c: any) => c.venture_confirmation_type || c.venture_valid_from;	
 
-	const hasShareholderInfo = (c: any) => c.is_family_shareholder === 'Y' || c.is_non_family_shareholder === 'Y';
+	const hasVentureInfo = (c: any) => c.venture_confirmation_type || c.venture_valid_from;
+
+	const hasShareholderInfo = (c: any) =>
+		c.is_family_shareholder === 'Y' || c.is_non_family_shareholder === 'Y';
 
 	function formatDate(dateStr: any) {
 		if (!dateStr) return '';
@@ -48,7 +47,6 @@
 
 	async function fetchFinancialData(master_id: string) {
 		try {
-
 			const financialResponse = await fetch(
 				`${WEBUI_API_BASE_URL}/rooibos/corpsearch/${master_id}/financialData`,
 				{
@@ -70,7 +68,7 @@
 </script>
 
 <div class="company-info-wrapper active flex flex-col w-full overflow-hidden">
-	<div class="flex-1 px-4 pb-4">
+	<div class="flex-1 px-4 pb-16">
 		<div class="space-y-6 mt-2">
 			{#if hasBasicInfo(company)}
 				<div id="basic" class="space-y-2 border-gray-100 pb-4 text-gray-900 dark:text-gray-500">
@@ -223,7 +221,6 @@
 								</p>
 							{/each}
 						{/if}
-
 					</div>
 				</div>
 			{/if}
@@ -295,18 +292,15 @@
 						주주 정보
 					</h3>
 					<div class="space-y-1 text-gray-900 dark:text-gray-400">
-						{#if company.is_family_shareholder}
-							<p class="text-sm flex items-center justify-between">
-								<span>가족주주</span>
-								<span>{company.is_family_shareholder === 'Y' ? '있음' : '없음'}</span>
-							</p>
-						{/if}
-						{#if company.is_non_family_shareholder}
-							<p class="text-sm flex items-center justify-between">
-								<span>외부주주</span>
-								<span>{company.is_non_family_shareholder === 'Y' ? '있음' : '없음'}</span>
-							</p>
-						{/if}
+						<p class="text-sm flex items-center justify-between">
+							<span>가족주주</span>
+							<span>{company.is_family_shareholder === 'Y' ? '있음' : '없음'}</span>
+						</p>
+
+						<p class="text-sm flex items-center justify-between">
+							<span>외부주주</span>
+							<span>{company.is_non_family_shareholder === 'Y' ? '있음' : '없음'}</span>
+						</p>
 					</div>
 				</div>
 			{/if}
@@ -321,7 +315,7 @@
 						</h3>
 						<table class="w-full text-sm">
 							<thead>
-								<tr class="border-b text-gray-900 dark:text-gray-400">
+								<tr class="border-b border-gray-300 text-gray-900 dark:text-gray-400">
 									<th class="text-left px-2 font-medium py-2">손익계산서</th>
 									{#each years as year}
 										<th class="w-1/5 text-right px-2 py-2 font-medium whitespace-nowrap"
@@ -374,7 +368,7 @@
 									<td colspan={years.length + 1} class="px-2 py-1 font-semibold">자산</td>
 								</tr>
 								{#each [{ name: '유동자산', key: 'current_assets' }, { name: '• 당좌자산', key: 'quick_assets' }, { name: '• 재고자산', key: 'inventory' }, { name: '비유동자산', key: 'non_current_assets' }, { name: '• 투자자산', key: 'investment_assets' }, { name: '• 유형자산', key: 'tangible_assets' }, { name: '• 무형자산', key: 'intangible_assets' }] as metric}
-									<tr class="border-b border-gray-100 hover:bg-gray-100 dark:hover:bg-gray-800">
+									<tr class="border-b border-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800">
 										<td class="w-1/3 px-2 py-2 font-medium">{metric.name}</td>
 										{#each years as year}
 											{@const yearData = financialData.find((d) => String(d.year) === year)}
@@ -398,7 +392,7 @@
 									>
 								</tr>
 								{#each [{ name: '유동부채', key: 'current_liabilities' }, { name: '비유동부채', key: 'non_current_liabilities' }, { name: '자본금', key: 'capital_stock' }, { name: '총이익잉여금', key: 'retained_earnings' }] as metric}
-									<tr class="border-b border-gray-100 hover:bg-gray-100 dark:hover:bg-gray-800">
+									<tr class="border-b border-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800">
 										<td class="w-1/3 px-2 py-2 font-medium">{metric.name}</td>
 										{#each years as year}
 											{@const yearData = financialData.find((d) => String(d.year) === year)}

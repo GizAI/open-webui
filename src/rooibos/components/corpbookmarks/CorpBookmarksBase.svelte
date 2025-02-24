@@ -26,12 +26,13 @@
 	import RichTextInput from '$lib/components/common/RichTextInput.svelte';
 	import Drawer from '$lib/components/common/Drawer.svelte';
 	import ChevronLeft from '$lib/components/icons/ChevronLeft.svelte';
-	import AccessControlModal from '$lib/components/workspace/common/AccessControlModal.svelte';
 	import { WEBUI_API_BASE_URL } from '$lib/constants';
 	import { goto } from '$app/navigation';
 	import ActionButtons from '../common/ActionButtons.svelte';
 	import CompanyDetail from '../company/CompanyDetail.svelte';
 	import { get } from 'svelte/store';
+	import LockClosed from '$lib/components/icons/LockClosed.svelte';
+	import RooibosAccessControlModal from '../common/RooibosAccessControlModal.svelte';
 
 	type Bookmark = {
 		id: string;
@@ -142,6 +143,7 @@
 	let mediaQuery: any;
 	let dragged = false;
 	let id: any = null;
+	const currentUser = get(user);
 
 	$: if (bookmark && bookmark.files) {
 		fuse = new Fuse(bookmark.files, {
@@ -535,7 +537,7 @@
 		}
 
 		id = $page.params.id;
-		const currentUser = get(user);
+		
 		const queryParams = new URLSearchParams({
 			business_registration_number: bookmark?.business_registration_number !== undefined
 				? bookmark?.business_registration_number.toString()
@@ -650,13 +652,30 @@
 	}}
 />
 {#if bookmark}
-<div class="sticky border-b top-0 z-10 shrink-0 px-4 pt-2 pb-1 bg-white dark:bg-gray-900">
+<div class="sticky border-b border-gray-200 top-0 z-10 shrink-0 px-4 pt-2 pb-1 bg-white dark:bg-gray-900">
 	<div class="flex items-center justify-between w-full mb-1">
 		<h1 class="{$mobile ? 'sm:text-xl' : 'text-xl'} font-semibold mb-1 truncate">
 			{bookmark.company_name}
 		</h1>
 
 		<div class="flex items-center space-x-1">
+			{#if bookmark.bookmark_user_id == currentUser.id}
+			<div class="self-center shrink-0">
+				<button
+					class="bg-gray-50 hover:bg-gray-100 text-black dark:bg-gray-850 dark:hover:bg-gray-800 dark:text-white transition px-2 py-1 rounded-full flex gap-1 items-center"
+					type="button"
+					on:click={() => {
+						showAccessControlModal = true;
+					}}
+				>
+					<LockClosed strokeWidth="2.5" className="size-3.5" />
+
+					<div class="text-sm font-medium shrink-0">
+						{$i18n.t('Access')}
+					</div>
+				</button>
+			</div>
+			{/if}
 			<ActionButtons companyInfo={bookmark} />
 
 			<button class="hover:bg-gray-100 rounded-full" on:click={closeCompanyInfo}>
@@ -682,12 +701,11 @@
 
 <div class="flex flex-col w-full translate-y-1" id="collection-container">
 	{#if bookmark}
-		<AccessControlModal
+		<RooibosAccessControlModal
 			bind:show={showAccessControlModal}
 			bind:accessControl={bookmark.access_control}
-			onChange={() => {
-				changeDebounceHandler();
-			}}
+			bind:bookmarkId={bookmark.bookmark_id}			
+			accessRoles={['read', 'write']}
 		/>
 		<div
 			class="company-info-wrapper active {isFullscreen
@@ -899,7 +917,7 @@
 								<button 
 									type="button"
 									on:click={() => moveToExistingChat(chat)}
-									class="mb-1 w-full text-left rounded bg-gray-100 dark:bg-gray-800 p-1 cursor-pointer text-xs"
+									class="mb-1 w-full text-left rounded bg-gray-50 dark:bg-gray-800 p-1 cursor-pointer text-xs"
 								>
 									{chat.title}
 								</button>

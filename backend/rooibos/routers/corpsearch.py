@@ -141,6 +141,7 @@ async def search(request: Request):
     establishment_year = filters.get("establishment_year", {}).get("value") if filters.get("establishment_year") else None
 
     included_industries = filters.get("included_industries", {}).get("value") if filters.get("included_industries") else None
+    excluded_industries = filters.get("excluded_industries", {}).get("value") if filters.get("excluded_industries") else None
 
     gender_raw = filters.get("gender", {}).get("value") if filters.get("gender") else None
     gender = "남" if gender_raw == "male" else ("여" if gender_raw == "female" else None)
@@ -428,9 +429,20 @@ async def search(request: Request):
                     sql_query += " AND (" + " AND ".join(conditions) + ")"             
 
             if included_industries:
-                sql_query += f" AND rmc.industry in (${param_count})"
-                params.append(included_industries)
-                param_count += 1
+                industry_list = included_industries.split(", ")  # 문자열을 리스트로 변환
+                industry_conditions = " OR ".join([f"rmc.industry = ${param_count + i}" for i in range(len(industry_list))])
+
+                sql_query += f" AND ({industry_conditions})"
+                params.extend(industry_list)
+                param_count += len(industry_list)
+
+            if excluded_industries:
+                excluded_list = excluded_industries.split(", ")  # 문자열을 리스트로 변환
+                placeholders = ", ".join([f"${param_count + i}" for i in range(len(excluded_list))])
+                sql_query += f" AND rmc.industry NOT IN ({placeholders})"
+                params.extend(excluded_list)
+                param_count += len(excluded_list)    
+
 
             if gender:
                 sql_query += f" AND me.gender = ${param_count}"

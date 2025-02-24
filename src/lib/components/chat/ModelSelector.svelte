@@ -4,7 +4,6 @@
 	import { toast } from 'svelte-sonner';
 	import Selector from './ModelSelector/Selector.svelte';
 	import Tooltip from '../common/Tooltip.svelte';
-	import {selectedCompanyInfo} from '$rooibos/stores'
 
 	import { updateUserSettings } from '$lib/apis/users';
 	const i18n = getContext('i18n');
@@ -41,11 +40,13 @@
 					<Selector
 						id={`${selectedModelIdx}`}
 						placeholder={$i18n.t('Select a model')}
-						items={$models.map((model) => ({
-							value: model.id,
-							label: model.name,
-							model: model
-						}))}
+						items={$models
+							.filter((model) => !model.info?.base_model_id)
+							.map((model) => ({
+								value: model.id,
+								label: model.name,
+								model: model
+							}))}
 						showTemporaryChatControl={$user.role === 'user'
 							? ($user?.permissions?.chat?.temporary ?? true)
 							: true}
@@ -80,9 +81,6 @@
 						</button>
 					</Tooltip>
 				</div>
-				{#if $selectedCompanyInfo.company_name != null}
-				<div class="min-w-[200px] whitespace-nowrap font-bold">{$selectedCompanyInfo.company_name}</div>
-				{/if}
 			{:else}
 				<div
 					class="  self-center mx-1 disabled:text-gray-600 disabled:hover:text-gray-600 -translate-y-[0.5px]"

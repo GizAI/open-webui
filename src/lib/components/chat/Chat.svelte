@@ -1974,6 +1974,7 @@
 									bind:autoScroll
 									bind:prompt
 									{selectedModels}
+									{atSelectedModel}
 									{sendPrompt}
 									{showMessage}
 									{submitMessage}
@@ -2031,7 +2032,8 @@
 									}
 								}}
 								on:modelChange={async (event) => {
-									selectedModels = [event.detail.model_id.toString()];
+									//selectedModels = [event.detail.model_id.toString()];
+									atSelectedModel = event.detail;
 								}}
 							/>
 
@@ -2077,7 +2079,8 @@
 									}
 								}}
 								on:modelChange={async (event) => {
-									selectedModels = [event.detail.model_id.toString()];
+									//selectedModels = [event.detail.model_id.toString()];
+									atSelectedModel = event.detail;
 								}}
 							/>
 						</div>

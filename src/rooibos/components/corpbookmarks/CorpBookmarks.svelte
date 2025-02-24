@@ -6,7 +6,7 @@
 	import { onMount, getContext } from 'svelte';
 	const i18n = getContext('i18n');
 
-	import { user, WEBUI_NAME} from '$lib/stores';
+	import { user, WEBUI_NAME } from '$lib/stores';
 
 	import { goto } from '$app/navigation';
 
@@ -17,7 +17,6 @@
 	import { WEBUI_API_BASE_URL } from '$lib/constants';
 	import { get } from 'svelte/store';
 
-
 	let loaded = false;
 
 	let selectedItem: any = null;
@@ -27,37 +26,43 @@
 
 	const deleteHandler = async (item: any) => {
 		try {
-        const response = await fetch(`${WEBUI_API_BASE_URL}/rooibos/corpbookmarks/${item.id}/delete`, {
-            method: 'DELETE',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-        });
+			const response = await fetch(
+				`${WEBUI_API_BASE_URL}/rooibos/corpbookmarks/${item.id}/delete`,
+				{
+					method: 'DELETE',
+					headers: {
+						'Content-Type': 'application/json'
+					}
+				}
+			);
 
-        const data = await response.json();
+			const data = await response.json();
 
-        if (response.ok) {            
-			bookmarks = bookmarks.filter((bookmark: any) => bookmark.id !== item.id);
-        } else {
-            console.error("Delete failed:", data);
-            alert(`Failed to delete bookmark: ${data.error || "Unknown error"}`);
-        }
-    } catch (error) {
-        console.error("Error in deleteHandler:", error);
-        alert("An unexpected error occurred while deleting the bookmark.");
-    }
+			if (response.ok) {
+				bookmarks = bookmarks.filter((bookmark: any) => bookmark.id !== item.id);
+			} else {
+				console.error('Delete failed:', data);
+				alert(`Failed to delete bookmark: ${data.error || 'Unknown error'}`);
+			}
+		} catch (error) {
+			console.error('Error in deleteHandler:', error);
+			alert('An unexpected error occurred while deleting the bookmark.');
+		}
 	};
 
 	onMount(async () => {
 		const currentUser = get(user);
-		const response = await fetch(`${WEBUI_API_BASE_URL}/rooibos/corpbookmarks/user/${currentUser?.id}`, {
-			method: 'GET',
-			headers: {
-			'Content-Type': 'application/json',
-			authorization: `Bearer ${localStorage.token}`
-			},
-		});
-		
+		const response = await fetch(
+			`${WEBUI_API_BASE_URL}/rooibos/corpbookmarks/user/${currentUser?.id}`,
+			{
+				method: 'GET',
+				headers: {
+					'Content-Type': 'application/json',
+					authorization: `Bearer ${localStorage.token}`
+				}
+			}
+		);
+
 		if (!response.ok) {
 			throw new Error('검색 요청 실패');
 		}
@@ -77,7 +82,7 @@
 {#if loaded}
 	<DeleteConfirmDialog
 		bind:show={showDeleteConfirm}
-		title="북마크를 삭제하시겠습니까?"
+		title="나의기업에서 삭제하시겠습니까?"
 		on:confirm={() => {
 			deleteHandler(selectedItem);
 		}}
@@ -96,6 +101,7 @@
 						<Badge type="success" content={$i18n.t('Collection')} />
 						<div class=" flex self-center -mr-1 translate-y-1">
 							<CorpBookmarks
+								{bookmark}
 								on:delete={() => {
 									selectedItem = bookmark;
 									showDeleteConfirm = true;
@@ -108,14 +114,13 @@
 						<div class=" font-semibold line-clamp-1 h-fit">{bookmark.company_name}</div>
 
 						<div class=" text-xs overflow-hidden text-ellipsis line-clamp-1">
-							{bookmark.address} 
+							{bookmark.address}
 						</div>
 					</div>
 				</div>
 			</button>
 		{/each}
 	</div>
-
 {:else}
 	<div class="w-full h-full flex justify-center items-center">
 		<Spinner />
