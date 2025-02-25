@@ -35,6 +35,15 @@ export const filterGroups = [
 		min: 0,
 		max: 0
 	},
+	{
+		id: 'total_equity',
+		title: '총자본',
+		isMulti: false,
+		checked: false,
+		min: 0,
+		max: 0
+	},
+	
 	// {
 	// 	id: 'unallocated_profit',
 	// 	title: '미처분 이익 잉여금',
@@ -126,7 +135,8 @@ export const excludedGroupIds = [
 	'net_profit',
 	'unallocated_profit',
 	'establishment_year',
-	'representative_age'
+	'representative_age',
+	'total_equity'
 ];
 
 export function onFilterChange(selectedFilters: any, groupId: string, optionId: string, checked: boolean | string) {
@@ -163,7 +173,7 @@ export function onFilterChange(selectedFilters: any, groupId: string, optionId: 
 			value: checked
 		};
 	} else if (
-		['employee_count', 'sales', 'profit', 'net_profit', 'unallocated_profit'].includes(groupId) &&
+		['employee_count', 'sales', 'profit', 'net_profit', 'unallocated_profit', 'total_equity'].includes(groupId) &&
 		typeof checked === 'object' &&
 		checked !== null
 	) {

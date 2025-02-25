@@ -29,7 +29,7 @@
 	$: if (
 		group &&
 		group.id !== prevGroupId &&
-		['employee_count', 'sales', 'profit', 'net_profit', 'unallocated_profit'].includes(group.id)
+		['employee_count', 'sales', 'profit', 'net_profit', 'unallocated_profit', 'total_equity'].includes(group.id)
 	) {
 		rangeMin = selectedFilters[group.id]?.min || '';
 		rangeMax = selectedFilters[group.id]?.max || '';
@@ -46,7 +46,8 @@
 		'net_profit',
 		'representative_age',
 		'unallocated_profit',
-		'establishment_year'
+		'establishment_year',
+		'total_equity'
 	];
 
 	function shouldShowApplyButton(groupId: string): boolean {
@@ -59,7 +60,7 @@
 		} else if (filter.id === 'establishment_year') {
 			await filterChange(filter.id, 'establishment_year', establishmentYearValue);
 		} else if (
-			['employee_count', 'sales', 'profit', 'net_profit', 'unallocated_profit'].includes(filter.id)
+			['employee_count', 'sales', 'profit', 'net_profit', 'unallocated_profit', 'total_equity'].includes(filter.id)
 		) {
 			await filterChange(filter.id, '', { min: rangeMin, max: rangeMax });
 		} else {
@@ -87,7 +88,7 @@
 			<div class="filter-group-title flex items-center justify-between mb-3">
 				<h3 class="font-semibold text-gray-800 dark:text-gray-200 text-sm">
 					{group.title}
-					{#if ['sales', 'profit', 'net_profit', 'unallocated_profit'].includes(group.id)}
+					{#if ['sales', 'profit', 'net_profit', 'unallocated_profit', 'total_equity'].includes(group.id)}
 						<span class="text-xs ml-2 text-gray-500 dark:text-gray-200">(단위: 백만원)</span>
 					{/if}
 				</h3>
@@ -168,7 +169,7 @@
 								? 'grid-cols-1 gap-1'
 								: 'grid-cols-2 gap-2'}"
 						>
-							{#if ['employee_count', 'sales', 'profit', 'net_profit', 'unallocated_profit'].includes(group.id)}
+							{#if ['employee_count', 'sales', 'profit', 'net_profit', 'unallocated_profit', 'total_equity'].includes(group.id)}
 								<div
 									class="flex items-center gap-1 text-gray-900 dark:bg-gray-950 dark:text-gray-200"
 								>
