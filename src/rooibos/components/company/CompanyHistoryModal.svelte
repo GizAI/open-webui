@@ -13,11 +13,6 @@
 
   $: if (show) {
     history = selectedCompanyInfo.getHistory() || [];
-    if (history.length === 1) {
-      selectedCompanyInfo.set(history[0]);
-      onClose();
-      show = false;
-    }
   }
 
   onMount(() => {
