@@ -1,4 +1,4 @@
-<!-- NoteFolders.svelte -->
+<!-- NoteFolderMenu.svelte -->
 <script lang="ts">
 	import { createEventDispatcher, getContext } from 'svelte';
 	import Dropdown from '$lib/components/common/Dropdown.svelte';
@@ -8,6 +8,8 @@
 	import { flyAndScale } from '$lib/utils/transitions';
 	import { goto } from '$app/navigation';
 	import { v4 as uuidv4 } from 'uuid';
+	import { toast } from 'svelte-sonner';
+	import { renameNoteFolder } from '$rooibos/components/apis';
 
 	const i18n = getContext('i18n');
 	const dispatch = createEventDispatcher();
@@ -25,6 +27,9 @@
 			})
 		);
 
+	let editingFolderId: string | null = null;
+	let editedName = '';
+
 	function handleFolderClick(folderId: string) {
 		dispatch('click', { folderId });
 	}
@@ -32,17 +37,52 @@
 	function handleAddPage(e: Event, folderId: string) {
 		e.stopPropagation();
 		const newId = uuidv4();
-+		goto(`/rooibos/note/${newId}`);
+		goto(`/rooibos/note/${newId}`);
+	}
+
+	function startEditing(e: Event, folderId: string) {
+		e.stopPropagation();
+		editingFolderId = folderId;
+		editedName = folders[folderId].name;
+	}
+
+	async function submitRename(folderId: string) {
+		if (editedName && editedName !== folders[folderId].name) {
+			const oldName = folders[folderId].name;
+			// Update local state for immediate UI feedback.
+			folders[folderId].name = editedName;
+			try {
+				// Call the correct API to update the folder name on the server.
+				await renameNoteFolder(localStorage.token, folderId, editedName);
+				dispatch('rename', { folderId, newName: editedName });
+			} catch (error) {
+				// Revert local change if server update fails.
+				folders[folderId].name = oldName;
+				toast.error(`${error}`);
+			}
+		}
+		editingFolderId = null;
 	}
 </script>
 
 <ul class="folder-list">
 	{#each folderList as folderId (folderId)}
 		<li class="folder-item group relative">
-			<div class="flex items-center justify-between hover:bg-gray-100 dark:hover:bg-gray-900 ounded-md">
-				<span on:click={() => handleFolderClick(folderId)} class="cursor-pointer">
-					{folders[folderId].name}
-				</span>
+			<div class="flex items-center justify-between hover:bg-gray-100 dark:hover:bg-gray-900 rounded-md">
+				{#if editingFolderId === folderId}
+					<input
+						type="text"
+						bind:value={editedName}
+						class="cursor-text bg-transparent border-b border-dashed focus:outline-none"
+						on:blur={() => submitRename(folderId)}
+						on:keydown={(e) => { if (e.key === 'Enter') e.target.blur(); }}
+						autofocus
+					/>
+				{:else}
+					<span on:click={() => handleFolderClick(folderId)} class="cursor-pointer">
+						{folders[folderId].name}
+					</span>
+				{/if}
 
 				<div class="invisible group-hover:visible">
 					<Dropdown>
@@ -59,6 +99,13 @@
 								align="start"
 								transition={flyAndScale}
 							>
+								<DropdownMenu.Item
+									class="flex gap-2 items-center px-3 py-1.5 text-sm cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 rounded-md"
+									on:click={(e) => startEditing(e, folderId)}
+								>
+									<Pencil strokeWidth="2" />
+									<div class="flex items-center">{$i18n.t('이름변경')}</div>
+								</DropdownMenu.Item>
 								<DropdownMenu.Item
 									class="flex gap-2 items-center px-3 py-1.5 text-sm cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 rounded-md"
 									on:click={(e) => handleAddPage(e, folderId)}

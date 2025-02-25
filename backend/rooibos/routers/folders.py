@@ -81,4 +81,37 @@ async def addNoteFolder(request: Request):
             }
         )
 
+@router.get("/rename")
+async def update_folder_name(request: Request):
+    search_params = request.query_params
+    folderId = search_params.get("folderId")
+    folderName = search_params.get("folderName")
+    now = int(time.time())
+    try:
+        with get_db() as db:
+            query = """
+                UPDATE rb_folder
+                SET name = :folderName, updated_at = :updateAt
+                WHERE id = :folderId
+            """
+            params = {"folderName": folderName, "folderId": folderId, "updateAt": now}
+            db.execute(text(query), params)
+            db.commit() 
+            
+        return {
+            "success": True,
+            "message": "success"
+        }
+    except Exception as e:
+        log.error("Failed note folder rename : %s", e)
+        raise HTTPException(
+            status_code=500,
+            detail={
+                "success": False,
+                "error": "Failed note folder rename",
+                "message": str(e)
+            }
+        )
+
+
 
