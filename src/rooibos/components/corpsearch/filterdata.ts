@@ -12,27 +12,6 @@ export const filterGroups = [
 		]
 	},
 	{
-		id: 'certification',
-		title: '기업 인증',
-		isMulti: true,
-		checked: false,
-		options: [
-			{ id: 'research_institute', label: '연구소 인증' },
-			{ id: 'venture', label: '벤처 인증' },
-			{ id: 'innobiz', label: '이노비즈 인증' },
-			{ id: 'mainbiz', label: '메인비즈 인증' }
-			// { id: 'patent', label: '특허 보유' },
-			// { id: 'new_technology', label: '신기술' },
-		]
-	},
-	{
-		id: 'employee_count',
-		title: '종업원 수',
-		isMulti: false,
-		min: 0,
-		max: 0
-	},
-	{
 		id: 'sales',
 		title: '최근 매출액',
 		isMulti: false,
@@ -57,6 +36,41 @@ export const filterGroups = [
 		max: 0
 	},
 	{
+		id: 'unallocated_profit',
+		title: '미처분 이익 잉여금',
+		isMulti: false,
+		checked: false,
+		min: 0,
+		max: 0
+	},
+	{
+		id: 'employee_count',
+		title: '종업원 수',
+		isMulti: false,
+		min: 0,
+		max: 0
+	},
+	{
+		id: 'certification',
+		title: '기업 인증',
+		isMulti: true,
+		checked: false,
+		options: [
+			{ id: 'research_institute', label: '연구소 인증' },
+			{ id: 'venture', label: '벤처 인증' },
+			{ id: 'innobiz', label: '이노비즈 인증' },
+			{ id: 'mainbiz', label: '메인비즈 인증' }
+			// { id: 'patent', label: '특허 보유' },
+			// { id: 'new_technology', label: '신기술' },
+		]
+	},
+	{
+		id: 'included_industries',
+		title: '업종',
+		checked: false
+	},
+	
+	{
 		id: 'gender',
 		title: '대표 정보',
 		isMulti: false,
@@ -73,20 +87,13 @@ export const filterGroups = [
 		isMulti: false,
 		checked: false
 	},
-	{
-		id: 'unallocated_profit',
-		title: '미처분 이익 잉여금',
-		isMulti: false,
-		checked: false,
-		min: 0,
-		max: 0
-	},
-	{
-		id: 'establishment_year',
-		title: '법인 설립 연도',
-		isMulti: false,
-		checked: false
-	},
+	
+	// {
+	// 	id: 'establishment_year',
+	// 	title: '법인 설립 연도',
+	// 	isMulti: false,
+	// 	checked: false
+	// },
 	// {
 	//   id: 'loan',
 	//   title: '대출 사용 여부 및 금액',
@@ -101,11 +108,7 @@ export const filterGroups = [
 	//     { id: 'over_200m', label: '2억 이상' },
 	//   ],
 	// },
-	{
-		id: 'included_industries',
-		title: '업종',
-		checked: false
-	},
+	
 ];
 
 export const filterActions = [
