@@ -147,7 +147,7 @@ async def search(request: Request):
     gender = "남" if gender_raw == "male" else ("여" if gender_raw == "female" else None)
     representative_age = filters.get("representative_age", {}).get("value") if filters.get("representative_age") else None
 
-    def process_range_filter(data, multiplier=1_000_000):
+    def process_range_filter(data):
         if not data:
             return None, None
         min_val = data.get("min")  
@@ -156,14 +156,13 @@ async def search(request: Request):
         min_val = None if min_val == '' else min_val
         max_val = None if max_val == '' else max_val
 
-        return (float(min_val) * multiplier if min_val is not None else None,
-                float(max_val) * multiplier if max_val is not None else None)
+        return (min_val, max_val)
 
     net_profit_min, net_profit_max = process_range_filter(filters.get("net_profit"))
     profit_min, profit_max = process_range_filter(filters.get("profit"))
     sales_min, sales_max = process_range_filter(filters.get("sales"))
     unallocated_profit_min, unallocated_profit_max = process_range_filter(filters.get("unallocated_profit"))
-
+    total_equity_min, total_equity_max = process_range_filter(filters.get("total_equity"))
     try:
         params = []
         param_count = 1
@@ -231,6 +230,7 @@ async def search(request: Request):
                 rmc.venture_valid_until,
                 rmc.confirming_authority,
                 rmc.new_reconfirmation_code,
+                sfd_latest.total_equity AS financial_total_equity,
                 cb.id as bookmark_id
         """        
 
@@ -278,6 +278,19 @@ async def search(request: Request):
             LEFT JOIN smtp_executives me
                 ON rmc.business_registration_number = me.business_registration_number
                 AND me.position = '대표이사' 
+            LEFT JOIN smtp_financial_company sfc 
+                ON sfc.company_name = rmc.company_name
+            LEFT JOIN (
+                SELECT *
+                FROM (
+                    SELECT 
+                        sfd.*,
+                        ROW_NUMBER() OVER (PARTITION BY sfd.financial_company_id ORDER BY sfd.year DESC) AS rn
+                    FROM smtp_financial_data sfd
+                ) sub
+                WHERE rn = 1
+            ) sfd_latest 
+                ON sfd_latest.financial_company_id = sfc.id    
             WHERE rmc.company_type != '개인' and rmc.latitude IS NOT NULL
             """
 
@@ -358,6 +371,17 @@ async def search(request: Request):
                 
 
         if not query:
+
+            if employee_count_min not in [None, '']:
+                sql_query += f" AND (rmc.employee_count)::numeric >= ${param_count}"
+                params.append(employee_count_min)
+                param_count += 1
+
+            if employee_count_max not in [None, '']:
+                sql_query += f" AND (rmc.employee_count)::numeric <= ${param_count}"
+                params.append(employee_count_max)
+                param_count += 1
+
             if sales_min not in [None, '']:
                 sql_query += f" AND (rmc.recent_sales)::numeric >= ${param_count}"
                 params.append(sales_min)
@@ -378,15 +402,7 @@ async def search(request: Request):
                 params.append(profit_max)
                 param_count += 1
 
-            if employee_count_min not in [None, '']:
-                sql_query += f" AND (rmc.employee_count)::numeric >= ${param_count}"
-                params.append(employee_count_min)
-                param_count += 1
-
-            if employee_count_max not in [None, '']:
-                sql_query += f" AND (rmc.employee_count)::numeric <= ${param_count}"
-                params.append(employee_count_max)
-                param_count += 1
+            
 
             if net_profit_min not in [None, '']:
                 sql_query += f" AND (rmc.net_income)::numeric >= ${param_count}"
@@ -407,6 +423,16 @@ async def search(request: Request):
                 sql_query += f" AND (FinancialComparison.retained_earnings)::numeric <= ${param_count}"
                 params.append(unallocated_profit_max)
                 param_count += 1
+
+            if total_equity_min not in [None, '']:
+                sql_query += f" AND (rmc.total_equity)::numeric >= ${param_count}"
+                params.append(total_equity_min)
+                param_count += 1
+
+            if total_equity_max not in [None, '']:
+                sql_query += f" AND (rmc.total_equity)::numeric <= ${param_count}"
+                params.append(total_equity_max)
+                param_count += 1    
 
             if establishment_year not in [None, '']:
                 sql_query += f" AND SUBSTRING(rmc.establishment_date, 1, 4)::INTEGER >= ${param_count}"

@@ -718,16 +718,16 @@
 			</Folder>
 
 			<!-- Notes 폴더 컴포넌트 추가 -->
-			 {#if $user?.id == '5ee82147-b469-4609-8bea-2ba484cfc2ab'}
-			<NoteFolder
-				collapsible={!search}
-				className="px-2 mt-0.5"
-				name={$i18n.t('Notes')}
-				onAdd={() => createNotesFolder()}
-				onAddLabel={$i18n.t('New Folder')}
-			>
-				<NoteFolderMenu folders={notesFolders} />
-			</NoteFolder>
+			{#if $user?.id == '5ee82147-b469-4609-8bea-2ba484cfc2ab'}
+				<NoteFolder
+					collapsible={!search}
+					className="px-2 mt-0.5"
+					name={$i18n.t('Notes')}
+					onAdd={() => createNotesFolder()}
+					onAddLabel={$i18n.t('New Folder')}
+				>
+					<NoteFolderMenu folders={notesFolders} />
+				</NoteFolder>
 			{/if}
 		</div>
 
