@@ -182,7 +182,7 @@ export function onFilterChange(selectedFilters: any, groupId: string, optionId: 
 			...((newFilters[groupId] as any) || {}),
 			[optionId]: checked
 		};
-	} else if (group.isMulti) {
+	} else if (groupId == 'certification') {
 		const currentValues = Array.isArray(selectedFilters[groupId]?.value)
 			? (selectedFilters[groupId]?.value as string[])
 			: [];
