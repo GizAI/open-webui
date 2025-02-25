@@ -2,6 +2,8 @@
 	import { toast } from 'svelte-sonner';
 	import { v4 as uuidv4 } from 'uuid';
 	import { createPicker, getAuthToken } from '$lib/utils/google-drive-picker';
+	import { pickAndDownloadFile } from '$lib/utils/onedrive-file-picker';
+
 	import ChatCategories from '$rooibos/components/chat/ChatCategories.svelte';
 
 	import { onMount, tick, getContext, createEventDispatcher, onDestroy } from 'svelte';
@@ -1129,6 +1131,21 @@
 													);
 												}
 											}}
+											uploadOneDriveHandler={async () => {
+												try {
+													const fileData = await pickAndDownloadFile();
+													if (fileData) {
+														const file = new File([fileData.blob], fileData.name, {
+															type: fileData.blob.type || 'application/octet-stream'
+														});
+														await uploadFileHandler(file);
+													} else {
+														console.log('No file was selected from OneDrive');
+													}
+												} catch (error) {
+													console.error('OneDrive Error:', error);
+												}
+											}}
 											onClose={async () => {
 												await tick();
 
@@ -1156,7 +1173,7 @@
 
 										<div class="flex gap-0.5 items-center overflow-x-auto scrollbar-none flex-1">
 											
-											<Tooltip content={'ÏßÄÏãùÏ†ÑÎ¨∏Î¥á'} placement="top">
+											<Tooltip content={'¡ˆΩƒ¿¸πÆ∫ø'} placement="top">
 												<button
 													on:click|preventDefault={() => {
 														if(atSelectedModel == undefined){
@@ -1173,12 +1190,12 @@
 													
 													<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-bot "><path d="M12 8V4H8"></path><rect width="16" height="12" x="4" y="8" rx="2"></rect><path d="M2 14h2"></path><path d="M20 14h2"></path><path d="M15 13v2"></path><path d="M9 13v2"></path></svg>
 													<span class="hidden @sm:block whitespace-nowrap overflow-hidden text-ellipsis translate-y-[0.5px] mr-0.5">
-														{'ÏßÄÏãùÏ†ÑÎ¨∏Î¥á'}
+														{'¡ˆΩƒ¿¸πÆ∫ø'}
 													</span>
 												</button>
 											</Tooltip>
 
-											<Tooltip content={'Í∏∞ÏóÖ ÏÑ†ÌÉù'} placement="top">
+											<Tooltip content={'±‚æ˜ º±≈√'} placement="top">
 												<button
 													on:click|preventDefault={() => {
 														if ($selectedCompanyInfo?.company_name) {
@@ -1194,7 +1211,7 @@
 												>
 													<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-building-2"><path d="M6 22V4c0-.27 0-.55.07-.82a1.477 1.477 0 0 1 1.1-1.11C7.46 2 7.73 2 8 2h8c.27 0 .55 0 .82.07a1.477 1.477 0 0 1 1.11 1.1c.07.28.07.56.07.83v18H6Z"/><path d="M2 14v6c0 1.1.9 2 2 2h2V12H4c-1.1 0-2 .9-2 2Z"/><path d="M20 12h-2v10h2c1.1 0 2-.9 2-2v-6c0-1.1-.9-2-2-2Z"/><path d="M12 16v3"/><path d="M10 13v3"/><path d="M14 13v3"/><path d="M12 10v3"/><path d="M10 7v3"/><path d="M14 7v3"/></svg>
 													<span class="hidden @sm:block whitespace-nowrap overflow-hidden text-ellipsis translate-y-[0.5px] mr-0.5">
-														{'Í∏∞ÏóÖ ÏÑ†ÌÉù'}
+														{'±‚æ˜ º±≈√'}
 													</span>
 												</button>
 											</Tooltip>
@@ -1351,14 +1368,17 @@
 
 																	stream = null;
 
-																	if (!$TTSWorker) {
-																		await TTSWorker.set(
-																			new KokoroWorker({
-																				dtype: $settings.audio?.tts?.engineConfig?.dtype ?? 'fp32'
-																			})
-																		);
+																	if ($settings.audio?.tts?.engine === 'browser-kokoro') {
+																		// If the user has not initialized the TTS worker, initialize it
+																		if (!$TTSWorker) {
+																			await TTSWorker.set(
+																				new KokoroWorker({
+																					dtype: $settings.audio?.tts?.engineConfig?.dtype ?? 'fp32'
+																				})
+																			);
 
-																		await $TTSWorker.init();
+																			await $TTSWorker.init();
+																		}
 																	}
 
 																	showCallOverlay.set(true);
