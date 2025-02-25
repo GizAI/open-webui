@@ -85,7 +85,12 @@
 				: 'p-4 rounded-lg'} text-gray-900 dark:bg-gray-950 dark:text-gray-200"
 		>
 			<div class="filter-group-title flex items-center justify-between mb-3">
-				<h3 class="font-semibold text-gray-800 dark:text-gray-200 text-sm">{group.title}</h3>
+				<h3 class="font-semibold text-gray-800 dark:text-gray-200 text-sm">
+					{group.title}
+					{#if ['sales', 'profit', 'net_profit', 'unallocated_profit'].includes(group.id)}
+						<span class="text-xs ml-2 text-gray-500 dark:text-gray-200">(단위: 백만원)</span>
+					{/if}
+				</h3>
 				{#if shouldShowApplyButton(group.id)}
 					<button
 						on:click={() => {
