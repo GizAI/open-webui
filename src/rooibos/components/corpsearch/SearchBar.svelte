@@ -242,7 +242,8 @@
 					}
 				}
 			);
-
+			currentLocation.lat = y;
+			currentLocation.lng = x
 			const data = await response.json();
 			const list = data.data;
 
