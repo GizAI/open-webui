@@ -5,37 +5,71 @@
 	import { user } from '$lib/stores';
 	import { selectedCompanyInfo } from '$rooibos/stores';
 	import { get } from 'svelte/store';
+	import DeleteConfirmDialog from '$lib/components/common/ConfirmDialog.svelte';
 
 	export let companyInfo: any = {};
 	export let financialData: any = {};
 
 	const currentUser = get(user);
 
+	// 삭제 확인 대화상자 제어 변수
+	let showDeleteConfirm = false;
+
+	// 북마크 추가 요청
+	const addCompany = async (company: any) => {
+		const response = await fetch(`${WEBUI_API_BASE_URL}/rooibos/corpbookmarks/add`, {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json',
+				Authorization: `Bearer ${localStorage.token}`
+			},
+			body: JSON.stringify({
+				userId: currentUser?.id,
+				companyId: company.master_id,
+				business_registration_number: company.business_registration_number
+			})
+		});
+		const data = await response.json();
+		companyInfo.bookmark_id = data.id;
+		companyInfo.bookmark_user_id = currentUser?.id;
+	};
+
+	// 삭제 요청을 실제 진행하는 함수
+	const confirmDelete = async () => {
+		try {
+			const response = await fetch(
+				`${WEBUI_API_BASE_URL}/rooibos/corpbookmarks/${companyInfo.bookmark_id}/delete`,
+				{
+					method: 'DELETE',
+					headers: {
+						'Content-Type': 'application/json'
+					}
+				}
+			);
+			const data = await response.json();
+			if (response.ok) {
+				companyInfo.bookmark_user_id = null;
+			} else {
+				console.error('Delete failed:', data);
+				alert(`북마크 삭제 실패: ${data.error || '알 수 없는 오류'}`);
+			}
+		} catch (error) {
+			console.error('Error in confirmDelete:', error);
+			alert('북마크 삭제 중 예기치 못한 오류가 발생했습니다.');
+		} finally {
+			// 대화상자 닫기
+			showDeleteConfirm = false;
+		}
+	};
+
+	// 북마크 추가 또는 삭제(확인 후) 처리
 	const saveCompany = async (company: any) => {
 		if (!company.bookmark_user_id) {
-			const response = await fetch(`${WEBUI_API_BASE_URL}/rooibos/corpbookmarks/add`, {
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json',
-					Authorization: `Bearer ${localStorage.token}`
-				},
-				body: JSON.stringify({
-					userId: currentUser?.id,
-					companyId: company.master_id,
-					business_registration_number: company.business_registration_number
-				})
-			});
-			const data = await response.json();
-			companyInfo.bookmark_id = data.id;
-			companyInfo.bookmark_user_id = currentUser?.id;
+			// 북마크 추가
+			await addCompany(company);
 		} else {
-			await fetch(`${WEBUI_API_BASE_URL}/rooibos/corpbookmarks/${companyInfo.bookmark_id}/delete`, {
-				method: 'DELETE',
-				headers: {
-					'Content-Type': 'application/json'
-				}
-			});
-			companyInfo.bookmark_user_id = null;
+			// 삭제 전 확인 대화상자 호출
+			showDeleteConfirm = true;
 		}
 	};
 
@@ -56,7 +90,7 @@
 </script>
 
 <div class="flex items-center space-x-1">
-	<!-- 저장 버튼 -->
+	<!-- 저장 버튼 (추가/삭제) -->
 	<button
 		class="flex flex-col items-center hover:bg-gray-100 dark:hover:bg-gray-300 rounded-lg"
 		on:click={() => saveCompany(companyInfo)}
@@ -136,3 +170,10 @@
 		<span class="text-xs text-gray-500 mt-1 whitespace-nowrap">네이버지도</span>
 	</button>
 </div>
+
+<!-- 삭제 확인 대화상자 -->
+<DeleteConfirmDialog
+	bind:show={showDeleteConfirm}
+	title="북마크를 삭제하시겠습니까?"
+	on:confirm={confirmDelete}
+/>
