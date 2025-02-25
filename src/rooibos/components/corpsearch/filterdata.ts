@@ -35,14 +35,14 @@ export const filterGroups = [
 		min: 0,
 		max: 0
 	},
-	{
-		id: 'unallocated_profit',
-		title: '미처분 이익 잉여금',
-		isMulti: false,
-		checked: false,
-		min: 0,
-		max: 0
-	},
+	// {
+	// 	id: 'unallocated_profit',
+	// 	title: '미처분 이익 잉여금',
+	// 	isMulti: false,
+	// 	checked: false,
+	// 	min: 0,
+	// 	max: 0
+	// },
 	{
 		id: 'employee_count',
 		title: '종업원 수',
