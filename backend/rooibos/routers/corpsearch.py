@@ -425,12 +425,12 @@ async def search(request: Request):
                 param_count += 1
 
             if total_equity_min not in [None, '']:
-                sql_query += f" AND (rmc.total_equity)::numeric >= ${param_count}"
+                sql_query += f" AND (sfd_latest.total_equity)::numeric >= ${param_count}"
                 params.append(total_equity_min)
                 param_count += 1
 
             if total_equity_max not in [None, '']:
-                sql_query += f" AND (rmc.total_equity)::numeric <= ${param_count}"
+                sql_query += f" AND (sfd_latest.total_equity)::numeric <= ${param_count}"
                 params.append(total_equity_max)
                 param_count += 1    
 
