@@ -4,12 +4,13 @@
 	import Dropdown from '$lib/components/common/Dropdown.svelte';
 	import { DropdownMenu } from 'bits-ui';
 	import Tooltip from '$lib/components/common/Tooltip.svelte';
-	import Pencil from '$lib/components/icons/Pencil.svelte';
 	import { flyAndScale } from '$lib/utils/transitions';
 	import { goto } from '$app/navigation';
 	import { v4 as uuidv4 } from 'uuid';
 	import { toast } from 'svelte-sonner';
 	import { renameNoteFolder } from '$rooibos/components/apis';
+	import { NotebookIcon } from 'lucide-svelte';
+	import Pencil from '$lib/components/icons/Pencil.svelte';
 
 	const i18n = getContext('i18n');
 	const dispatch = createEventDispatcher();
@@ -49,14 +50,11 @@
 	async function submitRename(folderId: string) {
 		if (editedName && editedName !== folders[folderId].name) {
 			const oldName = folders[folderId].name;
-			// Update local state for immediate UI feedback.
 			folders[folderId].name = editedName;
 			try {
-				// Call the correct API to update the folder name on the server.
 				await renameNoteFolder(localStorage.token, folderId, editedName);
 				dispatch('rename', { folderId, newName: editedName });
 			} catch (error) {
-				// Revert local change if server update fails.
 				folders[folderId].name = oldName;
 				toast.error(`${error}`);
 			}
@@ -110,7 +108,7 @@
 									class="flex gap-2 items-center px-3 py-1.5 text-sm cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 rounded-md"
 									on:click={(e) => handleAddPage(e, folderId)}
 								>
-									<Pencil strokeWidth="2" />
+									<NotebookIcon strokeWidth="2" />
 									<div class="flex items-center">{$i18n.t('새페이지')}</div>
 								</DropdownMenu.Item>
 							</DropdownMenu.Content>

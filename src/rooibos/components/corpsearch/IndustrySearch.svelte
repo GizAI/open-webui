@@ -202,8 +202,8 @@
 
 <style>
 	.industry-search {
-		width: 100%;
-		max-width: 400px;
+		width: 120px;
+		max-width: 120px;
 	}
 
 	.input-wrapper {
@@ -215,9 +215,9 @@
 		position: absolute;
 		top: 100%;
 		left: 0;
-		width: 100%;
+		width: 200px;
 		z-index: 10;
-		max-height: 300px;
+		max-height: 200px;
 		overflow-y: auto;
 		scrollbar-width: thin;
 		scrollbar-color: #999 transparent;
