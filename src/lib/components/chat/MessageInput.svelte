@@ -1173,7 +1173,7 @@
 
 										<div class="flex gap-0.5 items-center overflow-x-auto scrollbar-none flex-1">
 											
-											<Tooltip content={'Áö½ÄÀü¹®º¿'} placement="top">
+											<Tooltip content={'ì§€ì‹ì „ë¬¸ë´‡'} placement="top">
 												<button
 													on:click|preventDefault={() => {
 														if(atSelectedModel == undefined){
@@ -1190,12 +1190,12 @@
 													
 													<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-bot "><path d="M12 8V4H8"></path><rect width="16" height="12" x="4" y="8" rx="2"></rect><path d="M2 14h2"></path><path d="M20 14h2"></path><path d="M15 13v2"></path><path d="M9 13v2"></path></svg>
 													<span class="hidden @sm:block whitespace-nowrap overflow-hidden text-ellipsis translate-y-[0.5px] mr-0.5">
-														{'Áö½ÄÀü¹®º¿'}
+														{'ì§€ì‹ì „ë¬¸ë´‡'}
 													</span>
 												</button>
 											</Tooltip>
 
-											<Tooltip content={'±â¾÷ ¼±ÅÃ'} placement="top">
+											<Tooltip content={'ê¸°ì—… ì„ íƒ'} placement="top">
 												<button
 													on:click|preventDefault={() => {
 														if ($selectedCompanyInfo?.company_name) {
@@ -1211,7 +1211,7 @@
 												>
 													<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-building-2"><path d="M6 22V4c0-.27 0-.55.07-.82a1.477 1.477 0 0 1 1.1-1.11C7.46 2 7.73 2 8 2h8c.27 0 .55 0 .82.07a1.477 1.477 0 0 1 1.11 1.1c.07.28.07.56.07.83v18H6Z"/><path d="M2 14v6c0 1.1.9 2 2 2h2V12H4c-1.1 0-2 .9-2 2Z"/><path d="M20 12h-2v10h2c1.1 0 2-.9 2-2v-6c0-1.1-.9-2-2-2Z"/><path d="M12 16v3"/><path d="M10 13v3"/><path d="M14 13v3"/><path d="M12 10v3"/><path d="M10 7v3"/><path d="M14 7v3"/></svg>
 													<span class="hidden @sm:block whitespace-nowrap overflow-hidden text-ellipsis translate-y-[0.5px] mr-0.5">
-														{'±â¾÷ ¼±ÅÃ'}
+														{'ê¸°ì—… ì„ íƒ'}
 													</span>
 												</button>
 											</Tooltip>
