@@ -2,7 +2,9 @@
 <script lang="ts">
   import { showSidebar } from '$lib/stores';
   import MenuLines from '$lib/components/icons/MenuLines.svelte';
+  import { createEventDispatcher } from 'svelte';
 
+  const dispatch = createEventDispatcher();
   export let pageTitle = "";
   export let onNewChat = () => {};
 
@@ -22,6 +24,7 @@
       pageTitle = inputValue;
     }
     editing = false;
+    dispatch('titleChange', pageTitle);
   }
 
   function handleKeyDown(e: KeyboardEvent) {

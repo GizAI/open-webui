@@ -18,14 +18,16 @@
   let pageTitle = "새 페이지";
   let showSidebar = false;
   let note = {};
+  let manualTitleEdited = false;
+  let saveTimeout;
 
-  const { id: noteId } = get(page).params;
+  const { id: noteId } = get(page).params;  
 
   function updateNoteContent() {
     const jsonContent = editor.getJSON();
-    let newTitle = note.title ?? "새 페이지";
-
-    if (jsonContent.content && jsonContent.content.length > 0) {
+    
+    let newTitle = pageTitle;
+    if (!manualTitleEdited && jsonContent.content && jsonContent.content.length > 0) {
       const heading = jsonContent.content.find(
         node => node.type === 'heading' && node.attrs && node.attrs.level === 1
       );
@@ -34,7 +36,6 @@
       }
     }
     pageTitle = newTitle;
-    debugger
     updateNote(localStorage.token, noteId, newTitle, jsonContent);
   }
 
@@ -72,11 +73,23 @@
       content: contentToLoad,
       autofocus: true,
       onUpdate({ editor }) {
-        updateNoteContent();
-        console.log('변경된 JSON 내용:', editor.getJSON());
+        clearTimeout(saveTimeout);
+        saveTimeout = setTimeout(() => {
+          updateNoteContent();
+          console.log('변경된 JSON 내용:', editor.getJSON());
+        }, 1000); 
       }
     });
   });
+
+  function handleTitleChange(e) {
+    pageTitle = e.detail;
+    manualTitleEdited = true;
+    if (editor) {
+      const jsonContent = editor.getJSON();
+      updateNote(localStorage.token, noteId, pageTitle, jsonContent);
+    }
+  }
 
   onDestroy(() => {
     if (editor) {
@@ -93,7 +106,7 @@
   }
 </script>
 
-<TopBar {pageTitle} onNewChat={openSidebar} />
+<TopBar {pageTitle} on:titleChange={handleTitleChange} onNewChat={openSidebar} />
 
 <div class="notion-page-container">
   <div class="editor-wrapper" bind:this={editorElement}></div>
