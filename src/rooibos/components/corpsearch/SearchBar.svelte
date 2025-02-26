@@ -548,8 +548,7 @@
 			</div>
 		</div>
 	{:else}
-		<!-- 비검색 모드: 기존 필터 그룹 영역 (변경 없음) -->
-		<div class="relative" bind:this={filterContainerRef}>
+		<div class="relative">
 			{#if showLeftArrow}
 				<div class="absolute left-0 top-1/2 -translate-y-1/2 z-10 to-transparent pr-8 pl-2">
 					<button
@@ -578,20 +577,19 @@
 					{#each filterGroups as group}
 						<button
 							type="button"
-							class="px-2 py-2 text-sm {selectedFilters[group.id] &&
-							(selectedFilters[group.id].value ||
-								selectedFilters[group.id].min ||
-								selectedFilters[group.id].max)
-								? 'font-bold text-blue-700 dark:text-yellow-700'
-								: 'font-medium text-gray-600 dark:text-gray-400'} whitespace-nowrap rounded-full"
+							class="px-2 py-2 text-sm {
+								(group.id === 'included_industries'
+									? ((selectedFilters[group.id]?.value || selectedFilters[group.id]?.min || selectedFilters[group.id]?.max) || selectedFilters.excluded_industries?.value)
+									: (selectedFilters[group.id]?.value || selectedFilters[group.id]?.min || selectedFilters[group.id]?.max))
+									? 'font-bold text-blue-700 dark:text-yellow-700'
+									: 'font-medium text-gray-600 dark:text-gray-400'
+							} whitespace-nowrap rounded-full"
 							on:click={(e) => toggleFilter(group.id, e)}
 						>
 							{group.isMulti
 								? `${group.title} ${Array.isArray(selectedFilters[group.id]?.value) && selectedFilters[group.id].value.length > 0 ? `(${selectedFilters[group.id].value.length})` : ''}`
 								: group.defaultValue || selectedFilters[group.id]?.value
-									? group.options?.find(
-											(opt) => opt.id === (selectedFilters[group.id]?.value || group.defaultValue)
-										)?.label || group.title
+									? group.options?.find((opt) => opt.id === (selectedFilters[group.id]?.value || group.defaultValue))?.label || group.title
 									: group.title}
 						</button>
 					{/each}

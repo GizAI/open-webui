@@ -81,7 +81,7 @@ export const filterGroups = [
 	
 	{
 		id: 'gender',
-		title: '대표 정보',
+		title: '대표이사(남.여)',
 		isMulti: false,
 		checked: false,
 		options: [
