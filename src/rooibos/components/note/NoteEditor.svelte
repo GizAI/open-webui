@@ -24,11 +24,11 @@
   const { id: noteId } = get(page).params;  
 
   function updateNoteContent() {
-    const jsonContent = editor.getJSON();
+    const htmlContent = editor.getHTML();
     
     let newTitle = pageTitle;
-    if (!manualTitleEdited && jsonContent.content && jsonContent.content.length > 0) {
-      const heading = jsonContent.content.find(
+    if (!manualTitleEdited && editor.getJSON().content && editor.getJSON().content.length > 0) {
+      const heading = editor.getJSON().content.find(
         node => node.type === 'heading' && node.attrs && node.attrs.level === 1
       );
       if (heading && heading.content && heading.content.length > 0 && heading.content[0].text) {
@@ -36,7 +36,7 @@
       }
     }
     pageTitle = newTitle;
-    updateNote(localStorage.token, noteId, newTitle, jsonContent);
+    updateNote(localStorage.token, noteId, newTitle, htmlContent);
   }
 
   onMount(async () => {
@@ -49,13 +49,27 @@
     let contentToLoad = `<p class="subtitle"></p>`;
     if (note && note.content) {
       if (typeof note.content === 'string') {
-        try {
-          contentToLoad = JSON.parse(note.content);
-        } catch(e) {
-          contentToLoad = note.content;
-        }
-      } else {
         contentToLoad = note.content;
+      } else {
+        // If for some reason content is still an object, convert it to HTML
+        try {
+          editor = new Editor({
+            extensions: [
+              StarterKit,
+              Underline,
+              TextStyle,
+              Color,
+              TextAlign.configure({
+                types: ['heading', 'paragraph'],
+              }),
+            ],
+            content: note.content
+          });
+          contentToLoad = editor.getHTML();
+          editor.destroy();
+        } catch(e) {
+          contentToLoad = `<p class="subtitle"></p>`;
+        }
       }
     }
 
@@ -76,7 +90,7 @@
         clearTimeout(saveTimeout);
         saveTimeout = setTimeout(() => {
           updateNoteContent();
-          console.log('변경된 JSON 내용:', editor.getJSON());
+          console.log('변경된 HTML 내용:', editor.getHTML());
         }, 1000); 
       }
     });
@@ -86,8 +100,8 @@
     pageTitle = e.detail;
     manualTitleEdited = true;
     if (editor) {
-      const jsonContent = editor.getJSON();
-      updateNote(localStorage.token, noteId, pageTitle, jsonContent);
+      const htmlContent = editor.getHTML();
+      updateNote(localStorage.token, noteId, pageTitle, htmlContent);
     }
   }
 
