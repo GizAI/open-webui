@@ -8,9 +8,11 @@
 	import { goto } from '$app/navigation';
 	import { v4 as uuidv4 } from 'uuid';
 	import { toast } from 'svelte-sonner';
-	import { renameNoteFolder } from '$rooibos/components/apis';
+	import { renameNoteFolder } from '$rooibos/components/apis/folder';
 	import { NotebookIcon } from 'lucide-svelte';
 	import Pencil from '$lib/components/icons/Pencil.svelte';
+	import { createNote } from '$rooibos/components/apis/note';
+	import { user } from '$lib/stores';
 
 	const i18n = getContext('i18n');
 	const dispatch = createEventDispatcher();
@@ -35,9 +37,10 @@
 		dispatch('click', { folderId });
 	}
 
-	function handleAddPage(e: Event, folderId: string) {
+	async function handleAddPage(e: Event, folderId: string) {
 		e.stopPropagation();
 		const newId = uuidv4();
+		await createNote(localStorage.token, newId, $user?.id, folderId);
 		goto(`/rooibos/note/${newId}`);
 	}
 

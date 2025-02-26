@@ -1,19 +1,20 @@
+<!-- TopBar.svelte-->
 <script lang="ts">
   import { showSidebar } from '$lib/stores';
   import MenuLines from '$lib/components/icons/MenuLines.svelte';
-  import { get } from 'svelte/store';
 
-  // 실제 제목 값은 비어있는 상태로 시작
   export let pageTitle = "";
   export let onNewChat = () => {};
 
-  // 처음부터 입력 모드로 시작
-  let editing = true;
+  let editing = false;
   let inputValue = "";
   const placeholder = "새 페이지";
 
+  $: if (!editing) {
+    inputValue = pageTitle;
+  }
+
   function handleBlur() {
-    // 입력값이 없으면 기본 placeholder 적용
     if (!inputValue.trim()) {
       pageTitle = placeholder;
       inputValue = placeholder;
@@ -30,9 +31,7 @@
   }
 </script>
 
-<!-- 상단바 전체 컨테이너 -->
 <div class="top-bar">
-  <!-- 왼쪽 영역: 메뉴 버튼과 페이지 제목을 한 줄에 배치 -->
   <div class="left">
     {#if !$showSidebar}
       <button
@@ -58,7 +57,6 @@
         class="page-title"
         on:click={() => {
           editing = true;
-          // 제목이 기본 placeholder인 경우 입력값은 빈 문자열로 설정하여 텍스트가 사라지도록 함
           inputValue = pageTitle === placeholder ? "" : pageTitle;
         }}
       >
@@ -67,7 +65,6 @@
     {/if}
   </div>
 
-  <!-- 오른쪽 영역: 새 채팅 버튼 -->
   <div class="right">
     <button on:click={onNewChat} class="new-chat-btn">
       <svg
@@ -97,7 +94,6 @@
     background-color: #fff;
     padding: 0.5rem 1rem;
   }
-  /* 왼쪽 영역: 메뉴 버튼과 페이지 제목을 한 줄에 배치 */
   .left {
     display: flex;
     align-items: center;

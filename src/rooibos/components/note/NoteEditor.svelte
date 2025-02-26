@@ -1,16 +1,22 @@
+<!-- NoteEditor.svelte-->
 <script>
     import { onMount, onDestroy, tick } from 'svelte';
     import { Editor } from '@tiptap/core';
     import StarterKit from '@tiptap/starter-kit';
     import TopBar from './TopBar.svelte';
     import RightSidebar from './NoteAIChat.svelte';
+    import { getNote, renameNote } from '../apis/note';
+    import { get } from 'svelte/store';
+    import { page } from '$app/stores';
   
     let editor;
     let editorElement;
     let pageTitle = "새 페이지";
     let showSidebar = false;
+    let note = {};
   
-    // 에디터의 JSON에서 제목(첫 번째 h1)을 추출하는 함수
+    const { id: noteId } = get(page).params;
+    
     function updatePageTitle() {
       const json = editor.getJSON();
       let newTitle = "새 페이지";
@@ -23,13 +29,20 @@
         }
       }
       pageTitle = newTitle;
+      renameNote(localStorage.token, newTitle, noteId)
     }
   
-    onMount(() => {
+    onMount(async () => {
+      note = await getNote(noteId);
+      
+      if (note && note.title) {
+        pageTitle = note.title;
+      }
+      
       editor = new Editor({
         element: editorElement,
         extensions: [StarterKit],
-        content: `<p class="subtitle"></p>`,
+        content: note && note.content ? note.content : `<p class="subtitle"></p>`,
         autofocus: true,
         onUpdate({ editor }) {
           updatePageTitle();
@@ -37,7 +50,6 @@
         }
       });
     });
-
   
     onDestroy(() => {
       if (editor) {
@@ -55,16 +67,12 @@
     }
   </script>
   
-  <!-- 상단 바 (TopBar) 컴포넌트 -->
   <TopBar {pageTitle} onNewChat={openSidebar} />
   
-  <!-- 화면 전체를 감싸는 컨테이너 -->
   <div class="notion-page-container">
-    <!-- 에디터가 렌더링 될 영역 -->
     <div class="editor-wrapper" bind:this={editorElement}></div>
   </div>
   
-  <!-- 우측 사이드바 (조건부 렌더링) -->
   {#if showSidebar}
     <RightSidebar on:close={closeSidebar} />
   {/if}

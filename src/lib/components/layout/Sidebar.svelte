@@ -58,7 +58,7 @@
 	import ChannelItem from './Sidebar/ChannelItem.svelte';
 	import PencilSquare from '../icons/PencilSquare.svelte';
 	import Home from '../icons/Home.svelte';
-	import { createNewRooibosFolder, getNoteFolders } from '$rooibos/components/apis';
+	import { createNewRooibosFolder, getNoteFolders } from '$rooibos/components/apis/folder';
 
 	const BREAKPOINT = 768;
 
