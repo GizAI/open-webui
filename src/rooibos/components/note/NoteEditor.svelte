@@ -494,101 +494,28 @@
     onSetLink={setLink}
     onTranslate={translateSelectedText}
     onRemoveFormat={removeFormat}
+    {showColorPicker}
+    {showHighlightPicker}
+    {showAlignmentOptions}
+    {showLinkInput}
+    {colorPickerPosition}
+    {highlightPickerPosition}
+    {alignmentDropdownPosition}
+    {linkInputPosition}
+    {linkInputValue}
+    {setColor}
+    {setHighlight}
+    {setTextAlignLeft}
+    {setTextAlignCenter}
+    {setTextAlignRight}
+    {applyLink}
+    {handleLinkInputKeydown}
   />
 </div>
 
 {#if showSidebar}
   <RightSidebar on:close={closeSidebar} />
 {/if}
-
-<!-- 포털 컨테이너 -->
-<div class="portal-container">
-  {#if showColorPicker}
-    <div class="floating-dropdown floating-color-picker" style="position: fixed; left: {colorPickerPosition.x}px; top: {colorPickerPosition.y}px; border: 1px solid #ddd;">
-      <button class="color-option" style="background-color: #000000;" on:click={() => setColor('#000000')}></button>
-      <button class="color-option" style="background-color: #FF0000;" on:click={() => setColor('#FF0000')}></button>
-      <button class="color-option" style="background-color: #00FF00;" on:click={() => setColor('#00FF00')}></button>
-      <button class="color-option" style="background-color: #0000FF;" on:click={() => setColor('#0000FF')}></button>
-      <button class="color-option" style="background-color: #FFFF00;" on:click={() => setColor('#FFFF00')}></button>
-      <button class="color-option" style="background-color: #FF00FF;" on:click={() => setColor('#FF00FF')}></button>
-      <button class="color-option" style="background-color: #00FFFF;" on:click={() => setColor('#00FFFF')}></button>
-    </div>
-  {/if}
-  
-  {#if showHighlightPicker}
-    <div class="floating-dropdown floating-color-picker" style="position: fixed; left: {highlightPickerPosition.x}px; top: {highlightPickerPosition.y}px; border: 1px solid #ddd;">
-      <button class="color-option" style="background-color: #FFFF00;" on:click={() => setHighlight('#FFFF00')}></button>
-      <button class="color-option" style="background-color: #FFA500;" on:click={() => setHighlight('#FFA500')}></button>
-      <button class="color-option" style="background-color: #FF69B4;" on:click={() => setHighlight('#FF69B4')}></button>
-      <button class="color-option" style="background-color: #7FFFD4;" on:click={() => setHighlight('#7FFFD4')}></button>
-      <button class="color-option" style="background-color: #90EE90;" on:click={() => setHighlight('#90EE90')}></button>
-    </div>
-  {/if}
-  
-  {#if showAlignmentOptions}
-    <div class="floating-dropdown floating-alignment-dropdown" style="position: fixed; left: {alignmentDropdownPosition.x}px; top: {alignmentDropdownPosition.y}px; border: 1px solid #ddd;">
-      <button
-        class="alignment-option"
-        on:click={setTextAlignLeft}
-        class:active={editorState.textAlignLeft}
-        title="왼쪽 정렬"
-      >
-        <span class="icon">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <line x1="3" y1="6" x2="21" y2="6"></line>
-            <line x1="3" y1="12" x2="15" y2="12"></line>
-            <line x1="3" y1="18" x2="18" y2="18"></line>
-          </svg>
-        </span>
-      </button>
-      <button
-        class="alignment-option"
-        on:click={setTextAlignCenter}
-        class:active={editorState.textAlignCenter}
-        title="가운데 정렬"
-      >
-        <span class="icon">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <line x1="3" y1="6" x2="21" y2="6"></line>
-            <line x1="6" y1="12" x2="18" y2="12"></line>
-            <line x1="3" y1="18" x2="21" y2="18"></line>
-          </svg>
-        </span>
-      </button>
-      <button
-        class="alignment-option"
-        on:click={setTextAlignRight}
-        class:active={editorState.textAlignRight}
-        title="오른쪽 정렬"
-      >
-        <span class="icon">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <line x1="3" y1="6" x2="21" y2="6"></line>
-            <line x1="9" y1="12" x2="21" y2="12"></line>
-            <line x1="6" y1="18" x2="21" y2="18"></line>
-          </svg>
-        </span>
-      </button>
-    </div>
-  {/if}
-
-  {#if showLinkInput}
-    <div class="floating-dropdown floating-link-input" style="position: fixed; left: {linkInputPosition.x}px; top: {linkInputPosition.y}px; border: 1px solid #ddd;">
-      <div class="link-input-container">
-        <div class="link-input-row">
-          <input 
-            id="link-input"
-            type="text" 
-            bind:value={linkInputValue} 
-            placeholder="URL 입력" 
-            on:keydown={handleLinkInputKeydown}
-          />
-          <button class="link-button" on:click={applyLink}>적용</button>
-        </div>
-      </div>
-    </div>
-  {/if}
-</div>
 
 <style>
   .notion-page-container {
@@ -605,76 +532,9 @@
     border: none;
     padding: 0;
   }
-  .editor-wrapper :focus {
+  .editor-wrapper:focus {
     outline: none;
-  }
-  
-  .bubble-menu-button {
-    background: none;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    color: #333;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 28px;
-    height: 28px;
-    margin: 0;
-    transition: background-color 0.2s ease;
-  }
-  
-  .bubble-menu-button:hover {
-    background-color: rgba(0, 0, 0, 0.05);
-  }
-  
-  .bubble-menu-button.active {
-    background-color: rgba(0, 0, 0, 0.1);
-    color: #000;
-  }
-  
-  .icon {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-  
-  .icon svg {
-    width: 14px;
-    height: 14px;
-  }
-  
-  .color-picker-container {
-    position: relative;
-    z-index: 50;
-  }
-  
-  .color-picker {
-    position: absolute;
-    top: 100%;
-    left: 0;
-    display: flex;
-    flex-wrap: wrap;
-    background: white;
-    border-radius: 4px;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-    padding: 4px;
-    z-index: 10;
-    width: 120px;
-  }
-  
-  .color-option {
-    width: 20px;
-    height: 20px;
-    border-radius: 50%;
-    border: 1px solid #ddd;
-    margin: 2px;
-    cursor: pointer;
-  }
-  
-  .color-option:hover {
-    transform: scale(1.1);
-  }
+  }  
   
   :global(.tippy-box[data-theme~='bubble-menu-theme']) {
     background-color: transparent;
@@ -698,90 +558,5 @@
   
   :global(.custom-link:hover) {
     text-decoration: none;
-  }
-  
-  .bubble-menu {
-    overflow-x: auto;
-    max-width: 90vw;
-    scrollbar-width: thin;
-  }
-  
-  .bubble-menu::-webkit-scrollbar {
-    height: 4px;
-  }
-  
-  .bubble-menu::-webkit-scrollbar-thumb {
-    background-color: rgba(0, 0, 0, 0.2);
-    border-radius: 4px;
-  }
-  
-  .floating-dropdown {
-    position: fixed !important;
-    display: flex;
-    background: white;
-    border-radius: 4px;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-    padding: 4px;
-    z-index: 9999 !important;
-    pointer-events: auto;
-  }
-  
-  .floating-color-picker {
-    flex-wrap: wrap;
-    width: 120px;
-  }
-  
-  .floating-alignment-dropdown {
-    flex-direction: column;
-    width: 40px;
-  }
-  
-  .portal-container {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 0;
-    overflow: visible;
-    pointer-events: none;
-    z-index: 9999;
-  }
-  
-  .floating-link-input {
-    width: 300px;
-  }
-  
-  .link-input-container {
-    display: flex;
-    padding: 4px;
-  }
-  
-  .link-input-row {
-    display: flex;
-    width: 100%;
-    align-items: center;
-  }
-  
-  .link-input-container input {
-    flex: 1;
-    padding: 6px 8px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    font-size: 14px;
-    margin-right: 4px;
-  }
-  
-  .link-button {
-    padding: 6px 10px;
-    background-color: #f5f5f5;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 12px;
-    white-space: nowrap;
-  }
-  
-  .link-button:hover {
-    background-color: #e5e5e5;
   }
 </style>
