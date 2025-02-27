@@ -45,6 +45,9 @@ from starlette.middleware.sessions import SessionMiddleware
 from starlette.responses import Response, StreamingResponse
 
 
+from open_webui.utils import logger
+from open_webui.utils.audit import AuditLevel, AuditLoggingMiddleware
+from open_webui.utils.logger import start_logger
 from open_webui.socket.main import (
     app as socket_app,
     periodic_usage_pool_cleanup,
@@ -163,6 +166,7 @@ from open_webui.config import (
     RAG_TEMPLATE,
     DEFAULT_RAG_TEMPLATE,
     RAG_FULL_CONTEXT,
+    BYPASS_EMBEDDING_AND_RETRIEVAL,
     RAG_EMBEDDING_MODEL,
     RAG_EMBEDDING_MODEL_AUTO_UPDATE,
     RAG_EMBEDDING_MODEL_TRUST_REMOTE_CODE,
@@ -192,7 +196,7 @@ from open_webui.config import (
     YOUTUBE_LOADER_PROXY_URL,
     # Retrieval (Web Search)
     RAG_WEB_SEARCH_ENGINE,
-    RAG_WEB_SEARCH_FULL_CONTEXT,
+    BYPASS_WEB_SEARCH_EMBEDDING_AND_RETRIEVAL,
     RAG_WEB_SEARCH_RESULT_COUNT,
     RAG_WEB_SEARCH_CONCURRENT_REQUESTS,
     RAG_WEB_SEARCH_TRUST_ENV,
@@ -305,8 +309,11 @@ from open_webui.config import (
     reset_config,
 )
 from open_webui.env import (
+    AUDIT_EXCLUDED_PATHS,
+    AUDIT_LOG_LEVEL,
     CHANGELOG,
     GLOBAL_LOG_LEVEL,
+    MAX_BODY_LOG_SIZE,
     SAFE_MODE,
     SRC_LOG_LEVELS,
     VERSION,
@@ -391,6 +398,7 @@ https://github.com/open-webui/open-webui
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    start_logger()
     if RESET_CONFIG_ON_START:
         reset_config()
 
@@ -533,6 +541,7 @@ app.state.config.FILE_MAX_COUNT = RAG_FILE_MAX_COUNT
 
 
 app.state.config.RAG_FULL_CONTEXT = RAG_FULL_CONTEXT
+app.state.config.BYPASS_EMBEDDING_AND_RETRIEVAL = BYPASS_EMBEDDING_AND_RETRIEVAL
 app.state.config.ENABLE_RAG_HYBRID_SEARCH = ENABLE_RAG_HYBRID_SEARCH
 app.state.config.ENABLE_RAG_WEB_LOADER_SSL_VERIFICATION = (
     ENABLE_RAG_WEB_LOADER_SSL_VERIFICATION
@@ -569,7 +578,9 @@ app.state.config.YOUTUBE_LOADER_PROXY_URL = YOUTUBE_LOADER_PROXY_URL
 
 app.state.config.ENABLE_RAG_WEB_SEARCH = ENABLE_RAG_WEB_SEARCH
 app.state.config.RAG_WEB_SEARCH_ENGINE = RAG_WEB_SEARCH_ENGINE
-app.state.config.RAG_WEB_SEARCH_FULL_CONTEXT = RAG_WEB_SEARCH_FULL_CONTEXT
+app.state.config.BYPASS_WEB_SEARCH_EMBEDDING_AND_RETRIEVAL = (
+    BYPASS_WEB_SEARCH_EMBEDDING_AND_RETRIEVAL
+)
 app.state.config.RAG_WEB_SEARCH_DOMAIN_FILTER_LIST = RAG_WEB_SEARCH_DOMAIN_FILTER_LIST
 
 app.state.config.ENABLE_GOOGLE_DRIVE_INTEGRATION = ENABLE_GOOGLE_DRIVE_INTEGRATION
@@ -890,6 +901,19 @@ app.include_router(
 app.include_router(utils.router, prefix="/api/v1/utils", tags=["utils"])
 
 
+try:
+    audit_level = AuditLevel(AUDIT_LOG_LEVEL)
+except ValueError as e:
+    logger.error(f"Invalid audit level: {AUDIT_LOG_LEVEL}. Error: {e}")
+    audit_level = AuditLevel.NONE
+
+if audit_level != AuditLevel.NONE:
+    app.add_middleware(
+        AuditLoggingMiddleware,
+        audit_level=audit_level,
+        excluded_paths=AUDIT_EXCLUDED_PATHS,
+        max_body_size=MAX_BODY_LOG_SIZE,
+    )
 ##################################
 #
 # Chat Endpoints
@@ -1189,9 +1213,7 @@ async def get_app_config(request: Request):
                     "client_id": GOOGLE_DRIVE_CLIENT_ID.value,
                     "api_key": GOOGLE_DRIVE_API_KEY.value,
                 },
-                "onedrive": {
-                    "client_id": ONEDRIVE_CLIENT_ID.value
-                }
+                "onedrive": {"client_id": ONEDRIVE_CLIENT_ID.value},
             }
             if user is not None
             else {}
