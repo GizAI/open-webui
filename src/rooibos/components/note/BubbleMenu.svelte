@@ -32,6 +32,12 @@
 
   // 부모와 element 참조를 공유하기 위한 바인딩 변수
   export let menuElement;
+  
+  // 취소 버튼 클릭 핸들러
+  function cancelLink() {
+    showLinkInput = false;
+    linkInputValue = '';
+  }
 </script>
 
 <div 
@@ -265,8 +271,10 @@
             bind:value={linkInputValue} 
             placeholder="URL 입력" 
             on:keydown={handleLinkInputKeydown}
+            autofocus
           />
           <button class="link-button" on:click={applyLink}>적용</button>
+          <button class="link-button cancel-button" on:click={cancelLink}>취소</button>
         </div>
       </div>
     </div>
@@ -423,5 +431,14 @@
   .alignment-option.active {
     background-color: rgba(0, 0, 0, 0.1);
     color: #000;
+  }
+  
+  .cancel-button {
+    margin-left: 4px;
+    background-color: #f8f8f8;
+  }
+  
+  .cancel-button:hover {
+    background-color: #e0e0e0;
   }
 </style>
