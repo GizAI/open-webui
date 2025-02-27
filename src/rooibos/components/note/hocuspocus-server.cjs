@@ -12,7 +12,7 @@ const axios = require('axios');
 // 서버 설정 상수
 const HOCUSPOCUS_HOST = '0.0.0.0';
 const HOCUSPOCUS_PORT = 1234;
-const API_BASE_URL = 'http://localhost:8000/api'; // 백엔드 API 주소
+const API_BASE_URL = 'http://localhost:8080/api/v1'; // 백엔드 API 주소
 
 // Redis 설정 (필요한 경우)
 const redisConfig = process.env.REDIS_URL ? {
@@ -42,39 +42,39 @@ const server = Server.configure({
     
     try {
       // 토큰 검증 및 사용자 정보 가져오기
-      const token = requestHeaders.authorization?.replace('Bearer ', '');
-      if (!token) {
-        throw new Error('인증 토큰이 없습니다');
-      }
+    //   const token = requestHeaders.authorization?.replace('Bearer ', '');
+    //   if (!token) {
+    //     throw new Error('인증 토큰이 없습니다');
+    //   }
       
       // 사용자 정보 가져오기 (백엔드 API 호출)
-      const response = await axios.get(`${API_BASE_URL}/users/me`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+    //   const response = await axios.get(`${API_BASE_URL}/users/me`, {
+    //     headers: { Authorization: `Bearer ${token}` }
+    //   });
       
-      const user = {
-        id: response.data.id,
-        name: response.data.name,
-        color: response.data.color || getRandomColor(),
-        avatar: response.data.avatar
-      };
+    //   const user = {
+    //     id: response.data.id,
+    //     name: response.data.name,
+    //     color: response.data.color || getRandomColor(),
+    //     avatar: response.data.avatar
+    //   };
       
-      // 사용자 정보를 요청 객체에 저장
-      request.user = user;
+    //   // 사용자 정보를 요청 객체에 저장
+    //   request.user = user;
       
       // 문서 접근 권한 확인
-      const noteId = documentName.split(':')[1];
-      const permissionResponse = await axios.get(`${API_BASE_URL}/notes/${noteId}/permission`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+    //   const noteId = documentName.split(':')[1];
+    //   const permissionResponse = await axios.get(`${API_BASE_URL}/notes/${noteId}`, {
+    //     headers: { Authorization: `Bearer ${token}` }
+    //   });
       
-      if (!permissionResponse.data.canEdit) {
-        throw new Error('이 문서를 편집할 권한이 없습니다');
-      }
+    //   if (!permissionResponse.data.canEdit) {
+    //     throw new Error('이 문서를 편집할 권한이 없습니다');
+    //   }
       
       // 현재 접속 중인 사용자 목록에 추가
-      const activeUsers = data.instance.getMap('activeUsers');
-      activeUsers.set(user.id, user);
+    //   const activeUsers = data.instance.getMap('activeUsers');
+    //   activeUsers.set(user.id, user);
       
       return true;
     } catch (error) {
@@ -127,20 +127,47 @@ const server = Server.configure({
       fetch: async (data) => {
         try {
           // 문서 ID 추출 (형식: note:123)
-          const noteId = data.documentName.split(':')[1];
-          if (!noteId) return null;
+        //   const noteId = data.documentName.split(':')[1];
+        //   if (!noteId) return null;
           
           // 백엔드에서 문서 내용 가져오기
-          const token = data.requestHeaders.authorization?.replace('Bearer ', '');
-          const response = await axios.get(`${API_BASE_URL}/notes/${noteId}/content`, {
-            headers: token ? { Authorization: `Bearer ${token}` } : {},
-            responseType: 'arraybuffer'
-          });
-          
-          if (response.data?.length) {
-            return response.data;
+        //   const token = data.requestHeaders.authorization?.replace('Bearer ', '');
+        //   const response = await axios.get(`${API_BASE_URL}/rooibos/notes/${noteId}`, {
+        //     headers: token ? { Authorization: `Bearer ${token}` } : {},
+        //     responseType: 'arraybuffer'
+        //   });
+        let error;
+        console.log("!!!!!!!!!!!!!")  
+        const res = await fetch(
+            `${API_BASE_URL}/rooibos/notes/7c15ef4f-524e-413e-a2fa-ed162422a263`,
+            {
+              method: 'GET',
+              headers: {
+                Accept: 'application/json',
+                'Content-Type': 'application/json'
+              },
+            }
+          )
+            .then(async (res) => {
+                debugger
+              if (!res.ok) throw await res.json();
+              const data = await res.json();
+        console.log("================")  
+        console.log(data)
+              return data.note;
+            })
+            .catch((err) => {
+              error = err.detail;
+              return null;
+            });
+        
+          if (error) {
+            throw error;
           }
-          return null;
+        
+          return res;
+          
+          
         } catch (error) {
           console.error('문서 가져오기 오류:', error);
           return null;
@@ -156,7 +183,7 @@ const server = Server.configure({
           
           // 백엔드에 문서 내용 저장
           const token = data.requestHeaders.authorization?.replace('Bearer ', '');
-          await axios.post(`${API_BASE_URL}/notes/${noteId}/content`, data.state, {
+          await axios.post(`${API_BASE_URL}/rooibos/notes/update/`, data.state, {
             headers: {
               Authorization: token ? `Bearer ${token}` : '',
               'Content-Type': 'application/octet-stream'

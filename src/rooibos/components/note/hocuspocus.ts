@@ -70,39 +70,39 @@ const serverConfig: Partial<Configuration> = {
     
     try {
       // 토큰 검증 및 사용자 정보 가져오기
-      const token = requestHeaders.authorization?.replace('Bearer ', '');
-      if (!token) {
-        throw new Error('인증 토큰이 없습니다');
-      }
+    //   const token = requestHeaders.authorization?.replace('Bearer ', '');
+    //   if (!token) {
+    //     throw new Error('인증 토큰이 없습니다');
+    //   }
       
-      // 사용자 정보 가져오기 (백엔드 API 호출)
-      const response = await axios.get(`${API_BASE_URL}/users/me`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+    //   // 사용자 정보 가져오기 (백엔드 API 호출)
+    //   const response = await axios.get(`${API_BASE_URL}/users/me`, {
+    //     headers: { Authorization: `Bearer ${token}` }
+    //   });
       
-      const user: User = {
-        id: response.data.id,
-        name: response.data.name,
-        color: response.data.color || getRandomColor(),
-        avatar: response.data.avatar
-      };
+    //   const user: User = {
+    //     id: response.data.id,
+    //     name: response.data.name,
+    //     color: response.data.color || getRandomColor(),
+    //     avatar: response.data.avatar
+    //   };
       
-      // 사용자 정보를 요청 객체에 저장
-      request.user = user;
+    //   // 사용자 정보를 요청 객체에 저장
+    //   request.user = user;
       
       // 문서 접근 권한 확인
-      const noteId = documentName.split(':')[1];
-      const permissionResponse = await axios.get(`${API_BASE_URL}/notes/${noteId}/permission`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+    //   const noteId = documentName.split(':')[1];
+    //   const permissionResponse = await axios.get(`${API_BASE_URL}/notes/${noteId}/permission`, {
+    //     headers: { Authorization: `Bearer ${token}` }
+    //   });
       
-      if (!permissionResponse.data.canEdit) {
-        throw new Error('이 문서를 편집할 권한이 없습니다');
-      }
+    //   if (!permissionResponse.data.canEdit) {
+    //     throw new Error('이 문서를 편집할 권한이 없습니다');
+    //   }
       
-      // 현재 접속 중인 사용자 목록에 추가
-      const activeUsers = data.instance.getMap('activeUsers');
-      activeUsers.set(user.id, user);
+    //   // 현재 접속 중인 사용자 목록에 추가
+    //   const activeUsers = data.instance.getMap('activeUsers');
+    //   activeUsers.set(user.id, user);
       
       return true;
     } catch (error) {
@@ -160,7 +160,7 @@ const serverConfig: Partial<Configuration> = {
           
           // 백엔드에서 문서 내용 가져오기
           const token = requestHeaders.authorization?.replace('Bearer ', '');
-          const response = await axios.get(`${API_BASE_URL}/notes/${noteId}/content`, {
+          const response = await axios.get(`${API_BASE_URL}/notes/${noteId}`, {
             headers: token ? { Authorization: `Bearer ${token}` } : {},
             responseType: 'arraybuffer'
           });
