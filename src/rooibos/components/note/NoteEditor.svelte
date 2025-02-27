@@ -50,7 +50,24 @@
   let highlightPickerPosition = { x: 0, y: 0 };
   let alignmentDropdownPosition = { x: 0, y: 0 };
   
-  // 에디터 상태 업데이트 함수
+  // 버블 메뉴 위치 조정을 위한 함수 추가
+  function adjustBubbleMenuPosition() {
+    if (!bubbleMenuElement) return;
+    
+    const rect = bubbleMenuElement.getBoundingClientRect();
+    const viewportWidth = window.innerWidth;
+    
+    // 메뉴가 화면 오른쪽을 벗어나는지 확인
+    if (rect.right > viewportWidth) {
+      // 오른쪽 경계를 넘어가면 위치 조정
+      const overflow = rect.right - viewportWidth;
+      bubbleMenuElement.style.transform = `translateX(-${overflow + 10}px)`;
+    } else {
+      bubbleMenuElement.style.transform = '';
+    }
+  }
+
+  // 에디터 상태 업데이트 함수 수정
   function updateEditorState() {
     if (!editor) return;
     
@@ -66,6 +83,9 @@
       textAlignCenter: editor.isActive({ textAlign: 'center' }),
       textAlignRight: editor.isActive({ textAlign: 'right' })
     };
+    
+    // 버블 메뉴 위치 조정
+    setTimeout(adjustBubbleMenuPosition, 0);
   }
 
   async function translateSelectedText() {
@@ -161,13 +181,22 @@
         BubbleMenu.configure({
           element: bubbleMenuElement,
           shouldShow: ({ editor, view, state, oldState, from, to }) => {
-            return from !== to && editor.isEditable;
+            const isVisible = from !== to && editor.isEditable;
+            if (isVisible) {
+              // 버블 메뉴가 표시될 때 위치 조정
+              setTimeout(adjustBubbleMenuPosition, 0);
+            }
+            return isVisible;
           },
           tippyOptions: {
             duration: 100,
             placement: 'top-start',
             offset: [0, 25],
-            theme: 'bubble-menu-theme'
+            theme: 'bubble-menu-theme',
+            onShow: () => {
+              // 표시될 때 위치 조정
+              setTimeout(adjustBubbleMenuPosition, 0);
+            }
           }
         }),
       ],
@@ -190,6 +219,9 @@
 
     // 문서 클릭 이벤트 리스너 추가
     document.addEventListener('click', closeAllDropdowns);
+    
+    // 창 크기 변경 시 버블 메뉴 위치 조정
+    window.addEventListener('resize', adjustBubbleMenuPosition);
   });
 
   function handleTitleChange(e) {
@@ -227,10 +259,91 @@
     updateEditorState();
   }
 
+  // 정렬 상태 확인 함수 개선
+  function checkAlignmentState() {
+    if (!editor) return;
+    
+    try {
+      // 정렬 상태 명시적으로 확인
+      const isLeftAligned = editor.isActive({ textAlign: 'left' });
+      const isCenterAligned = editor.isActive({ textAlign: 'center' });
+      const isRightAligned = editor.isActive({ textAlign: 'right' });
+      
+      // 상태 업데이트
+      editorState = {
+        ...editorState,
+        textAlignLeft: isLeftAligned,
+        textAlignCenter: isCenterAligned,
+        textAlignRight: isRightAligned
+      };
+      
+      // 디버깅용 로그
+      console.log('정렬 상태:', { 왼쪽: isLeftAligned, 가운데: isCenterAligned, 오른쪽: isRightAligned });
+    } catch (error) {
+      console.error('정렬 상태 확인 중 오류:', error);
+    }
+  }
+
+  // 정렬 함수 수정
+  function setTextAlignLeft() {
+    if (!editor) return;
+    editor.chain().focus().setTextAlign('left').run();
+    checkAlignmentState();
+    updateEditorState();
+  }
+
+  function setTextAlignCenter() {
+    if (!editor) return;
+    editor.chain().focus().setTextAlign('center').run();
+    checkAlignmentState();
+    updateEditorState();
+  }
+
+  function setTextAlignRight() {
+    if (!editor) return;
+    editor.chain().focus().setTextAlign('right').run();
+    checkAlignmentState();
+    updateEditorState();
+  }
+
+  // 서식 제거 함수를 더 강력하게 수정
   function removeFormat() {
     if (!editor) return;
-    editor.chain().focus().unsetAllMarks().run();
+    
+    // 모든 마크 제거 및 왼쪽 정렬 설정
+    editor.chain().focus()
+      .unsetAllMarks()
+      .clearNodes()  // 노드 속성 초기화 추가
+      .setTextAlign('left')
+      .run();
+    
+    // 상태 강제 업데이트
+    editorState = {
+      ...editorState,
+      bold: false,
+      italic: false,
+      underline: false,
+      strike: false,
+      textStyle: false,
+      highlight: false,
+      link: false,
+      textAlignLeft: true,
+      textAlignCenter: false,
+      textAlignRight: false
+    };
+    
+    // 정렬 상태 확인 및 전체 상태 업데이트
+    checkAlignmentState();
     updateEditorState();
+    
+    // 강제로 DOM 업데이트를 위한 타이머 추가
+    setTimeout(() => {
+      if (editor) {
+        // 에디터 상태 다시 확인
+        checkAlignmentState();
+        updateEditorState();
+      }
+    }, 50);
   }
 
   onDestroy(() => {
@@ -240,6 +353,9 @@
 
     // 문서 클릭 이벤트 리스너 제거
     document.removeEventListener('click', closeAllDropdowns);
+    
+    // 창 크기 변경 이벤트 리스너 제거
+    window.removeEventListener('resize', adjustBubbleMenuPosition);
   });
 
   function openSidebar() {
@@ -336,24 +452,6 @@
     updateEditorState();
   }
   
-  function setTextAlignLeft() {
-    if (!editor) return;
-    editor.chain().focus().setTextAlign('left').run();
-    updateEditorState();
-  }
-  
-  function setTextAlignCenter() {
-    if (!editor) return;
-    editor.chain().focus().setTextAlign('center').run();
-    updateEditorState();
-  }
-  
-  function setTextAlignRight() {
-    if (!editor) return;
-    editor.chain().focus().setTextAlign('right').run();
-    updateEditorState();
-  }
-
   // 문서 클릭 시 모든 드롭다운 닫기
   function closeAllDropdowns() {
     showColorPicker = false;
@@ -453,7 +551,6 @@
     <button
       class="bubble-menu-button"
       on:click={toggleAlignmentOptions}
-      class:active={editorState.textAlignLeft || editorState.textAlignCenter || editorState.textAlignRight}
       title="텍스트 정렬"
     >
       <span class="icon">
@@ -765,5 +862,29 @@
   .floating-dropdown {
     pointer-events: auto;
     /* 다른 스타일... */
+  }
+  
+  .alignment-option {
+    background: none;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    color: #333;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    margin: 2px;
+    transition: background-color 0.2s ease;
+  }
+
+  .alignment-option:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+  }
+
+  .alignment-option.active {
+    background-color: rgba(0, 0, 0, 0.1);
+    color: #000;
   }
 </style>
