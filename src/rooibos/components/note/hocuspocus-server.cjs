@@ -127,8 +127,8 @@ const server = Server.configure({
       fetch: async (data) => {
         try {
           // 문서 ID 추출 (형식: note:123)
-        //   const noteId = data.documentName.split(':')[1];
-        //   if (!noteId) return null;
+          const noteId = data.documentName.split(':')[1];
+          if (!noteId) return null;
           
           // 백엔드에서 문서 내용 가져오기
         //   const token = data.requestHeaders.authorization?.replace('Bearer ', '');
@@ -139,7 +139,7 @@ const server = Server.configure({
         let error;
         console.log("!!!!!!!!!!!!!")  
         const res = await fetch(
-            `${API_BASE_URL}/rooibos/notes/7c15ef4f-524e-413e-a2fa-ed162422a263`,
+            `${API_BASE_URL}/rooibos/notes/${noteId}`,
             {
               method: 'GET',
               headers: {
