@@ -173,9 +173,11 @@
           types: ['heading', 'paragraph'],
         }),
         Link.configure({
-          openOnClick: false,
+          openOnClick: true,
           HTMLAttributes: {
             class: 'custom-link',
+            target: '_blank',
+            rel: 'noopener noreferrer'
           },
         }),
         BubbleMenu.configure({
@@ -233,24 +235,99 @@
     }
   }
 
+  // 링크 관련 변수 추가
+  let showLinkInput = false;
+  let linkInputPosition = { x: 0, y: 0 };
+  let linkInputValue = '';
+
+  // 링크 토글 함수 수정
+  function toggleLinkInput(event) {
+    event.stopPropagation();
+    
+    if (!editor) return;
+    
+    const buttonRect = event.currentTarget.getBoundingClientRect();
+    linkInputPosition = {
+      x: buttonRect.left,
+      y: buttonRect.bottom + 10
+    };
+    
+    // 현재 선택된 링크 URL 가져오기
+    const previousUrl = editor.getAttributes('link').href || '';
+    linkInputValue = previousUrl;
+    
+    showLinkInput = !showLinkInput;
+    showColorPicker = false;
+    showHighlightPicker = false;
+    showAlignmentOptions = false;
+    
+    // 입력 필드에 포커스 주기 위한 타이머
+    if (showLinkInput) {
+      setTimeout(() => {
+        const linkInput = document.getElementById('link-input');
+        if (linkInput) linkInput.focus();
+      }, 10);
+    }
+  }
+
+  // 링크 적용 함수
+  function applyLink() {
+    if (!editor) return;
+    
+    if (linkInputValue === '') {
+      editor.chain().focus().extendMarkRange('link').unsetLink().run();
+    } else {
+      editor.chain().focus().extendMarkRange('link').setLink({ href: linkInputValue }).run();
+    }
+    
+    showLinkInput = false;
+    updateEditorState();
+  }
+
+  // 엔터 키 처리
+  function handleLinkInputKeydown(event) {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      applyLink();
+    } else if (event.key === 'Escape') {
+      event.preventDefault();
+      cancelLinkInput();
+    }
+  }
+
+  // 기존 setLink 함수 대체
   function setLink() {
     if (!editor) return;
     
-    const previousUrl = editor.getAttributes('link').href;
-    const url = window.prompt('URL', previousUrl);
-
-    if (url === null) {
+    const selection = editor.state.selection;
+    const hasLink = editor.isActive('link');
+    
+    if (selection.empty && !hasLink) {
+      // 선택된 텍스트가 없고 링크도 없는 경우
       return;
     }
-
-    if (url === '') {
-      editor.chain().focus().extendMarkRange('link').unsetLink().run();
-      updateEditorState();
-      return;
-    }
-
-    editor.chain().focus().extendMarkRange('link').setLink({ href: url }).run();
-    updateEditorState();
+    
+    // 링크 입력 UI 표시 (이벤트 객체 없이 위치 계산)
+    const bubbleRect = bubbleMenuElement.getBoundingClientRect();
+    linkInputPosition = {
+      x: bubbleRect.left,
+      y: bubbleRect.bottom + 10
+    };
+    
+    // 현재 선택된 링크 URL 가져오기
+    const previousUrl = editor.getAttributes('link').href || '';
+    linkInputValue = previousUrl;
+    
+    showLinkInput = true;
+    showColorPicker = false;
+    showHighlightPicker = false;
+    showAlignmentOptions = false;
+    
+    // 입력 필드에 포커스
+    setTimeout(() => {
+      const linkInput = document.getElementById('link-input');
+      if (linkInput) linkInput.focus();
+    }, 10);
   }
 
   function removeLink() {
@@ -575,20 +652,6 @@
         </svg>
       </span>
     </button>
-    
-    <button
-      class="bubble-menu-button"
-      on:click={removeLink}
-      class:active={editorState.link}
-      title="링크 제거"
-    >
-      <span class="icon">
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M18.36 6.64a9 9 0 1 1-12.73 0"></path>
-          <line x1="12" y1="2" x2="12" y2="12"></line>
-        </svg>
-      </span>
-    </button>
 
     <button
       class="bubble-menu-button"
@@ -694,6 +757,24 @@
           </svg>
         </span>
       </button>
+    </div>
+  {/if}
+
+  <!-- 링크 입력 UI 수정 -->
+  {#if showLinkInput}
+    <div class="floating-dropdown floating-link-input" style="position: fixed; left: {linkInputPosition.x}px; top: {linkInputPosition.y}px; border: 1px solid #ddd;">
+      <div class="link-input-container">
+        <div class="link-input-row">
+          <input 
+            id="link-input"
+            type="text" 
+            bind:value={linkInputValue} 
+            placeholder="URL 입력" 
+            on:keydown={handleLinkInputKeydown}
+          />
+          <button class="link-button" on:click={applyLink}>적용</button>
+        </div>
+      </div>
     </div>
   {/if}
 </div>
@@ -886,5 +967,43 @@
   .alignment-option.active {
     background-color: rgba(0, 0, 0, 0.1);
     color: #000;
+  }
+
+  .floating-link-input {
+    flex-direction: column;
+    width: 250px;
+  }
+
+  .link-input-container {
+    display: flex;
+    flex-direction: column;
+    padding: 4px;
+  }
+
+  .link-input-container input {
+    padding: 6px 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    margin-bottom: 8px;
+    font-size: 14px;
+  }
+
+  .link-input-buttons {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+  }
+
+  .link-button {
+    padding: 4px 8px;
+    background-color: #f5f5f5;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+  }
+
+  .link-button:hover {
+    background-color: #e5e5e5;
   }
 </style>
