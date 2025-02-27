@@ -458,18 +458,28 @@
     showAlignmentOptions = false;
   }
   
+  // 하이라이트 함수 수정 - 토글 기능 개선
+  function toggleHighlight() {
+    if (!editor) return;
+    
+    // 현재 선택 영역이 이미 하이라이트되어 있는지 확인
+    const isHighlighted = editor.isActive('highlight');
+    
+    if (isHighlighted) {
+      // 이미 하이라이트되어 있으면 제거
+      editor.chain().focus().unsetHighlight().run();
+    } else {
+      // 하이라이트되어 있지 않으면 노란색으로 적용
+      editor.chain().focus().setHighlight({ color: '#FFFF00' }).run();
+    }
+    
+    updateEditorState();
+  }
+  
+  // 버블 메뉴 버튼 클릭 핸들러 수정 - 하이라이트 피커 대신 바로 적용
   function toggleHighlightPicker(event) {
     event.stopPropagation();
-    
-    const buttonRect = event.currentTarget.getBoundingClientRect();
-    highlightPickerPosition = {
-      x: buttonRect.left,
-      y: buttonRect.bottom + 10
-    };
-    
-    showHighlightPicker = !showHighlightPicker;
-    showColorPicker = false;
-    showAlignmentOptions = false;
+    toggleHighlight();
   }
   
   function toggleAlignmentOptions(event) {
@@ -534,6 +544,12 @@
     showColorPicker = false;
     showHighlightPicker = false;
     showAlignmentOptions = false;
+  }
+
+  // 링크 취소 함수 추가
+  function cancelLinkInput() {
+    showLinkInput = false;
+    linkInputValue = '';
   }
 </script>
 
@@ -970,37 +986,37 @@
   }
 
   .floating-link-input {
-    flex-direction: column;
-    width: 250px;
+    width: 300px;
   }
 
   .link-input-container {
     display: flex;
-    flex-direction: column;
     padding: 4px;
   }
 
+  .link-input-row {
+    display: flex;
+    width: 100%;
+    align-items: center;
+  }
+
   .link-input-container input {
+    flex: 1;
     padding: 6px 8px;
     border: 1px solid #ddd;
     border-radius: 4px;
-    margin-bottom: 8px;
     font-size: 14px;
-  }
-
-  .link-input-buttons {
-    display: flex;
-    justify-content: flex-end;
-    gap: 8px;
+    margin-right: 4px;
   }
 
   .link-button {
-    padding: 4px 8px;
+    padding: 6px 10px;
     background-color: #f5f5f5;
     border: 1px solid #ddd;
     border-radius: 4px;
     cursor: pointer;
     font-size: 12px;
+    white-space: nowrap;
   }
 
   .link-button:hover {
