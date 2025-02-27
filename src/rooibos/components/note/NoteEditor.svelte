@@ -2,13 +2,19 @@
 <script>
   import { onMount, onDestroy } from 'svelte';
   import { Editor } from '@tiptap/core';
+  import Collaboration from '@tiptap/extension-collaboration';
+  import CollaborationCursor from '@tiptap/extension-collaboration-cursor';
+  import { HocuspocusProvider } from '@hocuspocus/provider';
+  import * as Y from 'yjs';
   import BubbleMenu from './BubbleMenu.svelte';
   import TopBar from './TopBar.svelte';
   import RightSidebar from './NoteAIChat.svelte';
+  import CollaboratorsList from './CollaboratorsList.svelte';
   import { getNote, updateNote } from '../apis/note';
   import { get } from 'svelte/store';
   import { page } from '$app/stores';
 	import { getExtensions } from './tiptapExtension';
+	import { user } from '$lib/stores';
 
   let editor;
   let editorElement;
@@ -18,6 +24,10 @@
   let manualTitleEdited = false;
   let saveTimeout;
   let bubbleMenuElement;
+  
+  // 협업 관련 변수
+  let provider;
+  let activeUsers = [];
   
   let editorState = {
     bold: false,
@@ -364,37 +374,117 @@
     showSidebar = false;
   }
 
-  onMount(async () => {
-    note = await getNote(noteId);
-    if (note && note.title) {
-      pageTitle = note.title;
-    }
+  // Hocuspocus 프로바이더 초기화 함수
+  function initCollaboration() {
+    // 문서 이름 형식: note:123
+    const documentName = `note:${noteId}`;
     
-    let contentToLoad = `<p class="subtitle"></p>`;
-    if (note && note.content) {
-      if (typeof note.content === 'string') {
-        contentToLoad = note.content;
+    // Hocuspocus 프로바이더 생성
+    provider = new HocuspocusProvider({
+      // 서버 주소를 환경에 맞게 수정
+      url: window.location.hostname === 'localhost' 
+        ? 'ws://localhost:1234' 
+        : `ws://${window.location.hostname}:1234`,
+      name: documentName,
+      token: localStorage.getItem('token'),
+      // 연결 재시도 설정 추가
+      connect: true,
+      maxRetries: 10,
+      retryDelay: 1000,
+      onAuthenticated: () => {
+        console.log('협업 서버에 인증됨');
+      },
+      onSynced: () => {
+        console.log('문서 동기화 완료');
+      },
+      onClose: () => {
+        console.log('협업 서버와 연결 끊김');
+      },
+      onMessage: (message) => {
+        console.log('서버 메시지:', message);
       }
-    }
+    });
+    
+    // 활성 사용자 목록 관찰
+    const yActiveUsers = provider.document.getMap('activeUsers');
+    
+    yActiveUsers.observe(() => {
+      // 활성 사용자 목록 업데이트
+      activeUsers = Array.from(yActiveUsers.values());
+    });
+    
+    return provider;
+  }
+
+  // 에디터 초기화 함수 (기존 함수 수정)
+  function initEditor(content, provider) {
+    // 현재 사용자 정보
+    const currentUser = $user;
     
     editor = new Editor({
       element: editorElement,
-      extensions: getExtensions({ bubbleMenuElement, adjustBubbleMenuPosition }),
-      content: contentToLoad,
+      extensions: [
+        ...getExtensions({ bubbleMenuElement, adjustBubbleMenuPosition }),
+        // 협업 확장 기능 추가
+        Collaboration.configure({
+          document: provider.document,
+        }),
+        CollaborationCursor.configure({
+          provider,
+          user: {
+            name: currentUser.name,
+            color: currentUser.color || '#ff0000',
+            avatar: currentUser.avatar
+          },
+        }),
+      ],
+      content,
       autofocus: true,
       onUpdate({ editor }) {
         clearTimeout(saveTimeout);
         saveTimeout = setTimeout(() => {
-          updateNoteContent();
-          console.log('변경된 HTML 내용:', editor.getHTML());
-        }, 1000); 
+          updateNoteMetadata();
+        }, 1000);
       },
       onSelectionUpdate({ editor }) {
         updateEditorState();
       }
     });
     
-    updateEditorState();
+    return editor;
+  }
+  
+  // 노트 메타데이터 업데이트 (제목 등)
+  function updateNoteMetadata() {
+    let newTitle = pageTitle;
+    if (!manualTitleEdited && editor.getJSON().content && editor.getJSON().content.length > 0) {
+      const heading = editor.getJSON().content.find(
+        node => node.type === 'heading' && node.attrs && node.attrs.level === 1
+      );
+      if (heading && heading.content && heading.content.length > 0 && heading.content[0].text) {
+        newTitle = heading.content[0].text;
+      }
+    }
+    pageTitle = newTitle;
+    
+    // 제목만 업데이트 (내용은 Hocuspocus가 처리)
+    updateNote(localStorage.token, noteId, newTitle);
+  }
+
+  onMount(async () => {
+    // 노트 메타데이터 가져오기
+    note = await getNote(noteId);
+    if (note && note.title) {
+      pageTitle = note.title;
+    }
+    
+    // 협업 프로바이더 초기화
+    provider = initCollaboration();
+    
+    // 에디터 초기화
+    editor = initEditor('', provider);
+    
+    // 이벤트 리스너 등록
     document.addEventListener('click', closeAllDropdowns);
     window.addEventListener('resize', adjustBubbleMenuPosition);
   });
@@ -403,12 +493,20 @@
     if (editor) {
       editor.destroy();
     }
+    
+    if (provider) {
+      provider.destroy();
+    }
+    
     document.removeEventListener('click', closeAllDropdowns);
     window.removeEventListener('resize', adjustBubbleMenuPosition);
   });
 </script>
 
 <TopBar {pageTitle} on:titleChange={handleTitleChange} onNewChat={openSidebar} />
+
+<!-- 협업자 목록 표시 -->
+<CollaboratorsList users={activeUsers} />
 
 <div class="notion-page-container">
   <div class="editor-wrapper" bind:this={editorElement}></div>
@@ -491,5 +589,31 @@
   
   :global(.custom-link:hover) {
     text-decoration: none;
+  }
+
+  /* 협업 관련 스타일 추가 */
+  :global(.collaboration-cursor__caret) {
+    border-left: 1px solid;
+    border-right: 1px solid;
+    margin-left: -1px;
+    margin-right: -1px;
+    pointer-events: none;
+    position: relative;
+    word-break: normal;
+  }
+
+  :global(.collaboration-cursor__label) {
+    border-radius: 3px 3px 3px 0;
+    color: #fff;
+    font-size: 12px;
+    font-style: normal;
+    font-weight: 600;
+    left: -1px;
+    line-height: normal;
+    padding: 0.1rem 0.3rem;
+    position: absolute;
+    top: -1.4em;
+    user-select: none;
+    white-space: nowrap;
   }
 </style>
