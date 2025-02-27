@@ -2,20 +2,13 @@
 <script>
   import { onMount, onDestroy } from 'svelte';
   import { Editor } from '@tiptap/core';
-  import StarterKit from '@tiptap/starter-kit';
-  import Underline from '@tiptap/extension-underline';
-  import TextStyle from '@tiptap/extension-text-style';
-  import Color from '@tiptap/extension-color';
-  import Highlight from '@tiptap/extension-highlight';
-  import TextAlign from '@tiptap/extension-text-align';
-  import Link from '@tiptap/extension-link';
-  import TipTapBubbleMenu from '@tiptap/extension-bubble-menu';
   import BubbleMenu from './BubbleMenu.svelte';
   import TopBar from './TopBar.svelte';
   import RightSidebar from './NoteAIChat.svelte';
   import { getNote, updateNote } from '../apis/note';
   import { get } from 'svelte/store';
   import { page } from '$app/stores';
+	import { getExtensions } from './tiptapExtension';
 
   let editor;
   let editorElement;
@@ -24,11 +17,8 @@
   let note = {};
   let manualTitleEdited = false;
   let saveTimeout;
-  
-  // 버블 메뉴 관련
   let bubbleMenuElement;
   
-  // 에디터 상태 변경 감지를 위한 변수
   let editorState = {
     bold: false,
     italic: false,
@@ -384,69 +374,12 @@
     if (note && note.content) {
       if (typeof note.content === 'string') {
         contentToLoad = note.content;
-      } else {
-        try {
-          editor = new Editor({
-            extensions: [
-              StarterKit,
-              Underline,
-              TextStyle,
-              Color,
-              Highlight,
-              TextAlign.configure({
-                types: ['heading', 'paragraph'],
-              }),
-              Link,
-            ],
-            content: note.content
-          });
-          contentToLoad = editor.getHTML();
-          editor.destroy();
-        } catch(e) {
-          contentToLoad = `<p class="subtitle"></p>`;
-        }
       }
     }
     
     editor = new Editor({
       element: editorElement,
-      extensions: [
-        StarterKit,
-        Underline,
-        TextStyle,
-        Color,
-        Highlight,
-        TextAlign.configure({
-          types: ['heading', 'paragraph'],
-        }),
-        Link.configure({
-          openOnClick: true,
-          HTMLAttributes: {
-            class: 'custom-link',
-            target: '_blank',
-            rel: 'noopener noreferrer'
-          },
-        }),
-        TipTapBubbleMenu.configure({
-          element: bubbleMenuElement,
-          shouldShow: ({ editor, from, to }) => {
-            const isVisible = from !== to && editor.isEditable;
-            if (isVisible) {
-              setTimeout(adjustBubbleMenuPosition, 0);
-            }
-            return isVisible;
-          },
-          tippyOptions: {
-            duration: 100,
-            placement: 'top-start',
-            offset: [0, 25],
-            theme: 'bubble-menu-theme',
-            onShow: () => {
-              setTimeout(adjustBubbleMenuPosition, 0);
-            }
-          }
-        }),
-      ],
+      extensions: getExtensions({ bubbleMenuElement, adjustBubbleMenuPosition }),
       content: contentToLoad,
       autofocus: true,
       onUpdate({ editor }) {
