@@ -75,7 +75,7 @@
 	let chatListLoading = false;
 	let allChatsLoaded = false;
 	let folders = {};
-	let notesFolders = {}; // Notes 전용 폴더 상태
+	let rooibosFolders = {}; // Notes 전용 폴더 상태
 
 	// Chats 폴더 초기화
 	const initFolders = async () => {
@@ -108,33 +108,33 @@
 	};
 
 	// Notes 폴더 초기화 (필요시 Notes 전용 필터 추가)
-	const initNotesFolders = async () => {
+	const initRooibosFolders = async () => {
 		const folderList = await getNoteFolders(localStorage.token, $user?.id).catch((error) => {
 			toast.error(`${error}`);
 			return [];
 		});
 		
-		notesFolders = {};
+		rooibosFolders = {};
 
 		for (const folder of folderList) {
-			notesFolders[folder.id] = { ...(notesFolders[folder.id] || {}), ...folder };
+			rooibosFolders[folder.id] = { ...(rooibosFolders[folder.id] || {}), ...folder };
 		}
 
 		for (const folder of folderList) {
 			if (folder.parent_id) {
-				if (!notesFolders[folder.parent_id]) {
-					notesFolders[folder.parent_id] = {};
+				if (!rooibosFolders[folder.parent_id]) {
+					rooibosFolders[folder.parent_id] = {};
 				}
-				notesFolders[folder.parent_id].childrenIds = notesFolders[folder.parent_id].childrenIds
-					? [...notesFolders[folder.parent_id].childrenIds, folder.id]
+				rooibosFolders[folder.parent_id].childrenIds = rooibosFolders[folder.parent_id].childrenIds
+					? [...rooibosFolders[folder.parent_id].childrenIds, folder.id]
 					: [folder.id];
-				notesFolders[folder.parent_id].childrenIds.sort((a, b) => {
-					return notesFolders[b].updated_at - notesFolders[a].updated_at;
+				rooibosFolders[folder.parent_id].childrenIds.sort((a, b) => {
+					return rooibosFolders[b].updated_at - rooibosFolders[a].updated_at;
 				});
 			}
 		}
 		
-		console.log(notesFolders)
+		console.log(rooibosFolders)
 	};
 
 	// Chats 폴더 생성 함수
@@ -171,36 +171,36 @@
 	};
 
 	// Notes 폴더 생성 함수
-	const createNotesFolder = async (name = 'Untitled') => {
+	const createRooibosFolder = async (name = 'Untitled', type = 'note') => {
 		if (name === '') {
 			toast.error($i18n.t('Folder name cannot be empty.'));
 			return;
 		}
-		const rootNotesFolders = Object.values(notesFolders).filter((folder) => folder.parent_id === null);
-		if (rootNotesFolders.find((folder) => folder.name.toLowerCase() === name.toLowerCase())) {
+		const rootFolders = Object.values(folders).filter((folder) => folder.parent_id === null);
+		if (rootFolders.find((folder) => folder.name.toLowerCase() === name.toLowerCase())) {
 			let i = 1;
-			while (rootNotesFolders.find((folder) => folder.name.toLowerCase() === `${name} ${i}`.toLowerCase())) {
+			while (rootFolders.find((folder) => folder.name.toLowerCase() === `${name} ${i}`.toLowerCase())) {
 				i++;
 			}
 			name = `${name} ${i}`;
 		}
 		const tempId = uuidv4();
-		notesFolders = {
-			...notesFolders,
+		rooibosFolders = {
+			...rooibosFolders,
 			[tempId]: {
 				id: tempId,
 				name: name,
 				created_at: Date.now(),
 				updated_at: Date.now(),
-				type: 'note'
+				type: type
 			}
 		};
-		const res = await createNewRooibosFolder(localStorage.token, name, $user?.id).catch((error) => {
+		const res = await createNewRooibosFolder(localStorage.token, name, $user?.id, type).catch((error) => {
 			toast.error(`${error}`);
 			return null;
 		});
 		if (res) {
-			await initNotesFolders();
+			await initRooibosFolders();
 		}
 	};
 
@@ -378,7 +378,7 @@
 		});
 		await initChannels();
 		await initChatList();
-		await initNotesFolders();
+		await initRooibosFolders();
 		window.addEventListener('keydown', onKeyDown);
 		window.addEventListener('keyup', onKeyUp);
 		window.addEventListener('touchstart', onTouchStart);
@@ -538,27 +538,43 @@
 				</a>
 			</div>
 			<div class="px-1.5 flex justify-center text-gray-800 dark:text-gray-200">
-				<a
-					class="flex-grow flex space-x-3 rounded-lg px-2 py-[7px] hover:bg-gray-100 dark:hover:bg-gray-900 transition"
-					href="/rooibos/corpbookmarks"
-					on:click={() => {
-						selectedChatId = null;
-						chatId.set('');
-						if ($mobile) {
-							showSidebar.set(false);
-						}
-					}}
-					draggable="false"
-				>
-					<div class="self-center">
-						<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="size-[1.1rem]">
-							<path stroke-linecap="round" stroke-linejoin="round" d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.563.563 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.563.563 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345l2.125-5.111z"/>
-						</svg>
+				
+					<div class="flex self-center w-full">
+						{#if $user?.id == '5ee82147-b469-4609-8bea-2ba484cfc2ab'}
+							<NoteFolder
+								collapsible={!search}
+								className="w-full flex justify-between items-center"
+								name="나의 기업"
+								onAdd={() => createRooibosFolder('Untitled', 'corp')}
+								onAddLabel={$i18n.t('New Folder')}
+							>
+								<NoteFolderMenu 
+									folders={Object.values(rooibosFolders)
+										.filter(folder => folder.type === 'corp')
+										.reduce((acc, folder) => {
+											acc[folder.id] = folder;
+											return acc;
+										}, {})} 
+								/>
+							</NoteFolder>
+						{:else}
+							<a
+								class="flex-grow flex space-x-3 rounded-lg px-2 py-[7px] hover:bg-gray-100 dark:hover:bg-gray-900 transition"
+								href="/rooibos/corpbookmarks"
+								on:click={() => {
+									selectedChatId = null;
+									chatId.set('');
+									if ($mobile) {
+										showSidebar.set(false);
+									}
+								}}
+								draggable="false"
+							>
+							<div class="self-center font-medium text-sm font-primary">나의 기업</div>
+							</a>
+						{/if}
 					</div>
-					<div class="flex self-center">
-						<div class="self-center font-medium text-sm font-primary">나의 기업</div>
-					</div>
-				</a>
+				
 			</div>
 		{/if}
 
@@ -723,10 +739,17 @@
 					collapsible={!search}
 					className="px-2 mt-0.5"
 					name={$i18n.t('Notes')}
-					onAdd={() => createNotesFolder()}
+					onAdd={() => createRooibosFolder('Untitled', "note")}
 					onAddLabel={$i18n.t('New Folder')}
 				>
-					<NoteFolderMenu folders={notesFolders} />
+					<NoteFolderMenu 
+						folders={Object.values(rooibosFolders)
+							.filter(folder => folder.type === 'note')
+							.reduce((acc, folder) => {
+								acc[folder.id] = folder;
+								return acc;
+							}, {})} 
+					/>
 				</NoteFolder>
 			{/if}
 		</div>

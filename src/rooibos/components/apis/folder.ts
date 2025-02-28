@@ -1,8 +1,8 @@
 import { WEBUI_API_BASE_URL } from '$lib/constants';
 
-export const createNewRooibosFolder = async (token: string, name: string, userId: string = '') => {
+export const createNewRooibosFolder = async (token: string, name: string, userId: string = '', type: string = '') => {
 	let error = null;
-
+debugger
 	const res = await fetch(`${WEBUI_API_BASE_URL}/rooibos/folders/add/?userId=${userId}`, {
 		method: 'POST',
 		headers: {
@@ -11,7 +11,8 @@ export const createNewRooibosFolder = async (token: string, name: string, userId
 			authorization: `Bearer ${token}`
 		},
 		body: JSON.stringify({
-			name: name
+			name: name,
+			type: type
 		})
 	})
 		.then(async (res) => {
