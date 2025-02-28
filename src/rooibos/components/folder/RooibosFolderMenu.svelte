@@ -14,8 +14,7 @@
 	import { createNote } from '$rooibos/components/apis/note';
 	import { user } from '$lib/stores';
 
-	// i18n을 스토어로 사용하기 위해 타입 정의
-	const i18n: { subscribe: any; t: (key: string) => string } = getContext('i18n');
+	const i18n = getContext('i18n');
 	const dispatch = createEventDispatcher();
 
 	export let folders: Record<string, any> = {};
@@ -35,7 +34,7 @@
 	let editedName = '';
 
 	function handleFolderClick(folderId: string) {
-		goto(`/rooibos/folder/${folderId}`);
+		dispatch('click', { folderId });
 	}
 
 	async function handleAddPage(e: Event, folderId: string) {
