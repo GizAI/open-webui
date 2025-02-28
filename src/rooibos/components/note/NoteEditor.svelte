@@ -374,84 +374,135 @@
     showSidebar = false;
   }
 
-  // Hocuspocus 프로바이더 초기화 함수
+  // Hocuspocus 프로바이더 초기화 함수 수정
   function initCollaboration() {
     // 문서 이름 형식: note:123
     const documentName = `note:${noteId}`;
     
+    console.log('Connecting to Hocuspocus server with document:', documentName);
+    
     // Hocuspocus 프로바이더 생성
     provider = new HocuspocusProvider({
-      // 서버 주소를 환경에 맞게 수정
       url: window.location.hostname === 'localhost' 
         ? 'ws://localhost:1234' 
-        : `ws://${window.location.hostname}:1234`,
+        : `wss://${window.location.hostname}:1234`,
       name: documentName,
       token: localStorage.getItem('token'),
-      // 연결 재시도 설정 추가
       connect: true,
-      maxRetries: 10,
-      retryDelay: 1000,
+      forceSyncInterval: 1000, // 1초마다 강제 동기화
+      maxAttempts: 20, // 연결 재시도 횟수 증가
+      delay: 500, // 재연결 지연 시간 감소
+      onConnect: () => {
+        console.log('WebSocket 연결됨');
+      },
+      onDisconnect: () => {
+        console.error('WebSocket 연결 끊김');
+      },
       onAuthenticated: () => {
         console.log('협업 서버에 인증됨');
       },
       onSynced: () => {
         console.log('문서 동기화 완료');
+        // 동기화 완료 시 에디터 초기화 시도
+        if (!editor && editorElement) {
+          console.log('동기화 완료 후 에디터 초기화 시도');
+          try {
+            editor = initEditor('', provider);
+          } catch (error) {
+            console.error('동기화 후 에디터 초기화 오류:', error);
+          }
+        }
       },
       onClose: () => {
         console.log('협업 서버와 연결 끊김');
       },
       onMessage: (message) => {
         console.log('서버 메시지:', message);
+      },
+      onStatus: ({ status }) => {
+        console.log('연결 상태:', status);
+      },
+      onAwarenessUpdate: ({ states }) => {
+        console.log('Awareness 업데이트:', states);
+        // 활성 사용자 목록 업데이트
+        activeUsers = states.map(state => state.user).filter(Boolean);
       }
-    });
-    
-    // 활성 사용자 목록 관찰
-    const yActiveUsers = provider.document.getMap('activeUsers');
-    
-    yActiveUsers.observe(() => {
-      // 활성 사용자 목록 업데이트
-      activeUsers = Array.from(yActiveUsers.values());
     });
     
     return provider;
   }
 
-  // 에디터 초기화 함수 (기존 함수 수정)
+  // 에디터 초기화 함수 수정
   function initEditor(content, provider) {
-    // 현재 사용자 정보
-    const currentUser = $user;
-    
-    editor = new Editor({
-      element: editorElement,
-      extensions: [
-        ...getExtensions({ bubbleMenuElement, adjustBubbleMenuPosition }),
-        // 협업 확장 기능 추가
-        Collaboration.configure({
-          document: provider.document,
-        }),
-        CollaborationCursor.configure({
-          provider,
-          user: {
-            name: currentUser.name,
-            color: currentUser.color || '#ff0000',
-            avatar: currentUser.avatar
-          },
-        }),
-      ],
-      content,
-      autofocus: true,
-      onUpdate({ editor }) {
-        clearTimeout(saveTimeout);
-        saveTimeout = setTimeout(() => {
-          updateNoteMetadata();
-        }, 1000);
-      },
-      onSelectionUpdate({ editor }) {
-        updateEditorState();
+    try {
+      console.log('에디터 초기화 시작');
+      const currentUser = $user;
+      console.log('현재 사용자:', currentUser);
+      
+      // Y.js 문서 구조 확인
+      console.log('Y.js 문서 구조:', provider.document);
+      
+      // 모든 기존 필드 삭제
+      if (provider.document.share.has('prosemirror')) {
+        console.log('기존 prosemirror 필드 발견, 삭제합니다');
+        provider.document.share.delete('prosemirror');
       }
-    });
-    
-    return editor;
+      
+      if (provider.document.share.has('content')) {
+        console.log('기존 content 필드 발견, 삭제합니다');
+        provider.document.share.delete('content');
+      }
+      
+      // 초기 내용 설정
+      let initialContent = content || '<p></p>';
+      
+      // 서버에서 가져온 내용이 있으면 사용
+      if (noteData && noteData.content) {
+        initialContent = noteData.content;
+        console.log('서버에서 가져온 내용 사용:', initialContent);
+      }
+      
+      editor = new Editor({
+        element: editorElement,
+        extensions: [
+          ...getExtensions({ bubbleMenuElement, adjustBubbleMenuPosition }),
+          // 협업 확장 기능 추가
+          Collaboration.configure({
+            document: provider.document,
+            field: 'prosemirror',
+          }),
+          CollaborationCursor.configure({
+            provider,
+            user: {
+              name: currentUser?.name || 'Anonymous',
+              color: '#ff0000',
+              avatar: null
+            },
+          }),
+        ],
+        content: initialContent,
+        autofocus: 'end',
+        onReady: () => {
+          console.log('에디터가 준비되었습니다.');
+        },
+        onUpdate: ({ editor }) => {
+          console.log('에디터 내용 업데이트');
+          clearTimeout(saveTimeout);
+          saveTimeout = setTimeout(() => {
+            updateNoteMetadata();
+          }, 1000);
+        },
+        onSelectionUpdate: ({ editor }) => {
+          updateEditorState();
+        }
+      });
+      
+      console.log('에디터 객체 생성 완료:', editor);
+      return editor;
+    } catch (error) {
+      console.error('에디터 초기화 중 오류:', error);
+      throw error;
+    }
   }
   
   // 노트 메타데이터 업데이트 (제목 등)
@@ -472,21 +523,64 @@
   }
 
   onMount(async () => {
-    // 노트 메타데이터 가져오기
-    note = await getNote(noteId);
-    if (note && note.title) {
-      pageTitle = note.title;
+    try {
+      console.log('노트 에디터 마운트 시작');
+      
+      // 협업 프로바이더 초기화
+      provider = initCollaboration();
+      
+      // 추가 이벤트 리스너 등록 (provider 초기화 후)
+      provider.on('sync', () => {
+        console.log('sync 이벤트 발생 (동기화 진행 중)');
+      });
+
+      provider.on('synced', () => {
+        console.log('synced 이벤트 발생 (동기화 완료)');
+      });
+
+      provider.on('update', () => {
+        console.log('update 이벤트 발생 (문서 업데이트)');
+      });
+
+      provider.on('error', (error) => {
+        console.error('provider 오류 발생:', error);
+      });
+      
+      console.log('프로바이더 초기화 완료, 동기화 대기 중...');
+      
+      // 동기화 대기 (타임아웃 추가)
+      const syncPromise = new Promise((resolve) => {
+        const syncTimeout = setTimeout(() => {
+          console.warn('문서 동기화 타임아웃, 에디터를 계속 초기화합니다');
+          resolve(false);
+        }, 20000); // 20초로 증가
+        
+        provider.on('synced', () => {
+          clearTimeout(syncTimeout);
+          console.log('문서가 동기화되었습니다.');
+          resolve(true);
+        });
+      });
+      
+      // 타임아웃 여부와 관계없이 에디터 초기화 진행
+      await syncPromise.then((synced) => {
+        console.log('동기화 상태:', synced ? '성공' : '타임아웃');
+      }).catch(() => {
+        console.log('동기화 프로미스 오류, 계속 진행합니다');
+      });
+      
+      console.log('provider document 구조:', JSON.stringify(provider.document.toJSON()));
+      
+      // 에디터 초기화 (provider가 동기화된 후)
+      editor = initEditor('', provider);
+      console.log('에디터 초기화 완료');
+      
+      // 이벤트 리스너 등록
+      document.addEventListener('click', closeAllDropdowns);
+      window.addEventListener('resize', adjustBubbleMenuPosition);
+    } catch (error) {
+      console.error('에디터 초기화 중 오류 발생:', error);
     }
-    
-    // 협업 프로바이더 초기화
-    provider = initCollaboration();
-    
-    // 에디터 초기화
-    editor = initEditor('', provider);
-    
-    // 이벤트 리스너 등록
-    document.addEventListener('click', closeAllDropdowns);
-    window.addEventListener('resize', adjustBubbleMenuPosition);
   });
 
   onDestroy(() => {
