@@ -579,7 +579,7 @@
     text-decoration: none;
   }
 
-  /* 협업 관련 스타일 */
+  /* 협업 관련 스타일 수정 */
   :global(.collaboration-cursor__caret) {
     border-left: 1px solid;
     border-right: 1px solid;
@@ -591,17 +591,19 @@
   }
 
   :global(.collaboration-cursor__label) {
-    border-radius: 3px 3px 3px 0;
+    border-radius: 4px;
     color: #fff;
-    font-size: 12px;
+    font-size: 14px;
     font-style: normal;
     font-weight: 600;
-    left: -1px;
-    line-height: normal;
     padding: 0.1rem 0.3rem;
     position: absolute;
-    top: -1.4em;
+    top: -1.8em;
+    left: 0;
     user-select: none;
     white-space: nowrap;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+    transform: translateY(-2px);
+    z-index: 100;
   }
 </style>
