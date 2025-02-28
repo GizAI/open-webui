@@ -35,7 +35,7 @@
 	let editedName = '';
 
 	function handleFolderClick(folderId: string) {
-		goto(`/rooibos/folder/${folderId}`);
+		goto(`/rooibos/folder/${folderId}/notes`);
 	}
 
 	async function handleAddPage(e: Event, folderId: string) {
