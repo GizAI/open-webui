@@ -1,7 +1,7 @@
 	<script>
-		import CorpBookmarks from '$rooibos/components/corpbookmarks/CorpBookmarks.svelte';
+		import MyCompany from '$rooibos/components/mycompany/MyCompany.svelte';
   	</script>
 	
-	<CorpBookmarks />
+	<MyCompany />
   
   
