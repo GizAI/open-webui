@@ -58,7 +58,6 @@ const server = Server.configure({
       : []),
     
     new Database({
-      // 문서 가져오기 함수는 기존 로직 유지
       fetch: async (data) => {
         try {
           const noteId = data.documentName.split(':')[1];

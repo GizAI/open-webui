@@ -357,12 +357,26 @@
     showSidebar = false;
   }
 
-  // Hocuspocus 프로바이더 초기화 함수
   function initCollaboration() {
-    // 문서 이름 형식: note:123
     const documentName = `note:${noteId}`;
+    const currentUser = get(user);
     
-    // Hocuspocus 프로바이더 생성
+    // 세션별 고유 ID 생성 (브라우저 탭마다 다른 ID)
+    const sessionId = crypto.randomUUID();
+    
+    // 랜덤 색상 생성 함수
+    const getRandomColor = () => {
+      const colors = [
+        '#f44336', '#e91e63', '#9c27b0', '#673ab7', '#3f51b5', 
+        '#2196f3', '#03a9f4', '#00bcd4', '#009688', '#4caf50', 
+        '#8bc34a', '#cddc39', '#ffc107', '#ff9800', '#ff5722'
+      ];
+      return colors[Math.floor(Math.random() * colors.length)];
+    };
+    
+    // 세션별 색상 생성
+    const sessionColor = getRandomColor();
+    
     provider = new HocuspocusProvider({
       url:
         window.location.hostname === 'localhost'
@@ -387,7 +401,6 @@
       }
     });
     
-    // 활성 사용자 목록 관찰
     const yActiveUsers = provider.document.getMap('activeUsers');
     yActiveUsers.observe(() => {
       activeUsers = Array.from(yActiveUsers.values());
@@ -396,10 +409,33 @@
     return provider;
   }
 
-  // 에디터 초기화 함수
   function initEditor(content, provider) {
-    // 현재 사용자 정보를 Svelte 스토어에서 가져옴
     const currentUser = get(user);
+    
+    // 랜덤 색상 생성 함수
+    const getRandomColor = () => {
+      const colors = [
+        '#f44336', // 빨강
+        '#e91e63', // 핑크
+        '#9c27b0', // 보라
+        '#673ab7', // 진보라
+        '#3f51b5', // 남색
+        '#2196f3', // 파랑
+        '#03a9f4', // 하늘
+        '#00bcd4', // 청록
+        '#009688', // 틸
+        '#4caf50', // 초록
+        '#8bc34a', // 연두
+        '#cddc39', // 라임
+        '#ffc107', // 황색
+        '#ff9800', // 주황
+        '#ff5722'  // 주홍
+      ];
+      return colors[Math.floor(Math.random() * colors.length)];
+    };
+    
+    // 세션별 색상 생성
+    const sessionColor = getRandomColor();
     
     editor = new Editor({
       element: editorElement,
@@ -412,9 +448,9 @@
         CollaborationCursor.configure({
           provider,
           user: {
-            name: currentUser.name,
-            color: currentUser.color || '#ff0000',
-            avatar: currentUser.avatar
+            name: currentUser?.name || 'Anonymous',
+            color: sessionColor, // 세션별 랜덤 색상 적용
+            avatar: currentUser?.avatar
           },
         }),
       ],
@@ -429,19 +465,14 @@
   }  
 
   onMount(async () => {
-    // 노트 메타데이터 가져오기
     note = await getNote(noteId);
     if (note && note.title) {
       pageTitle = note.title;
     }
     
-    // 협업 프로바이더 초기화
     provider = initCollaboration();
-    
-    // 에디터 초기화 (초기 content는 빈 문자열로 전달)
     editor = initEditor('', provider);
     
-    // 이벤트 리스너 등록
     document.addEventListener('click', closeAllDropdowns);
     window.addEventListener('resize', adjustBubbleMenuPosition);
   });
