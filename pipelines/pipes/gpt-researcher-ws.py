@@ -20,7 +20,7 @@ class Pipeline:
         websocket_url: str = "ws://127.0.0.1:8000/ws"
 
     def __init__(self):
-        self.name = "연구 파이프라인"
+        self.name = "GPT 연구자"
         self.valves = self.Valves()
         pass
 
@@ -78,20 +78,71 @@ class Pipeline:
 
                     # 응답을 스트림 형식으로 변환하여 전달
                     try:
-                        # 이미 JSON 형식이면 OpenAI 스트림 형식으로 변환
+                        # JSON 형식 응답 처리
                         json_data = json.loads(response)
                         logger.info(
                             f"JSON 응답 처리 (키: {list(json_data.keys()) if isinstance(json_data, dict) else 'not a dict'})"
                         )
 
-                        # 응답 데이터를 OpenAI 스트림 형식으로 변환
-                        if (
-                            isinstance(json_data, dict)
-                            and "type" in json_data
-                            and "output" in json_data
-                        ):
-                            # 연구 보고서 형식 응답 처리
-                            content = json_data.get("output", "")
+                        # 응답 타입에 따른 처리
+                        if isinstance(json_data, dict) and "type" in json_data:
+                            response_type = json_data.get("type", "")
+
+                            # images 타입은 무시
+                            if response_type == "images":
+                                logger.info("이미지 타입 응답 무시")
+                                continue
+
+                            # report 타입은 그대로 OpenAI 형식으로 변환하여 반환
+                            elif response_type == "report" and "output" in json_data:
+                                content = json_data.get("output", "")
+                                chunk = {
+                                    "id": f"chatcmpl-{int(time.time())}",
+                                    "object": "chat.completion.chunk",
+                                    "created": int(time.time()),
+                                    "model": model_id,
+                                    "choices": [
+                                        {
+                                            "index": 0,
+                                            "delta": {"content": content},
+                                            "finish_reason": None,
+                                        }
+                                    ],
+                                }
+                                yield f"data: {json.dumps(chunk)}".encode("utf-8")
+
+                            # 그 외 타입(logs, path 등)은 <think> 태그로 감싸서 반환
+                            else:
+                                # 출력 내용 가져오기
+                                content = ""
+                                if "output" in json_data:
+                                    content = json_data.get("output", "")
+                                elif "content" in json_data:
+                                    content = json_data.get("content", "")
+                                else:
+                                    # 전체 JSON을 문자열로 변환
+                                    content = json.dumps(json_data)
+
+                                # <think> 태그로 감싸기
+                                wrapped_content = f"<think>{content}</think>"
+
+                                chunk = {
+                                    "id": f"chatcmpl-{int(time.time())}",
+                                    "object": "chat.completion.chunk",
+                                    "created": int(time.time()),
+                                    "model": model_id,
+                                    "choices": [
+                                        {
+                                            "index": 0,
+                                            "delta": {"content": wrapped_content},
+                                            "finish_reason": None,
+                                        }
+                                    ],
+                                }
+                                yield f"data: {json.dumps(chunk)}".encode("utf-8")
+                        else:
+                            # 타입이 없는 일반 JSON 응답은 <think> 태그로 감싸서 반환
+                            wrapped_content = f"<think>{json.dumps(json_data)}</think>"
                             chunk = {
                                 "id": f"chatcmpl-{int(time.time())}",
                                 "object": "chat.completion.chunk",
@@ -100,18 +151,16 @@ class Pipeline:
                                 "choices": [
                                     {
                                         "index": 0,
-                                        "delta": {"content": content},
+                                        "delta": {"content": wrapped_content},
                                         "finish_reason": None,
                                     }
                                 ],
                             }
                             yield f"data: {json.dumps(chunk)}".encode("utf-8")
-                        else:
-                            # 일반 JSON 응답 처리
-                            yield f"data: {json.dumps(json_data)}".encode("utf-8")
                     except json.JSONDecodeError:
-                        # 일반 텍스트인 경우 스트림 형식으로 변환
+                        # 일반 텍스트인 경우 <think> 태그로 감싸서 반환
                         logger.info("일반 텍스트 응답 처리")
+                        wrapped_content = f"<think>{response}</think>"
                         chunk = {
                             "id": f"chatcmpl-{int(time.time())}",
                             "object": "chat.completion.chunk",
@@ -120,7 +169,7 @@ class Pipeline:
                             "choices": [
                                 {
                                     "index": 0,
-                                    "delta": {"content": response},
+                                    "delta": {"content": wrapped_content},
                                     "finish_reason": None,
                                 }
                             ],
@@ -139,7 +188,7 @@ class Pipeline:
                 "choices": [
                     {
                         "index": 0,
-                        "delta": {"content": f"웹소켓 오류: {str(e)}"},
+                        "delta": {"content": f"<think>웹소켓 오류: {str(e)}</think>"},
                         "finish_reason": "error",
                     }
                 ],
