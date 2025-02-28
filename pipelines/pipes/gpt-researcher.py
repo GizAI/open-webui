@@ -1,21 +1,24 @@
 from typing import List, Union, Generator, Iterator, Dict, Any
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from gpt_researcher import GPTResearcher
 import asyncio
 import os
-from dotenv import load_dotenv
-
-# 환경 변수 로드
-load_dotenv()
 
 
 class Pipeline:
     class Valves(BaseModel):
         """파이프라인 설정을 위한 밸브 클래스"""
 
-        openai_api_key: str = os.getenv("OPENAI_API_KEY", "")
-        tavily_api_key: str = os.getenv("TAVILY_API_KEY", "")
-        report_type: str = "research_report"
+        openai_api_key: str = ""
+        tavily_api_key: str = ""
+        report_type: str = Field(
+            default="research_report",
+            description="The type of report to generate",
+        )
+        language: str = Field(
+            default="korean",
+            description="The language to use for the research report",
+        )
 
     def __init__(self) -> None:
         """파이프라인 초기화"""
@@ -31,12 +34,6 @@ class Pipeline:
         """서버 종료 시 호출되는 메서드"""
         print(f"Shutting down GPT Researcher Pipeline: {__name__}")
 
-    async def on_valves_updated(self) -> None:
-        """밸브 설정이 업데이트될 때 호출되는 메서드"""
-        if self.researcher:
-            os.environ["OPENAI_API_KEY"] = self.valves.openai_api_key
-            os.environ["TAVILY_API_KEY"] = self.valves.tavily_api_key
-
     async def inlet(self, body: Dict[str, Any], user: Dict[str, Any]) -> Dict[str, Any]:
         """요청 전처리 메서드"""
         print(f"Processing inlet request: {__name__}")
@@ -49,6 +46,14 @@ class Pipeline:
         print(f"Processing outlet response: {__name__}")
         return body
 
+    def _set_api_keys(self) -> None:
+        """API 키를 환경 변수에 설정하는 메서드"""
+        if self.valves.openai_api_key:
+            os.environ["OPENAI_API_KEY"] = self.valves.openai_api_key
+
+        if self.valves.tavily_api_key:
+            os.environ["TAVILY_API_KEY"] = self.valves.tavily_api_key
+
     async def conduct_research(self, query: str) -> Dict[str, Any]:
         """
         주어진 쿼리에 대한 연구를 수행하는 메서드
@@ -60,7 +65,14 @@ class Pipeline:
             Dict[str, Any]: 연구 결과, 소스, 컨텍스트 및 비용 정보를 포함한 딕셔너리
         """
         try:
-            self.researcher = GPTResearcher(query, self.valves.report_type)
+            # API 키를 환경 변수에 설정
+            self._set_api_keys()
+
+            self.researcher = GPTResearcher(
+                query=query,
+                report_type=self.valves.report_type,
+                language=self.valves.language,
+            )
             research_result = await self.researcher.conduct_research()
             report = await self.researcher.write_report()
 
@@ -93,6 +105,9 @@ class Pipeline:
             str: 포맷팅된 연구 결과
         """
         print(f"Processing research request: {__name__}")
+
+        # API 키를 환경 변수에 설정
+        self._set_api_keys()
 
         research_results = asyncio.run(self.conduct_research(user_message))
 
