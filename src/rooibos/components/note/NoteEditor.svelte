@@ -10,7 +10,7 @@
   import TopBar from './TopBar.svelte';
   import RightSidebar from './NoteAIChat.svelte';
   import CollaboratorsList from './CollaboratorsList.svelte';
-  import { getNote, updateNote } from '../apis/note';
+  import { getNote, renameNote } from '../apis/note';
   import { get } from 'svelte/store';
   import { page } from '$app/stores';
   import { getExtensions } from './tiptapExtension';
@@ -115,22 +115,6 @@
     } catch (error) {
       console.error('번역 중 오류 발생:', error);
     }
-  }
-
-  function updateNoteContent() {
-    const htmlContent = editor.getHTML();
-    
-    let newTitle = pageTitle;
-    if (!manualTitleEdited && editor.getJSON().content && editor.getJSON().content.length > 0) {
-      const heading = editor.getJSON().content.find(
-        node => node.type === 'heading' && node.attrs && node.attrs.level === 1
-      );
-      if (heading && heading.content && heading.content.length > 0 && heading.content[0].text) {
-        newTitle = heading.content[0].text;
-      }
-    }
-    pageTitle = newTitle;
-    updateNote(localStorage.token, noteId, newTitle, htmlContent);
   }
 
   // 액션 함수들
@@ -361,8 +345,7 @@
     pageTitle = e.detail;
     manualTitleEdited = true;
     if (editor) {
-      const htmlContent = editor.getHTML();
-      updateNote(localStorage.token, noteId, pageTitle, htmlContent);
+      renameNote(localStorage.token, noteId, pageTitle);
     }
   }
   
@@ -437,35 +420,13 @@
       ],
       content,
       autofocus: true,
-      onUpdate({ editor }) {
-        clearTimeout(saveTimeout);
-        saveTimeout = setTimeout(() => {
-          updateNoteMetadata();
-        }, 1000);
-      },
       onSelectionUpdate({ editor }) {
         updateEditorState();
       }
     });
     
     return editor;
-  }
-  
-  // 노트 메타데이터 업데이트 (제목 등)
-  function updateNoteMetadata() {
-    let newTitle = pageTitle;
-    if (!manualTitleEdited && editor.getJSON().content && editor.getJSON().content.length > 0) {
-      const heading = editor.getJSON().content.find(
-        node => node.type === 'heading' && node.attrs && node.attrs.level === 1
-      );
-      if (heading && heading.content && heading.content.length > 0 && heading.content[0].text) {
-        newTitle = heading.content[0].text;
-      }
-    }
-    pageTitle = newTitle;
-    // 제목만 업데이트 (내용은 Hocuspocus가 처리)
-    updateNote(localStorage.token, noteId, newTitle);
-  }
+  }  
 
   onMount(async () => {
     // 노트 메타데이터 가져오기

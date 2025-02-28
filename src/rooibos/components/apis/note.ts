@@ -68,11 +68,10 @@ export const createNote = async (token: string, newId: string, userId: string = 
 	return res;
 };
 
-export const updateNote = async (
+export const renameNote = async (
 	token: string,
 	noteId: string,
-	newTitle: string,
-	newContent: any
+	newTitle: string
   ) => {
 	let error = null;
   
@@ -86,7 +85,7 @@ export const updateNote = async (
 		  'Content-Type': 'application/json',
 		  authorization: `Bearer ${token}`
 		},
-		body: JSON.stringify({ title: newTitle, content: newContent })
+		body: JSON.stringify({ title: newTitle })
 	  }
 	)
 	  .then(async (res) => {

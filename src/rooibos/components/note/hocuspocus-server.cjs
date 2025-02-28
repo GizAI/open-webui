@@ -1,9 +1,9 @@
-// server.js (또는 실행 파일)
 const { Server } = require('@hocuspocus/server');
 const { Database } = require('@hocuspocus/extension-database');
 const { Logger } = require('@hocuspocus/extension-logger');
 const { Redis } = require('@hocuspocus/extension-redis');
 const axios = require('axios');
+const Y = require('yjs'); // Yjs 임포트
 
 const HOCUSPOCUS_HOST = '0.0.0.0';
 const HOCUSPOCUS_PORT = 1234;
@@ -18,13 +18,8 @@ const redisConfig = process.env.REDIS_URL
     }
   : null;
 
-function getRandomColor() {
-  const colors = [
-    '#5D8AA8', '#E32636', '#FFBF00', '#9966CC', '#7CB9E8', 
-    '#B2BEB5', '#87A96B', '#FF9966', '#007FFF', '#89CFF0'
-  ];
-  return colors[Math.floor(Math.random() * colors.length)];
-}
+// noteId별 디바운스 타이머를 저장할 맵
+const debounceMap = new Map();
 
 const server = Server.configure({
   address: HOCUSPOCUS_HOST,
@@ -33,54 +28,9 @@ const server = Server.configure({
   async onConnect(data) {
     const { request, requestHeaders, documentName } = data;
     console.log(`사용자가 문서에 연결됨: ${documentName}`);
-    
-    try {
-      // 토큰 검증 및 사용자 정보 가져오기 (필요 시 주석 해제)
-      // const token = requestHeaders.authorization?.replace('Bearer ', '');
-      // if (!token) {
-      //   throw new Error('인증 토큰이 없습니다');
-      // }
-      // const response = await axios.get(`${API_BASE_URL}/users/me`, {
-      //   headers: { Authorization: `Bearer ${token}` }
-      // });
-      // const user = {
-      //   id: response.data.id,
-      //   name: response.data.name,
-      //   color: response.data.color || getRandomColor(),
-      //   avatar: response.data.avatar
-      // };
-      // request.user = user;
-      
-      // 문서 접근 권한 확인 (필요 시 주석 해제)
-      // const noteId = documentName.split(':')[1];
-      // const permissionResponse = await axios.get(`${API_BASE_URL}/notes/${noteId}`, {
-      //   headers: { Authorization: `Bearer ${token}` }
-      // });
-      // if (!permissionResponse.data.canEdit) {
-      //   throw new Error('이 문서를 편집할 권한이 없습니다');
-      // }
-      
-      // 활성 사용자 목록에 추가 (원하는 경우)
-      // const activeUsers = data.instance.getMap('activeUsers');
-      // activeUsers.set(user.id, user);
-      
-      return true;
-    } catch (error) {
-      console.error('연결 오류:', error);
-      return false;
-    }
+    // (인증 및 권한 확인 로직 생략)
+    return true;
   },
-  
-  // 필요 시 onDisconnect 핸들러 구현
-  // async onDisconnect(data) {
-  //   const { request, instance } = data;
-  //   const user = request.user;
-  //   if (user) {
-  //     const activeUsers = instance.getMap('activeUsers');
-  //     activeUsers.delete(user.id);
-  //     console.log(`사용자 연결 해제: ${user.name}`);
-  //   }
-  // },
   
   extensions: [
     new Logger({
@@ -108,43 +58,64 @@ const server = Server.configure({
       : []),
     
     new Database({
-      // 문서 가져오기
+      // 문서 가져오기 함수는 기존 로직 유지
       fetch: async (data) => {
-    //     try {
-    //       const noteId = data.documentName.split(':')[1];
-    //       if (!noteId) return null;
-          
-    //       const token = data.requestHeaders.authorization?.replace('Bearer ', '');
-    //       const response = await axios.get(`${API_BASE_URL}/rooibos/notes/${noteId}`, {
-    //         headers: token ? { Authorization: `Bearer ${token}` } : {},
-    //         responseType: 'arraybuffer'
-    //       });
-          
-    //       return response.data.note;
-    //     } catch (error) {
-    //       console.error('문서 가져오기 오류:', error);
-    //       return null;
-    //     }
-    //   },
-      
-      // 문서 저장하기
-      store: async (data) => {
         try {
           const noteId = data.documentName.split(':')[1];
-          if (!noteId) return;
+          if (!noteId) return null;
           
           const token = data.requestHeaders.authorization?.replace('Bearer ', '');
-          await axios.post(`${API_BASE_URL}/rooibos/notes/update/`, data.state, {
-            headers: {
-              Authorization: token ? `Bearer ${token}` : '',
-              'Content-Type': 'application/octet-stream'
-            }
+          const response = await axios.get(`${API_BASE_URL}/rooibos/notes/${noteId}`, {
+            headers: token ? { Authorization: `Bearer ${token}` } : {},
+            responseType: 'arraybuffer'
           });
           
-          console.log(`문서 저장 완료: ${noteId}`);
+          return response.data.note;
         } catch (error) {
-          console.error('문서 저장 오류:', error);
+          console.error('문서 가져오기 오류:', error);
+          return null;
         }
+      },
+      
+      // 저장 함수에 디바운스 적용: 1초 동안 입력이 없으면 저장
+      store: async (data) => {
+        console.log("!!!!!!!!!!!!!!!!!!!!!!!!");
+        const noteId = data.documentName.split(':')[1];
+        if (!noteId) return;
+        
+        // 기존에 타이머가 있으면 취소
+        if (debounceMap.has(noteId)) {
+          clearTimeout(debounceMap.get(noteId));
+        }
+        
+        // 1초 후 저장 실행
+        debounceMap.set(noteId, setTimeout(async () => {
+          try {
+            // Yjs 문서 업데이트 형식으로 변환
+            const update = Y.encodeStateAsUpdate(data.document);
+            console.log("=======================");
+            console.log(update);
+            // 필요에 따라 제목 추출 로직을 추가할 수 있음
+            const queryParams = new URLSearchParams({ noteId });
+            const res = await fetch(
+                `${API_BASE_URL}/rooibos/notes/update/?${queryParams.toString()}`,
+                {
+                  method: 'PUT',
+                  headers: {
+                    Accept: 'application/json',
+                    'Content-Type': 'application/json'
+                  },
+                  body: JSON.stringify({ content: update })
+                }
+              )
+
+            console.log(`문서 저장 완료: ${noteId}`);
+          } catch (error) {
+            console.error('문서 저장 오류:', error);
+          } finally {
+            debounceMap.delete(noteId);
+          }
+        }, 1000)); // 1000ms = 1초 대기
       }
     })
   ]
