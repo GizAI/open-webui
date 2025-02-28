@@ -34,8 +34,12 @@
 	let editingFolderId: string | null = null;
 	let editedName = '';
 
-	function handleFolderClick(folderId: string) {
-		goto(`/rooibos/folder/${folderId}/notes`);
+	function handleFolderClick(folder: any) {
+		if (folder.type === 'note') {
+			goto(`/rooibos/folder/${folder.id}/notes`);
+		} else {
+			goto(`/rooibos/folder/${folder.id}/companies`);
+		}
 	}
 
 	async function handleAddPage(e: Event, folderId: string) {
@@ -81,7 +85,7 @@
 						autofocus
 					/>
 				{:else}
-					<span on:click={() => handleFolderClick(folderId)} class="cursor-pointer">
+					<span on:click={() => handleFolderClick(folders[folderId])} class="cursor-pointer">
 						{folders[folderId].name}
 					</span>
 				{/if}
@@ -108,13 +112,15 @@
 									<Pencil strokeWidth="2" />
 									<div class="flex items-center">{$i18n.t('이름변경')}</div>
 								</DropdownMenu.Item>
-								<DropdownMenu.Item
-									class="flex gap-2 items-center px-3 py-1.5 text-sm cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 rounded-md"
-									on:click={(e) => handleAddPage(e, folderId)}
-								>
-									<NotebookIcon strokeWidth="2" />
-									<div class="flex items-center">{$i18n.t('새페이지')}</div>
-								</DropdownMenu.Item>
+								{#if folders[folderId].type === 'note'}
+									<DropdownMenu.Item
+										class="flex gap-2 items-center px-3 py-1.5 text-sm cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 rounded-md"
+										on:click={(e) => handleAddPage(e, folderId)}
+									>
+										<NotebookIcon strokeWidth="2" />
+										<div class="flex items-center">{$i18n.t('새페이지')}</div>
+									</DropdownMenu.Item>
+								{/if}
 							</DropdownMenu.Content>
 						</div>
 					</Dropdown>

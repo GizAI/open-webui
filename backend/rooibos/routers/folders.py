@@ -24,7 +24,6 @@ async def getNoteFolder(request: Request):
                 SELECT *
                 FROM rb_folder
                 WHERE user_id = :userId
-                  AND type = 'note'
                 ORDER BY created_at ASC
             """
             params = {"userId": userId}
@@ -49,22 +48,23 @@ async def getNoteFolder(request: Request):
 
 @router.post("/add")
 async def addNoteFolder(request: Request):
-    search_params = request.query_params
-    userId = search_params.get("userId")  
-    folder_name = request.query_params.get("name", "Untitle")
+    data = await request.json()
+    userId = request.query_params.get("userId")  
+    folder_name = data.get("name", "Untitle")
+    folder_type = data.get("type")
     new_id = str(uuid.uuid4())
     now = int(time.time())
     try:
         with get_db() as db:
             query = """
                 INSERT INTO rb_folder (id, parent_id, user_id, "name", type, items, meta, is_expanded, created_at, updated_at)
-                VALUES (:id, NULL, :userId, :name, 'note', NULL, NULL, false, :created_at, :updated_at)
+                VALUES (:id, NULL, :userId, :name, :folderType, NULL, NULL, false, :created_at, :updated_at)
                 RETURNING *
             """
-            params = {"id": new_id, "userId": userId, "name": folder_name, "created_at": now, "updated_at": now}
+            params = {"id": new_id, "userId": userId, "name": folder_name, "folderType": folder_type, "created_at": now, "updated_at": now}
             result = db.execute(text(query), params)
+            folder = dict(result.fetchone()._mapping)  # _mapping 속성 사용
             db.commit()
-            folder = dict(result.fetchone())
 
         return {
             "success": True,
@@ -145,3 +145,40 @@ async def getFolderNoteList(folderId: str, request: Request):
             }
         )
 
+@router.get("/{folderId}/myCompany")
+async def getFolderCompanyList(folderId: str, request: Request):    
+    search_params = request.query_params
+    userId = search_params.get("userId")
+    try:
+        
+        query = """
+            SELECT DISTINCT
+                f.id,
+                f.created_at,
+                f.updated_at,
+                f.company_id,
+                rmc.master_id,
+                rmc.company_name,
+                rmc.address
+            FROM corp_bookmark f
+            INNER JOIN rb_master_company rmc
+                ON f.company_id::text = rmc.master_id::text
+            WHERE f.user_id = $1
+            ORDER BY f.updated_at DESC
+        """
+        params = {"userId": userId, "folderId": folderId}
+        result = get_db().execute(text(query), params)
+        companyList = [dict(row._mapping) for row in result.fetchall()]    
+
+        return {
+            "success": True,
+            "data": companyList,
+            "total": len(companyList),
+        }
+    except Exception as e:
+        log.error("Search API error: " + str(e))
+        return {
+            "success": False,
+            "error": "Search failed",
+            "message": str(e)
+        }
