@@ -1,5 +1,4 @@
 <script>
-  // 현재 활성 사용자 목록을 props로 받음
   export let users = [];
 </script>
 

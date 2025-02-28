@@ -10,11 +10,11 @@
   import TopBar from './TopBar.svelte';
   import RightSidebar from './NoteAIChat.svelte';
   import CollaboratorsList from './CollaboratorsList.svelte';
-  import { getNote, updateNote } from '../apis/note';
+  import { getNote, renameNote } from '../apis/note';
   import { get } from 'svelte/store';
   import { page } from '$app/stores';
-	import { getExtensions } from './tiptapExtension';
-	import { user } from '$lib/stores';
+  import { getExtensions } from './tiptapExtension';
+  import { user } from '$lib/stores';
 
   let editor;
   let editorElement;
@@ -44,7 +44,7 @@
 
   const { id: noteId } = get(page).params;  
 
-  // 드롭다운 위치 계산을 위한 변수
+  // 드롭다운 위치 계산 변수들
   let colorPickerPosition = { x: 0, y: 0 };
   let highlightPickerPosition = { x: 0, y: 0 };
   let alignmentDropdownPosition = { x: 0, y: 0 };
@@ -115,22 +115,6 @@
     } catch (error) {
       console.error('번역 중 오류 발생:', error);
     }
-  }
-
-  function updateNoteContent() {
-    const htmlContent = editor.getHTML();
-    
-    let newTitle = pageTitle;
-    if (!manualTitleEdited && editor.getJSON().content && editor.getJSON().content.length > 0) {
-      const heading = editor.getJSON().content.find(
-        node => node.type === 'heading' && node.attrs && node.attrs.level === 1
-      );
-      if (heading && heading.content && heading.content.length > 0 && heading.content[0].text) {
-        newTitle = heading.content[0].text;
-      }
-    }
-    pageTitle = newTitle;
-    updateNote(localStorage.token, noteId, newTitle, htmlContent);
   }
 
   // 액션 함수들
@@ -361,8 +345,7 @@
     pageTitle = e.detail;
     manualTitleEdited = true;
     if (editor) {
-      const htmlContent = editor.getHTML();
-      updateNote(localStorage.token, noteId, pageTitle, htmlContent);
+      renameNote(localStorage.token, noteId, pageTitle);
     }
   }
   
@@ -374,213 +357,124 @@
     showSidebar = false;
   }
 
-  // Hocuspocus 프로바이더 초기화 함수 수정
   function initCollaboration() {
-    // 문서 이름 형식: note:123
     const documentName = `note:${noteId}`;
+    const currentUser = get(user);
     
-    console.log('Connecting to Hocuspocus server with document:', documentName);
+    // 세션별 고유 ID 생성 (브라우저 탭마다 다른 ID)
+    const sessionId = crypto.randomUUID();
     
-    // Hocuspocus 프로바이더 생성
+    // 랜덤 색상 생성 함수
+    const getRandomColor = () => {
+      const colors = [
+        '#f44336', '#e91e63', '#9c27b0', '#673ab7', '#3f51b5', 
+        '#2196f3', '#03a9f4', '#00bcd4', '#009688', '#4caf50', 
+        '#8bc34a', '#cddc39', '#ffc107', '#ff9800', '#ff5722'
+      ];
+      return colors[Math.floor(Math.random() * colors.length)];
+    };
+    
+    // 세션별 색상 생성
+    const sessionColor = getRandomColor();
+    
     provider = new HocuspocusProvider({
-      url: window.location.hostname === 'localhost' 
-        ? 'ws://localhost:1234' 
-        : `wss://${window.location.hostname}:1234`,
+      url:
+        window.location.hostname === 'localhost'
+          ? 'ws://localhost:1234'
+          : `ws://${window.location.hostname}:1234`,
       name: documentName,
       token: localStorage.getItem('token'),
       connect: true,
-      forceSyncInterval: 1000, // 1초마다 강제 동기화
-      maxAttempts: 20, // 연결 재시도 횟수 증가
-      delay: 500, // 재연결 지연 시간 감소
-      onConnect: () => {
-        console.log('WebSocket 연결됨');
-      },
-      onDisconnect: () => {
-        console.error('WebSocket 연결 끊김');
-      },
+      maxRetries: 10,
+      retryDelay: 1000,
       onAuthenticated: () => {
         console.log('협업 서버에 인증됨');
       },
       onSynced: () => {
         console.log('문서 동기화 완료');
-        // 동기화 완료 시 에디터 초기화 시도
-        if (!editor && editorElement) {
-          console.log('동기화 완료 후 에디터 초기화 시도');
-          try {
-            editor = initEditor('', provider);
-          } catch (error) {
-            console.error('동기화 후 에디터 초기화 오류:', error);
-          }
-        }
       },
       onClose: () => {
         console.log('협업 서버와 연결 끊김');
       },
       onMessage: (message) => {
         console.log('서버 메시지:', message);
-      },
-      onStatus: ({ status }) => {
-        console.log('연결 상태:', status);
-      },
-      onAwarenessUpdate: ({ states }) => {
-        console.log('Awareness 업데이트:', states);
-        // 활성 사용자 목록 업데이트
-        activeUsers = states.map(state => state.user).filter(Boolean);
       }
+    });
+    
+    const yActiveUsers = provider.document.getMap('activeUsers');
+    yActiveUsers.observe(() => {
+      activeUsers = Array.from(yActiveUsers.values());
     });
     
     return provider;
   }
 
-  // 에디터 초기화 함수 수정
   function initEditor(content, provider) {
-    try {
-      console.log('에디터 초기화 시작');
-      const currentUser = $user;
-      console.log('현재 사용자:', currentUser);
-      
-      // Y.js 문서 구조 확인
-      console.log('Y.js 문서 구조:', provider.document);
-      
-      // 모든 기존 필드 삭제
-      if (provider.document.share.has('prosemirror')) {
-        console.log('기존 prosemirror 필드 발견, 삭제합니다');
-        provider.document.share.delete('prosemirror');
-      }
-      
-      if (provider.document.share.has('content')) {
-        console.log('기존 content 필드 발견, 삭제합니다');
-        provider.document.share.delete('content');
-      }
-      
-      // 초기 내용 설정
-      let initialContent = content || '<p></p>';
-      
-      // 서버에서 가져온 내용이 있으면 사용
-      if (noteData && noteData.content) {
-        initialContent = noteData.content;
-        console.log('서버에서 가져온 내용 사용:', initialContent);
-      }
-      
-      editor = new Editor({
-        element: editorElement,
-        extensions: [
-          ...getExtensions({ bubbleMenuElement, adjustBubbleMenuPosition }),
-          // 협업 확장 기능 추가
-          Collaboration.configure({
-            document: provider.document,
-            field: 'prosemirror',
-          }),
-          CollaborationCursor.configure({
-            provider,
-            user: {
-              name: currentUser?.name || 'Anonymous',
-              color: '#ff0000',
-              avatar: null
-            },
-          }),
-        ],
-        content: initialContent,
-        autofocus: 'end',
-        onReady: () => {
-          console.log('에디터가 준비되었습니다.');
-        },
-        onUpdate: ({ editor }) => {
-          console.log('에디터 내용 업데이트');
-          clearTimeout(saveTimeout);
-          saveTimeout = setTimeout(() => {
-            updateNoteMetadata();
-          }, 1000);
-        },
-        onSelectionUpdate: ({ editor }) => {
-          updateEditorState();
-        }
-      });
-      
-      console.log('에디터 객체 생성 완료:', editor);
-      return editor;
-    } catch (error) {
-      console.error('에디터 초기화 중 오류:', error);
-      throw error;
-    }
-  }
-  
-  // 노트 메타데이터 업데이트 (제목 등)
-  function updateNoteMetadata() {
-    let newTitle = pageTitle;
-    if (!manualTitleEdited && editor.getJSON().content && editor.getJSON().content.length > 0) {
-      const heading = editor.getJSON().content.find(
-        node => node.type === 'heading' && node.attrs && node.attrs.level === 1
-      );
-      if (heading && heading.content && heading.content.length > 0 && heading.content[0].text) {
-        newTitle = heading.content[0].text;
-      }
-    }
-    pageTitle = newTitle;
+    const currentUser = get(user);
     
-    // 제목만 업데이트 (내용은 Hocuspocus가 처리)
-    updateNote(localStorage.token, noteId, newTitle);
-  }
+    // 랜덤 색상 생성 함수
+    const getRandomColor = () => {
+      const colors = [
+        '#f44336', // 빨강
+        '#e91e63', // 핑크
+        '#9c27b0', // 보라
+        '#673ab7', // 진보라
+        '#3f51b5', // 남색
+        '#2196f3', // 파랑
+        '#03a9f4', // 하늘
+        '#00bcd4', // 청록
+        '#009688', // 틸
+        '#4caf50', // 초록
+        '#8bc34a', // 연두
+        '#cddc39', // 라임
+        '#ffc107', // 황색
+        '#ff9800', // 주황
+        '#ff5722'  // 주홍
+      ];
+      return colors[Math.floor(Math.random() * colors.length)];
+    };
+    
+    // 세션별 색상 생성
+    const sessionColor = getRandomColor();
+    
+    editor = new Editor({
+      element: editorElement,
+      extensions: [
+        ...getExtensions({ bubbleMenuElement, adjustBubbleMenuPosition }),
+        // 협업 확장 기능 추가
+        Collaboration.configure({
+          document: provider.document,
+        }),
+        CollaborationCursor.configure({
+          provider,
+          user: {
+            name: currentUser?.name || 'Anonymous',
+            color: sessionColor, // 세션별 랜덤 색상 적용
+            avatar: currentUser?.avatar
+          },
+        }),
+      ],
+      content,
+      autofocus: true,
+      onSelectionUpdate({ editor }) {
+        updateEditorState();
+      }
+    });
+    
+    return editor;
+  }  
 
   onMount(async () => {
-    try {
-      console.log('노트 에디터 마운트 시작');
-      
-      // 협업 프로바이더 초기화
-      provider = initCollaboration();
-      
-      // 추가 이벤트 리스너 등록 (provider 초기화 후)
-      provider.on('sync', () => {
-        console.log('sync 이벤트 발생 (동기화 진행 중)');
-      });
-
-      provider.on('synced', () => {
-        console.log('synced 이벤트 발생 (동기화 완료)');
-      });
-
-      provider.on('update', () => {
-        console.log('update 이벤트 발생 (문서 업데이트)');
-      });
-
-      provider.on('error', (error) => {
-        console.error('provider 오류 발생:', error);
-      });
-      
-      console.log('프로바이더 초기화 완료, 동기화 대기 중...');
-      
-      // 동기화 대기 (타임아웃 추가)
-      const syncPromise = new Promise((resolve) => {
-        const syncTimeout = setTimeout(() => {
-          console.warn('문서 동기화 타임아웃, 에디터를 계속 초기화합니다');
-          resolve(false);
-        }, 20000); // 20초로 증가
-        
-        provider.on('synced', () => {
-          clearTimeout(syncTimeout);
-          console.log('문서가 동기화되었습니다.');
-          resolve(true);
-        });
-      });
-      
-      // 타임아웃 여부와 관계없이 에디터 초기화 진행
-      await syncPromise.then((synced) => {
-        console.log('동기화 상태:', synced ? '성공' : '타임아웃');
-      }).catch(() => {
-        console.log('동기화 프로미스 오류, 계속 진행합니다');
-      });
-      
-      console.log('provider document 구조:', JSON.stringify(provider.document.toJSON()));
-      
-      // 에디터 초기화 (provider가 동기화된 후)
-      editor = initEditor('', provider);
-      console.log('에디터 초기화 완료');
-      
-      // 이벤트 리스너 등록
-      document.addEventListener('click', closeAllDropdowns);
-      window.addEventListener('resize', adjustBubbleMenuPosition);
-    } catch (error) {
-      console.error('에디터 초기화 중 오류 발생:', error);
+    note = await getNote(noteId);
+    if (note && note.title) {
+      pageTitle = note.title;
     }
+    
+    provider = initCollaboration();
+    editor = initEditor('', provider);
+    
+    document.addEventListener('click', closeAllDropdowns);
+    window.addEventListener('resize', adjustBubbleMenuPosition);
   });
 
   onDestroy(() => {
@@ -685,7 +579,7 @@
     text-decoration: none;
   }
 
-  /* 협업 관련 스타일 추가 */
+  /* 협업 관련 스타일 수정 */
   :global(.collaboration-cursor__caret) {
     border-left: 1px solid;
     border-right: 1px solid;
@@ -697,17 +591,19 @@
   }
 
   :global(.collaboration-cursor__label) {
-    border-radius: 3px 3px 3px 0;
+    border-radius: 4px;
     color: #fff;
-    font-size: 12px;
+    font-size: 14px;
     font-style: normal;
     font-weight: 600;
-    left: -1px;
-    line-height: normal;
     padding: 0.1rem 0.3rem;
     position: absolute;
-    top: -1.4em;
+    top: -1.8em;
+    left: 0;
     user-select: none;
     white-space: nowrap;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+    transform: translateY(-2px);
+    z-index: 100;
   }
 </style>
