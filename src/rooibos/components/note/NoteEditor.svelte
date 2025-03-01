@@ -283,6 +283,13 @@
 		const selection = editor.state.selection;
 		const hasLink = editor.isActive('link');
 
+		// 링크가 이미 적용된 상태에서 링크 버튼을 클릭하면 링크 제거
+		if (hasLink) {
+			editor.chain().focus().unsetLink().run();
+			updateEditorState();
+			return;
+		}
+
 		if (selection.empty && !hasLink) {
 			return;
 		}
