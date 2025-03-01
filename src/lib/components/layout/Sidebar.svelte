@@ -48,8 +48,8 @@
 	import AddFilesPlaceholder from '../AddFilesPlaceholder.svelte';
 	import SearchInput from './Sidebar/SearchInput.svelte';
 	import Folder from '../common/Folder.svelte';
-	import NoteFolder from '$rooibos/components/note/folder/NoteFolder.svelte'
-	import NoteFolderMenu from '$rooibos/components/note/folder/NoteFolderMenu.svelte'
+	import NoteFolder from '$rooibos/components/note/folder/NoteFolder.svelte';
+	import NoteFolderMenu from '$rooibos/components/note/folder/NoteFolderMenu.svelte';
 	import Plus from '../icons/Plus.svelte';
 	import Tooltip from '../common/Tooltip.svelte';
 	import Folders from './Sidebar/Folders.svelte';
@@ -109,11 +109,24 @@
 
 	// Notes 폴더 초기화 (필요시 Notes 전용 필터 추가)
 	const initRooibosFolders = async () => {
-		const folderList = await getNoteFolders(localStorage.token, $user?.id).catch((error) => {
+		const response = await getNoteFolders(localStorage.token, $user?.id).catch((error) => {
 			toast.error(`${error}`);
-			return [];
+			return null;
 		});
-		
+
+		// response가 null이거나, 배열이 아닌 경우를 처리
+		let folderList = [];
+		if (response) {
+			// 만약 응답이 객체 형식이라면 data 필드에서 배열을 추출
+			if (Array.isArray(response)) {
+				folderList = response;
+			} else if (Array.isArray(response.data)) {
+				folderList = response.data;
+			} else {
+				toast.error('폴더 데이터 형식이 올바르지 않습니다.');
+			}
+		}
+		debugger;
 		rooibosFolders = {};
 
 		for (const folder of folderList) {
@@ -133,8 +146,8 @@
 				});
 			}
 		}
-		
-		console.log(rooibosFolders)
+
+		console.log(rooibosFolders);
 	};
 
 	// Chats 폴더 생성 함수
@@ -146,7 +159,9 @@
 		const rootFolders = Object.values(folders).filter((folder) => folder.parent_id === null);
 		if (rootFolders.find((folder) => folder.name.toLowerCase() === name.toLowerCase())) {
 			let i = 1;
-			while (rootFolders.find((folder) => folder.name.toLowerCase() === `${name} ${i}`.toLowerCase())) {
+			while (
+				rootFolders.find((folder) => folder.name.toLowerCase() === `${name} ${i}`.toLowerCase())
+			) {
 				i++;
 			}
 			name = `${name} ${i}`;
@@ -179,7 +194,9 @@
 		const rootFolders = Object.values(folders).filter((folder) => folder.parent_id === null);
 		if (rootFolders.find((folder) => folder.name.toLowerCase() === name.toLowerCase())) {
 			let i = 1;
-			while (rootFolders.find((folder) => folder.name.toLowerCase() === `${name} ${i}`.toLowerCase())) {
+			while (
+				rootFolders.find((folder) => folder.name.toLowerCase() === `${name} ${i}`.toLowerCase())
+			) {
 				i++;
 			}
 			name = `${name} ${i}`;
@@ -195,10 +212,12 @@
 				type: type
 			}
 		};
-		const res = await createNewRooibosFolder(localStorage.token, name, $user?.id, type).catch((error) => {
-			toast.error(`${error}`);
-			return null;
-		});
+		const res = await createNewRooibosFolder(localStorage.token, name, $user?.id, type).catch(
+			(error) => {
+				toast.error(`${error}`);
+				return null;
+			}
+		);
 		if (res) {
 			await initRooibosFolders();
 		}
@@ -432,7 +451,9 @@
 
 {#if $showSidebar}
 	<div
-		class="{$isApp ? ' ml-[4.5rem] md:ml-0' : ''} fixed md:hidden z-40 top-0 right-0 left-0 bottom-0 bg-black/60 w-full min-h-screen h-screen flex justify-center overflow-hidden overscroll-contain"
+		class="{$isApp
+			? ' ml-[4.5rem] md:ml-0'
+			: ''} fixed md:hidden z-40 top-0 right-0 left-0 bottom-0 bg-black/60 w-full min-h-screen h-screen flex justify-center overflow-hidden overscroll-contain"
 		on:mousedown={() => {
 			showSidebar.set(!$showSidebar);
 		}}
@@ -442,10 +463,18 @@
 <div
 	bind:this={navElement}
 	id="sidebar"
-	class="h-screen max-h-[100dvh] min-h-screen select-none {$showSidebar ? 'md:relative w-[260px] max-w-[260px]' : '-translate-x-[260px] w-[0px]'} {$isApp ? `ml-[4.5rem] md:ml-0 ` : 'transition-width duration-200 ease-in-out'} shrink-0 bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-gray-200 text-sm fixed z-50 top-0 left-0 overflow-x-hidden"
+	class="h-screen max-h-[100dvh] min-h-screen select-none {$showSidebar
+		? 'md:relative w-[260px] max-w-[260px]'
+		: '-translate-x-[260px] w-[0px]'} {$isApp
+		? `ml-[4.5rem] md:ml-0 `
+		: 'transition-width duration-200 ease-in-out'} shrink-0 bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-gray-200 text-sm fixed z-50 top-0 left-0 overflow-x-hidden"
 	data-state={$showSidebar}
 >
-	<div class="py-2 my-auto flex flex-col justify-between h-screen max-h-[100dvh] w-[260px] overflow-x-hidden z-50 {$showSidebar ? '' : 'invisible'}">
+	<div
+		class="py-2 my-auto flex flex-col justify-between h-screen max-h-[100dvh] w-[260px] overflow-x-hidden z-50 {$showSidebar
+			? ''
+			: 'invisible'}"
+	>
 		<div class="px-1.5 flex justify-between space-x-1 text-gray-600 dark:text-gray-400">
 			<button
 				class="cursor-pointer p-[7px] flex rounded-xl hover:bg-gray-100 dark:hover:bg-gray-900 transition"
@@ -454,8 +483,19 @@
 				}}
 			>
 				<div class="m-auto self-center">
-					<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="size-5">
-						<path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25H12"/>
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						fill="none"
+						viewBox="0 0 24 24"
+						stroke-width="2"
+						stroke="currentColor"
+						class="size-5"
+					>
+						<path
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25H12"
+						/>
 					</svg>
 				</div>
 			</button>
@@ -478,7 +518,12 @@
 			>
 				<div class="flex items-center">
 					<div class="self-center mx-1.5">
-						<img crossorigin="anonymous" src="{WEBUI_BASE_URL}/static/favicon.png" class="size-5 -translate-x-1.5 rounded-full" alt="logo" />
+						<img
+							crossorigin="anonymous"
+							src="{WEBUI_BASE_URL}/static/favicon.png"
+							class="size-5 -translate-x-1.5 rounded-full"
+							alt="logo"
+						/>
 					</div>
 					<div class="self-center font-medium text-sm text-gray-850 dark:text-white font-primary">
 						{$i18n.t('New Chat')}
@@ -505,8 +550,19 @@
 					draggable="false"
 				>
 					<div class="self-center">
-						<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="size-[1.1rem]">
-							<path stroke-linecap="round" stroke-linejoin="round" d="M13.5 16.875h3.375m0 0h3.375m-3.375 0V13.5m0 3.375v3.375M6 10.5h2.25a2.25 2.25 0 0 0 2.25-2.25V6a2.25 2.25 0 0 0-2.25-2.25H6A2.25 2.25 0 0 0 3.75 6v2.25A2.25 2.25 0 0 0 6 10.5Zm0 9.75h2.25A2.25 2.25 0 0 0 10.5 18v-2.25a2.25 2.25 0 0 0-2.25-2.25H6a2.25 2.25 0 0 0-2.25 2.25V18A2.25 2.25 0 0 0 6 20.25Zm9.75-9.75H18a2.25 2.25 0 0 0 2.25-2.25V6A2.25 2.25 0 0 0 18 3.75h-2.25A2.25 2.25 0 0 0 13.5 6v2.25a2.25 2.25 0 0 0 2.25 2.25Z"/>
+						<svg
+							xmlns="http://www.w3.org/2000/svg"
+							fill="none"
+							viewBox="0 0 24 24"
+							stroke-width="2"
+							stroke="currentColor"
+							class="size-[1.1rem]"
+						>
+							<path
+								stroke-linecap="round"
+								stroke-linejoin="round"
+								d="M13.5 16.875h3.375m0 0h3.375m-3.375 0V13.5m0 3.375v3.375M6 10.5h2.25a2.25 2.25 0 0 0 2.25-2.25V6a2.25 2.25 0 0 0-2.25-2.25H6A2.25 2.25 0 0 0 3.75 6v2.25A2.25 2.25 0 0 0 6 10.5Zm0 9.75h2.25A2.25 2.25 0 0 0 10.5 18v-2.25a2.25 2.25 0 0 0-2.25-2.25H6a2.25 2.25 0 0 0-2.25 2.25V18A2.25 2.25 0 0 0 6 20.25Zm9.75-9.75H18a2.25 2.25 0 0 0 2.25-2.25V6A2.25 2.25 0 0 0 18 3.75h-2.25A2.25 2.25 0 0 0 13.5 6v2.25a2.25 2.25 0 0 0 2.25 2.25Z"
+							/>
 						</svg>
 					</div>
 					<div class="flex self-center translate-y-[0.5px]">
@@ -528,8 +584,19 @@
 					draggable="false"
 				>
 					<div class="self-center">
-						<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="size-[1.1rem]">
-							<path stroke-linecap="round" stroke-linejoin="round" d="M3.75 21h16.5M4.5 3h15M5.25 3v18m13.5-18v18M9 6.75h1.5m-1.5 3h1.5m-1.5 3h1.5m3-6H15m-1.5 3H15m-1.5 3H15M9 21v-3.375c0-.621.504-1.125 1.125-1.125h3.75c.621 0 1.125.504 1.125 1.125V21"/>
+						<svg
+							xmlns="http://www.w3.org/2000/svg"
+							fill="none"
+							viewBox="0 0 24 24"
+							stroke-width="2"
+							stroke="currentColor"
+							class="size-[1.1rem]"
+						>
+							<path
+								stroke-linecap="round"
+								stroke-linejoin="round"
+								d="M3.75 21h16.5M4.5 3h15M5.25 3v18m13.5-18v18M9 6.75h1.5m-1.5 3h1.5m-1.5 3h1.5m3-6H15m-1.5 3H15m-1.5 3H15M9 21v-3.375c0-.621.504-1.125 1.125-1.125h3.75c.621 0 1.125.504 1.125 1.125V21"
+							/>
 						</svg>
 					</div>
 					<div class="flex self-center">
@@ -547,13 +614,14 @@
 							onAdd={() => createRooibosFolder('Untitled', 'corp')}
 							onAddLabel={$i18n.t('New Folder')}
 						>
-							<NoteFolderMenu 
+							<NoteFolderMenu
 								folders={Object.values(rooibosFolders)
-									.filter(folder => folder.type === 'corp')
+									.filter((folder) => folder.type === 'corp')
 									.reduce((acc, folder) => {
 										acc[folder.id] = folder;
 										return acc;
-									}, {})} 
+									}, {})}
+								parentId={null}
 							/>
 						</NoteFolder>
 					{:else}
@@ -571,8 +639,19 @@
 						>
 							{#if $user?.id != '5ee82147-b469-4609-8bea-2ba484cfc2ab'}
 								<div class="self-center">
-									<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="size-[1.1rem]">
-										<path stroke-linecap="round" stroke-linejoin="round" d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.563.563 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.563.563 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345l2.125-5.111z"/>
+									<svg
+										xmlns="http://www.w3.org/2000/svg"
+										fill="none"
+										viewBox="0 0 24 24"
+										stroke-width="2"
+										stroke="currentColor"
+										class="size-[1.1rem]"
+									>
+										<path
+											stroke-linecap="round"
+											stroke-linejoin="round"
+											d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.563.563 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.563.563 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345l2.125-5.111z"
+										/>
 									</svg>
 								</div>
 							{/if}
@@ -587,10 +666,18 @@
 			{#if $temporaryChatEnabled}
 				<div class="absolute z-40 w-full h-full flex justify-center"></div>
 			{/if}
-			<SearchInput bind:value={search} on:input={searchDebounceHandler} placeholder={$i18n.t('Search')}/>
+			<SearchInput
+				bind:value={search}
+				on:input={searchDebounceHandler}
+				placeholder={$i18n.t('Search')}
+			/>
 		</div>
 
-		<div class="relative flex flex-col flex-1 overflow-y-auto overflow-x-hidden {$temporaryChatEnabled ? 'opacity-20' : ''}">
+		<div
+			class="relative flex flex-col flex-1 overflow-y-auto overflow-x-hidden {$temporaryChatEnabled
+				? 'opacity-20'
+				: ''}"
+		>
 			{#if $config?.features?.enable_channels && ($user.role === 'admin' || $channels.length > 0) && !search}
 				<Folder
 					className="px-2 mt-0.5"
@@ -607,7 +694,12 @@
 					onAddLabel={$i18n.t('Create Channel')}
 				>
 					{#each $channels as channel}
-						<ChannelItem {channel} onUpdate={async () => { await initChannels(); }}/>
+						<ChannelItem
+							{channel}
+							onUpdate={async () => {
+								await initChannels();
+							}}
+						/>
 					{/each}
 				</Folder>
 			{/if}
@@ -650,10 +742,12 @@
 									}
 									if (chat) {
 										if (chat.folder_id) {
-											await updateChatFolderIdById(localStorage.token, chat.id, null).catch((error) => {
-												toast.error(`${error}`);
-												return null;
-											});
+											await updateChatFolderIdById(localStorage.token, chat.id, null).catch(
+												(error) => {
+													toast.error(`${error}`);
+													return null;
+												}
+											);
 										}
 										if (!chat.pinned) {
 											await toggleChatPinnedStatusById(localStorage.token, chat.id);
@@ -664,16 +758,24 @@
 							}}
 							name={$i18n.t('Pinned')}
 						>
-							<div class="ml-3 pl-1 mt-[1px] flex flex-col overflow-y-auto scrollbar-hidden border-s border-gray-100 dark:border-gray-900">
+							<div
+								class="ml-3 pl-1 mt-[1px] flex flex-col overflow-y-auto scrollbar-hidden border-s border-gray-100 dark:border-gray-900"
+							>
 								{#each $pinnedChats as chat, idx}
 									<ChatItem
 										id={chat.id}
 										title={chat.title}
 										{shiftKey}
 										selected={selectedChatId === chat.id}
-										on:select={() => { selectedChatId = chat.id; }}
-										on:unselect={() => { selectedChatId = null; }}
-										on:change={async () => { initChatList(); }}
+										on:select={() => {
+											selectedChatId = chat.id;
+										}}
+										on:unselect={() => {
+											selectedChatId = null;
+										}}
+										on:change={async () => {
+											initChatList();
+										}}
 										on:tag={(e) => {
 											const { type, name } = e.detail;
 											tagEventHandler(type, name, chat.id);
@@ -692,8 +794,12 @@
 							const { folderId, items } = e.detail;
 							importChatHandler(items, false, folderId);
 						}}
-						on:update={async (e) => { initChatList(); }}
-						on:change={async () => { initChatList(); }}
+						on:update={async (e) => {
+							initChatList();
+						}}
+						on:change={async () => {
+							initChatList();
+						}}
 					/>
 				{/if}
 
@@ -702,7 +808,12 @@
 						{#if $chats}
 							{#each $chats as chat, idx}
 								{#if idx === 0 || (idx > 0 && chat.time_range !== $chats[idx - 1].time_range)}
-									<div class="w-full pl-2.5 text-xs text-gray-500 dark:text-gray-500 font-medium {idx === 0 ? '' : 'pt-5'} pb-1.5">
+									<div
+										class="w-full pl-2.5 text-xs text-gray-500 dark:text-gray-500 font-medium {idx ===
+										0
+											? ''
+											: 'pt-5'} pb-1.5"
+									>
 										{$i18n.t(chat.time_range)}
 									</div>
 								{/if}
@@ -711,9 +822,15 @@
 									title={chat.title}
 									{shiftKey}
 									selected={selectedChatId === chat.id}
-									on:select={() => { selectedChatId = chat.id; }}
-									on:unselect={() => { selectedChatId = null; }}
-									on:change={async () => { initChatList(); }}
+									on:select={() => {
+										selectedChatId = chat.id;
+									}}
+									on:unselect={() => {
+										selectedChatId = null;
+									}}
+									on:change={async () => {
+										initChatList();
+									}}
 									on:tag={(e) => {
 										const { type, name } = e.detail;
 										tagEventHandler(type, name, chat.id);
@@ -721,8 +838,14 @@
 								/>
 							{/each}
 							{#if $scrollPaginationEnabled && !allChatsLoaded}
-								<Loader on:visible={(e) => { if (!chatListLoading) loadMoreChats(); }}>
-									<div class="w-full flex justify-center py-1 text-xs animate-pulse items-center gap-2">
+								<Loader
+									on:visible={(e) => {
+										if (!chatListLoading) loadMoreChats();
+									}}
+								>
+									<div
+										class="w-full flex justify-center py-1 text-xs animate-pulse items-center gap-2"
+									>
 										<Spinner className="size-4" />
 										<div>Loading...</div>
 									</div>
@@ -744,16 +867,17 @@
 					collapsible={!search}
 					className="px-2 mt-0.5"
 					name={$i18n.t('Notes')}
-					onAdd={() => createRooibosFolder('Untitled', "note")}
+					onAdd={() => createRooibosFolder('Untitled', 'note')}
 					onAddLabel={$i18n.t('New Folder')}
 				>
-					<NoteFolderMenu 
+					<NoteFolderMenu
 						folders={Object.values(rooibosFolders)
-							.filter(folder => folder.type === 'note')
+							.filter((folder) => folder.type === 'note')
 							.reduce((acc, folder) => {
 								acc[folder.id] = folder;
 								return acc;
-							}, {})} 
+							}, {})}
+						parentId={null}
 					/>
 				</NoteFolder>
 			{/if}
@@ -777,7 +901,11 @@
 							}}
 						>
 							<div class="self-center mr-3">
-								<img src={$user.profile_image_url} class="max-w-[30px] object-cover rounded-full" alt="User profile" />
+								<img
+									src={$user.profile_image_url}
+									class="max-w-[30px] object-cover rounded-full"
+									alt="User profile"
+								/>
 							</div>
 							<div class="self-center font-medium">{$user.name}</div>
 						</button>
@@ -786,8 +914,6 @@
 			</div>
 		</div>
 	</div>
-
-	
 </div>
 
 <style>

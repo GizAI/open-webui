@@ -145,30 +145,30 @@ async def getFolderNoteList(folderId: str, request: Request):
             }
         )
 
-@router.get("/{folderId}/myCompany")
+@router.get("/{folderId}/companies")
 async def getFolderCompanyList(folderId: str, request: Request):    
     search_params = request.query_params
     userId = search_params.get("userId")
     try:
-        
-        query = """
-            SELECT DISTINCT
-                f.id,
-                f.created_at,
-                f.updated_at,
-                f.company_id,
-                rmc.master_id,
-                rmc.company_name,
-                rmc.address
-            FROM corp_bookmark f
-            INNER JOIN rb_master_company rmc
-                ON f.company_id::text = rmc.master_id::text
-            WHERE f.user_id = $1
-            ORDER BY f.updated_at DESC
-        """
-        params = {"userId": userId, "folderId": folderId}
-        result = get_db().execute(text(query), params)
-        companyList = [dict(row._mapping) for row in result.fetchall()]    
+        with get_db() as db:
+            query = """
+                SELECT DISTINCT
+                    f.id,
+                    f.created_at,
+                    f.updated_at,
+                    f.company_id,
+                    rmc.master_id,
+                    rmc.company_name,
+                    rmc.address
+                FROM corp_bookmark f
+                INNER JOIN rb_master_company rmc
+                    ON f.company_id::text = rmc.master_id::text
+                WHERE f.user_id = :userId AND f.folder_id = :folderId
+                ORDER BY f.updated_at DESC
+            """
+            params = {"userId": userId, "folderId": folderId}
+            result = db.execute(text(query), params)
+            companyList = [dict(row._mapping) for row in result.fetchall()]    
 
         return {
             "success": True,

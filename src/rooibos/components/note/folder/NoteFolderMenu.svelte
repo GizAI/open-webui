@@ -74,14 +74,18 @@
 <ul class="folder-list">
 	{#each folderList as folderId (folderId)}
 		<li class="folder-item group relative">
-			<div class="flex items-center justify-between hover:bg-gray-100 dark:hover:bg-gray-900 rounded-md">
+			<div
+				class="flex items-center justify-between hover:bg-gray-100 dark:hover:bg-gray-900 rounded-md"
+			>
 				{#if editingFolderId === folderId}
 					<input
 						type="text"
 						bind:value={editedName}
 						class="cursor-text bg-transparent border-b border-dashed focus:outline-none"
 						on:blur={() => submitRename(folderId)}
-						on:keydown={(e) => { if (e.key === 'Enter') e.target.blur(); }}
+						on:keydown={(e) => {
+							if (e.key === 'Enter') e.target.blur();
+						}}
 						autofocus
 					/>
 				{:else}
@@ -126,6 +130,11 @@
 					</Dropdown>
 				</div>
 			</div>
+
+			<!-- Add recursive rendering for child folders -->
+			{#if folders[folderId].childrenIds && folders[folderId].childrenIds.length > 0}
+				<svelte:self {folders} parentId={folderId} />
+			{/if}
 		</li>
 	{/each}
 </ul>
