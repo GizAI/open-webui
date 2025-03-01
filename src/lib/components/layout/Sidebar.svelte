@@ -126,7 +126,7 @@
 				toast.error('폴더 데이터 형식이 올바르지 않습니다.');
 			}
 		}
-		debugger;
+
 		rooibosFolders = {};
 
 		for (const folder of folderList) {
