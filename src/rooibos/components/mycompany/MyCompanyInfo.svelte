@@ -77,8 +77,14 @@
 		industry_major?: string;
 		industry_middle?: string;
 		industry_small?: string;
-		sme_type?: { sme_type: string, certificate_expiry_date: string }[];
-		research_info?: { lab_name: string, lab_location: string, first_approval_date: string, research_field: string; division: string }[];
+		sme_type?: { sme_type: string; certificate_expiry_date: string }[];
+		research_info?: {
+			lab_name: string;
+			lab_location: string;
+			first_approval_date: string;
+			research_field: string;
+			division: string;
+		}[];
 		birth_year?: string;
 		foundation_year?: string;
 		is_family_shareholder?: string;
@@ -143,6 +149,7 @@
 	let mediaQuery: any;
 	let dragged = false;
 	let id: any = null;
+	let folderId: string | null = null;
 	const currentUser = get(user);
 
 	$: if (bookmark && bookmark.files) {
@@ -155,7 +162,7 @@
 		filteredItems = query
 			? fuse.search(query).map((e: any) => {
 					return e.item;
-			  })
+				})
 			: (bookmark?.files ?? []);
 	}
 
@@ -379,7 +386,7 @@
 
 	const syncDirectoryHandler = async () => {
 		if ((bookmark?.files ?? []).length > 0) {
-			const res = await fetch(`${WEBUI_API_BASE_URL}/rooibos/corpbookmarks/${id}/file/reset`, {
+			const res = await fetch(`${WEBUI_API_BASE_URL}/rooibos/mycompanies/${id}/file/reset`, {
 				method: 'POST',
 				headers: {
 					Accept: 'application/json',
@@ -399,7 +406,7 @@
 	};
 
 	const addFileHandler = async (fileId: string) => {
-		const res = await fetch(`${WEBUI_API_BASE_URL}/rooibos/corpbookmarks/${id}/file/add`, {
+		const res = await fetch(`${WEBUI_API_BASE_URL}/rooibos/mycompanies/${id}/file/add`, {
 			method: 'POST',
 			headers: {
 				Accept: 'application/json',
@@ -421,7 +428,7 @@
 	};
 
 	const deleteFileHandler = async (fileId: string) => {
-		const res = await fetch(`${WEBUI_API_BASE_URL}/rooibos/corpbookmarks/${id}/file/remove`, {
+		const res = await fetch(`${WEBUI_API_BASE_URL}/rooibos/mycompanies/${id}/file/remove`, {
 			method: 'POST',
 			headers: {
 				Accept: 'application/json',
@@ -537,26 +544,34 @@
 		}
 
 		id = $page.params.id;
-		
+
+		// Get folderId from URL query parameters
+		const urlParams = new URLSearchParams(window.location.search);
+		folderId = urlParams.get('folderId');
+
 		const queryParams = new URLSearchParams({
-			business_registration_number: bookmark?.business_registration_number !== undefined
-				? bookmark?.business_registration_number.toString()
-				: '',
+			business_registration_number:
+				bookmark?.business_registration_number !== undefined
+					? bookmark?.business_registration_number.toString()
+					: '',
 			user_id: currentUser?.id ?? ''
 		});
 
-		const response = await fetch(`${WEBUI_API_BASE_URL}/rooibos/corpbookmarks/${id}?${queryParams.toString()}`, {
-			method: 'GET',
-			headers: {
-				Accept: 'application/json',
-				'Content-Type': 'application/json',
-				authorization: `Bearer ${localStorage.token}`
+		const response = await fetch(
+			`${WEBUI_API_BASE_URL}/rooibos/mycompanies/${id}?${queryParams.toString()}`,
+			{
+				method: 'GET',
+				headers: {
+					Accept: 'application/json',
+					'Content-Type': 'application/json',
+					authorization: `Bearer ${localStorage.token}`
+				}
 			}
-		});
+		);
 
 		const data = await response.json();
 		bookmark = data.bookmark[0];
-		chatList = data.chatList;	
+		chatList = data.chatList;
 
 		filteredItems = bookmark?.files ?? [];
 
@@ -578,13 +593,12 @@
 
 	function closeCompanyInfo() {
 		isFullscreen = false;
-		goto('/rooibos/corpbookmarks');
+		goto(`/rooibos/folder/${folderId}/companies`);
 	}
 
 	function moveToExistingChat(chat: any) {
 		goto(`/c/${chat.id}`);
 	}
-
 </script>
 
 {#if dragged}
@@ -652,52 +666,54 @@
 	}}
 />
 {#if bookmark}
-<div class="sticky border-b border-gray-200 top-0 z-10 shrink-0 px-4 pt-2 pb-1 bg-white dark:bg-gray-900">
-	<div class="flex items-center justify-between w-full mb-1">
-		<h1 class="{$mobile ? 'sm:text-xl' : 'text-xl'} font-semibold mb-1 truncate">
-			{bookmark.company_name}
-		</h1>
+	<div
+		class="sticky border-b border-gray-200 top-0 z-10 shrink-0 px-4 pt-2 pb-1 bg-white dark:bg-gray-900"
+	>
+		<div class="flex items-center justify-between w-full mb-1">
+			<h1 class="{$mobile ? 'sm:text-xl' : 'text-xl'} font-semibold mb-1 truncate">
+				{bookmark.company_name}
+			</h1>
 
-		<div class="flex items-center space-x-1">
-			<!-- {#if bookmark.bookmark_user_id == currentUser.id} -->
-			{#if false}
-			<div class="self-center shrink-0">
-				<button
-					class="bg-gray-50 hover:bg-gray-100 text-black dark:bg-gray-850 dark:hover:bg-gray-800 dark:text-white transition px-2 py-1 rounded-full flex gap-1 items-center"
-					type="button"
-					on:click={() => {
-						showAccessControlModal = true;
-					}}
-				>
-					<LockClosed strokeWidth="2.5" className="size-3.5" />
+			<div class="flex items-center space-x-1">
+				<!-- {#if bookmark.bookmark_user_id == currentUser.id} -->
+				{#if false}
+					<div class="self-center shrink-0">
+						<button
+							class="bg-gray-50 hover:bg-gray-100 text-black dark:bg-gray-850 dark:hover:bg-gray-800 dark:text-white transition px-2 py-1 rounded-full flex gap-1 items-center"
+							type="button"
+							on:click={() => {
+								showAccessControlModal = true;
+							}}
+						>
+							<LockClosed strokeWidth="2.5" className="size-3.5" />
 
-					<div class="text-sm font-medium shrink-0">
-						{$i18n.t('Access')}
+							<div class="text-sm font-medium shrink-0">
+								{$i18n.t('Access')}
+							</div>
+						</button>
 					</div>
+				{/if}
+				<ActionButtons companyInfo={bookmark} />
+
+				<button class="hover:bg-gray-100 rounded-full" on:click={closeCompanyInfo}>
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						class="h-5 w-5 text-gray-500"
+						fill="none"
+						viewBox="0 0 24 24"
+						stroke="currentColor"
+					>
+						<path
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							stroke-width="2"
+							d="M6 18L18 6M6 6l12 12"
+						/>
+					</svg>
 				</button>
 			</div>
-			{/if}
-			<ActionButtons companyInfo={bookmark} />
-
-			<button class="hover:bg-gray-100 rounded-full" on:click={closeCompanyInfo}>
-				<svg
-					xmlns="http://www.w3.org/2000/svg"
-					class="h-5 w-5 text-gray-500"
-					fill="none"
-					viewBox="0 0 24 24"
-					stroke="currentColor"
-				>
-					<path
-						stroke-linecap="round"
-						stroke-linejoin="round"
-						stroke-width="2"
-						d="M6 18L18 6M6 6l12 12"
-					/>
-				</svg>
-			</button>
 		</div>
 	</div>
-</div>
 {/if}
 
 <div class="flex flex-col w-full translate-y-1" id="collection-container">
@@ -705,7 +721,7 @@
 		<RooibosAccessControlModal
 			bind:show={showAccessControlModal}
 			bind:accessControl={bookmark.access_control}
-			bind:bookmarkId={bookmark.bookmark_id}			
+			bind:bookmarkId={bookmark.bookmark_id}
 			accessRoles={['read', 'write']}
 		/>
 		<div
@@ -909,13 +925,17 @@
 
 				<!-- 채팅 리스트 추가 -->
 				{#if chatList.length > 0}
-				<div class="{largeScreen ? 'flex-shrink-0 w-60 max-w-60 border-l border-gray-200 dark:border-gray-700' : 'w-1/2'} flex flex-col">
+					<div
+						class="{largeScreen
+							? 'flex-shrink-0 w-60 max-w-60 border-l border-gray-200 dark:border-gray-700'
+							: 'w-1/2'} flex flex-col"
+					>
 						<div class="px-2 py-1 border-b border-gray-200 dark:border-gray-700">
 							<h2 class="text-xs">채팅</h2>
 						</div>
 						<div class="flex-1 overflow-y-auto p-1 max-h-[100px]">
 							{#each chatList as chat}
-								<button 
+								<button
 									type="button"
 									on:click={() => moveToExistingChat(chat)}
 									class="mb-1 w-full text-left rounded bg-gray-50 dark:bg-gray-800 p-1 cursor-pointer text-xs"
@@ -926,15 +946,11 @@
 						</div>
 					</div>
 				{/if}
-
-
-
 			</div>
 
 			<div class="flex-1 px-4 pb-4">
-				<CompanyDetail company={bookmark} bind:financialData={financialData} />
+				<CompanyDetail company={bookmark} bind:financialData />
 			</div>
-			
 		</div>
 	{:else}
 		<Spinner />

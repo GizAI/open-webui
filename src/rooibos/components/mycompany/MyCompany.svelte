@@ -34,15 +34,12 @@
 
 	const deleteHandler = async (item: any) => {
 		try {
-			const response = await fetch(
-				`${WEBUI_API_BASE_URL}/rooibos/corpbookmarks/${item.id}/delete`,
-				{
-					method: 'DELETE',
-					headers: {
-						'Content-Type': 'application/json'
-					}
+			const response = await fetch(`${WEBUI_API_BASE_URL}/rooibos/mycompanies/${item.id}/delete`, {
+				method: 'DELETE',
+				headers: {
+					'Content-Type': 'application/json'
 				}
-			);
+			});
 
 			const data = await response.json();
 
@@ -104,7 +101,7 @@
 			<button
 				class=" flex space-x-4 cursor-pointer text-left w-full px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-850 transition rounded-xl"
 				on:click={() => {
-					goto(`/rooibos/mycompanies/${bookmark.id}`);
+					goto(`/rooibos/mycompanies/${bookmark.id}?folderId=${$page.params.id}`);
 				}}
 			>
 				<div class=" w-full">

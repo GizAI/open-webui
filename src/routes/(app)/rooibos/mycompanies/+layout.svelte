@@ -21,24 +21,6 @@
 	let loaded = false;
 
 	onMount(async () => {
-		if ($user?.role !== 'admin') {
-			if ($page.url.pathname.includes('/models') && !$user?.permissions?.workspace?.models) {
-				goto('/');
-			} else if (
-				$page.url.pathname.includes('/knowledge') &&
-				!$user?.permissions?.workspace?.knowledge
-			) {
-				goto('/');
-			} else if (
-				$page.url.pathname.includes('/prompts') &&
-				!$user?.permissions?.workspace?.prompts
-			) {
-				goto('/');
-			} else if ($page.url.pathname.includes('/tools') && !$user?.permissions?.workspace?.tools) {
-				goto('/');
-			}
-		}
-
 		loaded = true;
 	});
 </script>
@@ -75,65 +57,7 @@
 				<div class="">
 					<div
 						class="flex gap-1 scrollbar-none overflow-x-auto w-fit text-center text-sm font-medium rounded-full bg-transparent py-1 touch-auto pointer-events-auto"
-					>
-						{#if $user?.role === 'admin' || $user?.permissions?.workspace?.models}
-							<a
-								class="min-w-fit rounded-full p-1.5 {$page.url.pathname.includes(
-									'/workspace/models'
-								)
-									? ''
-									: 'text-gray-300 dark:text-gray-600 hover:text-gray-700 dark:hover:text-white'} transition"
-								href="/workspace/models">{$i18n.t('Models')}</a
-							>
-						{/if}
-
-						{#if $user?.role === 'admin' || $user?.permissions?.workspace?.knowledge}
-							<a
-								class="min-w-fit rounded-full p-1.5 {$page.url.pathname.includes(
-									'/workspace/knowledge'
-								)
-									? ''
-									: 'text-gray-300 dark:text-gray-600 hover:text-gray-700 dark:hover:text-white'} transition"
-								href="/workspace/knowledge"
-							>
-								{$i18n.t('Knowledge')}
-							</a>
-						{/if}
-
-						{#if $user?.role === 'admin' || $user?.permissions?.workspace?.prompts}
-							<a
-								class="min-w-fit rounded-full p-1.5 {$page.url.pathname.includes(
-									'/workspace/prompts'
-								)
-									? ''
-									: 'text-gray-300 dark:text-gray-600 hover:text-gray-700 dark:hover:text-white'} transition"
-								href="/workspace/prompts">{$i18n.t('Prompts')}</a
-							>
-						{/if}
-
-						{#if $user?.role === 'admin' || $user?.permissions?.workspace?.tools}
-							<a
-								class="min-w-fit rounded-full p-1.5 {$page.url.pathname.includes('/workspace/tools')
-									? ''
-									: 'text-gray-300 dark:text-gray-600 hover:text-gray-700 dark:hover:text-white'} transition"
-								href="/workspace/tools"
-							>
-								{$i18n.t('Tools')}
-							</a>
-						{/if}
-
-						{#if $user?.email}
-							<a
-								class="min-w-fit rounded-full p-1.5 {$page.url.pathname.includes('/rooibos/corpbookmarks')
-									? ''
-									: 'text-gray-300 dark:text-gray-600 hover:text-gray-700 dark:hover:text-white'} transition"
-								href="/rooibos/corpbookmarks"
-							>
-								나의기업
-							</a>
-						{/if}
-
-					</div>
+					></div>
 				</div>
 
 				<!-- <div class="flex items-center text-xl font-semibold">{$i18n.t('Workspace')}</div> -->
