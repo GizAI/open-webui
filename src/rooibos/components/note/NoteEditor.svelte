@@ -441,33 +441,39 @@
 		// 랜덤 색상 생성 함수
 		const getRandomColor = () => {
 			const colors = [
-				'#f44336', // 빨강
-				'#e91e63', // 핑크
-				'#9c27b0', // 보라
-				'#673ab7', // 진보라
-				'#3f51b5', // 남색
-				'#2196f3', // 파랑
-				'#03a9f4', // 하늘
-				'#00bcd4', // 청록
-				'#009688', // 틸
-				'#4caf50', // 초록
-				'#8bc34a', // 연두
-				'#cddc39', // 라임
-				'#ffc107', // 황색
-				'#ff9800', // 주황
-				'#ff5722' // 주홍
+				'#f44336',
+				'#e91e63',
+				'#9c27b0',
+				'#673ab7',
+				'#3f51b5',
+				'#2196f3',
+				'#03a9f4',
+				'#00bcd4',
+				'#009688',
+				'#4caf50',
+				'#8bc34a',
+				'#cddc39',
+				'#ffc107',
+				'#ff9800',
+				'#ff5722'
 			];
 			return colors[Math.floor(Math.random() * colors.length)];
 		};
-
-		// 세션별 색상 생성
 		const sessionColor = getRandomColor();
 
+		// 만약 저장된 content가 Y.js update 데이터라면 Uint8Array로 변환하여 적용
+		if (content && typeof content === 'object' && !Array.isArray(content)) {
+			// Object.values(content)를 통해 숫자 배열을 얻은 후 Uint8Array로 변환
+			const updateArray = new Uint8Array(Object.values(content));
+			// 저장된 업데이트를 현재 Y.Doc에 적용
+			Y.applyUpdate(provider.document, updateArray);
+		}
+
+		// 에디터 생성 (초기 content는 빈 문자열이어도 provider.document에 이미 update가 적용됨)
 		editor = new Editor({
 			element: editorElement,
 			extensions: [
 				...getExtensions({ bubbleMenuElement, adjustBubbleMenuPosition }),
-				// 협업 확장 기능 추가
 				Collaboration.configure({
 					document: provider.document
 				}),
@@ -475,28 +481,48 @@
 					provider,
 					user: {
 						name: currentUser?.name || 'Anonymous',
-						color: sessionColor, // 세션별 랜덤 색상 적용
+						color: sessionColor,
 						avatar: currentUser?.avatar
 					}
 				})
 			],
-			content,
+			// 초기 콘텐츠는 빈 문자열로 설정 (이미 Y.Doc에 update 반영됨)
+			content: '',
 			autofocus: true,
 			onSelectionUpdate({ editor }) {
 				updateEditorState();
 			}
 		});
-
 		return editor;
 	}
 
 	onMount(async () => {
+		// 노트 데이터 가져오기
 		note = await getNote(noteId);
-		if (note && note.title) {
-			pageTitle = note.title;
+		if (note) {
+			pageTitle = note.title || '새 페이지';
 		}
 
+		// 협업 초기화
 		provider = initCollaboration();
+
+		// note.content가 존재하면 (문자열인 경우 JSON.parse 후 사용)
+		let storedUpdate = note.content;
+		if (storedUpdate && typeof storedUpdate === 'string') {
+			try {
+				storedUpdate = JSON.parse(storedUpdate);
+			} catch (e) {
+				console.error('노트 content 파싱 오류:', e);
+			}
+		}
+
+		if (storedUpdate && typeof storedUpdate === 'object' && !Array.isArray(storedUpdate)) {
+			const updateArray = new Uint8Array(Object.values(storedUpdate));
+			// 에디터 생성 전에 Y.Doc에 업데이트 적용
+			Y.applyUpdate(provider.document, updateArray);
+		}
+
+		// 이제 에디터 생성: 이미 Y.Doc에 업데이트가 반영되었으므로 초기 content는 빈 문자열이어도 OK
 		editor = initEditor('', provider);
 
 		document.addEventListener('click', closeAllDropdowns);
