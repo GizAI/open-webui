@@ -26,6 +26,7 @@
 	import RichTextInput from '$lib/components/common/RichTextInput.svelte';
 	import Drawer from '$lib/components/common/Drawer.svelte';
 	import ChevronLeft from '$lib/components/icons/ChevronLeft.svelte';
+	import MenuLines from '$lib/components/icons/MenuLines.svelte';
 	import { WEBUI_API_BASE_URL } from '$lib/constants';
 	import { goto } from '$app/navigation';
 	import ActionButtons from '../common/ActionButtons.svelte';
@@ -670,9 +671,25 @@
 		class="sticky border-b border-gray-200 top-0 z-10 shrink-0 px-4 pt-2 pb-1 bg-white dark:bg-gray-900"
 	>
 		<div class="flex items-center justify-between w-full mb-1">
-			<h1 class="{$mobile ? 'sm:text-xl' : 'text-xl'} font-semibold mb-1 truncate">
-				{bookmark.company_name}
-			</h1>
+			<div class="flex items-center">
+				{#if !$showSidebar}
+					<button
+						id="sidebar-toggle-button"
+						class="cursor-pointer p-1.5 mr-2 flex rounded-xl hover:bg-gray-100 dark:hover:bg-gray-850 transition"
+						on:click={() => {
+							showSidebar.set(!$showSidebar);
+						}}
+						aria-label="Toggle Sidebar"
+					>
+						<div class="m-auto self-center">
+							<MenuLines />
+						</div>
+					</button>
+				{/if}
+				<h1 class="{$mobile ? 'sm:text-xl' : 'text-xl'} font-semibold mb-1 truncate">
+					{bookmark.company_name}
+				</h1>
+			</div>
 
 			<div class="flex items-center space-x-1">
 				<!-- {#if bookmark.bookmark_user_id == currentUser.id} -->

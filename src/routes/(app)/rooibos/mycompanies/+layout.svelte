@@ -14,8 +14,6 @@
 	import { page } from '$app/stores';
 	import { goto } from '$app/navigation';
 
-	import MenuLines from '$lib/components/icons/MenuLines.svelte';
-
 	const i18n = getContext('i18n');
 
 	let loaded = false;
@@ -37,23 +35,8 @@
 			? 'md:max-w-[calc(100%-260px)]'
 			: ''}"
 	>
-		<div class="   px-2.5 pt-1 backdrop-blur-xl">
-			<div class=" flex items-center gap-1">
-				<div class="{$showSidebar ? 'md:hidden' : ''} self-center flex flex-none items-center">
-					<button
-						id="sidebar-toggle-button"
-						class="cursor-pointer p-1.5 flex rounded-xl hover:bg-gray-100 dark:hover:bg-gray-850 transition"
-						on:click={() => {
-							showSidebar.set(!$showSidebar);
-						}}
-						aria-label="Toggle Sidebar"
-					>
-						<div class=" m-auto self-center">
-							<MenuLines />
-						</div>
-					</button>
-				</div>
-
+		<div class="px-2.5 pt-1 backdrop-blur-xl">
+			<div class="flex items-center gap-1">
 				<div class="">
 					<div
 						class="flex gap-1 scrollbar-none overflow-x-auto w-fit text-center text-sm font-medium rounded-full bg-transparent py-1 touch-auto pointer-events-auto"
@@ -64,7 +47,7 @@
 			</div>
 		</div>
 
-		<div class="  pb-1 px-[18px] flex-1 max-h-full overflow-y-auto" id="workspace-container">
+		<div class="pb-1 px-[18px] flex-1 max-h-full overflow-y-auto" id="workspace-container">
 			<slot />
 		</div>
 	</div>
