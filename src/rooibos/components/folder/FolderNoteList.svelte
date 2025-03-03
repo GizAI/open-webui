@@ -19,6 +19,7 @@
 	import { WEBUI_API_BASE_URL } from '$lib/constants';
 	import { get } from 'svelte/store';
 	import { page } from '$app/stores';
+	import NoteItemMenu from '../note/NoteItemMenu.svelte';
 
 	let loaded = false;
 
@@ -116,24 +117,24 @@
 					goto(`/rooibos/note/${note.id}`);
 				}}
 			>
-				<div class=" w-full">
+				<div class="w-full">
 					<div class="flex items-center justify-between -mt-1">
-						<!-- <div class=" flex self-center -mr-1 translate-y-1">
-							<CorpBookmarks
-								{note}
-								on:delete={() => {
-									selectedItem = note;
-									showDeleteConfirm = true;
-								}}
-							/>
-						</div> -->
-					</div>
-
-					<div class=" self-center flex-1 px-1 mb-1">
-						<div class=" font-semibold line-clamp-1 h-fit">{note.title}</div>
-
-						<div class=" text-xs overflow-hidden text-ellipsis line-clamp-1">
-							{note.updated_at}
+						<div class="self-center flex-1 px-1 mb-1">
+							<div class="flex items-center justify-between">
+								<div class="font-semibold line-clamp-1 h-fit">{note.title}</div>
+								<div class="flex self-center">
+									<NoteItemMenu
+										bookmark={note}
+										on:delete={() => {
+											selectedItem = note;
+											showDeleteConfirm = true;
+										}}
+									/>
+								</div>
+							</div>
+							<div class="text-xs overflow-hidden text-ellipsis line-clamp-1">
+								{note.updated_at}
+							</div>
 						</div>
 					</div>
 				</div>
