@@ -2,21 +2,48 @@
 	import { DropdownMenu } from 'bits-ui';
 	import { flyAndScale } from '$lib/utils/transitions';
 	import { getContext, createEventDispatcher } from 'svelte';
-	const dispatch = createEventDispatcher();
-
 	import Dropdown from '$lib/components/common/Dropdown.svelte';
 	import GarbageBin from '$lib/components/icons/GarbageBin.svelte';
 	import Tooltip from '$lib/components/common/Tooltip.svelte';
 	import EllipsisHorizontal from '$lib/components/icons/EllipsisHorizontal.svelte';
+	import FolderSelect from '$rooibos/components/folder/FolderSelect.svelte';
 	import { selectedCompanyInfo } from '$rooibos/stores/index.js';
 	import { goto } from '$app/navigation';
+	import { WEBUI_API_BASE_URL } from '$lib/constants';
 
+	const dispatch = createEventDispatcher();
 	const i18n = getContext('i18n');
 
 	export let bookmark: any = null;
 	export let onClose: Function = () => {};
 
 	let show = false;
+	// 폴더 선택 모달 제어 변수
+	let showFolderSelect = false;
+
+	// 폴더 이동 API 호출 함수
+	async function moveBookmarkToFolder(selectedFolder) {
+		// 예시: bookmark 객체에 userId, id 정보가 있다고 가정합니다.
+		const payload = {
+			bookmarkId: bookmark.id,
+			targetFolderId: selectedFolder.id
+		};
+		try {
+			const response = await fetch(`${WEBUI_API_BASE_URL}/rooibos/folders/move?userId=${bookmark.userId}`, {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify(payload)
+			});
+			const result = await response.json();
+			if (result.success) {
+				dispatch('moved', { folder: selectedFolder });
+			} else {
+				console.error('Error moving bookmark:', result);
+			}
+		} catch (error) {
+			console.error('Error moving bookmark:', error);
+		}
+	}
 </script>
 
 <Dropdown
@@ -29,8 +56,8 @@
 	align="end"
 >
 	<Tooltip content={$i18n.t('More')}>
-		<slot
-			><button
+		<slot>
+			<button
 				class="self-center w-fit text-sm p-1.5 dark:text-gray-300 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5 rounded-xl"
 				type="button"
 				on:click={(e) => {
@@ -51,8 +78,9 @@
 			align="end"
 			transition={flyAndScale}
 		>
+			<!-- 기존 메뉴: 새채팅 -->
 			<DropdownMenu.Item
-				class="flex  gap-2  items-center px-3 py-2 text-sm  font-medium cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 rounded-md"
+				class="flex gap-2 items-center px-3 py-2 text-sm font-medium cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 rounded-md"
 				on:click={() => {
 					selectedCompanyInfo.set(bookmark);
 					goto('/');
@@ -74,8 +102,10 @@
 				</svg>
 				<div class="flex items-center">새채팅</div>
 			</DropdownMenu.Item>
+
+			<!-- 기존 메뉴: 삭제 -->
 			<DropdownMenu.Item
-				class="flex  gap-2  items-center px-3 py-2 text-sm  font-medium cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 rounded-md"
+				class="flex gap-2 items-center px-3 py-2 text-sm font-medium cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 rounded-md"
 				on:click={() => {
 					dispatch('delete');
 				}}
@@ -83,6 +113,39 @@
 				<GarbageBin strokeWidth="2" />
 				<div class="flex items-center">{$i18n.t('Delete')}</div>
 			</DropdownMenu.Item>
+
+			<!-- 새 메뉴: 폴더 이동 -->
+			<DropdownMenu.Item
+				class="flex gap-2 items-center px-3 py-2 text-sm font-medium cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 rounded-md"
+				on:click={() => {
+					showFolderSelect = true;
+				}}
+			>
+				<svg
+					xmlns="http://www.w3.org/2000/svg"
+					class="h-5 w-5 text-gray-500"
+					fill="none"
+					viewBox="0 0 24 24"
+					stroke="currentColor"
+				>
+					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7h4l2-2h8l2 2h4v13H3V7z" />
+				</svg>
+				<div class="flex items-center">{$i18n.t('Move Folder')}</div>
+			</DropdownMenu.Item>
 		</DropdownMenu.Content>
 	</div>
 </Dropdown>
+
+<!-- 폴더 선택 모달 (FolderSelect 컴포넌트) -->
+{#if showFolderSelect}
+	<FolderSelect
+		isOpen={showFolderSelect}
+		bookmarkId={bookmark.id}
+		onClose={() => { showFolderSelect = false; }}
+		on:close={() => { showFolderSelect = false; }}
+		on:select={(event) => {
+			moveBookmarkToFolder(event.detail);
+			showFolderSelect = false;
+		}}
+	/>
+{/if}

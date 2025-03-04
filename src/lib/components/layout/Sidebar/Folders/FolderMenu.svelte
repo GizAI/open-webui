@@ -11,6 +11,7 @@
 	import Pencil from '$lib/components/icons/Pencil.svelte';
 	import Tooltip from '$lib/components/common/Tooltip.svelte';
 	import Download from '$lib/components/icons/Download.svelte';
+	import FolderOpen from '$lib/components/icons/FolderOpen.svelte';
 
 	let show = false;
 </script>
@@ -43,6 +44,16 @@
 			>
 				<Pencil strokeWidth="2" />
 				<div class="flex items-center">{$i18n.t('Rename')}</div>
+			</DropdownMenu.Item>
+
+			<DropdownMenu.Item
+				class="flex gap-2 items-center px-3 py-1.5 text-sm  cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 rounded-md"
+				on:click={() => {
+					dispatch('moveToFolder');
+				}}
+			>
+				<FolderOpen strokeWidth="2" />
+				<div class="flex items-center">{$i18n.t('Move to folder')}</div>
 			</DropdownMenu.Item>
 
 			<DropdownMenu.Item
