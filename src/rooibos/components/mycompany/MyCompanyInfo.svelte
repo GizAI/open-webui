@@ -687,7 +687,7 @@
 					</button>
 				{/if}
 				<h1 class="{$mobile ? 'sm:text-xl' : 'text-xl'} font-semibold mb-1 truncate">
-					{bookmark.company_name}
+					{bookmark.company_name}1
 				</h1>
 			</div>
 

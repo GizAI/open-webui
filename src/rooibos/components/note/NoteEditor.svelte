@@ -18,7 +18,7 @@
 
 	let editor;
 	let editorElement;
-	let pageTitle = '새 페이지';
+	let pageTitle = '';
 	let showSidebar = false;
 	let note = {};
 	let manualTitleEdited = false;
@@ -319,14 +319,12 @@
 
 		const { from, to } = editor.state.selection;
 		if (from === to) {
-			// 선택 영역이 없으면 URL 텍스트를 삽입하며 링크 적용
 			editor
 				.chain()
 				.focus()
 				.insertContent(`<a href="${linkInputValue}" target="_blank">${linkInputValue}</a>`)
 				.run();
 		} else {
-			// 선택 영역이 있을 경우, 한 체인 내에서 기존 링크를 해제한 후 새 링크 적용
 			editor.chain().focus().unsetLink().setLink({ href: linkInputValue, target: '_blank' }).run();
 		}
 
@@ -375,10 +373,8 @@
 		const documentName = `note:${noteId}`;
 		const currentUser = get(user);
 
-		// 세션별 고유 ID 생성 (브라우저 탭마다 다른 ID)
 		const sessionId = crypto.randomUUID();
 
-		// 랜덤 색상 생성 함수
 		const getRandomColor = () => {
 			const colors = [
 				'#f44336',
@@ -400,7 +396,6 @@
 			return colors[Math.floor(Math.random() * colors.length)];
 		};
 
-		// 세션별 색상 생성
 		const sessionColor = getRandomColor();
 
 		provider = new HocuspocusProvider({
@@ -461,15 +456,11 @@
 		};
 		const sessionColor = getRandomColor();
 
-		// 만약 저장된 content가 Y.js update 데이터라면 Uint8Array로 변환하여 적용
 		if (content && typeof content === 'object' && !Array.isArray(content)) {
-			// Object.values(content)를 통해 숫자 배열을 얻은 후 Uint8Array로 변환
 			const updateArray = new Uint8Array(Object.values(content));
-			// 저장된 업데이트를 현재 Y.Doc에 적용
 			Y.applyUpdate(provider.document, updateArray);
 		}
 
-		// 에디터 생성 (초기 content는 빈 문자열이어도 provider.document에 이미 update가 적용됨)
 		editor = new Editor({
 			element: editorElement,
 			extensions: [
@@ -486,7 +477,6 @@
 					}
 				})
 			],
-			// 초기 콘텐츠는 빈 문자열로 설정 (이미 Y.Doc에 update 반영됨)
 			content: '',
 			autofocus: true,
 			onSelectionUpdate({ editor }) {
@@ -497,16 +487,15 @@
 	}
 
 	onMount(async () => {
-		// 노트 데이터 가져오기
 		note = await getNote(noteId);
 		if (note) {
 			pageTitle = note.title || '새 페이지';
+		}else {
+			pageTitle = '새 페이지';
 		}
 
-		// 협업 초기화
 		provider = initCollaboration();
 
-		// note.content가 존재하면 (문자열인 경우 JSON.parse 후 사용)
 		let storedUpdate = note.content;
 		if (storedUpdate && typeof storedUpdate === 'string') {
 			try {
@@ -518,11 +507,9 @@
 
 		if (storedUpdate && typeof storedUpdate === 'object' && !Array.isArray(storedUpdate)) {
 			const updateArray = new Uint8Array(Object.values(storedUpdate));
-			// 에디터 생성 전에 Y.Doc에 업데이트 적용
 			Y.applyUpdate(provider.document, updateArray);
 		}
 
-		// 이제 에디터 생성: 이미 Y.Doc에 업데이트가 반영되었으므로 초기 content는 빈 문자열이어도 OK
 		editor = initEditor('', provider);
 
 		document.addEventListener('click', closeAllDropdowns);
@@ -545,13 +532,11 @@
 
 <TopBar {pageTitle} on:titleChange={handleTitleChange} onNewChat={openSidebar} />
 
-<!-- 협업자 목록 표시 -->
 <CollaboratorsList users={activeUsers} />
 
 <div class="notion-page-container">
 	<div class="editor-wrapper" bind:this={editorElement}></div>
 
-	<!-- BubbleMenu 컴포넌트 사용 -->
 	<BubbleMenu
 		bind:menuElement={bubbleMenuElement}
 		{editorState}

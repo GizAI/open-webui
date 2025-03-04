@@ -59,6 +59,8 @@
 	import PencilSquare from '../icons/PencilSquare.svelte';
 	import Home from '../icons/Home.svelte';
 	import { createNewRooibosFolder, getNoteFolders } from '$rooibos/components/apis/folder';
+	import RooibosFolderMenu from '$rooibos/components/folder/RooibosFolderMenu.svelte';
+	import RooibosFolder from '$rooibos/components/folder/RooibosFolder.svelte';
 
 	const BREAKPOINT = 768;
 
@@ -607,14 +609,15 @@
 			<div class="px-1.5 flex justify-center text-gray-800 dark:text-gray-200">
 				<div class="flex self-center w-full">
 					{#if $user?.id == '5ee82147-b469-4609-8bea-2ba484cfc2ab'}
-						<NoteFolder
+						<RooibosFolder
 							collapsible={!search}
 							className="w-full flex justify-between items-center"
 							name="나의 기업"
 							onAdd={() => createRooibosFolder('Untitled', 'corp')}
 							onAddLabel={$i18n.t('New Folder')}
+							open={false}
 						>
-							<NoteFolderMenu
+							<RooibosFolderMenu
 								folders={Object.values(rooibosFolders)
 									.filter((folder) => folder.type === 'corp')
 									.reduce((acc, folder) => {
@@ -623,7 +626,7 @@
 									}, {})}
 								parentId={null}
 							/>
-						</NoteFolder>
+						</RooibosFolder>
 					{:else}
 						<a
 							class="flex-grow flex space-x-3 rounded-lg px-2 py-[7px] hover:bg-gray-100 dark:hover:bg-gray-900 transition"
@@ -660,6 +663,28 @@
 					{/if}
 				</div>
 			</div>
+			
+			<!-- Notes 폴더 컴포넌트 추가 -->
+			{#if $user?.id == '5ee82147-b469-4609-8bea-2ba484cfc2ab'}
+				<RooibosFolder
+					collapsible={!search}
+					className="px-2 mt-0.5"
+					name={$i18n.t('Notes')}
+					onAdd={() => createRooibosFolder('Untitled', 'note')}
+					onAddLabel={$i18n.t('New Folder')}
+					open={false}
+				>
+					<RooibosFolderMenu
+						folders={Object.values(rooibosFolders)
+							.filter((folder) => folder.type === 'note')
+							.reduce((acc, folder) => {
+								acc[folder.id] = folder;
+								return acc;
+							}, {})}
+						parentId={null}
+					/>
+				</RooibosFolder>
+			{/if}
 		{/if}
 
 		<div class="relative {$temporaryChatEnabled ? 'opacity-20' : ''}">
@@ -860,27 +885,6 @@
 					</div>
 				</div>
 			</Folder>
-
-			<!-- Notes 폴더 컴포넌트 추가 -->
-			{#if $user?.id == '5ee82147-b469-4609-8bea-2ba484cfc2ab'}
-				<NoteFolder
-					collapsible={!search}
-					className="px-2 mt-0.5"
-					name={$i18n.t('Notes')}
-					onAdd={() => createRooibosFolder('Untitled', 'note')}
-					onAddLabel={$i18n.t('New Folder')}
-				>
-					<NoteFolderMenu
-						folders={Object.values(rooibosFolders)
-							.filter((folder) => folder.type === 'note')
-							.reduce((acc, folder) => {
-								acc[folder.id] = folder;
-								return acc;
-							}, {})}
-						parentId={null}
-					/>
-				</NoteFolder>
-			{/if}
 		</div>
 
 		<div class="px-2">
