@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onMount, getContext } from 'svelte';
+	import { onMount, getContext, createEventDispatcher } from 'svelte';
 	import Modal from '$lib/components/common/Modal.svelte';
 	import { WEBUI_API_BASE_URL } from '$lib/constants';
 	import { getNoteFolders } from '../apis/folder';
@@ -14,6 +14,8 @@
 	export let bookmarkId: string;
 
 	let folders = [];
+
+	const dispatch = createEventDispatcher();
 
 	// 폴더 목록 로드 함수
 	async function loadFolders() {
@@ -33,29 +35,8 @@
 	});
 
 	async function selectFolder(folder) {
-		try {
-			await fetch(`${WEBUI_API_BASE_URL}/rooibos/folders/move?userId=${$user?.id}`, {
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json',
-					'Authorization': localStorage.token,
-				},
-				body: JSON.stringify({
-					bookmarkId: bookmarkId,
-					targetFolderId: folder.id
-				})
-			});
-			if (folder.type === 'note') {
-				goto(`/rooibos/folder/${folder.id}/notes`);
-			} else {
-				goto(`/rooibos/folder/${folder.id}/companies`);
-			}
-			
-			onClose();
-		} catch (error) {
-			console.error('북마크 이동 실패:', error);
-			toast.error(`북마크 이동 실패: ${error}`);
-		}
+		dispatch('close', folder);
+		onClose();
 	}
 </script>
 

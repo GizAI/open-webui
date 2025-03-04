@@ -673,3 +673,55 @@ async def remove_user_access_control(id: str, request: Request):
                 "message": str(e)
             }
         } 
+    
+@router.post("/move")
+async def moveBookmark(request: Request):
+    data = await request.json()
+    userId = request.query_params.get("userId")
+    bookmarkId = data.get("bookmarkId")
+    targetFolderId = data.get("targetFolderId")
+    
+    if not (userId and bookmarkId and targetFolderId):
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "success": False,
+                "error": "Missing required parameters",
+                "message": "userId, bookmarkId, 그리고 targetFolderId 값이 필요합니다."
+            }
+        )
+    
+    try:
+        with get_db() as db:
+            query = """
+                UPDATE corp_bookmark
+                SET folder_id = :targetFolderId, updated_at = now()
+                WHERE id = :bookmarkId AND user_id = :userId
+                RETURNING *
+            """
+            params = {
+                "targetFolderId": targetFolderId,
+                "bookmarkId": bookmarkId,
+                "userId": userId
+            }
+            result = db.execute(text(query), params)
+            updated = result.fetchone()
+            if updated is None:
+                raise Exception("해당 북마크가 존재하지 않거나 사용자 정보가 일치하지 않습니다.")
+            updated_bookmark = dict(updated._mapping)
+            db.commit()
+
+        return {
+            "success": True,
+            "bookmark": updated_bookmark
+        }
+    except Exception as e:
+        log.error("북마크 이동 실패: %s", e)
+        raise HTTPException(
+            status_code=500,
+            detail={
+                "success": False,
+                "error": "북마크 이동 실패",
+                "message": str(e)
+            }
+        )

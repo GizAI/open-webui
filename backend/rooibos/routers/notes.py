@@ -146,5 +146,55 @@ async def delete_note(id: str):
         }
     
 
+@router.post("/move")
+async def moveBookmark(request: Request):
+    data = await request.json()
+    userId = request.query_params.get("userId")
+    noteId = data.get("noteId")
+    targetFolderId = data.get("targetFolderId")
+    
+    if not (userId and noteId and targetFolderId):
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "success": False,
+                "error": "Missing required parameters",
+                "message": "userId, noteId, 그리고 targetFolderId 값이 필요합니다."
+            }
+        )
+    
+    try:
+        with get_db() as db:
+            query = """
+                UPDATE rb_note
+                SET folder_id = :targetFolderId, updated_at = now()
+                WHERE id = :noteId AND user_id = :userId
+                RETURNING *
+            """
+            params = {
+                "targetFolderId": targetFolderId,
+                "noteId": noteId,
+                "userId": userId
+            }
+            result = db.execute(text(query), params)
+            updated = result.fetchone()
+            if updated is None:
+                raise Exception("해당 북마크가 존재하지 않거나 사용자 정보가 일치하지 않습니다.")
+            updated_note = dict(updated._mapping)
+            db.commit()
 
+        return {
+            "success": True,
+            "note": updated_note
+        }
+    except Exception as e:
+        log.error("북마크 이동 실패: %s", e)
+        raise HTTPException(
+            status_code=500,
+            detail={
+                "success": False,
+                "error": "북마크 이동 실패",
+                "message": str(e)
+            }
+        )
 

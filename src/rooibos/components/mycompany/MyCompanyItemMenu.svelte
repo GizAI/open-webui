@@ -10,6 +10,7 @@
 	import { selectedCompanyInfo } from '$rooibos/stores/index.js';
 	import { goto } from '$app/navigation';
 	import { WEBUI_API_BASE_URL } from '$lib/constants';
+	import { user } from '$lib/stores';
 
 	const dispatch = createEventDispatcher();
 	const i18n = getContext('i18n');
@@ -18,18 +19,15 @@
 	export let onClose: Function = () => {};
 
 	let show = false;
-	// 폴더 선택 모달 제어 변수
 	let showFolderSelect = false;
 
-	// 폴더 이동 API 호출 함수
 	async function moveBookmarkToFolder(selectedFolder) {
-		// 예시: bookmark 객체에 userId, id 정보가 있다고 가정합니다.
 		const payload = {
 			bookmarkId: bookmark.id,
 			targetFolderId: selectedFolder.id
 		};
 		try {
-			const response = await fetch(`${WEBUI_API_BASE_URL}/rooibos/folders/move?userId=${bookmark.userId}`, {
+			const response = await fetch(`${WEBUI_API_BASE_URL}/rooibos/mycompanies/move?userId=${$user?.id}`, {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify(payload)
@@ -78,7 +76,6 @@
 			align="end"
 			transition={flyAndScale}
 		>
-			<!-- 기존 메뉴: 새채팅 -->
 			<DropdownMenu.Item
 				class="flex gap-2 items-center px-3 py-2 text-sm font-medium cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 rounded-md"
 				on:click={() => {
@@ -103,7 +100,6 @@
 				<div class="flex items-center">새채팅</div>
 			</DropdownMenu.Item>
 
-			<!-- 기존 메뉴: 삭제 -->
 			<DropdownMenu.Item
 				class="flex gap-2 items-center px-3 py-2 text-sm font-medium cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 rounded-md"
 				on:click={() => {
@@ -136,16 +132,17 @@
 	</div>
 </Dropdown>
 
-<!-- 폴더 선택 모달 (FolderSelect 컴포넌트) -->
 {#if showFolderSelect}
 	<FolderSelect
 		isOpen={showFolderSelect}
 		bookmarkId={bookmark.id}
-		onClose={() => { showFolderSelect = false; }}
-		on:close={() => { showFolderSelect = false; }}
-		on:select={(event) => {
-			moveBookmarkToFolder(event.detail);
+		onClose={() => {
 			showFolderSelect = false;
+		}}
+		on:close={(e) => {
+			if (e.detail) {
+				moveBookmarkToFolder(e.detail);
+			}
 		}}
 	/>
 {/if}
