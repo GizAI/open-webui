@@ -18,6 +18,9 @@ logger = logging.getLogger("WebSocketClient")
 class Pipeline:
     class Valves(BaseModel):
         websocket_url: str = "ws://127.0.0.1:8000/ws"
+        report_type: str = "research_report"
+        tone: str = "Objective"
+        language: str = "korean"
 
     def __init__(self):
         self.name = "GPT 연구자"
@@ -43,13 +46,13 @@ class Pipeline:
                 # 메시지 전송 - 'start {JSON}' 형식으로 변경
                 request_data = {
                     "task": body.get("task", user_message),
-                    "report_type": body.get("report_type", "research_report"),
+                    "report_type": self.valves.report_type,
                     "report_source": body.get("report_source", "web"),
                     "source_urls": body.get("source_urls", []),
-                    "tone": body.get("tone", "Objective"),
+                    "tone": self.valves.tone,
                     "agent": body.get("agent", "Auto Agent"),
                     "query_domains": body.get("query_domains", []),
-                    "language": body.get("language", "korean"),
+                    "language": self.valves.language,
                 }
 
                 # 'start {JSON}' 형식으로 요청 전송

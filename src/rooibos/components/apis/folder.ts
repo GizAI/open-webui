@@ -1,8 +1,13 @@
 import { WEBUI_API_BASE_URL } from '$lib/constants';
 
-export const createNewRooibosFolder = async (token: string, name: string, userId: string = '', type: string = '') => {
+export const createNewRooibosFolder = async (
+	token: string,
+	name: string,
+	userId: string = '',
+	type: string = ''
+) => {
 	let error = null;
-debugger
+
 	const res = await fetch(`${WEBUI_API_BASE_URL}/rooibos/folders/add/?userId=${userId}`, {
 		method: 'POST',
 		headers: {
@@ -33,7 +38,7 @@ debugger
 
 export const getNoteFolders = async (token: string = '', userId: string = '') => {
 	let error = null;
-  
+
 	const res = await fetch(`${WEBUI_API_BASE_URL}/rooibos/folders/?userId=${userId}`, {
 		method: 'GET',
 		headers: {
@@ -44,7 +49,7 @@ export const getNoteFolders = async (token: string = '', userId: string = '') =>
 	})
 		.then(async (res) => {
 			if (!res.ok) throw await res.json();
-      const result = await res.json();
+			const result = await res.json();
 			return result.folders;
 		})
 		.then((json) => {
@@ -63,20 +68,27 @@ export const getNoteFolders = async (token: string = '', userId: string = '') =>
 	return res;
 };
 
-export const renameNoteFolder = async (token: string = '', folderId: string = '', folderName: string = '') => {
+export const renameNoteFolder = async (
+	token: string = '',
+	folderId: string = '',
+	folderName: string = ''
+) => {
 	let error = null;
-  
-	const res = await fetch(`${WEBUI_API_BASE_URL}/rooibos/folders/rename?folderId=${folderId}&folderName=${folderName}`, {
-		method: 'GET',
-		headers: {
-			Accept: 'application/json',
-			'Content-Type': 'application/json',
-			authorization: `Bearer ${token}`
+
+	const res = await fetch(
+		`${WEBUI_API_BASE_URL}/rooibos/folders/rename?folderId=${folderId}&folderName=${folderName}`,
+		{
+			method: 'GET',
+			headers: {
+				Accept: 'application/json',
+				'Content-Type': 'application/json',
+				authorization: `Bearer ${token}`
+			}
 		}
-	})
+	)
 		.then(async (res) => {
 			if (!res.ok) throw await res.json();
-	        const result = await res.json();
+			const result = await res.json();
 			return result.folders;
 		})
 		.then((json) => {
@@ -94,8 +106,6 @@ export const renameNoteFolder = async (token: string = '', folderId: string = ''
 
 	return res;
 };
-
-
 
 export const getFolderById = async (token: string, id: string) => {
 	let error = null;

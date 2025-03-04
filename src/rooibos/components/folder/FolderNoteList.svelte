@@ -7,7 +7,7 @@
 	import { onMount, getContext } from 'svelte';
 	const i18n = getContext('i18n');
 
-	import { user, WEBUI_NAME } from '$lib/stores';
+	import { user, WEBUI_NAME, showSidebar } from '$lib/stores';
 
 	import { goto } from '$app/navigation';
 
@@ -15,9 +15,11 @@
 	import CorpBookmarks from '$rooibos/components/corpbookmarks/CorpBookmarksItemMenu.svelte';
 	import Badge from '$lib/components/common/Badge.svelte';
 	import Spinner from '$lib/components/common/Spinner.svelte';
+	import MenuLines from '$lib/components/icons/MenuLines.svelte';
 	import { WEBUI_API_BASE_URL } from '$lib/constants';
 	import { get } from 'svelte/store';
 	import { page } from '$app/stores';
+	import NoteItemMenu from '../note/NoteItemMenu.svelte';
 
 	let loaded = false;
 
@@ -94,6 +96,19 @@
 		}}
 	/>
 
+	<div class="mb-2 flex items-center">
+		{#if !$showSidebar}
+			<button
+				id="sidebar-toggle-button"
+				class="sidebar-toggle-button p-2 mr-2"
+				on:click={() => showSidebar.set(true)}
+				aria-label="Toggle Sidebar"
+			>
+				<MenuLines />
+			</button>
+		{/if}
+	</div>
+
 	<div class="mb-5 grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-2">
 		{#each notes as note}
 			<button
@@ -102,24 +117,24 @@
 					goto(`/rooibos/note/${note.id}`);
 				}}
 			>
-				<div class=" w-full">
+				<div class="w-full">
 					<div class="flex items-center justify-between -mt-1">
-						<!-- <div class=" flex self-center -mr-1 translate-y-1">
-							<CorpBookmarks
-								{note}
-								on:delete={() => {
-									selectedItem = note;
-									showDeleteConfirm = true;
-								}}
-							/>
-						</div> -->
-					</div>
-
-					<div class=" self-center flex-1 px-1 mb-1">
-						<div class=" font-semibold line-clamp-1 h-fit">{note.title}</div>
-
-						<div class=" text-xs overflow-hidden text-ellipsis line-clamp-1">
-							{note.updated_at}
+						<div class="self-center flex-1 px-1 mb-1">
+							<div class="flex items-center justify-between">
+								<div class="font-semibold line-clamp-1 h-fit">{note.title}</div>
+								<div class="flex self-center">
+									<NoteItemMenu
+										bookmark={note}
+										on:delete={() => {
+											selectedItem = note;
+											showDeleteConfirm = true;
+										}}
+									/>
+								</div>
+							</div>
+							<div class="text-xs overflow-hidden text-ellipsis line-clamp-1">
+								{note.updated_at}
+							</div>
 						</div>
 					</div>
 				</div>
