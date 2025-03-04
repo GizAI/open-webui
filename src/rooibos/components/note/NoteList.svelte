@@ -19,6 +19,7 @@
 	import { get } from 'svelte/store';
 	import { page } from '$app/stores';
 	import NoteItemMenu from '../note/NoteItemMenu.svelte';
+	import { toast } from 'svelte-sonner';
 
 	let loaded = false;
 
@@ -42,6 +43,7 @@
 			const data = await response.json();
 
 			if (response.ok) {
+				toast.success($i18n.t(`삭제되었습니다.`));
 				notes = notes.filter((note: any) => note.id !== item.id);
 			} else {
 				console.error('Delete failed:', data);
