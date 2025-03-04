@@ -124,7 +124,7 @@
 								<div class="font-semibold line-clamp-1 h-fit">{note.title}</div>
 								<div class="flex self-center">
 									<NoteItemMenu
-										bookmark={note}
+										note={note}
 										on:delete={() => {
 											selectedItem = note;
 											showDeleteConfirm = true;
