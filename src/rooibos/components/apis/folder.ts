@@ -36,7 +36,7 @@ export const createNewRooibosFolder = async (
 	return res;
 };
 
-export const getNoteFolders = async (token: string = '', userId: string = '', folderType: string = '') => {
+export const getRooibosFolders = async (token: string = '', userId: string = '', folderType: string = '') => {
 	let error = null;
 
 	const res = await fetch(

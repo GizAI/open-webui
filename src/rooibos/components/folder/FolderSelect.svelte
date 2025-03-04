@@ -2,8 +2,9 @@
 	import { onMount, getContext, createEventDispatcher } from 'svelte';
 	import Modal from '$lib/components/common/Modal.svelte';
 	import { WEBUI_API_BASE_URL } from '$lib/constants';
-	import { getNoteFolders } from '../apis/folder';
+	import { getRooibosFolders } from '../apis/folder';
 	import { user } from '$lib/stores';
+	import Spinner from '$lib/components/common/Spinner.svelte';
 	const i18n = getContext('i18n');
 
 	export let isOpen: boolean;
@@ -18,7 +19,7 @@
 	// 폴더 목록 로드 함수
 	async function loadFolders() {
 		try {
-			const response = await getNoteFolders(localStorage.token, $user?.id, folderType).catch((error) => {
+			const response = await getRooibosFolders(localStorage.token, $user?.id, folderType).catch((error) => {
 				toast.error(`${error}`);
 				return null;
 			});
@@ -78,7 +79,9 @@
 				{/each}
 			</ul>
 		{:else}
-			
+			<div class="w-full h-full flex justify-center items-center">
+				<Spinner />
+			</div>
 		{/if}
 	</div>
 </Modal>

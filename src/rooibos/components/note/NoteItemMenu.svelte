@@ -102,16 +102,6 @@
 			<DropdownMenu.Item
 				class="flex gap-2 items-center px-3 py-2 text-sm font-medium cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 rounded-md"
 				on:click={() => {
-					dispatch('delete');
-				}}
-			>
-				<GarbageBin strokeWidth="2" />
-				<div class="flex items-center">{$i18n.t('Delete')}</div>
-			</DropdownMenu.Item>
-
-			<DropdownMenu.Item
-				class="flex gap-2 items-center px-3 py-2 text-sm font-medium cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 rounded-md"
-				on:click={() => {
 					showFolderSelect = true;
 				}}
 			>
@@ -124,8 +114,19 @@
 				>
 					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7h4l2-2h8l2 2h4v13H3V7z" />
 				</svg>
-				<div class="flex items-center">{$i18n.t('Move Folder')}</div>
+				<div class="flex items-center">이동</div>
 			</DropdownMenu.Item>
+
+			<DropdownMenu.Item
+				class="flex gap-2 items-center px-3 py-2 text-sm font-medium cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 rounded-md"
+				on:click={() => {
+					dispatch('delete');
+				}}
+			>
+				<GarbageBin strokeWidth="2" />
+				<div class="flex items-center">{$i18n.t('Delete')}</div>
+			</DropdownMenu.Item>
+
 		</DropdownMenu.Content>
 	</div>
 </Dropdown>

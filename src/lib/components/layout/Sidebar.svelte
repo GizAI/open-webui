@@ -56,7 +56,7 @@
 	import ChannelItem from './Sidebar/ChannelItem.svelte';
 	import PencilSquare from '../icons/PencilSquare.svelte';
 	import Home from '../icons/Home.svelte';
-	import { createNewRooibosFolder, getNoteFolders } from '$rooibos/components/apis/folder';
+	import { createNewRooibosFolder, getRooibosFolders } from '$rooibos/components/apis/folder';
 	import RooibosFolderMenu from '$rooibos/components/folder/RooibosFolderMenu.svelte';
 	import RooibosFolder from '$rooibos/components/folder/RooibosFolder.svelte';
 
@@ -109,7 +109,7 @@
 
 	// Notes 폴더 초기화 (필요시 Notes 전용 필터 추가)
 	const initRooibosFolders = async () => {
-		const response = await getNoteFolders(localStorage.token, $user?.id).catch((error) => {
+		const response = await getRooibosFolders(localStorage.token, $user?.id).catch((error) => {
 			toast.error(`${error}`);
 			return null;
 		});
