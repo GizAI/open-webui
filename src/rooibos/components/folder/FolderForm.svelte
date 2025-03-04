@@ -1,0 +1,62 @@
+<script lang="ts">
+	import { getContext, createEventDispatcher } from 'svelte';
+	import Modal from '$lib/components/common/Modal.svelte';
+	import Spinner from '$lib/components/common/Spinner.svelte';
+	const i18n = getContext('i18n');
+
+	export let folder;
+
+	const dispatch = createEventDispatcher();
+
+	// Function to close the modal
+	function onClose() {
+		dispatch('close');
+	}
+
+	// Function to select a folder
+	function selectFolder(selectedFolder) {
+		dispatch('select', { folder: selectedFolder });
+		onClose();
+	}
+
+	// 폴더 목록 로드 함수
+	
+</script>
+
+<Modal on:close={onClose}>
+	<div class="p-4">
+		<div class="flex justify-between items-center mb-4">
+			<h2 class="text-lg font-bold">{$i18n.t('폴더 선택')}</h2>
+			<button type="button" on:click={onClose} class="text-gray-500 hover:text-gray-700">
+				<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+				</svg>
+			</button>
+		</div>
+		{#if folder}
+			<ul class="space-y-2">
+				
+					<li>
+						<button
+							class="w-full text-left px-4 py-2 rounded hover:bg-gray-100 flex justify-between items-center"
+							on:click={() => selectFolder(folder)}
+						>
+							<div class="flex items-center">
+								<!-- 폴더 아이콘 (Heroicons) -->
+								<svg class="w-5 h-5 mr-2 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7h4l2 2h8a2 2 0 012 2v7a2 2 0 01-2 2H5a2 2 0 01-2-2V7z" />
+								</svg>
+								<span>{folder.name}</span>
+							</div>
+							<span class="text-sm text-gray-500">{folder.updated_at}</span>
+						</button>
+					</li>
+				
+			</ul>
+		{:else}
+			<div class="w-full h-full flex justify-center items-center">
+				<Spinner />
+			</div>
+		{/if}
+	</div>
+</Modal>
