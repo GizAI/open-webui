@@ -14,7 +14,8 @@
 	import { createNote } from '$rooibos/components/apis/note';
 	import { user } from '$lib/stores';
 
-	const i18n = getContext('i18n');
+	// i18n을 스토어로 사용하기 위해 타입 정의
+	const i18n: { subscribe: any; t: (key: string) => string } = getContext('i18n');
 	const dispatch = createEventDispatcher();
 
 	export let folders: Record<string, any> = {};
@@ -33,8 +34,12 @@
 	let editingFolderId: string | null = null;
 	let editedName = '';
 
-	function handleFolderClick(folderId: string) {
-		dispatch('click', { folderId });
+	function handleFolderClick(folder: any) {
+		if (folder.type === 'note') {
+			goto(`/rooibos/folder/${folder.id}/notes`);
+		} else {
+			goto(`/rooibos/folder/${folder.id}/companies`);
+		}
 	}
 
 	async function handleAddPage(e: Event, folderId: string) {
@@ -69,18 +74,22 @@
 <ul class="folder-list">
 	{#each folderList as folderId (folderId)}
 		<li class="folder-item group relative">
-			<div class="flex items-center justify-between hover:bg-gray-100 dark:hover:bg-gray-900 rounded-md">
+			<div
+				class="flex items-center justify-between hover:bg-gray-100 dark:hover:bg-gray-900 rounded-md"
+			>
 				{#if editingFolderId === folderId}
 					<input
 						type="text"
 						bind:value={editedName}
 						class="cursor-text bg-transparent border-b border-dashed focus:outline-none"
 						on:blur={() => submitRename(folderId)}
-						on:keydown={(e) => { if (e.key === 'Enter') e.target.blur(); }}
+						on:keydown={(e) => {
+							if (e.key === 'Enter') e.target.blur();
+						}}
 						autofocus
 					/>
 				{:else}
-					<span on:click={() => handleFolderClick(folderId)} class="cursor-pointer">
+					<span on:click={() => handleFolderClick(folders[folderId])} class="cursor-pointer">
 						{folders[folderId].name}
 					</span>
 				{/if}
@@ -107,18 +116,25 @@
 									<Pencil strokeWidth="2" />
 									<div class="flex items-center">{$i18n.t('이름변경')}</div>
 								</DropdownMenu.Item>
-								<DropdownMenu.Item
-									class="flex gap-2 items-center px-3 py-1.5 text-sm cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 rounded-md"
-									on:click={(e) => handleAddPage(e, folderId)}
-								>
-									<NotebookIcon strokeWidth="2" />
-									<div class="flex items-center">{$i18n.t('새페이지')}</div>
-								</DropdownMenu.Item>
+								{#if folders[folderId].type === 'note'}
+									<DropdownMenu.Item
+										class="flex gap-2 items-center px-3 py-1.5 text-sm cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 rounded-md"
+										on:click={(e) => handleAddPage(e, folderId)}
+									>
+										<NotebookIcon strokeWidth="2" />
+										<div class="flex items-center">{$i18n.t('새페이지')}</div>
+									</DropdownMenu.Item>
+								{/if}
 							</DropdownMenu.Content>
 						</div>
 					</Dropdown>
 				</div>
 			</div>
+
+			<!-- Add recursive rendering for child folders -->
+			{#if folders[folderId].childrenIds && folders[folderId].childrenIds.length > 0}
+				<svelte:self {folders} parentId={folderId} />
+			{/if}
 		</li>
 	{/each}
 </ul>

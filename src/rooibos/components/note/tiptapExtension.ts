@@ -10,10 +10,10 @@ import TipTapBubbleMenu from '@tiptap/extension-bubble-menu';
 import type { Extension } from '@tiptap/core';
 
 export interface TiptapExtensionOptions {
-  // 버블 메뉴 엘리먼트 (NoteEditor.svelte에서 bind한 요소)
-  bubbleMenuElement: HTMLElement;
-  // 버블 메뉴 위치 조정을 위한 함수 (NoteEditor.svelte의 adjustBubbleMenuPosition)
-  adjustBubbleMenuPosition: () => void;
+	// 버블 메뉴 엘리먼트 (NoteEditor.svelte에서 bind한 요소)
+	bubbleMenuElement: HTMLElement;
+	// 버블 메뉴 위치 조정을 위한 함수 (NoteEditor.svelte의 adjustBubbleMenuPosition)
+	adjustBubbleMenuPosition: () => void;
 }
 
 /**
@@ -23,43 +23,44 @@ export interface TiptapExtensionOptions {
  * @returns Extension[] 배열
  */
 export function getExtensions(options: TiptapExtensionOptions): Extension[] {
-  const { bubbleMenuElement, adjustBubbleMenuPosition } = options;
+	const { bubbleMenuElement, adjustBubbleMenuPosition } = options;
 
-  return [
-    StarterKit,
-    Underline as unknown as Extension,
-    TextStyle as unknown as Extension,
-    Color,
-    Highlight as unknown as Extension,
-    TextAlign.configure({
-      types: ['heading', 'paragraph'],
-    }),
-    Link.configure({
-      openOnClick: true,
-      HTMLAttributes: {
-        class: 'custom-link',
-        target: '_blank',
-        rel: 'noopener noreferrer',
-      },
-    }) as unknown as Extension,
-    TipTapBubbleMenu.configure({
-      element: bubbleMenuElement,
-      shouldShow: ({ editor, from, to }: { editor: any; from: number; to: number }) => {
-        const isVisible = from !== to && editor.isEditable;
-        if (isVisible) {
-          setTimeout(adjustBubbleMenuPosition, 0);
-        }
-        return isVisible;
-      },
-      tippyOptions: {
-        duration: 100,
-        placement: 'top-start',
-        offset: [0, 25],
-        theme: 'bubble-menu-theme',
-        onShow: () => {
-          setTimeout(adjustBubbleMenuPosition, 0);
-        },
-      },
-    }) as unknown as Extension,
-  ];
+	return [
+		StarterKit,
+		Underline as unknown as Extension,
+		TextStyle as unknown as Extension,
+		Color,
+		Highlight as unknown as Extension,
+		TextAlign.configure({
+			types: ['heading', 'paragraph']
+		}),
+		Link.configure({
+			openOnClick: true,
+			HTMLAttributes: {
+				class: 'custom-link',
+				target: '_blank',
+				rel: 'noopener noreferrer',
+				contenteditable: 'false'
+			}
+		}) as unknown as Extension,
+		TipTapBubbleMenu.configure({
+			element: bubbleMenuElement,
+			shouldShow: ({ editor, from, to }: { editor: any; from: number; to: number }) => {
+				const isVisible = from !== to && editor.isEditable;
+				if (isVisible) {
+					setTimeout(adjustBubbleMenuPosition, 0);
+				}
+				return isVisible;
+			},
+			tippyOptions: {
+				duration: 100,
+				placement: 'top-start',
+				offset: [0, 45],
+				theme: 'bubble-menu-theme',
+				onShow: () => {
+					setTimeout(adjustBubbleMenuPosition, 0);
+				}
+			}
+		}) as unknown as Extension
+	];
 }

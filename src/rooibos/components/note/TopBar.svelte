@@ -10,7 +10,7 @@
 
   let editing = false;
   let inputValue = "";
-  const placeholder = "새 페이지";
+  const placeholder = "";
 
   $: if (!editing) {
     inputValue = pageTitle;
@@ -68,7 +68,7 @@
     {/if}
   </div>
 
-  <div class="right">
+  <!-- <div class="right">
     <button on:click={onNewChat} class="new-chat-btn">
       <svg
         xmlns="http://www.w3.org/2000/svg"
@@ -86,7 +86,7 @@
       </svg>
       <span class="btn-text">AI채팅</span>
     </button>
-  </div>
+  </div> -->
 </div>
 
 <style>
