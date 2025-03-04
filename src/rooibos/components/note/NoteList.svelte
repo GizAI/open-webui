@@ -130,11 +130,14 @@
 											selectedItem = note;
 											showDeleteConfirm = true;
 										}}
+										on:moved={() => {
+											notes = notes.filter(n => n.id !== note.id);
+										}}
 									/>
 								</div>
 							</div>
 							<div class="text-xs overflow-hidden text-ellipsis line-clamp-1">
-								{note.updated_at}
+								{dayjs(note.updated_at).format('YYYY년 MM월 DD일 HH:mm:ss')}
 							</div>
 						</div>
 					</div>

@@ -38,6 +38,14 @@
 		dispatch('close', folder);
 		onClose();
 	}
+
+	function formatTimestamp(ts: number): string {
+		const date = new Date(ts * 1000);
+		const year = date.getFullYear();
+		const month = (date.getMonth() + 1).toString().padStart(2, '0');
+		const day = date.getDate().toString().padStart(2, '0');
+		return `${year}-${month}-${day}`;
+	}
 </script>
 
 <Modal {isOpen} on:close={onClose}>
@@ -66,7 +74,7 @@
 								</svg>
 								<span>{folder.name}</span>
 							</div>
-							<span class="text-sm text-gray-500">{folder.updated_at}</span>
+							<span class="text-sm text-gray-500">{formatTimestamp(folder.updated_at)}</span>
 						</button>
 					</li>
 				{/each}

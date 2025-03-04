@@ -128,7 +128,12 @@
 									selectedItem = bookmark;
 									showDeleteConfirm = true;
 								}}
+								on:moved={() => {
+									// 이동한 북마크는 리스트에서 제거
+									bookmarks = bookmarks.filter((b) => b.id !== bookmark.id);
+								}}
 							/>
+
 						</div>
 					</div>
 
