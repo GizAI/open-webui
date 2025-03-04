@@ -91,13 +91,8 @@ class Pipeline:
                         if isinstance(json_data, dict) and "type" in json_data:
                             response_type = json_data.get("type", "")
 
-                            # images 타입은 무시
-                            if response_type == "images":
-                                logger.info("이미지 타입 응답 무시")
-                                continue
-
-                            # report 타입은 그대로 OpenAI 형식으로 변환하여 반환
-                            elif response_type == "report" and "output" in json_data:
+                            # report 타입만 처리하고 나머지는 무시
+                            if response_type == "report" and "output" in json_data:
                                 content = json_data.get("output", "")
                                 chunk = {
                                     "id": f"chatcmpl-{int(time.time())}",
@@ -113,71 +108,18 @@ class Pipeline:
                                     ],
                                 }
                                 yield f"data: {json.dumps(chunk)}".encode("utf-8")
-
-                            # 그 외 타입(logs, path 등)은 <think> 태그로 감싸서 반환
                             else:
-                                # 출력 내용 가져오기
-                                content = ""
-                                if "output" in json_data:
-                                    content = json_data.get("output", "")
-                                elif "content" in json_data:
-                                    content = json_data.get("content", "")
-                                else:
-                                    # 전체 JSON을 문자열로 변환
-                                    content = json.dumps(json_data)
-
-                                # <think> 태그로 감싸기
-                                wrapped_content = f"<think>{content}</think>"
-
-                                chunk = {
-                                    "id": f"chatcmpl-{int(time.time())}",
-                                    "object": "chat.completion.chunk",
-                                    "created": int(time.time()),
-                                    "model": model_id,
-                                    "choices": [
-                                        {
-                                            "index": 0,
-                                            "delta": {"content": wrapped_content},
-                                            "finish_reason": None,
-                                        }
-                                    ],
-                                }
-                                yield f"data: {json.dumps(chunk)}".encode("utf-8")
+                                # report 타입이 아닌 경우 로그만 남기고 무시
+                                logger.info(f"{response_type} 타입 응답 무시")
+                                continue
                         else:
-                            # 타입이 없는 일반 JSON 응답은 <think> 태그로 감싸서 반환
-                            wrapped_content = f"<think>{json.dumps(json_data)}</think>"
-                            chunk = {
-                                "id": f"chatcmpl-{int(time.time())}",
-                                "object": "chat.completion.chunk",
-                                "created": int(time.time()),
-                                "model": model_id,
-                                "choices": [
-                                    {
-                                        "index": 0,
-                                        "delta": {"content": wrapped_content},
-                                        "finish_reason": None,
-                                    }
-                                ],
-                            }
-                            yield f"data: {json.dumps(chunk)}".encode("utf-8")
+                            # 타입이 없는 응답도 무시
+                            logger.info("타입 없는 응답 무시")
+                            continue
                     except json.JSONDecodeError:
-                        # 일반 텍스트인 경우 <think> 태그로 감싸서 반환
-                        logger.info("일반 텍스트 응답 처리")
-                        wrapped_content = f"<think>{response}</think>"
-                        chunk = {
-                            "id": f"chatcmpl-{int(time.time())}",
-                            "object": "chat.completion.chunk",
-                            "created": int(time.time()),
-                            "model": model_id,
-                            "choices": [
-                                {
-                                    "index": 0,
-                                    "delta": {"content": wrapped_content},
-                                    "finish_reason": None,
-                                }
-                            ],
-                        }
-                        yield f"data: {json.dumps(chunk)}".encode("utf-8")
+                        # 일반 텍스트인 경우도 무시
+                        logger.info("일반 텍스트 응답 무시")
+                        continue
 
                 logger.info(f"웹소켓 통신 완료: 총 {response_count}개 응답 수신")
 
@@ -191,7 +133,7 @@ class Pipeline:
                 "choices": [
                     {
                         "index": 0,
-                        "delta": {"content": f"<think>웹소켓 오류: {str(e)}</think>"},
+                        "delta": {"content": f"연구 중 오류가 발생했습니다: {str(e)}"},
                         "finish_reason": "error",
                     }
                 ],
