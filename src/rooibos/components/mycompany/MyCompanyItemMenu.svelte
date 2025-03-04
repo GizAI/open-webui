@@ -136,6 +136,7 @@
 	<FolderSelect
 		isOpen={showFolderSelect}
 		bookmarkId={bookmark.id}
+		folderType="corp"
 		onClose={() => {
 			showFolderSelect = false;
 		}}

@@ -4,13 +4,11 @@
 	import { WEBUI_API_BASE_URL } from '$lib/constants';
 	import { getNoteFolders } from '../apis/folder';
 	import { user } from '$lib/stores';
-	import { goto } from '$app/navigation';
 	const i18n = getContext('i18n');
 
-	// 부모에서 전달하는 프라퍼티 및 이벤트 핸들러
 	export let isOpen: boolean;
 	export let onClose: () => void;
-	// 선택할 북마크 ID (부모에서 전달)
+	export let folderType: string;
 	export let bookmarkId: string;
 
 	let folders = [];
@@ -20,7 +18,7 @@
 	// 폴더 목록 로드 함수
 	async function loadFolders() {
 		try {
-			const response = await getNoteFolders(localStorage.token, $user?.id).catch((error) => {
+			const response = await getNoteFolders(localStorage.token, $user?.id, folderType).catch((error) => {
 				toast.error(`${error}`);
 				return null;
 			});

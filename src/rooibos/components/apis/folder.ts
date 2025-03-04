@@ -36,25 +36,26 @@ export const createNewRooibosFolder = async (
 	return res;
 };
 
-export const getNoteFolders = async (token: string = '', userId: string = '') => {
+export const getNoteFolders = async (token: string = '', userId: string = '', folderType: string = '') => {
 	let error = null;
 
-	const res = await fetch(`${WEBUI_API_BASE_URL}/rooibos/folders/?userId=${userId}`, {
-		method: 'GET',
-		headers: {
-			Accept: 'application/json',
-			'Content-Type': 'application/json',
-			authorization: `Bearer ${token}`
+	const res = await fetch(
+		`${WEBUI_API_BASE_URL}/rooibos/folders/?userId=${userId}&folderType=${folderType}`,
+		{
+			method: 'GET',
+			headers: {
+				Accept: 'application/json',
+				'Content-Type': 'application/json',
+				authorization: `Bearer ${token}`
+			}
 		}
-	})
+	)
 		.then(async (res) => {
 			if (!res.ok) throw await res.json();
 			const result = await res.json();
 			return result.folders;
 		})
-		.then((json) => {
-			return json;
-		})
+		.then((json) => json)
 		.catch((err) => {
 			error = err.detail;
 			console.log(err);
@@ -67,6 +68,7 @@ export const getNoteFolders = async (token: string = '', userId: string = '') =>
 
 	return res;
 };
+
 
 export const renameNoteFolder = async (
 	token: string = '',

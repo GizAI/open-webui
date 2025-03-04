@@ -18,15 +18,19 @@ router = APIRouter()
 async def getNoteFolder(request: Request):
     search_params = request.query_params
     userId = search_params.get("userId")  
+    folderType = search_params.get("folderType")
     try:
         with get_db() as db:
             query = """
                 SELECT *
                 FROM rb_folder
                 WHERE user_id = :userId
-                ORDER BY created_at ASC
             """
             params = {"userId": userId}
+            if folderType:
+                query += " AND type = :folderType"
+                params["folderType"] = folderType
+            query += " ORDER BY created_at DESC"
             result = db.execute(text(query), params)
             folders = [dict(row._mapping) for row in result.fetchall()]
 
