@@ -2,8 +2,9 @@
 	import { onMount, getContext } from 'svelte';
 	import Modal from '$lib/components/common/Modal.svelte';
 	import { WEBUI_API_BASE_URL } from '$lib/constants';
-	import { getRooibosFolders } from '../apis/folder';
+	import { getNoteFolders } from '../apis/folder';
 	import { user } from '$lib/stores';
+	import { goto } from '$app/navigation';
 	const i18n = getContext('i18n');
 
 	// 부모에서 전달하는 프라퍼티 및 이벤트 핸들러
@@ -17,7 +18,7 @@
 	// 폴더 목록 로드 함수
 	async function loadFolders() {
 		try {
-			const response = await getRooibosFolders(localStorage.token, $user?.id).catch((error) => {
+			const response = await getNoteFolders(localStorage.token, $user?.id).catch((error) => {
 				toast.error(`${error}`);
 				return null;
 			});
@@ -31,10 +32,9 @@
 		loadFolders();
 	});
 
-	// 폴더 선택 시 /move 엔드포인트 호출
 	async function selectFolder(folder) {
 		try {
-			const response = await fetch(`${WEBUI_API_BASE_URL}/rooibos/folders/move?userId=${$user?.id}`, {
+			await fetch(`${WEBUI_API_BASE_URL}/rooibos/folders/move?userId=${$user?.id}`, {
 				method: 'POST',
 				headers: {
 					'Content-Type': 'application/json',
@@ -45,11 +45,12 @@
 					targetFolderId: folder.id
 				})
 			});
-			const data = await response.json();
-			if (!data.success) {
-				throw new Error(data.message);
+			if (folder.type === 'note') {
+				goto(`/rooibos/folder/${folder.id}/notes`);
+			} else {
+				goto(`/rooibos/folder/${folder.id}/companies`);
 			}
-			toast.success(data.message);
+			
 			onClose();
 		} catch (error) {
 			console.error('북마크 이동 실패:', error);
@@ -90,7 +91,7 @@
 				{/each}
 			</ul>
 		{:else}
-			<p>{$i18n.t('No folders available')}</p>
+			
 		{/if}
 	</div>
 </Modal>
