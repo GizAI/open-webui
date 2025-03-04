@@ -122,7 +122,7 @@
 										on:click={(e) => handleAddPage(e, folderId)}
 									>
 										<NotebookIcon strokeWidth="2" />
-										<div class="flex items-center">{$i18n.t('새페이지')}</div>
+										<div class="flex items-center">{$i18n.t('새노트')}</div>
 									</DropdownMenu.Item>
 								{/if}
 							</DropdownMenu.Content>

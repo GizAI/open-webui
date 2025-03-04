@@ -12,7 +12,6 @@
 	import { goto } from '$app/navigation';
 
 	import DeleteConfirmDialog from '$lib/components/common/ConfirmDialog.svelte';
-	import CorpBookmarks from '$rooibos/components/corpbookmarks/CorpBookmarksItemMenu.svelte';
 	import Badge from '$lib/components/common/Badge.svelte';
 	import Spinner from '$lib/components/common/Spinner.svelte';
 	import MenuLines from '$lib/components/icons/MenuLines.svelte';
@@ -31,7 +30,7 @@
 	const deleteHandler = async (item: any) => {
 		try {
 			const response = await fetch(
-				`${WEBUI_API_BASE_URL}/rooibos/corpbookmarks/${item.id}/delete`,
+				`${WEBUI_API_BASE_URL}/rooibos/notes/${item.id}/delete`,
 				{
 					method: 'DELETE',
 					headers: {

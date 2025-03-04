@@ -121,7 +121,30 @@ async def updateNote(request: Request):
             detail={"success": False, "error": "Failed to update note", "message": str(e)}
         )
 
+@router.delete("/{id}/delete")
+async def delete_note(id: str):
+    try:
+        sql_query = """
+        DELETE FROM rb_note
+        WHERE id = :id
+        """
+        log.info(f"Executing query: {sql_query} with parameter id={id}")
+        with get_db() as db:
+            db.execute(text(sql_query), {"id": id})
+            db.commit() 
 
+        return {
+            "success": True,
+            "message": f"Note with company_id {id} has been successfully deleted."
+        }
+    except Exception as e:
+        log.error("Delete API error: " + str(e))
+        return {
+            "success": False,
+            "error": "Delete failed",
+            "message": str(e)
+        }
+    
 
 
 
