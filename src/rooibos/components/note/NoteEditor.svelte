@@ -569,7 +569,7 @@
 	/>
 </div>
 
-{#if showSidebar}
+{#if showSidebar && false}
 	<RightSidebar on:close={closeSidebar} />
 {/if}
 
