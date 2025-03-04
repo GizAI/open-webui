@@ -48,8 +48,6 @@
 	import AddFilesPlaceholder from '../AddFilesPlaceholder.svelte';
 	import SearchInput from './Sidebar/SearchInput.svelte';
 	import Folder from '../common/Folder.svelte';
-	import NoteFolder from '$rooibos/components/note/folder/NoteFolder.svelte';
-	import NoteFolderMenu from '$rooibos/components/note/folder/NoteFolderMenu.svelte';
 	import Plus from '../icons/Plus.svelte';
 	import Tooltip from '../common/Tooltip.svelte';
 	import Folders from './Sidebar/Folders.svelte';

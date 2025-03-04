@@ -1,7 +1,7 @@
 	<script>
-		import FolderNoteList from '$rooibos/components/folder/FolderNoteList.svelte';
+		import NoteList from '$rooibos/components/note/NoteList.svelte';
   	</script>
 	
-	<FolderNoteList />
+	<NoteList />
   
   

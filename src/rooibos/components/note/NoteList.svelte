@@ -1,4 +1,4 @@
-<!-- FolderNoteList.svelte -->
+<!-- NoteList.svelte -->
 <script lang="ts">
 	import dayjs from 'dayjs';
 	import relativeTime from 'dayjs/plugin/relativeTime';
@@ -83,14 +83,14 @@
 
 <svelte:head>
 	<title>
-		나의기업 | {$WEBUI_NAME}
+		노트 | {$WEBUI_NAME}
 	</title>
 </svelte:head>
 
 {#if loaded}
 	<DeleteConfirmDialog
 		bind:show={showDeleteConfirm}
-		title="나의기업에서 삭제하시겠습니까?"
+		title="노트를 삭제하시겠습니까?"
 		on:confirm={() => {
 			deleteHandler(selectedItem);
 		}}
