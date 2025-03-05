@@ -18,6 +18,7 @@
 	import { get } from 'svelte/store';
 	import { user} from '$lib/stores';
 	import { getNote } from '../apis/note';
+	import { NodeSelection } from 'prosemirror-state';
 
 	// Add custom type declaration for HTMLDivElement with cleanupListeners property
 	declare global {
@@ -60,6 +61,8 @@
 	let manualTitleEdited = false;
 	let saveTimeout;
 	let bubbleMenuElement;
+	let isLineMenuOpen = false;
+	import { TextSelection } from 'prosemirror-state';
 
 	// 협업 관련 변수
 	let provider;
@@ -111,6 +114,28 @@
 	function updateEditorState() {
 		if (!editor) return;
 
+		// 라인 메뉴가 활성 중이거나 선택이 비어있으면 버블 메뉴 숨김
+		if (isLineMenuOpen) {
+			if (bubbleMenuElement) {
+				bubbleMenuElement.style.visibility = 'hidden';
+				bubbleMenuElement.style.display = 'none';
+			}
+		} else if (editor.state.selection.empty) {
+			// 선택이 비어있는 경우
+			if (bubbleMenuElement) {
+				bubbleMenuElement.style.visibility = 'hidden';
+				bubbleMenuElement.style.display = 'none';
+			}
+		} else {
+			// 선택이 있고 라인 메뉴가 활성화되지 않은 경우
+			if (bubbleMenuElement) {
+				bubbleMenuElement.style.visibility = 'visible';
+				bubbleMenuElement.style.display = 'flex';
+				// 버블 메뉴가 표시될 때 위치 조정 보장
+				setTimeout(adjustBubbleMenuPosition, 0);
+			}
+		}
+
 		editorState = {
 			bold: editor.isActive('bold'),
 			italic: editor.isActive('italic'),
@@ -123,8 +148,16 @@
 			textAlignCenter: editor.isActive({ textAlign: 'center' }),
 			textAlignRight: editor.isActive({ textAlign: 'right' })
 		};
+	}
 
-		setTimeout(adjustBubbleMenuPosition, 0);
+	// 버블 메뉴를 강제로 표시하는 함수
+	function forceBubbleMenuDisplay() {
+		if (!bubbleMenuElement || !editor || isLineMenuOpen || editor.state.selection.empty) return;
+		
+		bubbleMenuElement.style.visibility = 'visible';
+		bubbleMenuElement.style.display = 'flex';
+		adjustBubbleMenuPosition();
+		updateEditorState();
 	}
 
 	async function translateSelectedText() {
@@ -506,31 +539,71 @@
  
                  // 클릭 이벤트 리스너 추가
                  lineIcon.addEventListener('click', (e) => {
-                   e.preventDefault();
-                   e.stopPropagation();
-                   
-                   try {
-                     console.log('라인 메뉴 아이콘 클릭됨', { node, pos });
-                     const editorInstance = extensionThis.editor || editor;
-                     // 현재 하이라이트 상태 토글
-                     const currentPluginState = this.getState(editorInstance.state);
-                     const newHighlightedPos = currentPluginState.highlightedPos === pos ? null : pos;
-                     editorInstance.view.dispatch(editorInstance.state.tr.setMeta('toggleLineHighlight', newHighlightedPos));
- 
-                     showLineMenu(
-                       e.clientX, 
-                       e.clientY, 
-                       editorInstance, 
-                       node, 
-                       pos,
-                       () => {
-                         console.log('사이드바 열기 콜백');
-                       }
-                     );
-                   } catch (error) {
-                     console.error('라인 메뉴 표시 중 오류:', error);
-                   }
-                 });
+		e.preventDefault();
+		e.stopPropagation();
+		try {
+			console.log('라인 메뉴 아이콘 클릭됨', { node, pos });
+			const editorInstance = extensionThis.editor || editor;
+			isLineMenuOpen = true;
+	
+			const currentPluginState = this.getState(editorInstance.state);
+			const newHighlightedPos = currentPluginState.highlightedPos === pos ? null : pos;
+			const transaction = editorInstance.state.tr
+				.setSelection(NodeSelection.create(editorInstance.state.doc, pos))
+				.setMeta('toggleLineHighlight', newHighlightedPos);
+			editorInstance.view.dispatch(transaction);
+	
+			showLineMenu(
+				e.clientX, 
+				e.clientY, 
+				editorInstance, 
+				node, 
+				pos,
+				() => {
+					console.log('라인 메뉴 종료: 텍스트 선택 복구');
+					// 라인 메뉴 상태 초기화
+					isLineMenuOpen = false;
+					
+					// 강제로 텍스트 선택 생성하여 버블 메뉴 표시 유도
+					try {
+						// 현재 노드의 내용이 있는지 확인
+						const nodeContent = node.textContent || '';
+						if (nodeContent.length > 0) {
+							// 노드 내용이 있으면 텍스트 선택 생성
+							const startPos = pos + 1; // 노드 시작 위치 다음
+							const endPos = Math.min(startPos + 5, pos + node.nodeSize - 1); // 최대 5자 또는 노드 끝까지
+							
+							// 텍스트 선택 생성 및 적용
+							const newSelection = TextSelection.create(editorInstance.state.doc, startPos, endPos);
+							editorInstance.view.dispatch(editorInstance.state.tr.setSelection(newSelection));
+							
+							// 버블 메뉴 강제 표시
+							setTimeout(() => {
+								forceBubbleMenuDisplay();
+							}, 50);
+						} else {
+							// 노드가 비어있는 경우 다른 방식으로 처리
+							console.log('노드가 비어있어 다른 방식으로 선택 생성 시도');
+							// 다음 노드로 이동 시도
+							const nextPos = pos + node.nodeSize;
+							if (nextPos < editorInstance.state.doc.content.size) {
+								const newSelection = TextSelection.create(editorInstance.state.doc, nextPos, nextPos + 1);
+								editorInstance.view.dispatch(editorInstance.state.tr.setSelection(newSelection));
+								
+								setTimeout(() => {
+									forceBubbleMenuDisplay();
+								}, 50);
+							}
+						}
+					} catch (error) {
+						console.error('텍스트 선택 생성 중 오류:', error);
+					}
+				}
+			);
+		} catch (error) {
+			console.error('라인 메뉴 표시 중 오류:', error);
+		}
+	});
                  
                  const decorationWidget = Decoration.widget(pos, lineIcon, {
                    side: -1,
@@ -598,7 +671,10 @@
 			content: '',
 			autofocus: true,
 			onSelectionUpdate({ editor }) {
-				updateEditorState();
+				// 선택이 변경될 때마다 에디터 상태 업데이트
+				setTimeout(() => {
+					updateEditorState();
+				}, 0);
 			}
 		});
 		return editor;
@@ -632,6 +708,11 @@
 
 		document.addEventListener('click', closeAllDropdowns);
 		window.addEventListener('resize', adjustBubbleMenuPosition);
+		
+		// 에디터 초기화 후 버블 메뉴 상태 설정
+		setTimeout(() => {
+			updateEditorState();
+		}, 100);
 	});
 
 	onDestroy(() => {
@@ -696,6 +777,13 @@
 	background-color: #ffff99; /* 원하는 하이라이트 색상으로 수정 가능 */
 }
 
+	:global(.tippy-box[data-theme~='bubble-menu-theme']) {
+		background-color: transparent !important;
+		box-shadow: none !important;
+		transform: translateY(-15px) !important;
+		visibility: visible !important;
+		display: flex !important;
+	}
 
 	.notion-page-container {
 		max-width: 800px;
@@ -713,12 +801,6 @@
 	}
 	.editor-wrapper:focus {
 		outline: none;
-	}
-
-	:global(.tippy-box[data-theme~='bubble-menu-theme']) {
-		background-color: transparent;
-		box-shadow: none;
-		transform: translateY(-15px);
 	}
 
 	:global(.tippy-box[data-theme~='bubble-menu-theme'] .tippy-content) {

@@ -224,6 +224,9 @@
     function closeMenu() {
       menu.remove();
       document.removeEventListener('mousedown', handleClickOutside);
+      if (typeof openSidebarCallback === 'function') {
+        openSidebarCallback();
+      }
     }
     
     return { closeMenu };
