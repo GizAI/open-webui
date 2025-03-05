@@ -2,7 +2,7 @@
 <script lang="ts">
 	import { onMount, onDestroy, createEventDispatcher } from 'svelte';
 	import { Editor } from '@tiptap/core';
-	import { Plugin, PluginKey } from 'prosemirror-state';
+	import { Plugin, PluginKey, TextSelection, NodeSelection } from 'prosemirror-state';
 	import { Decoration, DecorationSet } from 'prosemirror-view';
 	import { Extension } from '@tiptap/core';
 	import { Collaboration } from '@tiptap/extension-collaboration';
@@ -16,59 +16,62 @@
 	import { HocuspocusProvider } from '@hocuspocus/provider';
 	import { page } from '$app/stores';
 	import { get } from 'svelte/store';
-	import { user} from '$lib/stores';
-	import { getNote } from '../apis/note';
-	import { NodeSelection } from 'prosemirror-state';
+	import { user } from '$lib/stores';
+	import { getNote, renameNote } from '../apis/note';
 
+	// Type declarations
 	// Add custom type declaration for HTMLDivElement with cleanupListeners property
-	declare global {
-		interface HTMLDivElement {
-			cleanupListeners?: () => void;
-		}
+	interface HTMLDivElementWithCleanup extends HTMLDivElement {
+		cleanupListeners?: () => void;
 	}
 
-	/**
-	 * @typedef {Object} Note
-	 * @property {string} [title] - The title of the note.
-	 * @property {any} [content] - The content of the note.
-	 */
+	interface Note {
+		title?: string;
+		content?: any;
+	}
 
-	/**
-	 * @typedef {Object} EditorState
-	 * @property {boolean} bold - Whether the text is bold.
-	 * @property {boolean} italic - Whether the text is italic.
-	 * @property {boolean} underline - Whether the text is underlined.
-	 * @property {boolean} strike - Whether the text is struck through.
-	 * @property {boolean} textStyle - Whether the text has a specific style.
-	 * @property {boolean} highlight - Whether the text is highlighted.
-	 * @property {boolean} link - Whether the text is linked.
-	 * @property {boolean} textAlignLeft - Whether the text is left-aligned.
-	 * @property {boolean} textAlignCenter - Whether the text is center-aligned.
-	 * @property {boolean} textAlignRight - Whether the text is right-aligned.
-	 */
+	interface EditorState {
+		bold: boolean;
+		italic: boolean;
+		underline: boolean;
+		strike: boolean;
+		textStyle: boolean;
+		highlight: boolean;
+		link: boolean;
+		textAlignLeft: boolean;
+		textAlignCenter: boolean;
+		textAlignRight: boolean;
+	}
 
-	/**
-	 * @typedef {Object} Position
-	 * @property {number} x - The x-coordinate of the position.
-	 * @property {number} y - The y-coordinate of the position.
-	 */
+	interface Position {
+		x: number;
+		y: number;
+	}
 
-	let editor;
-	let editorElement;
+	interface ActiveUser {
+		id: string;
+		name: string;
+		color: string;
+		avatar?: string;
+	}
+
+	// Editor and UI state variables
+	let editor: Editor | null = null;
+	let editorElement: HTMLDivElementWithCleanup | null = null;
 	let pageTitle = '';
 	let showSidebar = false;
-	let note = {};
+	let note: Note = {};
 	let manualTitleEdited = false;
-	let saveTimeout;
-	let bubbleMenuElement;
+	let saveTimeout: ReturnType<typeof setTimeout> | null = null;
+	let bubbleMenuElement: HTMLElement | null = null;
 	let isLineMenuOpen = false;
-	import { TextSelection } from 'prosemirror-state';
 
-	// 협업 관련 변수
-	let provider;
-	let activeUsers = [];
+	// Collaboration variables
+	let provider: HocuspocusProvider | null = null;
+	let activeUsers: ActiveUser[] = [];
 
-	let editorState = {
+	// Editor state tracking
+	let editorState: EditorState = {
 		bold: false,
 		italic: false,
 		underline: false,
@@ -83,21 +86,25 @@
 
 	const { id: noteId } = get(page).params;
 
-	// 드롭다운 위치 계산 변수들
-	let colorPickerPosition = { x: 0, y: 0 };
-	let highlightPickerPosition = { x: 0, y: 0 };
-	let alignmentDropdownPosition = { x: 0, y: 0 };
+	// Position variables for dropdowns
+	let colorPickerPosition: Position = { x: 0, y: 0 };
+	let highlightPickerPosition: Position = { x: 0, y: 0 };
+	let alignmentDropdownPosition: Position = { x: 0, y: 0 };
 
-	// 링크 관련 변수
+	// Link related variables
 	let showLinkInput = false;
-	let linkInputPosition = { x: 0, y: 0 };
+	let linkInputPosition: Position = { x: 0, y: 0 };
 	let linkInputValue = '';
 
+	// UI state variables
 	let showColorPicker = false;
 	let showHighlightPicker = false;
 	let showAlignmentOptions = false;
 
-	function adjustBubbleMenuPosition() {
+	/**
+	 * Adjusts the position of the bubble menu to ensure it stays within viewport
+	 */
+	function adjustBubbleMenuPosition(): void {
 		if (!bubbleMenuElement) return;
 
 		const rect = bubbleMenuElement.getBoundingClientRect();
@@ -111,27 +118,30 @@
 		}
 	}
 
-	function updateEditorState() {
+	/**
+	 * Updates the editor state based on current selection and formatting
+	 */
+	function updateEditorState(): void {
 		if (!editor) return;
 
-		// 라인 메뉴가 활성 중이거나 선택이 비어있으면 버블 메뉴 숨김
+		// Hide bubble menu if line menu is active or selection is empty
 		if (isLineMenuOpen) {
 			if (bubbleMenuElement) {
 				bubbleMenuElement.style.visibility = 'hidden';
 				bubbleMenuElement.style.display = 'none';
 			}
 		} else if (editor.state.selection.empty) {
-			// 선택이 비어있는 경우
+			// Selection is empty
 			if (bubbleMenuElement) {
 				bubbleMenuElement.style.visibility = 'hidden';
 				bubbleMenuElement.style.display = 'none';
 			}
 		} else {
-			// 선택이 있고 라인 메뉴가 활성화되지 않은 경우
+			// Selection exists and line menu is not active
 			if (bubbleMenuElement) {
 				bubbleMenuElement.style.visibility = 'visible';
 				bubbleMenuElement.style.display = 'flex';
-				// 버블 메뉴가 표시될 때 위치 조정 보장
+				// Ensure position adjustment when bubble menu is displayed
 				setTimeout(adjustBubbleMenuPosition, 0);
 			}
 		}
@@ -150,8 +160,10 @@
 		};
 	}
 
-	// 버블 메뉴를 강제로 표시하는 함수
-	function forceBubbleMenuDisplay() {
+	/**
+	 * Forces the bubble menu to display if conditions are met
+	 */
+	function forceBubbleMenuDisplay(): void {
 		if (!bubbleMenuElement || !editor || isLineMenuOpen || editor.state.selection.empty) return;
 		
 		bubbleMenuElement.style.visibility = 'visible';
@@ -160,7 +172,10 @@
 		updateEditorState();
 	}
 
-	async function translateSelectedText() {
+	/**
+	 * Translates selected text using an API
+	 */
+	async function translateSelectedText(): Promise<void> {
 		if (!editor) return;
 
 		const { from, to } = editor.state.selection;
@@ -184,33 +199,34 @@
 		}
 	}
 
-	function toggleBold() {
+	// Text formatting functions
+	function toggleBold(): void {
 		if (!editor) return;
 		editor.chain().focus().toggleBold().run();
 		updateEditorState();
 	}
 
-	function toggleItalic() {
+	function toggleItalic(): void {
 		if (!editor) return;
 		editor.chain().focus().toggleItalic().run();
 		updateEditorState();
 	}
 
-	function toggleUnderline() {
+	function toggleUnderline(): void {
 		if (!editor) return;
 		editor.chain().focus().toggleUnderline().run();
 		updateEditorState();
 	}
 
-	function toggleStrike() {
+	function toggleStrike(): void {
 		if (!editor) return;
 		editor.chain().focus().toggleStrike().run();
 		updateEditorState();
 	}
 
-	function toggleColorPicker(event) {
+	function toggleColorPicker(event: MouseEvent): void {
 		event.stopPropagation();
-		const buttonRect = event.currentTarget.getBoundingClientRect();
+		const buttonRect = (event.currentTarget as HTMLElement).getBoundingClientRect();
 		colorPickerPosition = {
 			x: buttonRect.left,
 			y: buttonRect.bottom + 10
@@ -221,12 +237,12 @@
 		showAlignmentOptions = false;
 	}
 
-	function toggleHighlightPicker(event) {
+	function toggleHighlightPicker(event: MouseEvent): void {
 		event.stopPropagation();
 		toggleHighlight();
 	}
 
-	function toggleHighlight() {
+	function toggleHighlight(): void {
 		if (!editor) return;
 
 		const isHighlighted = editor.isActive('highlight');
@@ -240,9 +256,9 @@
 		updateEditorState();
 	}
 
-	function toggleAlignmentOptions(event) {
+	function toggleAlignmentOptions(event: MouseEvent): void {
 		event.stopPropagation();
-		const buttonRect = event.currentTarget.getBoundingClientRect();
+		const buttonRect = (event.currentTarget as HTMLElement).getBoundingClientRect();
 		alignmentDropdownPosition = {
 			x: buttonRect.left,
 			y: buttonRect.bottom + 10
@@ -253,42 +269,42 @@
 		showHighlightPicker = false;
 	}
 
-	function setColor(color) {
+	function setColor(color: string): void {
 		if (!editor) return;
 		editor.chain().focus().setColor(color).run();
 		showColorPicker = false;
 		updateEditorState();
 	}
 
-	function setHighlight(color) {
+	function setHighlight(color: string): void {
 		if (!editor) return;
 		editor.chain().focus().toggleHighlight({ color }).run();
 		showHighlightPicker = false;
 		updateEditorState();
 	}
 
-	function setTextAlignLeft() {
+	function setTextAlignLeft(): void {
 		if (!editor) return;
 		editor.chain().focus().setTextAlign('left').run();
 		checkAlignmentState();
 		updateEditorState();
 	}
 
-	function setTextAlignCenter() {
+	function setTextAlignCenter(): void {
 		if (!editor) return;
 		editor.chain().focus().setTextAlign('center').run();
 		checkAlignmentState();
 		updateEditorState();
 	}
 
-	function setTextAlignRight() {
+	function setTextAlignRight(): void {
 		if (!editor) return;
 		editor.chain().focus().setTextAlign('right').run();
 		checkAlignmentState();
 		updateEditorState();
 	}
 
-	function checkAlignmentState() {
+	function checkAlignmentState(): void {
 		if (!editor) return;
 
 		try {
@@ -313,7 +329,7 @@
 		}
 	}
 
-	function removeFormat() {
+	function removeFormat(): void {
 		if (!editor) return;
 
 		editor.chain().focus().unsetAllMarks().clearNodes().setTextAlign('left').run();
@@ -343,7 +359,7 @@
 		}, 50);
 	}
 
-	function setLink() {
+	function setLink(): void {
 		if (!editor) return;
 
 		const selection = editor.state.selection;
@@ -359,6 +375,8 @@
 			return;
 		}
 
+		if (!bubbleMenuElement) return;
+		
 		const bubbleRect = bubbleMenuElement.getBoundingClientRect();
 		linkInputPosition = {
 			x: bubbleRect.left,
@@ -379,7 +397,7 @@
 		}, 10);
 	}
 
-	function applyLink() {
+	function applyLink(): void {
 		if (!editor) return;
 
 		const { from, to } = editor.state.selection;
@@ -397,7 +415,7 @@
 		updateEditorState();
 	}
 
-	function handleLinkInputKeydown(event) {
+	function handleLinkInputKeydown(event: KeyboardEvent): void {
 		if (event.key === 'Enter') {
 			event.preventDefault();
 			applyLink();
@@ -407,72 +425,60 @@
 		}
 	}
 
-	function cancelLinkInput() {
+	function cancelLinkInput(): void {
 		showLinkInput = false;
 		linkInputValue = '';
 	}
 
-	function closeAllDropdowns() {
+	function closeAllDropdowns(): void {
 		showColorPicker = false;
 		showHighlightPicker = false;
 		showAlignmentOptions = false;
 	}
 
-	function handleTitleChange(e) {
+	function handleTitleChange(e: CustomEvent<string>): void {
 		pageTitle = e.detail;
 		manualTitleEdited = true;
-		if (editor) {
-			renameNote(localStorage.token, noteId, pageTitle);
+		if (editor && noteId) {
+			const token = localStorage.getItem('token') || '';
+			renameNote(token, noteId, pageTitle);
 		}
 	}
 
-	function openSidebar() {
+	function openSidebar(): void {
 		showSidebar = true;
 	}
 
-	function closeSidebar() {
+	function closeSidebar(): void {
 		showSidebar = false;
 	}
 
-	function setupCollaboration() {
+	/**
+	 * Sets up collaboration features for the editor
+	 */
+	function setupCollaboration(): HocuspocusProvider {
 		const documentName = `note:${noteId}`;
 		const currentUser = get(user);
 
-		const sessionId = crypto.randomUUID();
-
-		const getRandomColor = () => {
+		const getRandomColor = (): string => {
 			const colors = [
-				'#f44336',
-				'#e91e63',
-				'#9c27b0',
-				'#673ab7',
-				'#3f51b5',
-				'#2196f3',
-				'#03a9f4',
-				'#00bcd4',
-				'#009688',
-				'#4caf50',
-				'#8bc34a',
-				'#cddc39',
-				'#ffc107',
-				'#ff9800',
-				'#ff5722'
+				'#f44336', '#e91e63', '#9c27b0', '#673ab7', '#3f51b5',
+				'#2196f3', '#03a9f4', '#00bcd4', '#009688', '#4caf50',
+				'#8bc34a', '#cddc39', '#ffc107', '#ff9800', '#ff5722'
 			];
 			return colors[Math.floor(Math.random() * colors.length)];
 		};
 
 		const sessionColor = getRandomColor();
+		const token = localStorage.getItem('token') || '';
 
-		provider = new HocuspocusProvider({
-			url:
-				window.location.hostname === 'localhost'
-					? 'ws://localhost:1234'
-					: `ws://${window.location.hostname}:1234`,
+		const providerInstance = new HocuspocusProvider({
+			url: window.location.hostname === 'localhost'
+				? 'ws://localhost:1234'
+				: `ws://${window.location.hostname}:1234`,
 			name: documentName,
-			token: localStorage.getItem('token'),
+			token: token,
 			connect: true,
-			maxRetries: 10,
-			retryDelay: 1000,
 			onAuthenticated: () => {
 				console.log('협업 서버에 인증됨');
 			},
@@ -487,160 +493,157 @@
 			}
 		});
 
-		const yActiveUsers = provider.document.getMap('activeUsers');
+		const yActiveUsers = providerInstance.document.getMap('activeUsers');
 		yActiveUsers.observe(() => {
-			activeUsers = Array.from(yActiveUsers.values());
+			activeUsers = Array.from(yActiveUsers.values()) as ActiveUser[];
 		});
 
-		return provider;
+		return providerInstance;
 	}
 
 	// Line menu extension
 	const lineMenuExtension = Extension.create({
-   name: 'lineMenu',
-   addProseMirrorPlugins() {
-     const extensionThis = this;
-     return [
-       new Plugin({
-         key: new PluginKey('lineMenu'),
-         state: {
-           init() {
-             return { highlightedPos: null };
-           },
-           apply(tr, value) {
-             const highlight = tr.getMeta('toggleLineHighlight');
-             if (highlight !== undefined) {
-               return { highlightedPos: highlight };
-             }
-             return value;
-           }
-         },
-         props: {
-           decorations(state) {
-             const { doc } = state;
-             const { highlightedPos } = this.getState(state);
-             const decorations = [];
-             doc.descendants((node, pos) => {
-               if (node.isBlock && !node.isText) {
-                 // 하이라이트 상태에 따라 클래스 추가
-                 const classes = ['line-block'];
-                 if (highlightedPos === pos) {
-                   classes.push('line-highlight');
-                 }
-				 const blockDeco = Decoration.node(pos, pos + node.nodeSize, {
-                   class: classes.join(' ')
-                 });
-                 decorations.push(blockDeco);
- 
-                 // 라인 메뉴 아이콘 생성
-                 const lineIcon = document.createElement('div');
-                 lineIcon.className = 'line-icon';
-                 lineIcon.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="1" fill="currentColor"/><circle cx="12" cy="6" r="1" fill="currentColor"/><circle cx="12" cy="18" r="1" fill="currentColor"/></svg>';
- 
-                 // 클릭 이벤트 리스너 추가
-                 lineIcon.addEventListener('click', (e) => {
-		e.preventDefault();
-		e.stopPropagation();
-		try {
-			console.log('라인 메뉴 아이콘 클릭됨', { node, pos });
-			const editorInstance = extensionThis.editor || editor;
-			isLineMenuOpen = true;
-	
-			const currentPluginState = this.getState(editorInstance.state);
-			const newHighlightedPos = currentPluginState.highlightedPos === pos ? null : pos;
-			const transaction = editorInstance.state.tr
-				.setSelection(NodeSelection.create(editorInstance.state.doc, pos))
-				.setMeta('toggleLineHighlight', newHighlightedPos);
-			editorInstance.view.dispatch(transaction);
-	
-			showLineMenu(
-				e.clientX, 
-				e.clientY, 
-				editorInstance, 
-				node, 
-				pos,
-				() => {
-					console.log('라인 메뉴 종료: 텍스트 선택 복구');
-					// 라인 메뉴 상태 초기화
-					isLineMenuOpen = false;
-					
-					// 강제로 텍스트 선택 생성하여 버블 메뉴 표시 유도
-					try {
-						// 현재 노드의 내용이 있는지 확인
-						const nodeContent = node.textContent || '';
-						if (nodeContent.length > 0) {
-							// 노드 내용이 있으면 텍스트 선택 생성
-							const startPos = pos + 1; // 노드 시작 위치 다음
-							const endPos = Math.min(startPos + 5, pos + node.nodeSize - 1); // 최대 5자 또는 노드 끝까지
-							
-							// 텍스트 선택 생성 및 적용
-							const newSelection = TextSelection.create(editorInstance.state.doc, startPos, endPos);
-							editorInstance.view.dispatch(editorInstance.state.tr.setSelection(newSelection));
-							
-							// 버블 메뉴 강제 표시
-							setTimeout(() => {
-								forceBubbleMenuDisplay();
-							}, 50);
-						} else {
-							// 노드가 비어있는 경우 다른 방식으로 처리
-							console.log('노드가 비어있어 다른 방식으로 선택 생성 시도');
-							// 다음 노드로 이동 시도
-							const nextPos = pos + node.nodeSize;
-							if (nextPos < editorInstance.state.doc.content.size) {
-								const newSelection = TextSelection.create(editorInstance.state.doc, nextPos, nextPos + 1);
-								editorInstance.view.dispatch(editorInstance.state.tr.setSelection(newSelection));
-								
-								setTimeout(() => {
-									forceBubbleMenuDisplay();
-								}, 50);
+		name: 'lineMenu',
+		addProseMirrorPlugins() {
+			const extensionThis = this;
+			return [
+				new Plugin({
+					key: new PluginKey('lineMenu'),
+					state: {
+						init() {
+							return { highlightedPos: null };
+						},
+						apply(tr, value) {
+							const highlight = tr.getMeta('toggleLineHighlight');
+							if (highlight !== undefined) {
+								return { highlightedPos: highlight };
 							}
+							return value;
 						}
-					} catch (error) {
-						console.error('텍스트 선택 생성 중 오류:', error);
-					}
-				}
-			);
-		} catch (error) {
-			console.error('라인 메뉴 표시 중 오류:', error);
-		}
+					},
+					props: {
+						decorations(state) {
+							const { doc } = state;
+							const pluginState = this.getState(state);
+							const highlightedPos = pluginState ? pluginState.highlightedPos : null;
+							const decorations: any[] = [];
+							
+							doc.descendants((node, pos) => {
+								if (node.isBlock && !node.isText) {
+									// Add class based on highlight state
+									const classes = ['line-block'];
+									if (highlightedPos === pos) {
+										classes.push('line-highlight');
+									}
+									const blockDeco = Decoration.node(pos, pos + node.nodeSize, {
+										class: classes.join(' ')
+									});
+									decorations.push(blockDeco);
+				
+									// Create line menu icon
+									const lineIcon = document.createElement('div');
+									lineIcon.className = 'line-icon';
+									lineIcon.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="1" fill="currentColor"/><circle cx="12" cy="6" r="1" fill="currentColor"/><circle cx="12" cy="18" r="1" fill="currentColor"/></svg>';
+				
+									// Add click event listener
+									lineIcon.addEventListener('click', (e) => {
+										e.preventDefault();
+										e.stopPropagation();
+										try {
+											console.log('라인 메뉴 아이콘 클릭됨', { node, pos });
+											const editorInstance = extensionThis.editor || editor;
+											if (!editorInstance) return;
+											
+											isLineMenuOpen = true;
+									
+											const currentPluginState = this.getState(editorInstance.state);
+											if (!currentPluginState) return;
+											
+											const newHighlightedPos = currentPluginState.highlightedPos === pos ? null : pos;
+											const transaction = editorInstance.state.tr
+												.setSelection(NodeSelection.create(editorInstance.state.doc, pos))
+												.setMeta('toggleLineHighlight', newHighlightedPos);
+											editorInstance.view.dispatch(transaction);
+									
+											showLineMenu(
+												e.clientX, 
+												e.clientY, 
+												editorInstance, 
+												node, 
+												pos,
+												() => {
+													console.log('라인 메뉴 종료: 텍스트 선택 복구');
+													// Reset line menu state
+													isLineMenuOpen = false;
+													
+													// Force text selection to trigger bubble menu
+													try {
+														// Check if node has content
+														const nodeContent = node.textContent || '';
+														if (nodeContent.length > 0) {
+															// Create text selection if node has content
+															const startPos = pos + 1; // After node start
+															const endPos = Math.min(startPos + 5, pos + node.nodeSize - 1); // Max 5 chars or node end
+															
+															// Create and apply text selection
+															const newSelection = TextSelection.create(editorInstance.state.doc, startPos, endPos);
+															editorInstance.view.dispatch(editorInstance.state.tr.setSelection(newSelection));
+															
+															// Force bubble menu display
+															setTimeout(() => {
+																forceBubbleMenuDisplay();
+															}, 50);
+														} else {
+															// Handle empty node
+															console.log('노드가 비어있어 다른 방식으로 선택 생성 시도');
+															// Try moving to next node
+															const nextPos = pos + node.nodeSize;
+															if (nextPos < editorInstance.state.doc.content.size) {
+																const newSelection = TextSelection.create(editorInstance.state.doc, nextPos, nextPos + 1);
+																editorInstance.view.dispatch(editorInstance.state.tr.setSelection(newSelection));
+																
+																setTimeout(() => {
+																	forceBubbleMenuDisplay();
+																}, 50);
+															}
+														}
+													} catch (error) {
+														console.error('텍스트 선택 생성 중 오류:', error);
+													}
+												}
+											);
+										} catch (error) {
+											console.error('라인 메뉴 표시 중 오류:', error);
+										}
+									});
+									
+									const decorationWidget = Decoration.widget(pos, lineIcon, {
+										side: -1,
+										key: `line-menu-${pos}`,
+									});
+									decorations.push(decorationWidget);
+								}
+								return true;
+							});
+							return DecorationSet.create(doc, decorations);
+						}
+					},
+				}),
+			];
+		},
 	});
-                 
-                 const decorationWidget = Decoration.widget(pos, lineIcon, {
-                   side: -1,
-                   key: `line-menu-${pos}`,
-                 });
-                 decorations.push(decorationWidget);
-               }
-               return true;
-             });
-             return DecorationSet.create(doc, decorations);
-           }
-         },
-       }),
-     ];
-   },
- });
 
-	function initEditor(content, provider) {
+	/**
+	 * Initializes the editor with content and collaboration features
+	 */
+	function initEditor(content: any, provider: HocuspocusProvider): Editor {
 		const currentUser = get(user);
 
-		const getRandomColor = () => {
+		const getRandomColor = (): string => {
 			const colors = [
-				'#f44336',
-				'#e91e63',
-				'#9c27b0',
-				'#673ab7',
-				'#3f51b5',
-				'#2196f3',
-				'#03a9f4',
-				'#00bcd4',
-				'#009688',
-				'#4caf50',
-				'#8bc34a',
-				'#cddc39',
-				'#ffc107',
-				'#ff9800',
-				'#ff5722'
+				'#f44336', '#e91e63', '#9c27b0', '#673ab7', '#3f51b5',
+				'#2196f3', '#03a9f4', '#00bcd4', '#009688', '#4caf50',
+				'#8bc34a', '#cddc39', '#ffc107', '#ff9800', '#ff5722'
 			];
 			return colors[Math.floor(Math.random() * colors.length)];
 		};
@@ -651,10 +654,15 @@
 			Y.applyUpdate(provider.document, updateArray);
 		}
 
-		editor = new Editor({
+		if (!editorElement) return null as unknown as Editor;
+
+		const editorInstance = new Editor({
 			element: editorElement,
 			extensions: [
-				...getExtensions({ bubbleMenuElement, adjustBubbleMenuPosition }),
+				...getExtensions({ 
+					bubbleMenuElement: bubbleMenuElement as HTMLElement, 
+					adjustBubbleMenuPosition 
+				}),
 				Collaboration.configure({
 					document: provider.document
 				}),
@@ -662,8 +670,7 @@
 					provider,
 					user: {
 						name: currentUser?.name || 'Anonymous',
-						color: sessionColor,
-						avatar: currentUser?.avatar
+						color: sessionColor
 					}
 				}),
 				lineMenuExtension
@@ -671,48 +678,52 @@
 			content: '',
 			autofocus: true,
 			onSelectionUpdate({ editor }) {
-				// 선택이 변경될 때마다 에디터 상태 업데이트
+				// Update editor state when selection changes
 				setTimeout(() => {
 					updateEditorState();
 				}, 0);
 			}
 		});
-		return editor;
+		return editorInstance;
 	}
 
 	onMount(async () => {
-		note = await getNote(noteId);
-		if (note.title) {
-			pageTitle = note.title;
-		} else {
-			pageTitle = '새 페이지';
-		}
-
-		provider = setupCollaboration();
-
-		let storedUpdate = note.content;
-		if (storedUpdate && typeof storedUpdate === 'string') {
-			try {
-				storedUpdate = JSON.parse(storedUpdate);
-			} catch (e) {
-				console.error('노트 content 파싱 오류:', e);
+		try {
+			note = await getNote(noteId);
+			if (note.title) {
+				pageTitle = note.title;
+			} else {
+				pageTitle = '새 페이지';
 			}
+
+			provider = setupCollaboration();
+
+			let storedUpdate = note.content;
+			if (storedUpdate && typeof storedUpdate === 'string') {
+				try {
+					storedUpdate = JSON.parse(storedUpdate);
+				} catch (e) {
+					console.error('노트 content 파싱 오류:', e);
+				}
+			}
+
+			if (storedUpdate && typeof storedUpdate === 'object' && !Array.isArray(storedUpdate)) {
+				const updateArray = new Uint8Array(Object.values(storedUpdate));
+				Y.applyUpdate(provider.document, updateArray);
+			}
+
+			editor = initEditor('', provider);
+
+			document.addEventListener('click', closeAllDropdowns);
+			window.addEventListener('resize', adjustBubbleMenuPosition);
+			
+			// Initialize bubble menu state after editor setup
+			setTimeout(() => {
+				updateEditorState();
+			}, 100);
+		} catch (error) {
+			console.error('에디터 초기화 중 오류:', error);
 		}
-
-		if (storedUpdate && typeof storedUpdate === 'object' && !Array.isArray(storedUpdate)) {
-			const updateArray = new Uint8Array(Object.values(storedUpdate));
-			Y.applyUpdate(provider.document, updateArray);
-		}
-
-		editor = initEditor('', provider);
-
-		document.addEventListener('click', closeAllDropdowns);
-		window.addEventListener('resize', adjustBubbleMenuPosition);
-		
-		// 에디터 초기화 후 버블 메뉴 상태 설정
-		setTimeout(() => {
-			updateEditorState();
-		}, 100);
 	});
 
 	onDestroy(() => {
@@ -769,13 +780,13 @@
 </div>
 
 {#if showSidebar && false}
-	<RightSidebar on:close={closeSidebar} />
+	<!-- RightSidebar component is not available or not needed -->
 {/if}
 
 <style>
 	:global(.line-highlight) {
-	background-color: #ffff99; /* 원하는 하이라이트 색상으로 수정 가능 */
-}
+		background-color: #ffff99; /* 원하는 하이라이트 색상으로 수정 가능 */
+	}
 
 	:global(.tippy-box[data-theme~='bubble-menu-theme']) {
 		background-color: transparent !important;
