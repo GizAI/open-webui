@@ -35,6 +35,41 @@
     return icon;
   }
 
+  // 새로운 함수: + 버튼 아이콘 생성
+  export function createAddIcon() {
+    const icon = document.createElement('div');
+    icon.className = 'add-line-icon';
+    
+    // Create + symbol
+    const plusSymbol = document.createElement('div');
+    plusSymbol.className = 'plus-symbol';
+    plusSymbol.textContent = '+';
+    icon.appendChild(plusSymbol);
+    
+    // Apply icon styles
+    icon.style.cursor = 'pointer';
+    icon.style.userSelect = 'none';
+    icon.style.display = 'flex';
+    icon.style.alignItems = 'center';
+    icon.style.justifyContent = 'center';
+    icon.style.padding = '4px';
+    icon.style.position = 'absolute';
+    icon.style.left = '-24px';
+    icon.style.top = 'calc(100% - 5px)';
+    icon.style.backgroundColor = 'rgba(0, 0, 0, 0.05)';
+    icon.style.borderRadius = '50%';
+    icon.style.zIndex = '10';
+    icon.style.width = '18px';
+    icon.style.height = '18px';
+    icon.style.opacity = '0';
+    icon.style.transition = 'opacity 0.2s';
+    icon.style.fontSize = '16px';
+    icon.style.fontWeight = 'bold';
+    icon.style.color = '#666';
+    
+    return icon;
+  }
+
   // Function to check node type
   function isNodeType(editor, node, type, attrs = {}) {
     if (!editor || !node) return false;
@@ -277,6 +312,140 @@
     
     return { closeMenu };
   }
+
+  // 새로운 함수: + 버튼 클릭 시 메뉴 표시
+  export function showAddMenu(x, y, editor, pos) {
+    const oldMenu = document.getElementById('add-menu-popup');
+    if (oldMenu) {
+      oldMenu.remove();
+    }
+    
+    const menu = document.createElement('div');
+    menu.id = 'add-menu-popup';
+    menu.style.position = 'absolute';
+    menu.style.left = x + 'px';
+    menu.style.top = y + 'px';
+    menu.style.padding = '8px';
+    menu.style.border = '1px solid #eee';
+    menu.style.background = '#fff';
+    menu.style.zIndex = '9999';
+    menu.style.borderRadius = '6px';
+    menu.style.boxShadow = '0 2px 10px rgba(0,0,0,0.1)';
+    menu.style.display = 'flex';
+    menu.style.flexDirection = 'column';
+    menu.style.gap = '4px';
+    menu.style.minWidth = '180px';
+    menu.style.maxWidth = '220px';
+    menu.style.fontSize = '14px';
+    
+    // 새 텍스트 블록 추가
+    const textBtn = document.createElement('button');
+    textBtn.textContent = 'Text';
+    styleMenuItem(textBtn, '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 6v12M6 12h12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>');
+    textBtn.onclick = () => {
+      editor
+        .chain()
+        .focus()
+        .setTextSelection(pos)
+        .insertContent('<p></p>')
+        .run();
+      closeMenu();
+    };
+    menu.appendChild(textBtn);
+    
+    // 헤딩 1 추가
+    const h1Btn = document.createElement('button');
+    h1Btn.textContent = 'Heading 1';
+    styleMenuItem(h1Btn, '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M6 4v16M18 4v16M6 12h12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>');
+    h1Btn.onclick = () => {
+      editor
+        .chain()
+        .focus()
+        .setTextSelection(pos)
+        .insertContent('<h1></h1>')
+        .run();
+      closeMenu();
+    };
+    menu.appendChild(h1Btn);
+    
+    // 헤딩 2 추가
+    const h2Btn = document.createElement('button');
+    h2Btn.textContent = 'Heading 2';
+    styleMenuItem(h2Btn, '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M6 4v16M18 4v16M6 12h12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>');
+    h2Btn.onclick = () => {
+      editor
+        .chain()
+        .focus()
+        .setTextSelection(pos)
+        .insertContent('<h2></h2>')
+        .run();
+      closeMenu();
+    };
+    menu.appendChild(h2Btn);
+    
+    // 헤딩 3 추가
+    const h3Btn = document.createElement('button');
+    h3Btn.textContent = 'Heading 3';
+    styleMenuItem(h3Btn, '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M6 4v16M18 4v16M6 12h12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>');
+    h3Btn.onclick = () => {
+      editor
+        .chain()
+        .focus()
+        .setTextSelection(pos)
+        .insertContent('<h3></h3>')
+        .run();
+      closeMenu();
+    };
+    menu.appendChild(h3Btn);
+    
+    addDivider(menu);
+    
+    // 불릿 리스트 추가
+    const bulletBtn = document.createElement('button');
+    bulletBtn.textContent = 'Bullet list';
+    styleMenuItem(bulletBtn, '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>');
+    bulletBtn.onclick = () => {
+      editor
+        .chain()
+        .focus()
+        .setTextSelection(pos)
+        .insertContent('<ul><li></li></ul>')
+        .run();
+      closeMenu();
+    };
+    menu.appendChild(bulletBtn);
+    
+    // 순서 리스트 추가
+    const orderedBtn = document.createElement('button');
+    orderedBtn.textContent = 'Ordered list';
+    styleMenuItem(orderedBtn, '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M10 6h11M10 12h11M10 18h11M4 6h1v4M4 10h2M4 18h3M4 14h2v4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>');
+    orderedBtn.onclick = () => {
+      editor
+        .chain()
+        .focus()
+        .setTextSelection(pos)
+        .insertContent('<ol><li></li></ol>')
+        .run();
+      closeMenu();
+    };
+    menu.appendChild(orderedBtn);
+    
+    document.body.appendChild(menu);
+    
+    function handleClickOutside(e) {
+      if (!menu.contains(e.target)) {
+        closeMenu();
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    
+    function closeMenu() {
+      menu.remove();
+      document.removeEventListener('mousedown', handleClickOutside);
+    }
+    
+    return { closeMenu };
+  }
 </script>
 
 <script>
@@ -317,6 +486,32 @@
     background-color: #666;
   }
 
+  /* 새로운 스타일: + 버튼 아이콘 */
+  :global(.add-line-icon) {
+    opacity: 0; 
+    transition: opacity 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: absolute;
+    left: -24px;
+    top: calc(100% - 5px);
+    padding: 2px;
+    background-color: rgba(0, 0, 0, 0.05);
+    border-radius: 50%;
+    z-index: 10;
+    width: 18px;
+    height: 18px;
+    font-size: 16px;
+    font-weight: bold;
+    color: #666;
+  }
+
+  :global(.add-line-icon:hover) {
+    background-color: rgba(0, 0, 0, 0.1);
+    opacity: 1 !important;
+  }
+
   :global(.line-block) {
     position: relative;
     margin-left: 10px;
@@ -330,6 +525,10 @@
   }
   
   :global(.line-block:hover .line-icon) {
+    opacity: 1;
+  }
+  
+  :global(.line-block:hover .add-line-icon) {
     opacity: 1;
   }
   
@@ -349,6 +548,24 @@
   }
 
   :global(#line-menu-popup button:hover) {
+    background: #f5f5f5;
+  }
+  
+  :global(#add-menu-popup button) {
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    width: 100%;
+    text-align: left;
+    padding: 6px 8px;
+    font-size: 14px;
+    border-radius: 4px;
+    color: #333;
+    display: flex;
+    align-items: center;
+  }
+
+  :global(#add-menu-popup button:hover) {
     background: #f5f5f5;
   }
 </style> 

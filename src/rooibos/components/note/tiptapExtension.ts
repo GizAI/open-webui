@@ -10,9 +10,7 @@ import TipTapBubbleMenu from '@tiptap/extension-bubble-menu';
 import type { Extension } from '@tiptap/core';
 
 export interface TiptapExtensionOptions {
-	// 버블 메뉴 엘리먼트 (NoteEditor.svelte에서 bind한 요소)
 	bubbleMenuElement: HTMLElement;
-	// 버블 메뉴 위치 조정을 위한 함수 (NoteEditor.svelte의 adjustBubbleMenuPosition)
 	adjustBubbleMenuPosition: () => void;
 }
 
