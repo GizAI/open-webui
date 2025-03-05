@@ -163,14 +163,17 @@
 	/**
 	 * Forces the bubble menu to display if conditions are met
 	 */
-	function forceBubbleMenuDisplay(): void {
-		if (!bubbleMenuElement || !editor || isLineMenuOpen || editor.state.selection.empty) return;
+	 function forceBubbleMenuDisplay(): void {
+		if (!bubbleMenuElement || !editor || isLineMenuOpen) return;
+		// 버블 메뉴는 TextSelection일 때만 나타나야 함
+		if (!(editor.state.selection instanceof TextSelection) || editor.state.selection.empty) return;
 		
 		bubbleMenuElement.style.visibility = 'visible';
 		bubbleMenuElement.style.display = 'flex';
 		adjustBubbleMenuPosition();
 		updateEditorState();
 	}
+
 
 	/**
 	 * Translates selected text using an API
@@ -434,6 +437,10 @@
 		showColorPicker = false;
 		showHighlightPicker = false;
 		showAlignmentOptions = false;
+		// 클릭 시 라인 하이라이트 제거
+		if (editor) {
+			editor.view.dispatch(editor.state.tr.setMeta('toggleLineHighlight', null));
+		}
 	}
 
 	function handleTitleChange(e: CustomEvent<string>): void {
@@ -547,75 +554,43 @@
 				
 									// Add click event listener
 									lineIcon.addEventListener('click', (e) => {
-										e.preventDefault();
-										e.stopPropagation();
-										try {
-											console.log('라인 메뉴 아이콘 클릭됨', { node, pos });
-											const editorInstance = extensionThis.editor || editor;
-											if (!editorInstance) return;
-											
-											isLineMenuOpen = true;
-									
-											const currentPluginState = this.getState(editorInstance.state);
-											if (!currentPluginState) return;
-											
-											const newHighlightedPos = currentPluginState.highlightedPos === pos ? null : pos;
-											const transaction = editorInstance.state.tr
-												.setSelection(NodeSelection.create(editorInstance.state.doc, pos))
-												.setMeta('toggleLineHighlight', newHighlightedPos);
-											editorInstance.view.dispatch(transaction);
-									
-											showLineMenu(
-												e.clientX, 
-												e.clientY, 
-												editorInstance, 
-												node, 
-												pos,
-												() => {
-													console.log('라인 메뉴 종료: 텍스트 선택 복구');
-													// Reset line menu state
-													isLineMenuOpen = false;
-													
-													// Force text selection to trigger bubble menu
-													try {
-														// Check if node has content
-														const nodeContent = node.textContent || '';
-														if (nodeContent.length > 0) {
-															// Create text selection if node has content
-															const startPos = pos + 1; // After node start
-															const endPos = Math.min(startPos + 5, pos + node.nodeSize - 1); // Max 5 chars or node end
-															
-															// Create and apply text selection
-															const newSelection = TextSelection.create(editorInstance.state.doc, startPos, endPos);
-															editorInstance.view.dispatch(editorInstance.state.tr.setSelection(newSelection));
-															
-															// Force bubble menu display
-															setTimeout(() => {
-																forceBubbleMenuDisplay();
-															}, 50);
-														} else {
-															// Handle empty node
-															console.log('노드가 비어있어 다른 방식으로 선택 생성 시도');
-															// Try moving to next node
-															const nextPos = pos + node.nodeSize;
-															if (nextPos < editorInstance.state.doc.content.size) {
-																const newSelection = TextSelection.create(editorInstance.state.doc, nextPos, nextPos + 1);
-																editorInstance.view.dispatch(editorInstance.state.tr.setSelection(newSelection));
-																
-																setTimeout(() => {
-																	forceBubbleMenuDisplay();
-																}, 50);
-															}
-														}
-													} catch (error) {
-														console.error('텍스트 선택 생성 중 오류:', error);
-													}
-												}
-											);
-										} catch (error) {
-											console.error('라인 메뉴 표시 중 오류:', error);
-										}
-									});
+	e.preventDefault();
+	e.stopPropagation();
+	try {
+		const editorInstance = extensionThis.editor || editor;
+		if (!editorInstance) return;
+		
+		// 이미 라인메뉴가 열려있으면 재실행하지 않음
+		if (isLineMenuOpen) return;
+		
+		isLineMenuOpen = true;
+		
+		// 항상 하이라이트를 현재 pos로 설정 (토글 off 하지 않음)
+		const newHighlightedPos = pos;
+		const transaction = editorInstance.state.tr
+			.setSelection(NodeSelection.create(editorInstance.state.doc, pos))
+			.setMeta('toggleLineHighlight', newHighlightedPos);
+		editorInstance.view.dispatch(transaction);
+		
+		showLineMenu(
+			e.clientX, 
+			e.clientY, 
+			editorInstance, 
+			node, 
+			pos,
+			() => {
+				// 라인메뉴 종료 후 상태 복구
+				isLineMenuOpen = false;
+				setTimeout(() => {
+					forceBubbleMenuDisplay();
+				}, 50);
+			}
+		);
+	} catch (error) {
+		console.error('라인 메뉴 표시 중 오류:', error);
+	}
+});
+
 									
 									const decorationWidget = Decoration.widget(pos, lineIcon, {
 										side: -1,
