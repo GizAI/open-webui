@@ -1,25 +1,30 @@
 <!-- NoteEditor.svelte -->
-<script>
+<script lang="ts">
 	import { onMount, onDestroy } from 'svelte';
 	import { Editor } from '@tiptap/core';
-	import Collaboration from '@tiptap/extension-collaboration';
-	import CollaborationCursor from '@tiptap/extension-collaboration-cursor';
-	import { HocuspocusProvider } from '@hocuspocus/provider';
-	import * as Y from 'yjs';
-	import BubbleMenu from './BubbleMenu.svelte';
-	import TopBar from './TopBar.svelte';
-	import RightSidebar from './NoteAIChat.svelte';
-	import CollaboratorsList from './CollaboratorsList.svelte';
-	import { getNote, renameNote } from '../apis/note';
-	import { get } from 'svelte/store';
-	import { page } from '$app/stores';
-	import { getExtensions } from './tiptapExtension';
-	import { user } from '$lib/stores';
-
-	/* [추가] ProseMirror 데코레이션을 위한 import */
-	import { Extension } from '@tiptap/core';
 	import { Plugin, PluginKey } from 'prosemirror-state';
 	import { Decoration, DecorationSet } from 'prosemirror-view';
+	import { Extension } from '@tiptap/core';
+	import { Collaboration } from '@tiptap/extension-collaboration';
+	import { CollaborationCursor } from '@tiptap/extension-collaboration-cursor';
+	import * as Y from 'yjs';
+	import { getExtensions } from './tiptapExtension';
+	import TopBar from './TopBar.svelte';
+	import BubbleMenu from './BubbleMenu.svelte';
+	import CollaboratorsList from './CollaboratorsList.svelte';
+	import { createLineIcon, showLineMenu } from './LineMenu.svelte'; // Import the functions from LineMenu
+	import { HocuspocusProvider } from '@hocuspocus/provider';
+	import { page } from '$app/stores';
+	import { get } from 'svelte/store';
+	import { user} from '$lib/stores';
+	import { getNote } from '../apis/note';
+
+	// Add custom type declaration for HTMLDivElement with cleanupListeners property
+	declare global {
+		interface HTMLDivElement {
+			cleanupListeners?: () => void;
+		}
+	}
 
 	/**
 	 * @typedef {Object} Note
@@ -396,7 +401,7 @@
 		showSidebar = false;
 	}
 
-	function initCollaboration() {
+	function setupCollaboration() {
 		const documentName = `note:${noteId}`;
 		const currentUser = get(user);
 
@@ -486,47 +491,8 @@
 									const deco = Decoration.widget(
 										pos,
 										() => {
-											const icon = document.createElement('div');
-											icon.className = 'line-icon';
-											
-											// 세로로 배치된 점 3개 생성
-											for (let i = 0; i < 3; i++) {
-												const dot = document.createElement('div');
-												dot.className = 'line-icon-dot';
-												icon.appendChild(dot);
-											}
-											
-											// 아이콘 스타일 직접 적용
-											icon.style.cursor = 'pointer';
-											icon.style.userSelect = 'none';
-											icon.style.display = 'flex';
-											icon.style.flexDirection = 'column';
-											icon.style.gap = '2px';
-											icon.style.alignItems = 'center';
-											icon.style.justifyContent = 'center';
-											icon.style.padding = '4px';
-											icon.style.position = 'absolute';
-											icon.style.left = '-24px';
-											icon.style.top = '50%';
-											icon.style.transform = 'translateY(-50%)';
-											icon.style.backgroundColor = 'rgba(0, 0, 0, 0.05)';
-											icon.style.borderRadius = '4px';
-											icon.style.zIndex = '10';
-											icon.style.width = '18px';
-											icon.style.height = '18px';
-											icon.style.opacity = '0';
-											icon.style.transition = 'opacity 0.2s';
-											
-											// 부모 요소에 마우스 오버 이벤트 추가
-											const handleParentHover = () => {
-												icon.style.opacity = '1';
-											};
-											
-											const handleParentLeave = () => {
-												if (!icon.matches(':hover')) {
-													icon.style.opacity = '0';
-												}
-											};
+											// LineMenu 컴포넌트의 createLineIcon 함수 사용
+											const icon = createLineIcon();
 											
 											// 아이콘 자체에 마우스 오버 이벤트 추가
 											icon.addEventListener('mouseover', () => {
@@ -546,30 +512,14 @@
 												e.preventDefault();
 												e.stopPropagation();
 												
-												// 아이콘 클릭 시 메뉴 표시
+												// LineMenu 컴포넌트의 showLineMenu 함수 사용
 												showLineMenu(
 													e.clientX,
 													e.clientY,
-													() => {
-														// 굵게
-														extensionThis.editor
-															.chain()
-															.focus()
-															.setTextSelection({ from: pos + 1, to: pos + node.nodeSize - 1 })
-															.toggleBold()
-															.run();
-													},
-													() => {
-														// 이탤릭
-														extensionThis.editor
-															.chain()
-															.focus()
-															.setTextSelection({ from: pos + 1, to: pos + node.nodeSize - 1 })
-															.toggleItalic()
-															.run();
-													},
+													extensionThis.editor,
+													node,
 													pos,
-													node
+													openSidebar
 												);
 											});
 											
@@ -580,10 +530,21 @@
 													icon.parentElement;
 												
 												if (parentBlock) {
+													const handleParentHover = () => {
+														icon.style.opacity = '1';
+													};
+													
+													const handleParentLeave = () => {
+														if (!icon.matches(':hover')) {
+															icon.style.opacity = '0';
+														}
+													};
+													
 													parentBlock.addEventListener('mouseover', handleParentHover);
 													parentBlock.addEventListener('mouseout', handleParentLeave);
 													
 													// 클린업 함수 설정
+													// @ts-ignore
 													icon.cleanupListeners = () => {
 														parentBlock.removeEventListener('mouseover', handleParentHover);
 														parentBlock.removeEventListener('mouseout', handleParentLeave);
@@ -610,246 +571,6 @@
 			];
 		}
 	});
-
-	/* [추가] showLineMenu 함수를 확장하여 노션처럼 "Paragraph / Heading1~3 / Bullet / Ordered / Ask AI" 메뉴 추가 */
-	function showLineMenu(x, y, onBold, onItalic, pos, node) {
-		const oldMenu = document.getElementById('line-menu-popup');
-		if (oldMenu) {
-			oldMenu.remove();
-		}
-
-		const menu = document.createElement('div');
-		menu.id = 'line-menu-popup';
-		menu.style.position = 'absolute';
-		menu.style.left = x + 'px';
-		menu.style.top = y + 'px';
-		menu.style.transform = 'translateX(-100%)';
-		menu.style.padding = '8px';
-		menu.style.border = '1px solid #eee';
-		menu.style.background = '#fff';
-		menu.style.zIndex = '9999';
-		menu.style.borderRadius = '6px';
-		menu.style.boxShadow = '0 2px 10px rgba(0,0,0,0.1)';
-		menu.style.display = 'flex';
-		menu.style.flexDirection = 'column';
-		menu.style.gap = '4px';
-		menu.style.minWidth = '180px';
-		menu.style.maxWidth = '220px';
-		menu.style.fontSize = '14px';
-
-		// 메뉴 항목 스타일 함수
-		const styleMenuItem = (btn, icon) => {
-			btn.style.display = 'flex';
-			btn.style.alignItems = 'center';
-			btn.style.gap = '8px';
-			btn.style.padding = '6px 8px';
-			btn.style.border = 'none';
-			btn.style.borderRadius = '4px';
-			btn.style.background = 'transparent';
-			btn.style.cursor = 'pointer';
-			btn.style.width = '100%';
-			btn.style.textAlign = 'left';
-			btn.style.fontSize = '14px';
-			btn.style.color = '#333';
-			
-			if (icon) {
-				const iconSpan = document.createElement('span');
-				iconSpan.innerHTML = icon;
-				iconSpan.style.display = 'inline-flex';
-				iconSpan.style.width = '20px';
-				iconSpan.style.height = '20px';
-				iconSpan.style.alignItems = 'center';
-				iconSpan.style.justifyContent = 'center';
-				btn.prepend(iconSpan);
-			}
-			
-			btn.onmouseover = () => {
-				btn.style.background = '#f5f5f5';
-			};
-			btn.onmouseout = () => {
-				btn.style.background = 'transparent';
-			};
-		};
-
-		// 구분선 추가 함수
-		const addDivider = () => {
-			const divider = document.createElement('div');
-			divider.style.height = '1px';
-			divider.style.background = '#eee';
-			divider.style.margin = '4px 0';
-			menu.appendChild(divider);
-		};
-
-		// 블록 변환 섹션
-		const blockHeader = document.createElement('div');
-		blockHeader.style.fontSize = '12px';
-		blockHeader.style.color = '#888';
-		blockHeader.style.padding = '4px 8px';
-		menu.appendChild(blockHeader);
-
-		const extensionEditor = editor; // 전역 editor 참조(또는 extensionThis.editor 참조)
-		const fromPos = pos + 1;
-		const toPos = pos + node.nodeSize - 1;
-
-		// 현재 노드 타입 확인 함수
-		const isNodeType = (type, attrs = {}) => {
-			if (!extensionEditor || !node) return false;
-			
-			if (type === 'paragraph') {
-				return node.type.name === 'paragraph';
-			} else if (type === 'heading') {
-				return node.type.name === 'heading' && node.attrs.level === attrs.level;
-			} else if (type === 'bulletList') {
-				return node.type.name === 'bulletList' || 
-					(node.type.name === 'listItem' && node.parent?.type.name === 'bulletList');
-			} else if (type === 'orderedList') {
-				return node.type.name === 'orderedList' || 
-					(node.type.name === 'listItem' && node.parent?.type.name === 'orderedList');
-			}
-			return false;
-		};
-
-		// 메뉴 항목 활성화 함수
-		const styleActiveMenuItem = (btn, isActive) => {
-			if (isActive) {
-				btn.style.background = '#f0f0f0';
-				btn.style.fontWeight = 'bold';
-				
-				// 체크 아이콘 추가
-				const checkIcon = document.createElement('span');
-				checkIcon.innerHTML = '✓';
-				checkIcon.style.marginLeft = 'auto';
-				checkIcon.style.color = '#4caf50';
-				btn.appendChild(checkIcon);
-			}
-		};
-
-		// Paragraph
-		const paragraphBtn = document.createElement('button');
-		paragraphBtn.textContent = 'Paragraph';
-		styleMenuItem(paragraphBtn, '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 6v12M6 12h12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>');
-		styleActiveMenuItem(paragraphBtn, isNodeType('paragraph'));
-		paragraphBtn.onclick = () => {
-			extensionEditor
-				.chain()
-				.focus()
-				.setTextSelection({ from: fromPos, to: toPos })
-				.setNode('paragraph')
-				.run();
-			closeMenu();
-		};
-		menu.appendChild(paragraphBtn);
-
-		// Heading 1
-		const heading1Btn = document.createElement('button');
-		heading1Btn.textContent = 'Heading 1';
-		styleMenuItem(heading1Btn, '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M6 4v16M18 4v16M6 12h12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>');
-		styleActiveMenuItem(heading1Btn, isNodeType('heading', { level: 1 }));
-		heading1Btn.onclick = () => {
-			extensionEditor
-				.chain()
-				.focus()
-				.setTextSelection({ from: fromPos, to: toPos })
-				.setNode('heading', { level: 1 })
-				.run();
-			closeMenu();
-		};
-		menu.appendChild(heading1Btn);
-
-		// Heading 2
-		const heading2Btn = document.createElement('button');
-		heading2Btn.textContent = 'Heading 2';
-		styleMenuItem(heading2Btn, '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M6 4v16M18 4v16M6 12h12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>');
-		styleActiveMenuItem(heading2Btn, isNodeType('heading', { level: 2 }));
-		heading2Btn.onclick = () => {
-			extensionEditor
-				.chain()
-				.focus()
-				.setTextSelection({ from: fromPos, to: toPos })
-				.setNode('heading', { level: 2 })
-				.run();
-			closeMenu();
-		};
-		menu.appendChild(heading2Btn);
-
-		// Heading 3
-		const heading3Btn = document.createElement('button');
-		heading3Btn.textContent = 'Heading 3';
-		styleMenuItem(heading3Btn, '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M6 4v16M18 4v16M6 12h12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>');
-		styleActiveMenuItem(heading3Btn, isNodeType('heading', { level: 3 }));
-		heading3Btn.onclick = () => {
-			extensionEditor
-				.chain()
-				.focus()
-				.setTextSelection({ from: fromPos, to: toPos })
-				.setNode('heading', { level: 3 })
-				.run();
-			closeMenu();
-		};
-		menu.appendChild(heading3Btn);
-
-		// 리스트 섹션 위에 구분선 추가
-		addDivider();
-
-		// Bullet list
-		const bulletBtn = document.createElement('button');
-		bulletBtn.textContent = 'Bullet list';
-		styleMenuItem(bulletBtn, '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>');
-		styleActiveMenuItem(bulletBtn, isNodeType('bulletList'));
-		bulletBtn.onclick = () => {
-			extensionEditor
-				.chain()
-				.focus()
-				.setTextSelection({ from: fromPos, to: toPos })
-				.toggleBulletList()
-				.run();
-			closeMenu();
-		};
-		menu.appendChild(bulletBtn);
-
-		// Ordered list
-		const orderedBtn = document.createElement('button');
-		orderedBtn.textContent = 'Ordered list';
-		styleMenuItem(orderedBtn, '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M10 6h11M10 12h11M10 18h11M4 6h1v4M4 10h2M4 18h3M4 14h2v4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>');
-		styleActiveMenuItem(orderedBtn, isNodeType('orderedList'));
-		orderedBtn.onclick = () => {
-			extensionEditor
-				.chain()
-				.focus()
-				.setTextSelection({ from: fromPos, to: toPos })
-				.toggleOrderedList()
-				.run();
-			closeMenu();
-		};
-		menu.appendChild(orderedBtn);
-
-		addDivider();
-
-		// AI 섹션
-		// Ask AI
-		const askAI = document.createElement('button');
-		askAI.textContent = 'Ask AI';
-		styleMenuItem(askAI, '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 2a10 10 0 1 0 10 10 10 10 0 0 0-10-10zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8zm0-13a1 1 0 0 0-1 1v5a1 1 0 0 0 2 0V8a1 1 0 0 0-1-1zm0 10a1.5 1.5 0 1 0-1.5-1.5A1.5 1.5 0 0 0 12 17z" fill="currentColor"/></svg>');
-		askAI.onclick = () => {
-			closeMenu();
-			openSidebar(); // 기존 함수 사용
-		};
-		menu.appendChild(askAI);
-
-		document.body.appendChild(menu);
-
-		function handleClickOutside(e) {
-			if (!menu.contains(e.target)) {
-				closeMenu();
-			}
-		}
-		document.addEventListener('mousedown', handleClickOutside);
-
-		function closeMenu() {
-			menu.remove();
-			document.removeEventListener('mousedown', handleClickOutside);
-		}
-	}
 
 	function initEditor(content, provider) {
 		const currentUser = get(user);
@@ -896,7 +617,7 @@
 						avatar: currentUser?.avatar
 					}
 				}),
-				LineMenuExtension // [추가] 우리가 만든 라인 메뉴 확장
+				LineMenuExtension
 			],
 			content: '',
 			autofocus: true,
@@ -909,13 +630,13 @@
 
 	onMount(async () => {
 		note = await getNote(noteId);
-		if (note) {
-			pageTitle = note.title || '새 페이지';
+		if (note.title) {
+			pageTitle = note.title;
 		} else {
 			pageTitle = '새 페이지';
 		}
 
-		provider = initCollaboration();
+		provider = setupCollaboration();
 
 		let storedUpdate = note.content;
 		if (storedUpdate && typeof storedUpdate === 'string') {
