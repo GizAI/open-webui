@@ -663,26 +663,26 @@
 			</div>
 			
 			<!-- Notes 폴더 컴포넌트 추가 -->
-			{#if $user?.id == '5ee82147-b469-4609-8bea-2ba484cfc2ab'}
-				<RooibosFolder
-					collapsible={!search}
-					className="px-2 mt-0.5"
-					name={$i18n.t('Notes')}
-					onAdd={() => createRooibosFolder('Untitled', 'note')}
-					onAddLabel={$i18n.t('New Folder')}
-					open={false}
-				>
-					<RooibosFolderMenu
-						folders={Object.values(rooibosFolders)
-							.filter((folder) => folder.type === 'note')
-							.reduce((acc, folder) => {
-								acc[folder.id] = folder;
-								return acc;
-							}, {})}
-						parentId={null}
-					/>
-				</RooibosFolder>
-			{/if}
+			
+			<!-- <RooibosFolder
+				collapsible={!search}
+				className="px-2 mt-0.5"
+				name={$i18n.t('Notes')}
+				onAdd={() => createRooibosFolder('Untitled', 'note')}
+				onAddLabel={$i18n.t('New Folder')}
+				open={false}
+			>
+				<RooibosFolderMenu
+					folders={Object.values(rooibosFolders)
+						.filter((folder) => folder.type === 'note')
+						.reduce((acc, folder) => {
+							acc[folder.id] = folder;
+							return acc;
+						}, {})}
+					parentId={null}
+				/>
+			</RooibosFolder> -->
+			
 		{/if}
 
 		<div class="relative {$temporaryChatEnabled ? 'opacity-20' : ''}">

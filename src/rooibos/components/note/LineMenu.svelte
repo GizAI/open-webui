@@ -89,7 +89,7 @@
     menu.style.position = 'absolute';
     menu.style.left = x + 'px';
     menu.style.top = y + 'px';
-    menu.style.transform = 'translateX(-100%)';
+    menu.style.transform = 'translateY(10px)';
     menu.style.padding = '8px';
     menu.style.border = '1px solid #eee';
     menu.style.background = '#fff';
@@ -321,7 +321,7 @@
   }
   
   @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(-5px); }
+    from { opacity: 0; transform: translateY(5px); }
     to { opacity: 1; transform: translateY(0); }
   }
   
