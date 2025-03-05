@@ -464,87 +464,89 @@
 
 	// Line menu extension
 	const lineMenuExtension = Extension.create({
-		name: 'lineMenu',
-		addProseMirrorPlugins() {
-			const extensionThis = this;
-			return [
-				new Plugin({
-					key: new PluginKey('lineMenu'),
-					props: {
-						decorations(state) {
-							const { doc, selection } = state;
-							const decorations = [];
-							
-							// 각 블록 노드에 대해 데코레이션 생성
-							doc.descendants((node, pos) => {
-								if (node.isBlock && !node.isText) {
-									// 블록에 line-block 클래스 추가
-									const blockDeco = Decoration.node(pos, pos + node.nodeSize, {
-										class: 'line-block'
-									});
-									decorations.push(blockDeco);
-									
-									// 라인 메뉴 아이콘 생성
-									const lineIcon = document.createElement('div');
-									lineIcon.className = 'line-icon';
-									lineIcon.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="1" fill="currentColor"/><circle cx="12" cy="6" r="1" fill="currentColor"/><circle cx="12" cy="18" r="1" fill="currentColor"/></svg>';
-									
-									// 클릭 이벤트 리스너 추가
-									lineIcon.addEventListener('click', (e) => {
-										e.preventDefault();
-										e.stopPropagation();
-										
-										try {
-											console.log('라인 메뉴 아이콘 클릭됨', { node, pos });
-											const editor = extensionThis.editor || editor;
-											showLineMenu(
-												e.clientX, 
-												e.clientY, 
-												editor, 
-												node, 
-												pos,
-												() => {
-													console.log('사이드바 열기 콜백');
-												}
-											);
-										} catch (error) {
-											console.error('라인 메뉴 표시 중 오류:', error);
-										}
-									});
-									
-									// 마우스 오버 이벤트 리스너 추가
-									lineIcon.addEventListener('mouseover', () => {
-										lineIcon.style.opacity = '1';
-									});
-									
-									// 마우스 아웃 이벤트 리스너 추가
-									lineIcon.addEventListener('mouseout', () => {
-										// 부모 블록에 마우스가 없을 때만 아이콘 숨기기
-										const parentBlock = lineIcon.closest('.line-block');
-										if (!parentBlock || !parentBlock.matches(':hover')) {
-											lineIcon.style.opacity = '0';
-										}
-									});
-									
-									// 데코레이션 생성
-									const decoration = Decoration.widget(pos, lineIcon, {
-										side: -1,
-										key: `line-menu-${pos}`,
-									});
-									decorations.push(decoration);
-									
-									
-								}
-								return true;
-							});
-							
-							return DecorationSet.create(doc, decorations);
-						},
-					},
-				}),
-			];
-		},
-	});
+   name: 'lineMenu',
+   addProseMirrorPlugins() {
+     const extensionThis = this;
+     return [
+       new Plugin({
+         key: new PluginKey('lineMenu'),
+         state: {
+           init() {
+             return { highlightedPos: null };
+           },
+           apply(tr, value) {
+             const highlight = tr.getMeta('toggleLineHighlight');
+             if (highlight !== undefined) {
+               return { highlightedPos: highlight };
+             }
+             return value;
+           }
+         },
+         props: {
+           decorations(state) {
+             const { doc } = state;
+             const { highlightedPos } = this.getState(state);
+             const decorations = [];
+             doc.descendants((node, pos) => {
+               if (node.isBlock && !node.isText) {
+                 // 하이라이트 상태에 따라 클래스 추가
+                 const classes = ['line-block'];
+                 if (highlightedPos === pos) {
+                   classes.push('line-highlight');
+                 }
+				 const blockDeco = Decoration.node(pos, pos + node.nodeSize, {
+                   class: classes.join(' ')
+                 });
+                 decorations.push(blockDeco);
+ 
+                 // 라인 메뉴 아이콘 생성
+                 const lineIcon = document.createElement('div');
+                 lineIcon.className = 'line-icon';
+                 lineIcon.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="1" fill="currentColor"/><circle cx="12" cy="6" r="1" fill="currentColor"/><circle cx="12" cy="18" r="1" fill="currentColor"/></svg>';
+ 
+                 // 클릭 이벤트 리스너 추가
+                 lineIcon.addEventListener('click', (e) => {
+                   e.preventDefault();
+                   e.stopPropagation();
+                   
+                   try {
+                     console.log('라인 메뉴 아이콘 클릭됨', { node, pos });
+                     const editorInstance = extensionThis.editor || editor;
+                     // 현재 하이라이트 상태 토글
+                     const currentPluginState = this.getState(editorInstance.state);
+                     const newHighlightedPos = currentPluginState.highlightedPos === pos ? null : pos;
+                     editorInstance.view.dispatch(editorInstance.state.tr.setMeta('toggleLineHighlight', newHighlightedPos));
+ 
+                     showLineMenu(
+                       e.clientX, 
+                       e.clientY, 
+                       editorInstance, 
+                       node, 
+                       pos,
+                       () => {
+                         console.log('사이드바 열기 콜백');
+                       }
+                     );
+                   } catch (error) {
+                     console.error('라인 메뉴 표시 중 오류:', error);
+                   }
+                 });
+                 
+                 const decorationWidget = Decoration.widget(pos, lineIcon, {
+                   side: -1,
+                   key: `line-menu-${pos}`,
+                 });
+                 decorations.push(decorationWidget);
+               }
+               return true;
+             });
+             return DecorationSet.create(doc, decorations);
+           }
+         },
+       }),
+     ];
+   },
+ });
 
 	function initEditor(content, provider) {
 		const currentUser = get(user);
@@ -690,6 +692,11 @@
 {/if}
 
 <style>
+	:global(.line-highlight) {
+	background-color: #ffff99; /* 원하는 하이라이트 색상으로 수정 가능 */
+}
+
+
 	.notion-page-container {
 		max-width: 800px;
 		margin: 0 auto;
