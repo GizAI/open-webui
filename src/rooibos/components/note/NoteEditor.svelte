@@ -1,6 +1,6 @@
 <!-- NoteEditor.svelte -->
 <script lang="ts">
-	import { onMount, onDestroy } from 'svelte';
+	import { onMount, onDestroy, createEventDispatcher } from 'svelte';
 	import { Editor } from '@tiptap/core';
 	import { Plugin, PluginKey } from 'prosemirror-state';
 	import { Decoration, DecorationSet } from 'prosemirror-view';
@@ -12,7 +12,7 @@
 	import TopBar from './TopBar.svelte';
 	import BubbleMenu from './BubbleMenu.svelte';
 	import CollaboratorsList from './CollaboratorsList.svelte';
-	import { createAddIcon, showAddMenu } from './LineMenu.svelte'; // Import the functions from LineMenu
+	import { showLineMenu } from './LineMenu.svelte';
 	import { HocuspocusProvider } from '@hocuspocus/provider';
 	import { page } from '$app/stores';
 	import { get } from 'svelte/store';
@@ -462,112 +462,88 @@
 		return provider;
 	}
 
-	/* 기존 코드에서 "굵게/이탤릭"을 넣었던 라인 메뉴 확장을 확장/보강 */
-	const LineMenuExtension = Extension.create({
-		name: 'lineMenuExtension',
-
+	// Line menu extension
+	const lineMenuExtension = Extension.create({
+		name: 'lineMenu',
 		addProseMirrorPlugins() {
 			const extensionThis = this;
 			return [
 				new Plugin({
-					key: new PluginKey('lineMenuExtension'),
-					state: {
-						init(_, { doc }) {
-							return DecorationSet.empty;
-						},
-						apply(tr, oldDecorationSet) {
+					key: new PluginKey('lineMenu'),
+					props: {
+						decorations(state) {
+							const { doc, selection } = state;
 							const decorations = [];
-
-							tr.doc.descendants((node, pos) => {
-								// 블록 노드(문단, 헤딩 등)만 대상
-								if (node.isBlock) {
-									// 블록 노드에 line-block 클래스 추가
+							
+							// 각 블록 노드에 대해 데코레이션 생성
+							doc.descendants((node, pos) => {
+								if (node.isBlock && !node.isText) {
+									// 블록에 line-block 클래스 추가
 									const blockDeco = Decoration.node(pos, pos + node.nodeSize, {
 										class: 'line-block'
 									});
 									decorations.push(blockDeco);
 									
-									// + 버튼 아이콘 추가
-									const addDeco = Decoration.widget(
-										pos + node.nodeSize - 1,
-										() => {
-											// LineMenu 컴포넌트의 createAddIcon 함수 사용
-											const addIcon = createAddIcon();
-											
-											// 아이콘 자체에 마우스 오버 이벤트 추가
-											addIcon.addEventListener('mouseover', () => {
-												addIcon.style.backgroundColor = 'rgba(0, 0, 0, 0.1)';
-												addIcon.style.opacity = '1';
-											});
-											
-											addIcon.addEventListener('mouseout', () => {
-												addIcon.style.backgroundColor = 'rgba(0, 0, 0, 0.05)';
-												if (!document.querySelector('.line-block:hover')) {
-													addIcon.style.opacity = '0';
+									// 라인 메뉴 아이콘 생성
+									const lineIcon = document.createElement('div');
+									lineIcon.className = 'line-icon';
+									lineIcon.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="1" fill="currentColor"/><circle cx="12" cy="6" r="1" fill="currentColor"/><circle cx="12" cy="18" r="1" fill="currentColor"/></svg>';
+									
+									// 클릭 이벤트 리스너 추가
+									lineIcon.addEventListener('click', (e) => {
+										e.preventDefault();
+										e.stopPropagation();
+										
+										try {
+											console.log('라인 메뉴 아이콘 클릭됨', { node, pos });
+											const editor = extensionThis.editor || editor;
+											showLineMenu(
+												e.clientX, 
+												e.clientY, 
+												editor, 
+												node, 
+												pos,
+												() => {
+													console.log('사이드바 열기 콜백');
 												}
-											});
-											
-											// 클릭 이벤트
-											addIcon.addEventListener('click', (e) => {
-												e.preventDefault();
-												e.stopPropagation();
-												
-												// LineMenu 컴포넌트의 showAddMenu 함수 사용
-												showAddMenu(
-													e.clientX,
-													e.clientY,
-													extensionThis.editor,
-													pos + node.nodeSize
-												);
-											});
-											
-											// 아이콘이 생성된 후 부모 요소에 이벤트 리스너 추가
-											setTimeout(() => {
-												const parentBlock = addIcon.closest('.line-block') || 
-													document.querySelector(`.line-block[data-node-id="${pos}"]`) ||
-													addIcon.parentElement;
-												
-												if (parentBlock) {
-													const handleParentHover = () => {
-														addIcon.style.opacity = '1';
-													};
-													
-													const handleParentLeave = () => {
-														if (!addIcon.matches(':hover')) {
-															addIcon.style.opacity = '0';
-														}
-													};
-													
-													parentBlock.addEventListener('mouseover', handleParentHover);
-													parentBlock.addEventListener('mouseout', handleParentLeave);
-													
-													// 클린업 함수 설정
-													// @ts-ignore
-													addIcon.cleanupListeners = () => {
-														parentBlock.removeEventListener('mouseover', handleParentHover);
-														parentBlock.removeEventListener('mouseout', handleParentLeave);
-													};
-												}
-											}, 0);
-											
-											return addIcon;
-										},
-										{ side: 1 }
-									);
-									decorations.push(addDeco);
+											);
+										} catch (error) {
+											console.error('라인 메뉴 표시 중 오류:', error);
+										}
+									});
+									
+									// 마우스 오버 이벤트 리스너 추가
+									lineIcon.addEventListener('mouseover', () => {
+										lineIcon.style.opacity = '1';
+									});
+									
+									// 마우스 아웃 이벤트 리스너 추가
+									lineIcon.addEventListener('mouseout', () => {
+										// 부모 블록에 마우스가 없을 때만 아이콘 숨기기
+										const parentBlock = lineIcon.closest('.line-block');
+										if (!parentBlock || !parentBlock.matches(':hover')) {
+											lineIcon.style.opacity = '0';
+										}
+									});
+									
+									// 데코레이션 생성
+									const decoration = Decoration.widget(pos, lineIcon, {
+										side: -1,
+										key: `line-menu-${pos}`,
+									});
+									decorations.push(decoration);
+									
+									
 								}
+								return true;
 							});
-							return DecorationSet.create(tr.doc, decorations);
-						}
+							
+							return DecorationSet.create(doc, decorations);
+						},
 					},
-					props: {
-						decorations(state) {
-							return this.getState(state);
-						}
-					}
-				})
+				}),
 			];
-		}
+		},
 	});
 
 	function initEditor(content, provider) {
@@ -615,7 +591,7 @@
 						avatar: currentUser?.avatar
 					}
 				}),
-				LineMenuExtension
+				lineMenuExtension
 			],
 			content: '',
 			autofocus: true,
@@ -782,77 +758,4 @@
 		transform: translateY(-2px);
 		z-index: 100;
 	}
-
-	
-	#line-menu-popup button {
-		border: none;
-		background: transparent;
-		cursor: pointer;
-		width: 100%;
-		text-align: left;
-		padding: 6px 8px;
-		font-size: 14px;
-		border-radius: 4px;
-		color: #333;
-		display: flex;
-		align-items: center;
-	}
-
-	#line-menu-popup button:hover {
-		background: #f5f5f5;
-	}
-
-	
-	.line-icon {
-		opacity: 0; 
-		transition: opacity 0.2s ease;
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		justify-content: center;
-		gap: 2px;
-		position: absolute;
-		left: -24px;
-		top: 50%;
-		transform: translateY(-50%);
-		padding: 4px;
-		background-color: rgba(0, 0, 0, 0.05);
-		border-radius: 4px;
-		z-index: 10;
-		width: 18px;
-		height: 18px;
-	}
-
-	.line-icon:hover {
-		background-color: rgba(0, 0, 0, 0.1);
-		opacity: 1 !important;
-	}
-
-	.line-icon-dot {
-		width: 4px;
-		height: 4px;
-		border-radius: 50%;
-		background-color: #666;
-	}
-
-	.line-block {
-		position: relative;
-		margin-left: 10px;
-		padding-left: 5px;
-	}
-
-	.line-block:hover .line-icon {
-		opacity: 1;
-	}
-	
-	/* 추가: 라인 블록 호버 스타일 */
-	.line-block {
-		border-radius: 3px;
-		transition: background-color 0.2s ease;
-	}
-	
-	.line-block:hover {
-		background-color: rgba(0, 0, 0, 0.02);
-	}
-
 </style>
