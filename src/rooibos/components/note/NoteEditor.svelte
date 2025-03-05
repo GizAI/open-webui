@@ -12,7 +12,7 @@
 	import TopBar from './TopBar.svelte';
 	import BubbleMenu from './BubbleMenu.svelte';
 	import CollaboratorsList from './CollaboratorsList.svelte';
-	import { createLineIcon, showLineMenu, createAddIcon, showAddMenu } from './LineMenu.svelte'; // Import the functions from LineMenu
+	import { createAddIcon, showAddMenu } from './LineMenu.svelte'; // Import the functions from LineMenu
 	import { HocuspocusProvider } from '@hocuspocus/provider';
 	import { page } from '$app/stores';
 	import { get } from 'svelte/store';
@@ -486,77 +486,6 @@
 										class: 'line-block'
 									});
 									decorations.push(blockDeco);
-									
-									// 위젯 데코레이션으로 아이콘 삽입
-									const deco = Decoration.widget(
-										pos,
-										() => {
-											// LineMenu 컴포넌트의 createLineIcon 함수 사용
-											const icon = createLineIcon();
-											
-											// 아이콘 자체에 마우스 오버 이벤트 추가
-											icon.addEventListener('mouseover', () => {
-												icon.style.backgroundColor = 'rgba(0, 0, 0, 0.1)';
-												icon.style.opacity = '1';
-											});
-											
-											icon.addEventListener('mouseout', () => {
-												icon.style.backgroundColor = 'rgba(0, 0, 0, 0.05)';
-												if (!document.querySelector('.line-block:hover')) {
-													icon.style.opacity = '0';
-												}
-											});
-											
-											// 클릭 이벤트
-											icon.addEventListener('click', (e) => {
-												e.preventDefault();
-												e.stopPropagation();
-												
-												// LineMenu 컴포넌트의 showLineMenu 함수 사용
-												showLineMenu(
-													e.clientX,
-													e.clientY,
-													extensionThis.editor,
-													node,
-													pos,
-													openSidebar
-												);
-											});
-											
-											// 아이콘이 생성된 후 부모 요소에 이벤트 리스너 추가
-											setTimeout(() => {
-												const parentBlock = icon.closest('.line-block') || 
-													document.querySelector(`.line-block[data-node-id="${pos}"]`) ||
-													icon.parentElement;
-												
-												if (parentBlock) {
-													const handleParentHover = () => {
-														icon.style.opacity = '1';
-													};
-													
-													const handleParentLeave = () => {
-														if (!icon.matches(':hover')) {
-															icon.style.opacity = '0';
-														}
-													};
-													
-													parentBlock.addEventListener('mouseover', handleParentHover);
-													parentBlock.addEventListener('mouseout', handleParentLeave);
-													
-													// 클린업 함수 설정
-													// @ts-ignore
-													icon.cleanupListeners = () => {
-														parentBlock.removeEventListener('mouseover', handleParentHover);
-														parentBlock.removeEventListener('mouseout', handleParentLeave);
-													};
-												}
-											}, 0);
-											
-											return icon;
-										},
-										{ side: -1 }
-									);
-									decorations.push(deco);
 									
 									// + 버튼 아이콘 추가
 									const addDeco = Decoration.widget(
