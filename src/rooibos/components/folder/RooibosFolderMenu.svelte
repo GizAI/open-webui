@@ -144,7 +144,7 @@
 									on:click={(e) => { e.stopPropagation(); openManagement(folderId); }}
 								>
 									<Cog6 strokeWidth="2" />
-									<div class="flex items-center">관리</div>
+									<div class="flex items-center">{$i18n.t('폴더관리')}</div>
 								</DropdownMenu.Item>
 								{#if folders[folderId].type === 'note'}
 									<DropdownMenu.Item
@@ -173,6 +173,8 @@
 {#if showManagementForm && managementFolderId}
 	<FolderForm
 		folder={folders[managementFolderId]}
+		on:close={closeManagementForm}
+		on:update={handleFolderUpdate}
 	/>
 {/if}
 

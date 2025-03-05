@@ -249,7 +249,7 @@ async def add_user_access_control(id: str, request: Request):
             
             sql_update = """
                 UPDATE rb_folder 
-                SET access_control = :access_control, updated_at = now() 
+                SET access_control = :access_control, updated_at = extract(epoch from now())::bigint
                 WHERE id = :id 
                 RETURNING access_control
             """
@@ -257,12 +257,22 @@ async def add_user_access_control(id: str, request: Request):
                 text(sql_update),
                 {"access_control": json.dumps(current_access), "id": id}
             )
+
             updated_access = result_update.fetchone()[0]
             db.commit();
         
+        # Get user information for the updated access control
+        user_list = []
+        if "user_ids" in updated_access and updated_access["user_ids"]:
+            for user_id in updated_access["user_ids"]:
+                user = Users.get_user_by_id(user_id)
+                if user:
+                    user_list.append(user)
+        
         return {
             "success": True,
-            "data": updated_access
+            "data": updated_access,
+            "users": user_list
         }
         
     except Exception as e:
@@ -279,7 +289,6 @@ async def remove_user_access_control(id: str, request: Request):
     try:
         search_params = request.query_params
         user_id = search_params.get("user_id")
-
         if not user_id:
             raise HTTPException(status_code=400, detail="user_id is required")
         
@@ -291,14 +300,16 @@ async def remove_user_access_control(id: str, request: Request):
                 raise HTTPException(status_code=404, detail="Folder not found")
             
             current_access = row[0] or {}
+            
             if "user_ids" not in current_access or not isinstance(current_access["user_ids"], list):
                 current_access["user_ids"] = []
             
-            current_access["user_ids"] = [uid for uid in current_access["user_ids"] if uid != user_id]
+            if user_id in current_access["user_ids"]:
+                current_access["user_ids"].remove(user_id)
             
             sql_update = """
                 UPDATE rb_folder 
-                SET access_control = :access_control, updated_at = now() 
+                SET access_control = :access_control, updated_at = extract(epoch from now())::bigint
                 WHERE id = :id 
                 RETURNING access_control
             """
@@ -306,24 +317,30 @@ async def remove_user_access_control(id: str, request: Request):
                 text(sql_update),
                 {"access_control": json.dumps(current_access), "id": id}
             )
+
             updated_access = result_update.fetchone()[0]
             db.commit();
         
+        # Get user information for the updated access control
+        user_list = []
+        if "user_ids" in updated_access and updated_access["user_ids"]:
+            for user_id in updated_access["user_ids"]:
+                user = Users.get_user_by_id(user_id)
+                if user:
+                    user_list.append(user)
+        
         return {
             "success": True,
-            "status_code":200,
-            "data": updated_access
+            "data": updated_access,
+            "users": user_list
         }
-    
+        
     except Exception as e:
-        log.error("Remove user access error: " + str(e))        
+        log.error("Remove user access control error: " + str(e))
         return {
-            "status_code":500,
-            "content":{
-                "success": False,
-                "error": "Remove user failed",
-                "message": str(e)
-            }
+            "success": False,
+            "error": "Remove user failed",
+            "message": str(e)
         }
 
 

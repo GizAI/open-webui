@@ -134,7 +134,7 @@
 									<div class="flex gap-1">
 										<button 
 											on:click={saveFolder} 
-											class="px-3 py-1 bg-blue-500 text-white rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+											class="px-3 py-1 bg-white text-blue-500 border border-blue-500 rounded-md hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
 											disabled={isSaving}
 										>
 											{#if isSaving}
@@ -142,6 +142,15 @@
 											{:else}
 												저장
 											{/if}
+										</button>
+										<button 
+											on:click={() => {
+												isEditing = false;
+												folderName = folder?.name || '';
+											}} 
+											class="px-3 py-1 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500"
+										>
+											취소
 										</button>
 									</div>
 								</div>
@@ -195,22 +204,6 @@
 						bind:accessControl={accessControl}
 						onChange={handleAccessControlChange}
 					/>
-				</div>
-				
-				<!-- Action Buttons -->
-				<div class="flex justify-end gap-2 mt-4">
-					<button 
-						on:click={() => selectFolder(folder)}
-						class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
-					>
-						선택
-					</button>
-					<button 
-						on:click={onClose}
-						class="px-4 py-2 bg-gray-300 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-400 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500"
-					>
-						취소
-					</button>
 				</div>
 			</div>
 		{:else}

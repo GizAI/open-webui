@@ -11,6 +11,14 @@
 	import Badge from '$lib/components/common/Badge.svelte';
 	import { WEBUI_API_BASE_URL } from '$lib/constants';
 
+	// Define User interface
+	interface User {
+		id: string;
+		name: string;
+		role: string;
+		[key: string]: any;
+	}
+
 	export let onChange: Function = () => {};
 	export let accessControl: any = null;
 	export let folder: {
@@ -21,9 +29,14 @@
 	} | null = null;
 
 	let selectedUserId = '';
-	let users: any = [];
-	let accessUsers: any = [];
-	let showUserSelect = false;
+	let users: User[] = [];
+	let accessUsers: User[] = [];
+	let showUserSelect = true;
+
+	// Filter function to avoid linter errors
+	function filterAvailableUsers(users: User[], accessControlUserIds: string[]): User[] {
+		return users.filter(user => !accessControlUserIds.includes(user.id));
+	}
 
 	onMount(async () => {
 		if (folder) {
@@ -32,7 +45,8 @@
 			users = allUsers.filter((user: any) => user.role === 'user');
 
 			if (accessControl === null) {
-				accessControl = null;
+				accessControl = { user_ids: [] };
+				onChange(accessControl);
 			} else {
 				accessControl = {
 					user_ids: accessControl?.user_ids ?? []
@@ -86,7 +100,11 @@
 			if (res.ok) {
 				accessControl = result.data;
 				onChange(accessControl);
-				fetchAccessUsers();
+				if (result.users) {
+					accessUsers = result.users;
+				} else {
+					fetchAccessUsers();
+				}
 				showUserSelect = true;
 			} else {
 				console.error(result.message);
@@ -118,7 +136,11 @@
 			if (res.ok) {
 				accessControl = result.data;
 				onChange(accessControl);
-				fetchAccessUsers();
+				if (result.users) {
+					accessUsers = result.users;
+				} else {
+					fetchAccessUsers();
+				}
 				showUserSelect = true;
 			} else {
 				console.error(result.message);
@@ -191,9 +213,9 @@
 									class="text-gray-700 bg-gray-200 dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800"
 									value=""
 									disabled
-									selected>공유하려는 사용자를 선택하세요</option
+									selected>폴더에 공유하려는 사용자를 추가하세요</option
 								>
-								{#each users.filter((user) => !((accessControl?.user_ids || []).includes(user.id))) as user}
+								{#each filterAvailableUsers(users, accessControl?.user_ids || []) as user}
 									<option
 										class="text-gray-700 bg-gray-200 dark:bg-gray-900 hover:bg-gray-100 dark:hover:bg-gray-800"
 										value={user.id}>{user.name}</option
@@ -216,9 +238,6 @@
 								<div>{user.name}</div>
 							</div>
 							<div class="w-full flex justify-end items-center gap-0.5">
-								<button type="button" on:click={() => {}}>
-									<Badge type={'info'} content={$i18n.t('Read')} />
-								</button>
 								<button
 									class="rounded-full p-1 hover:bg-gray-100 dark:hover:bg-gray-850 transition"
 									type="button"
