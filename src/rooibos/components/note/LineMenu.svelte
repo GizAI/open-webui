@@ -224,6 +224,15 @@
     function closeMenu() {
       menu.remove();
       document.removeEventListener('mousedown', handleClickOutside);
+      
+      // Reset line highlight by dispatching a transaction
+      try {
+        const transaction = editor.state.tr.setMeta('toggleLineHighlight', null);
+        editor.view.dispatch(transaction);
+      } catch (error) {
+        console.error('라인 하이라이트 초기화 중 오류:', error);
+      }
+      
       if (typeof openSidebarCallback === 'function') {
         openSidebarCallback();
       }
