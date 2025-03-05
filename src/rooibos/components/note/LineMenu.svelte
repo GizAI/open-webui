@@ -21,7 +21,7 @@
   function styleMenuItem(btn, icon) {
     btn.style.display = 'flex';
     btn.style.alignItems = 'center';
-    btn.style.gap = '8px';
+    btn.style.gap = '4px';
     btn.style.padding = '6px 8px';
     btn.style.border = 'none';
     btn.style.borderRadius = '4px';
@@ -103,21 +103,11 @@
     menu.style.maxWidth = '220px';
     menu.style.fontSize = '14px';
     
-    // Block conversion section
-    const blockHeader = document.createElement('div');
-    blockHeader.style.fontSize = '12px';
-    blockHeader.style.color = '#888';
-    blockHeader.style.padding = '4px 8px';
-    blockHeader.textContent = '블록 변환';
-    menu.appendChild(blockHeader);
-    
-    const fromPos = pos;
-    const toPos = pos + node.nodeSize;
     
     // Paragraph
     const paragraphBtn = document.createElement('button');
     paragraphBtn.textContent = 'Paragraph';
-    styleMenuItem(paragraphBtn, '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 6v12M6 12h12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>');
+    styleMenuItem(paragraphBtn, '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><text x="8" y="17" font-size="16" font-weight="bold" fill="currentColor">P</text></svg>');
     styleActiveMenuItem(paragraphBtn, isNodeType(editor, node, 'paragraph'));
     paragraphBtn.onclick = () => {
       try {
@@ -212,6 +202,21 @@
     };
     menu.appendChild(orderedBtn);
     
+    // Tasks list
+    const tasksBtn = document.createElement('button');
+    tasksBtn.textContent = 'Tasks list';
+    styleMenuItem(tasksBtn, '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M9 12l2 2 4-4M8 6h13M8 18h13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><rect x="3" y="6" width="4" height="4" rx="1" stroke="currentColor" stroke-width="2"/><rect x="3" y="16" width="4" height="4" rx="1" stroke="currentColor" stroke-width="2"/></svg>');
+    tasksBtn.onclick = () => {
+      try {
+        console.log('Tasks list 버튼 클릭됨');
+        editor.chain().focus().toggleTaskList().run();
+      } catch (error) {
+        console.error('Tasks list 변환 중 오류:', error);
+      }
+      closeMenu();
+    };
+    menu.appendChild(tasksBtn);
+    
     document.body.appendChild(menu);
     
     function handleClickOutside(e) {
@@ -243,7 +248,7 @@
   /* 라인 아이콘 스타일 */
   :global(.line-icon) {
     position: absolute;
-    left: -30px;
+    left: -24px;
     width: 24px;
     height: 24px;
     display: flex;
@@ -293,7 +298,7 @@
   :global(#add-menu-popup button) {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 2px;
     width: 100%;
     text-align: left;
     padding: 6px 8px;
@@ -322,7 +327,7 @@
   
   :global(.line-block) {
     position: relative;
-    margin-left: 10px;
+    margin-left: 5px;
     padding-left: 5px;
     border-radius: 3px;
     transition: background-color 0.2s ease;
