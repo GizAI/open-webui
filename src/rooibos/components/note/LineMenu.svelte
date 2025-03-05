@@ -1,41 +1,5 @@
 <script context="module">
-  // Functions exported from the module context can be imported by other files
-  export function createLineIcon() {
-    const icon = document.createElement('div');
-    icon.className = 'line-icon';
-    
-    // Create three dots vertically
-    for (let i = 0; i < 3; i++) {
-      const dot = document.createElement('div');
-      dot.className = 'line-icon-dot';
-      icon.appendChild(dot);
-    }
-    
-    // Apply icon styles
-    icon.style.cursor = 'pointer';
-    icon.style.userSelect = 'none';
-    icon.style.display = 'flex';
-    icon.style.flexDirection = 'column';
-    icon.style.gap = '2px';
-    icon.style.alignItems = 'center';
-    icon.style.justifyContent = 'center';
-    icon.style.padding = '4px';
-    icon.style.position = 'absolute';
-    icon.style.left = '-24px';
-    icon.style.top = '50%';
-    icon.style.transform = 'translateY(-50%)';
-    icon.style.backgroundColor = 'rgba(0, 0, 0, 0.05)';
-    icon.style.borderRadius = '4px';
-    icon.style.zIndex = '10';
-    icon.style.width = '18px';
-    icon.style.height = '18px';
-    icon.style.opacity = '0';
-    icon.style.transition = 'opacity 0.2s';
-    
-    return icon;
-  }
-
-  // 새로운 함수: + 버튼 아이콘 생성
+  
   export function createAddIcon() {
     const icon = document.createElement('div');
     icon.className = 'add-line-icon';
