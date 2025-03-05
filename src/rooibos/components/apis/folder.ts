@@ -91,7 +91,7 @@ export const renameNoteFolder = async (
 		.then(async (res) => {
 			if (!res.ok) throw await res.json();
 			const result = await res.json();
-			return result.folders;
+			return result.folder;
 		})
 		.then((json) => {
 			return json;
