@@ -83,8 +83,7 @@
 				return {
 					...defaultState,
 					field: parsed.field || defaultState.field,
-					direction: parsed.direction || defaultState.direction,
-					initialLoad: parsed.initialLoad ?? defaultState.initialLoad
+					direction: parsed.direction || defaultState.direction
 				};
 			}
 		} catch (error) {
@@ -102,8 +101,7 @@
 		try {
 			const stateToSave = {
 				field: sortState.field,
-				direction: sortState.direction,
-				initialLoad: sortState.initialLoad
+				direction: sortState.direction
 			};
 			localStorage.setItem(`sort_${storageKey}`, JSON.stringify(stateToSave));
 		} catch (error) {
@@ -163,14 +161,12 @@
 			sortState = savedState;
 		}
 		
-		// 약간의 지연 후 초기 로딩 상태 해제 (initialLoad가 true인 경우에만)
-		if (sortState.initialLoad) {
-			setTimeout(() => {
-				sortState.initialLoad = false;
-				// 정렬 적용 및 이벤트 발생
-				sortedItems = sortItems(items, sortState);
-			}, 100);
-		}
+		// 약간의 지연 후 초기 로딩 상태 해제
+		setTimeout(() => {
+			sortState.initialLoad = false;
+			// 정렬 적용 및 이벤트 발생
+			sortedItems = sortItems(items, sortState);
+		}, 100);
 	});
 	
 	// 정렬 필드 변경 함수
@@ -186,21 +182,6 @@
 			sortState.field = field;
 			sortState.direction = 'asc';
 		}
-		
-		// localStorage에 정렬 상태 저장
-		if (storageKey) {
-			saveSortState(storageKey, sortState);
-		}
-		
-		// 정렬 적용 (sortedItems는 반응형으로 자동 업데이트됨)
-	}
-	
-	// 정렬 초기화 함수
-	function resetSort() {
-		// 초기 로딩 상태로 설정
-		sortState.initialLoad = true;
-		sortState.field = '';
-		sortState.direction = 'asc';
 		
 		// localStorage에 정렬 상태 저장
 		if (storageKey) {
@@ -231,16 +212,5 @@
 				{/if}
 			</button>
 		{/each}
-		
-		<!-- 정렬 초기화 버튼 -->
-		{#if !sortState.initialLoad}
-			<button
-				class="px-2 py-1 text-xs rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-500 dark:text-gray-400 transition"
-				on:click={resetSort}
-				title={$i18n.t('Reset to original order')}
-			>
-				{$i18n.t('Reset')}
-			</button>
-		{/if}
 	</div>
 </div> 
