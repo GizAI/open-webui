@@ -142,7 +142,6 @@
 						{ value: 'title', label: $i18n.t('Title') },
 						{ value: 'command', label: $i18n.t('Command') }
 					]}
-					storageKey="prompts"
 				/>
 			</div>
 

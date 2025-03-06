@@ -209,7 +209,6 @@
 						{ value: 'id', label: 'ID' },
 						{ value: 'name', label: $i18n.t('Name') }
 					]}
-					storageKey="tools"
 				/>
 			</div>
 

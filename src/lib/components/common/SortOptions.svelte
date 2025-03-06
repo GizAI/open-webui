@@ -75,6 +75,7 @@
 	import ChevronUp from '../icons/ChevronUp.svelte';
 	import { getContext, createEventDispatcher } from 'svelte';
 	import type { Readable } from 'svelte/store';
+	import { onMount } from 'svelte';
 	
 	// i18n을 Readable 스토어 타입으로 지정
 	interface I18nStore extends Readable<{
@@ -99,11 +100,21 @@
 	// 정렬 옵션 배열 (각 옵션은 value와 label을 가짐)
 	export let options: { value: string; label: string }[] = [];
 	
-	// localStorage에 저장할 때 사용할 고유 키 (더 이상 사용하지 않음)
-	export let storageKey: string = 'default';
-	
 	// 정렬된 항목 배열 (외부로 내보내기)
 	export let sortedItems: any[] = [];
+	
+	// options가 변경되면 첫 번째 옵션의 value를 기본 field로 설정
+	$: if (options.length > 0 && sortState.initialLoad) {
+		sortState.field = options[0].value;
+	}
+	
+	// 컴포넌트 초기화 시 실행
+	onMount(() => {
+		// options가 있으면 첫 번째 옵션을 기본 field로 설정
+		if (options.length > 0 && sortState.field === '') {
+			sortState.field = options[0].value;
+		}
+	});
 	
 	// 정렬 상태나 항목이 변경될 때마다 정렬 적용
 	// 무한 루프 방지를 위해 items나 sortState가 변경될 때만 정렬 적용

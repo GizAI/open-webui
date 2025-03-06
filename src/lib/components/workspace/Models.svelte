@@ -243,7 +243,6 @@
 						{ value: 'name', label: $i18n.t('Name') },
 						{ value: 'updated_at', label: $i18n.t('Updated') }
 					]}
-					storageKey="models"
 				/>
 			</div>
 
