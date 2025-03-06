@@ -1,5 +1,5 @@
 <script context="module" lang="ts">
-	export type SortDirection = 'asc' | 'desc';
+	export type SortDirection = 'asc' | 'desc' | 'none';
 	
 	export interface SortState {
 		field: string;
@@ -14,8 +14,8 @@
 	 * @returns 정렬된 항목 배열
 	 */
 	export function sortItems<T>(items: T[], sortState: SortState): T[] {
-		// 초기 로딩 시에는 정렬하지 않고 원본 배열 반환
-		if (sortState.initialLoad) {
+		// 초기 로딩 시 또는 정렬 방향이 'none'인 경우 원본 배열 반환
+		if (sortState.initialLoad || sortState.direction === 'none') {
 			return [...items];
 		}
 		
@@ -68,52 +68,12 @@
 		// undefined나 null인 경우 빈 문자열 반환
 		return value === null || value === undefined ? '' : value;
 	}
-	
-	/**
-	 * localStorage에서 정렬 상태를 불러옵니다.
-	 * @param storageKey 저장소 키
-	 * @param defaultState 기본 정렬 상태
-	 * @returns 저장된 정렬 상태 또는 기본값
-	 */
-	export function loadSortState(storageKey: string, defaultState: SortState): SortState {
-		try {
-			const savedState = localStorage.getItem(`sort_${storageKey}`);
-			if (savedState) {
-				const parsed = JSON.parse(savedState);
-				return {
-					...defaultState,
-					field: parsed.field || defaultState.field,
-					direction: parsed.direction || defaultState.direction
-				};
-			}
-		} catch (error) {
-			console.error('Error loading sort state from localStorage:', error);
-		}
-		return defaultState;
-	}
-	
-	/**
-	 * localStorage에 정렬 상태를 저장합니다.
-	 * @param storageKey 저장소 키
-	 * @param sortState 정렬 상태 객체
-	 */
-	export function saveSortState(storageKey: string, sortState: SortState): void {
-		try {
-			const stateToSave = {
-				field: sortState.field,
-				direction: sortState.direction
-			};
-			localStorage.setItem(`sort_${storageKey}`, JSON.stringify(stateToSave));
-		} catch (error) {
-			console.error('Error saving sort state to localStorage:', error);
-		}
-	}
 </script>
 
 <script lang="ts">
 	import ChevronDown from '../icons/ChevronDown.svelte';
 	import ChevronUp from '../icons/ChevronUp.svelte';
-	import { getContext, createEventDispatcher, onMount } from 'svelte';
+	import { getContext, createEventDispatcher } from 'svelte';
 	import type { Readable } from 'svelte/store';
 	
 	// i18n을 Readable 스토어 타입으로 지정
@@ -129,7 +89,7 @@
 	// 정렬 상태 객체
 	export let sortState: SortState = {
 		field: '',
-		direction: 'asc',
+		direction: 'none',
 		initialLoad: true
 	};
 	
@@ -139,7 +99,7 @@
 	// 정렬 옵션 배열 (각 옵션은 value와 label을 가짐)
 	export let options: { value: string; label: string }[] = [];
 	
-	// localStorage에 저장할 때 사용할 고유 키
+	// localStorage에 저장할 때 사용할 고유 키 (더 이상 사용하지 않음)
 	export let storageKey: string = 'default';
 	
 	// 정렬된 항목 배열 (외부로 내보내기)
@@ -156,42 +116,25 @@
 		dispatch('change', { sortedItems, sortState });
 	}
 	
-	// 컴포넌트가 마운트되면 localStorage에서 정렬 상태를 불러옴
-	onMount(() => {
-		// localStorage에서 저장된 정렬 상태 불러오기
-		if (storageKey) {
-			const savedState = loadSortState(storageKey, sortState);
-			sortState = savedState;
-		}
-		
-		// 약간의 지연 후 초기 로딩 상태 해제
-		setTimeout(() => {
-			sortState.initialLoad = false;
-			// 정렬 적용 및 이벤트 발생
-			sortedItems = sortItems(items, sortState);
-		}, 100);
-	});
-	
 	// 정렬 필드 변경 함수
 	function changeSortField(field: string) {
-		// 사용자가 정렬 옵션을 클릭하면 항상 초기 로딩 상태 해제
+		// 초기 로딩 상태 해제
 		sortState.initialLoad = false;
 		
 		if (sortState.field === field) {
-			// 같은 필드를 클릭한 경우 정렬 방향 전환
-			sortState.direction = sortState.direction === 'asc' ? 'desc' : 'asc';
+			// 같은 필드를 클릭한 경우 정렬 방향 순환 (asc -> desc -> none -> asc)
+			if (sortState.direction === 'asc') {
+				sortState.direction = 'desc';
+			} else if (sortState.direction === 'desc') {
+				sortState.direction = 'none';
+			} else {
+				sortState.direction = 'asc';
+			}
 		} else {
 			// 다른 필드를 클릭한 경우 해당 필드로 변경하고 오름차순으로 설정
 			sortState.field = field;
 			sortState.direction = 'asc';
 		}
-		
-		// localStorage에 정렬 상태 저장
-		if (storageKey) {
-			saveSortState(storageKey, sortState);
-		}
-		
-		// 정렬 적용 (sortedItems는 반응형으로 자동 업데이트됨)
 	}
 </script>
 
@@ -208,8 +151,10 @@
 					<span class="ml-1">
 						{#if sortState.direction === 'asc'}
 							<ChevronUp className="w-3 h-3 inline" />
-						{:else}
+						{:else if sortState.direction === 'desc'}
 							<ChevronDown className="w-3 h-3 inline" />
+						{:else}
+							<span class="text-xs text-gray-400">•</span>
 						{/if}
 					</span>
 				{/if}
