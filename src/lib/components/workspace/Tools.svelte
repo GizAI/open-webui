@@ -63,11 +63,6 @@
 		{ value: 'name', label: $i18n.t('Name') }
 	];
 
-	const handleSortChange = (event: CustomEvent<{ field: string; direction: SortDirection }>) => {
-		sortField = event.detail.field as SortField;
-		sortDirection = event.detail.direction;
-	};
-
 	$: {
 		// 검색 필터링
 		let filtered = tools.filter(
@@ -222,7 +217,6 @@
 					bind:sortField={sortField}
 					bind:sortDirection={sortDirection}
 					options={sortOptions}
-					on:change={handleSortChange}
 				/>
 			</div>
 

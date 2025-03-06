@@ -51,9 +51,9 @@
 
 	let group_ids = [];
 
-	type SortField = 'id' | 'name' | 'updated_at';
 	
-	let sortField: SortField = 'name';
+	
+	let sortField = 'name';
 	let sortDirection: SortDirection = 'asc';
 
 	const sortOptions = [
@@ -61,11 +61,6 @@
 		{ value: 'name', label: $i18n.t('Name') },
 		{ value: 'updated_at', label: $i18n.t('Updated') }
 	];
-
-	const handleSortChange = (event: CustomEvent<{ field: string; direction: SortDirection }>) => {
-		sortField = event.detail.field as SortField;
-		sortDirection = event.detail.direction;
-	};
 
 	$: if (models) {
 		let filtered = models.filter(
@@ -257,7 +252,6 @@
 					bind:sortField={sortField}
 					bind:sortDirection={sortDirection}
 					options={sortOptions}
-					on:change={handleSortChange}
 				/>
 			</div>
 

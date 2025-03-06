@@ -47,11 +47,6 @@
 		{ value: 'command', label: $i18n.t('Command') }
 	];
 
-	const handleSortChange = (event: CustomEvent<{ field: string; direction: SortDirection }>) => {
-		sortField = event.detail.field as SortField;
-		sortDirection = event.detail.direction;
-	};
-
 	let filteredItems = [];
 	$: {
 		// 검색 필터링
@@ -154,7 +149,6 @@
 					bind:sortField={sortField}
 					bind:sortDirection={sortDirection}
 					options={sortOptions}
-					on:change={handleSortChange}
 				/>
 			</div>
 
