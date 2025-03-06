@@ -664,12 +664,13 @@
 
 	onMount(async () => {
 		try {
-			note = await getNote(noteId);
-			if (note.title) {
-				pageTitle = note.title;
-			} else {
-				pageTitle = '새 페이지';
-			}
+			
+			// note = await getNote(noteId);
+			// if (note.title) {
+			// 	pageTitle = note.title;
+			// } else {
+			 	pageTitle = '새 페이지';
+			// }
 
 			provider = setupCollaboration();
 

@@ -31,7 +31,7 @@
 	import AddFilesPlaceholder from '$lib/components/AddFilesPlaceholder.svelte';
 
 	import AddContentMenu from './KnowledgeBase/AddContentMenu.svelte';
-	import AddTextContentModal from './KnowledgeBase/AddTextContentModal.svelte';
+	import NoteEditorModal from './KnowledgeBase/NoteEditorModal.svelte';
 
 	import SyncConfirmDialog from '../../common/ConfirmDialog.svelte';
 	import RichTextInput from '$lib/components/common/RichTextInput.svelte';
@@ -566,7 +566,7 @@
 	}}
 />
 
-<AddTextContentModal
+<NoteEditorModal
 	bind:show={showAddTextContentModal}
 	on:submit={(e) => {
 		const file = createFileFromText(e.detail.name, e.detail.content);
