@@ -19,6 +19,9 @@
 	import { user } from '$lib/stores';
 	import { getNote, renameNote } from '../apis/note';
 
+	// Initialize the event dispatcher
+	const dispatch = createEventDispatcher();
+
 	// Type declarations
 	// Add custom type declaration for HTMLDivElement with cleanupListeners property
 	interface HTMLDivElementWithCleanup extends HTMLDivElement {
@@ -55,10 +58,13 @@
 		avatar?: string;
 	}
 
-	// Editor and UI state variables
+	export let initialTitle: string = '';
+	export let initialContent: any = '';
+
+	let pageTitle = initialTitle || '새 페이지';
+
 	let editor: Editor | null = null;
-	let editorElement: HTMLDivElementWithCleanup | null = null;
-	let pageTitle = '';
+	let editorElement: HTMLDivElementWithCleanup | null = null;	
 	let showSidebar = false;
 	let note: Note = {};
 	let manualTitleEdited = false;
@@ -66,11 +72,9 @@
 	let bubbleMenuElement: HTMLElement | null = null;
 	let isLineMenuOpen = false;
 
-	// Collaboration variables
 	let provider: HocuspocusProvider | null = null;
 	let activeUsers: ActiveUser[] = [];
 
-	// Editor state tracking
 	let editorState: EditorState = {
 		bold: false,
 		italic: false,
@@ -86,24 +90,18 @@
 
 	const { id: noteId } = get(page).params;
 
-	// Position variables for dropdowns
 	let colorPickerPosition: Position = { x: 0, y: 0 };
 	let highlightPickerPosition: Position = { x: 0, y: 0 };
 	let alignmentDropdownPosition: Position = { x: 0, y: 0 };
 
-	// Link related variables
 	let showLinkInput = false;
 	let linkInputPosition: Position = { x: 0, y: 0 };
 	let linkInputValue = '';
 
-	// UI state variables
 	let showColorPicker = false;
 	let showHighlightPicker = false;
 	let showAlignmentOptions = false;
 
-	/**
-	 * Adjusts the position of the bubble menu to ensure it stays within viewport
-	 */
 	function adjustBubbleMenuPosition(): void {
 		if (!bubbleMenuElement) return;
 
@@ -118,9 +116,6 @@
 		}
 	}
 
-	/**
-	 * Updates the editor state based on current selection and formatting
-	 */
 	function updateEditorState(): void {
 		if (!editor) return;
 
@@ -437,7 +432,7 @@
 		showColorPicker = false;
 		showHighlightPicker = false;
 		showAlignmentOptions = false;
-		// 클릭 시 라인 하이라이트 제거
+	
 		if (editor) {
 			editor.view.dispatch(editor.state.tr.setMeta('toggleLineHighlight', null));
 		}
@@ -461,23 +456,10 @@
 		showSidebar = false;
 	}
 
-	/**
-	 * Sets up collaboration features for the editor
-	 */
 	function setupCollaboration(): HocuspocusProvider {
 		const documentName = `note:${noteId}`;
 		const currentUser = get(user);
 
-		const getRandomColor = (): string => {
-			const colors = [
-				'#f44336', '#e91e63', '#9c27b0', '#673ab7', '#3f51b5',
-				'#2196f3', '#03a9f4', '#00bcd4', '#009688', '#4caf50',
-				'#8bc34a', '#cddc39', '#ffc107', '#ff9800', '#ff5722'
-			];
-			return colors[Math.floor(Math.random() * colors.length)];
-		};
-
-		const sessionColor = getRandomColor();
 		const token = localStorage.getItem('token') || '';
 
 		const providerInstance = new HocuspocusProvider({
@@ -507,7 +489,6 @@
 		return providerInstance;
 	}
 
-	// Line menu extension
 	const lineMenuExtension = Extension.create({
 		name: 'lineMenu',
 		addProseMirrorPlugins() {
@@ -536,7 +517,6 @@
 							
 							doc.descendants((node, pos) => {
 								if (node.isBlock && !node.isText) {
-									// Add class based on highlight state
 									const classes = ['line-block'];
 									if (highlightedPos === pos) {
 										classes.push('line-highlight');
@@ -546,50 +526,44 @@
 									});
 									decorations.push(blockDeco);
 				
-									// Create line menu icon
 									const lineIcon = document.createElement('div');
 									lineIcon.className = 'line-icon';
 									lineIcon.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="1" fill="currentColor"/><circle cx="12" cy="6" r="1" fill="currentColor"/><circle cx="12" cy="18" r="1" fill="currentColor"/></svg>';
 			
-									// Add click event listener
 									lineIcon.addEventListener('click', (e) => {
-	e.preventDefault();
-	e.stopPropagation();
-	try {
-		const editorInstance = extensionThis.editor || editor;
-		if (!editorInstance) return;
-		
-		// 이미 라인메뉴가 열려있으면 재실행하지 않음
-		if (isLineMenuOpen) return;
-		
-		isLineMenuOpen = true;
-		
-		// 항상 하이라이트를 현재 pos로 설정 (토글 off 하지 않음)
-		const newHighlightedPos = pos;
-		const transaction = editorInstance.state.tr
-			.setSelection(NodeSelection.create(editorInstance.state.doc, pos))
-			.setMeta('toggleLineHighlight', newHighlightedPos);
-		editorInstance.view.dispatch(transaction);
-		
-		showLineMenu(
-			e.clientX, 
-			e.clientY, 
-			editorInstance, 
-			node, 
-			pos,
-			() => {
-				// 라인메뉴 종료 후 상태 복구
-				isLineMenuOpen = false;
-				setTimeout(() => {
-					forceBubbleMenuDisplay();
-				}, 50);
-			}
-		);
-	} catch (error) {
-		console.error('라인 메뉴 표시 중 오류:', error);
-	}
-});
-
+										e.preventDefault();
+										e.stopPropagation();
+										try {
+											const editorInstance = extensionThis.editor || editor;
+											if (!editorInstance) return;
+											
+											if (isLineMenuOpen) return;
+											
+											isLineMenuOpen = true;
+											
+											const newHighlightedPos = pos;
+											const transaction = editorInstance.state.tr
+												.setSelection(NodeSelection.create(editorInstance.state.doc, pos))
+												.setMeta('toggleLineHighlight', newHighlightedPos);
+											editorInstance.view.dispatch(transaction);
+											
+											showLineMenu(
+												e.clientX, 
+												e.clientY, 
+												editorInstance, 
+												node, 
+												pos,
+												() => {
+													isLineMenuOpen = false;
+													setTimeout(() => {
+														forceBubbleMenuDisplay();
+													}, 50);
+												}
+											);
+										} catch (error) {
+											console.error('라인 메뉴 표시 중 오류:', error);
+										}
+									});
 									
 									const decorationWidget = Decoration.widget(pos, lineIcon, {
 										side: -1,
@@ -607,12 +581,8 @@
 		},
 	});
 
-	/**
-	 * Initializes the editor with content and collaboration features
-	 */
 	function initEditor(content: any, provider: HocuspocusProvider): Editor {
 		const currentUser = get(user);
-
 		const getRandomColor = (): string => {
 			const colors = [
 				'#f44336', '#e91e63', '#9c27b0', '#673ab7', '#3f51b5',
@@ -649,10 +619,9 @@
 				}),
 				lineMenuExtension
 			],
-			content: '',
+			content: typeof content === 'string' ? content : '',
 			autofocus: true,
 			onSelectionUpdate({ editor }) {
-				// Update editor state when selection changes
 				setTimeout(() => {
 					updateEditorState();
 				}, 0);
@@ -662,44 +631,52 @@
 	}
 
 	onMount(async () => {
-		try {
-			
-			// note = await getNote(noteId);
-			// if (note.title) {
-			// 	pageTitle = note.title;
-			// } else {
-			 	pageTitle = '새 페이지';
-			// }
+	try {
+		console.log('initialTitle', initialTitle);
+		console.log('initialContent', initialContent);
 
-			provider = setupCollaboration();
+		provider = setupCollaboration();
 
-			let storedUpdate = note.content;
-			if (storedUpdate && typeof storedUpdate === 'string') {
+		let storedUpdate = initialContent;
+		if (storedUpdate && typeof storedUpdate === 'string') {
+			if (storedUpdate.trim().startsWith('<') && storedUpdate.trim().endsWith('>')) {
+				console.log('HTML content detected');
+			} else {
 				try {
 					storedUpdate = JSON.parse(storedUpdate);
 				} catch (e) {
 					console.error('노트 content 파싱 오류:', e);
+					console.log('Treating content as plain text/HTML');
 				}
 			}
-
-			if (storedUpdate && typeof storedUpdate === 'object' && !Array.isArray(storedUpdate)) {
-				const updateArray = new Uint8Array(Object.values(storedUpdate));
-				Y.applyUpdate(provider.document, updateArray);
-			}
-
-			editor = initEditor('', provider);
-
-			document.addEventListener('click', closeAllDropdowns);
-			window.addEventListener('resize', adjustBubbleMenuPosition);
-			
-			// Initialize bubble menu state after editor setup
-			setTimeout(() => {
-				updateEditorState();
-			}, 100);
-		} catch (error) {
-			console.error('에디터 초기화 중 오류:', error);
 		}
-	});
+
+		if (storedUpdate && typeof storedUpdate === 'object' && !Array.isArray(storedUpdate)) {
+			const updateArray = new Uint8Array(Object.values(storedUpdate));
+			Y.applyUpdate(provider.document, updateArray);
+		}
+
+		editor = initEditor(storedUpdate, provider);
+
+		if (typeof storedUpdate === 'string') {
+			const yXmlFragment = provider.document.getXmlFragment('prosemirror');			// Y.Doc가 비어있으면 초기 HTML 콘텐츠를 에디터에 적용
+			if (yXmlFragment && yXmlFragment.length === 0) {
+				editor.commands.setContent(storedUpdate);
+			}
+		}
+
+		document.addEventListener('click', closeAllDropdowns);
+		window.addEventListener('resize', adjustBubbleMenuPosition);
+
+		// 에디터 초기화 후 상태 업데이트
+		setTimeout(() => {
+			updateEditorState();
+		}, 100);
+	} catch (error) {
+		console.error('에디터 초기화 중 오류:', error);
+	}
+});
+
 
 	onDestroy(() => {
 		if (editor) {

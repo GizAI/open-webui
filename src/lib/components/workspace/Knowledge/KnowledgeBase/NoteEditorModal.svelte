@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { toast } from 'svelte-sonner';
-	import { onMount, getContext, createEventDispatcher } from 'svelte';
+	import { getContext, createEventDispatcher } from 'svelte';
 	const i18n = getContext('i18n');
 	const dispatch = createEventDispatcher();
 
@@ -9,27 +9,27 @@
 	import NoteEditor from '$rooibos/components/note/NoteEditor.svelte';
 	
 	export let show = false;
+	export let initialTitle: string = '';
+	export let initialContent: any = '';
 
 	let name = 'Untitled';
 	let content = '';
 	let noteEditor: any;
 
-	// 에디터 내용이 변경될 때마다 content 변수 업데이트
 	function updateContent() {
 		if (noteEditor && noteEditor.getContent) {
 			content = noteEditor.getContent();
 		}
 	}
 
-	// 에디터 제목이 변경될 때마다 name 변수 업데이트
 	function updateTitle() {
 		if (noteEditor && noteEditor.getTitle) {
 			name = noteEditor.getTitle();
 		}
 	}
+	
 
 	async function handleSubmit() {
-		// 제출 전에 최신 내용과 제목 가져오기
 		await updateContent();
 		await updateTitle();
 
@@ -71,6 +71,8 @@
 						bind:this={noteEditor}
 						on:change={updateContent}
 						on:titleChange={updateTitle}
+						initialTitle={initialTitle}
+						initialContent={initialContent}
 					/>
 				{/if}
 			</div>
