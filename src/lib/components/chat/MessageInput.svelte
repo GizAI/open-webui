@@ -91,6 +91,8 @@
 	let recording = false;
 	let showCompanyHistoryModal = false;
 
+	let isComposing = false;
+
 	let chatInputContainerElement;
 	let chatInputElement;
 
@@ -729,6 +731,8 @@
 													console.log(res);
 													return res;
 												}}
+												oncompositionstart={() => (isComposing = true)}
+												oncompositionend={() => (isComposing = false)}
 												on:keydown={async (e) => {
 													e = e.detail.event;
 
@@ -828,6 +832,10 @@
 																navigator.msMaxTouchPoints > 0
 															)
 														) {
+															if (isComposing) {
+																return;
+															}
+
 															// Uses keyCode '13' for Enter key for chinese/japanese keyboards.
 															//
 															// Depending on the user's settings, it will send the message
@@ -904,6 +912,8 @@
 											class="scrollbar-hidden bg-transparent dark:text-gray-100 outline-hidden w-full pt-3 px-1 resize-none"
 											placeholder={placeholder ? placeholder : $i18n.t('Send a Message')}
 											bind:value={prompt}
+											on:compositionstart={() => (isComposing = true)}
+											on:compositionend={() => (isComposing = false)}
 											on:keydown={async (e) => {
 												const isCtrlPressed = e.ctrlKey || e.metaKey; // metaKey is for Cmd key on Mac
 
@@ -1005,6 +1015,10 @@
 															navigator.msMaxTouchPoints > 0
 														)
 													) {
+														if (isComposing) {
+															return;
+														}
+
 														console.log('keypress', e);
 														// Prevent Enter key from creating a new line
 														const isCtrlPressed = e.ctrlKey || e.metaKey;
