@@ -26,8 +26,7 @@
 	import Spinner from '../common/Spinner.svelte';
 	import { capitalizeFirstLetter } from '$lib/utils';
 	import Tooltip from '../common/Tooltip.svelte';
-	import { sortItems } from '$lib/utils/sort';
-	import SortOptions, { type SortDirection } from '../common/SortOptions.svelte';
+	import SortOptions, { sortItems, type SortDirection } from '../common/SortOptions.svelte';
 
 	let loaded = false;
 
