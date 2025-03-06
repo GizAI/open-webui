@@ -26,8 +26,7 @@
 	import Spinner from '../common/Spinner.svelte';
 	import { capitalizeFirstLetter } from '$lib/utils';
 	import Tooltip from '../common/Tooltip.svelte';
-	import ChevronDown from '../icons/ChevronDown.svelte';
-	import ChevronUp from '../icons/ChevronUp.svelte';
+	import SortOptions, { sortItems, type SortDirection } from '../common/SortOptions.svelte';
 
 	let loaded = false;
 
@@ -42,45 +41,20 @@
 
 	// 정렬 관련 변수
 	type SortField = 'name' | 'updated_at';
-	type SortDirection = 'asc' | 'desc';
 	
 	let sortField: SortField = 'name'; // 기본 정렬 필드
 	let sortDirection: SortDirection = 'asc'; // 정렬 방향
 
-	// 정렬 함수
-	const sortItems = (items: any[], field: SortField, direction: SortDirection): any[] => {
-		return [...items].sort((a, b) => {
-			let valueA: string | number = '';
-			let valueB: string | number = '';
-			
-			// 필드에 따라 비교할 값 설정
-			if (field === 'name') {
-				valueA = a.name?.toLowerCase() || '';
-				valueB = b.name?.toLowerCase() || '';
-			} else if (field === 'updated_at') {
-				valueA = a.updated_at || 0;
-				valueB = b.updated_at || 0;
-			}
-			
-			// 정렬 방향에 따라 비교
-			if (direction === 'asc') {
-				return valueA > valueB ? 1 : valueA < valueB ? -1 : 0;
-			} else {
-				return valueA < valueB ? 1 : valueA > valueB ? -1 : 0;
-			}
-		});
-	};
+	// 정렬 옵션 정의
+	const sortOptions = [
+		{ value: 'name', label: $i18n.t('Name') },
+		{ value: 'updated_at', label: $i18n.t('Updated') }
+	];
 
-	// 정렬 필드 변경 함수
-	const changeSortField = (field: SortField) => {
-		if (sortField === field) {
-			// 같은 필드를 클릭한 경우 정렬 방향 전환
-			sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
-		} else {
-			// 다른 필드를 클릭한 경우 해당 필드로 변경하고 오름차순으로 설정
-			sortField = field;
-			sortDirection = 'asc';
-		}
+	// 정렬 변경 이벤트 핸들러
+	const handleSortChange = (event: CustomEvent<{ field: string; direction: SortDirection }>) => {
+		sortField = event.detail.field as SortField;
+		sortDirection = event.detail.direction;
 	};
 
 	$: if (knowledgeBases) {
@@ -157,39 +131,12 @@
 
 			<!-- 정렬 옵션 추가 -->
 			<div class="flex items-center space-x-2 mr-2">
-				<div class="text-sm text-gray-500 dark:text-gray-300">{$i18n.t('Sort by')}:</div>
-				<div class="flex space-x-1">
-					<button
-						class="px-2 py-1 text-xs rounded-lg {sortField === 'name' ? 'bg-gray-100 dark:bg-gray-700' : 'hover:bg-gray-50 dark:hover:bg-gray-800'} transition"
-						on:click={() => changeSortField('name')}
-					>
-						{$i18n.t('Name')}
-						{#if sortField === 'name'}
-							<span class="ml-1">
-								{#if sortDirection === 'asc'}
-									<ChevronUp className="w-3 h-3 inline" />
-								{:else}
-									<ChevronDown className="w-3 h-3 inline" />
-								{/if}
-							</span>
-						{/if}
-					</button>
-					<button
-						class="px-2 py-1 text-xs rounded-lg {sortField === 'updated_at' ? 'bg-gray-100 dark:bg-gray-700' : 'hover:bg-gray-50 dark:hover:bg-gray-800'} transition"
-						on:click={() => changeSortField('updated_at')}
-					>
-						{$i18n.t('Updated')}
-						{#if sortField === 'updated_at'}
-							<span class="ml-1">
-								{#if sortDirection === 'asc'}
-									<ChevronUp className="w-3 h-3 inline" />
-								{:else}
-									<ChevronDown className="w-3 h-3 inline" />
-								{/if}
-							</span>
-						{/if}
-					</button>
-				</div>
+				<SortOptions 
+					bind:sortField={sortField}
+					bind:sortDirection={sortDirection}
+					options={sortOptions}
+					on:change={handleSortChange}
+				/>
 			</div>
 
 			<div>

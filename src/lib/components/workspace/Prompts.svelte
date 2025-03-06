@@ -23,6 +23,7 @@
 	import Spinner from '../common/Spinner.svelte';
 	import Tooltip from '../common/Tooltip.svelte';
 	import { capitalizeFirstLetter } from '$lib/utils';
+	import SortOptions, { sortItems, type SortDirection } from '../common/SortOptions.svelte';
 
 	const i18n = getContext('i18n');
 	let promptsImportInputElement: HTMLInputElement;
@@ -36,8 +37,28 @@
 	let showDeleteConfirm = false;
 	let deletePrompt = null;
 
+	// 정렬 관련 변수 추가
+	type SortField = 'title' | 'command' | 'updated_at';
+	let sortField: SortField = 'title';
+	let sortDirection: SortDirection = 'asc';
+
+	const sortOptions = [
+		{ value: 'title', label: $i18n.t('Title') },
+		{ value: 'command', label: $i18n.t('Command') }
+	];
+
+	const handleSortChange = (event: CustomEvent<{ field: string; direction: SortDirection }>) => {
+		sortField = event.detail.field as SortField;
+		sortDirection = event.detail.direction;
+	};
+
 	let filteredItems = [];
-	$: filteredItems = prompts.filter((p) => query === '' || p.command.includes(query));
+	$: {
+		// 검색 필터링
+		let filtered = prompts.filter((p) => query === '' || p.command.includes(query));
+		// 정렬 적용
+		filteredItems = sortItems(filtered, sortField, sortDirection);
+	}
 
 	const shareHandler = async (prompt) => {
 		toast.success($i18n.t('Redirecting you to Open WebUI Community'));
@@ -116,9 +137,9 @@
 			</div>
 		</div>
 
-		<div class=" flex w-full space-x-2">
-			<div class="flex flex-1">
-				<div class=" self-center ml-1 mr-3">
+		<div class="flex flex-1 items-center w-full space-x-2">
+			<div class="flex flex-1 items-center">
+				<div class="self-center ml-1 mr-3">
 					<Search className="size-3.5" />
 				</div>
 				<input
@@ -128,9 +149,18 @@
 				/>
 			</div>
 
+			<div class="flex items-center space-x-2 mr-2">
+				<SortOptions 
+					bind:sortField={sortField}
+					bind:sortDirection={sortDirection}
+					options={sortOptions}
+					on:change={handleSortChange}
+				/>
+			</div>
+
 			<div>
 				<a
-					class=" px-2 py-2 rounded-xl hover:bg-gray-700/10 dark:hover:bg-gray-100/10 dark:text-gray-300 dark:hover:text-white transition font-medium text-sm flex items-center space-x-1"
+					class="px-2 py-2 rounded-xl hover:bg-gray-700/10 dark:hover:bg-gray-100/10 dark:text-gray-300 dark:hover:text-white transition font-medium text-sm flex items-center space-x-1"
 					href="/workspace/prompts/create"
 				>
 					<Plus className="size-3.5" />

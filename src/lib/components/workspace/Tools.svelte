@@ -31,6 +31,7 @@
 	import ChevronRight from '../icons/ChevronRight.svelte';
 	import Spinner from '../common/Spinner.svelte';
 	import { capitalizeFirstLetter } from '$lib/utils';
+	import SortOptions, { sortItems, type SortDirection } from '../common/SortOptions.svelte';
 
 	const i18n = getContext('i18n');
 
@@ -52,12 +53,32 @@
 	let tools = [];
 	let filteredItems = [];
 
-	$: filteredItems = tools.filter(
-		(t) =>
-			query === '' ||
-			t.name.toLowerCase().includes(query.toLowerCase()) ||
-			t.id.toLowerCase().includes(query.toLowerCase())
-	);
+	// 정렬 관련 변수 추가
+	type SortField = 'id' | 'name' | 'updated_at';
+	let sortField: SortField = 'name';
+	let sortDirection: SortDirection = 'asc';
+
+	const sortOptions = [
+		{ value: 'id', label: 'ID' },
+		{ value: 'name', label: $i18n.t('Name') }
+	];
+
+	const handleSortChange = (event: CustomEvent<{ field: string; direction: SortDirection }>) => {
+		sortField = event.detail.field as SortField;
+		sortDirection = event.detail.direction;
+	};
+
+	$: {
+		// 검색 필터링
+		let filtered = tools.filter(
+			(t) =>
+				query === '' ||
+				t.name.toLowerCase().includes(query.toLowerCase()) ||
+				t.id.toLowerCase().includes(query.toLowerCase())
+		);
+		// 정렬 적용
+		filteredItems = sortItems(filtered, sortField, sortDirection);
+	}
 
 	const shareHandler = async (tool) => {
 		const item = await getToolById(localStorage.token, tool.id).catch((error) => {
@@ -184,21 +205,30 @@
 			</div>
 		</div>
 
-		<div class=" flex w-full space-x-2">
-			<div class="flex flex-1">
-				<div class=" self-center ml-1 mr-3">
+		<div class="flex flex-1 items-center w-full space-x-2">
+			<div class="flex flex-1 items-center">
+				<div class="self-center ml-1 mr-3">
 					<Search className="size-3.5" />
 				</div>
 				<input
-					class=" w-full text-sm pr-4 py-1 rounded-r-xl outline-hidden bg-transparent"
+					class="w-full text-sm pr-4 py-1 rounded-r-xl outline-hidden bg-transparent"
 					bind:value={query}
 					placeholder={$i18n.t('Search Tools')}
 				/>
 			</div>
 
+			<div class="flex items-center space-x-2 mr-2">
+				<SortOptions 
+					bind:sortField={sortField}
+					bind:sortDirection={sortDirection}
+					options={sortOptions}
+					on:change={handleSortChange}
+				/>
+			</div>
+
 			<div>
 				<a
-					class=" px-2 py-2 rounded-xl hover:bg-gray-700/10 dark:hover:bg-gray-100/10 dark:text-gray-300 dark:hover:text-white transition font-medium text-sm flex items-center space-x-1"
+					class="px-2 py-2 rounded-xl hover:bg-gray-700/10 dark:hover:bg-gray-100/10 dark:text-gray-300 dark:hover:text-white transition font-medium text-sm flex items-center space-x-1"
 					href="/workspace/tools/create"
 				>
 					<Plus className="size-3.5" />
