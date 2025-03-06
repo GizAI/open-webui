@@ -5,7 +5,6 @@ from rooibos.routers import (
     corpsearch,
     corpbookmarks,
     mycompanies,
-    categories,
     folders,
     notes
 )
