@@ -31,7 +31,7 @@
 	import ChevronRight from '../icons/ChevronRight.svelte';
 	import Spinner from '../common/Spinner.svelte';
 	import { capitalizeFirstLetter } from '$lib/utils';
-	import SortOptions, { type SortDirection, type SortState } from '../common/SortOptions.svelte';
+	import SortOptions from '../common/SortOptions.svelte';
 
 	const i18n = getContext('i18n');
 
@@ -51,26 +51,12 @@
 	let showDeleteConfirm = false;
 
 	let tools = [];
+
 	let filteredItems = [];
-
-			
-	let sortState: SortState = {
-		field: 'name',
-		direction: 'asc',
-		initialLoad: true
-	};
-
-	const sortOptions = [
-		{ value: 'id', label: 'ID' },
-		{ value: 'name', label: $i18n.t('Name') }
-	];
-
-	// 검색 결과를 저장할 변수 추가
-	let searchResults = [];
+	let originalItems = [];
 	
 	$: {
-		// 검색 필터링
-		searchResults = tools.filter(
+		originalItems = tools.filter(
 			(t) =>
 				query === '' ||
 				t.name.toLowerCase().includes(query.toLowerCase()) ||
@@ -217,10 +203,17 @@
 
 			<div class="flex items-center space-x-2 mr-2">
 				<SortOptions 
-					bind:sortState={sortState}
-					items={searchResults}
+					bind:sortState={{
+						field: 'name',
+						direction: 'asc',
+						initialLoad: true
+					}}
+					items={originalItems}
 					bind:sortedItems={filteredItems}
-					options={sortOptions}
+					options={[
+						{ value: 'id', label: 'ID' },
+						{ value: 'name', label: $i18n.t('Name') }
+					]}
 					storageKey="tools"
 				/>
 			</div>

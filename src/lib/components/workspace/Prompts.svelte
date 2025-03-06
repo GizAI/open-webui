@@ -23,7 +23,7 @@
 	import Spinner from '../common/Spinner.svelte';
 	import Tooltip from '../common/Tooltip.svelte';
 	import { capitalizeFirstLetter } from '$lib/utils';
-	import SortOptions, { type SortDirection, type SortState } from '../common/SortOptions.svelte';
+	import SortOptions from '../common/SortOptions.svelte';
 
 	const i18n = getContext('i18n');
 	let promptsImportInputElement: HTMLInputElement;
@@ -36,25 +36,13 @@
 
 	let showDeleteConfirm = false;
 	let deletePrompt = null;
-	
-	// 정렬 상태 객체로 통합
-	let sortState: SortState = {
-		field: 'title',
-		direction: 'asc',
-		initialLoad: true
-	};
 
-	const sortOptions = [
-		{ value: 'title', label: $i18n.t('Title') },
-		{ value: 'command', label: $i18n.t('Command') }
-	];
-
+	let originalItems  = [];
 	let filteredItems = [];
-	let searchResults = [];
 	
 	$: {
 		// 검색 필터링
-		searchResults = prompts.filter((p) => query === '' || p.command.includes(query));
+		originalItems  = prompts.filter((p) => query === '' || p.command.includes(query));
 	}
 
 	const shareHandler = async (prompt) => {
@@ -148,10 +136,17 @@
 
 			<div class="flex items-center space-x-2 mr-2">
 				<SortOptions 
-					bind:sortState={sortState}
-					items={searchResults}
+					bind:sortState={{
+						field: 'title',
+						direction: 'asc',
+						initialLoad: true
+					}}
+					items={originalItems }
 					bind:sortedItems={filteredItems}
-					options={sortOptions}
+					options={[
+						{ value: 'title', label: $i18n.t('Title') },
+						{ value: 'command', label: $i18n.t('Command') }
+					]}
 					storageKey="prompts"
 				/>
 			</div>

@@ -37,24 +37,10 @@
 	let fuse = null;
 
 	let knowledgeBases = [];
+		
+	let originalItems = [];
 	let filteredItems = [];
 	
-	// 검색 결과 저장 변수
-	let searchResults = [];
-	
-	// 정렬 상태 객체로 통합
-	let sortState: SortState = {
-		field: 'name',
-		direction: 'asc',
-		initialLoad: true
-	};
-
-	// 정렬 옵션 정의
-	const sortOptions = [
-		{ value: 'name', label: $i18n.t('Name') },
-		{ value: 'updated_at', label: $i18n.t('Updated') }
-	];
-
 	$: if (knowledgeBases) {
 		fuse = new Fuse(knowledgeBases, {
 			keys: ['name', 'description']
@@ -62,7 +48,7 @@
 	}
 
 	$: if (fuse) {
-		searchResults = query
+		originalItems = query
 			? fuse.search(query).map((e) => {
 					return e.item;
 				})
@@ -127,10 +113,17 @@
 			<!-- 정렬 옵션 추가 -->
 			<div class="flex items-center space-x-2 mr-2">
 				<SortOptions 
-					bind:sortState={sortState}
-					items={searchResults}
+					bind:sortState={{
+						field: 'name',
+						direction: 'asc',
+						initialLoad: true
+					}}
+					items={originalItems}
 					bind:sortedItems={filteredItems}
-					options={sortOptions}
+					options={[
+						{ value: 'name', label: $i18n.t('Name') },
+						{ value: 'updated_at', label: $i18n.t('Updated') }
+					]}
 					storageKey="knowledge"
 				/>
 			</div>
