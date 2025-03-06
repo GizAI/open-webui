@@ -450,6 +450,7 @@
 			const token = localStorage.getItem('token') || '';
 			renameNote(token, noteId, pageTitle);
 		}
+		dispatch('titleChange', pageTitle);
 	}
 
 	function openSidebar(): void {
@@ -495,9 +496,7 @@
 			onClose: () => {
 				console.log('협업 서버와 연결 끊김');
 			},
-			onMessage: (message) => {
-				console.log('서버 메시지:', message);
-			}
+			onMessage: (message) => {}
 		});
 
 		const yActiveUsers = providerInstance.document.getMap('activeUsers');
@@ -551,7 +550,7 @@
 									const lineIcon = document.createElement('div');
 									lineIcon.className = 'line-icon';
 									lineIcon.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="1" fill="currentColor"/><circle cx="12" cy="6" r="1" fill="currentColor"/><circle cx="12" cy="18" r="1" fill="currentColor"/></svg>';
-				
+			
 									// Add click event listener
 									lineIcon.addEventListener('click', (e) => {
 	e.preventDefault();
@@ -714,6 +713,19 @@
 		document.removeEventListener('click', closeAllDropdowns);
 		window.removeEventListener('resize', adjustBubbleMenuPosition);
 	});
+
+	export function getContent() {
+		if (!editor) return '';
+		// 에디터 내용을 문자열 또는 필요한 형식으로 반환
+		return editor.getHTML(); // 또는 다른 적절한 메서드
+	}
+
+	export function getTitle() {
+		// 페이지 제목 반환
+		return pageTitle;
+	}
+
+	
 </script>
 
 <TopBar {pageTitle} on:titleChange={handleTitleChange} onNewChat={openSidebar} />
