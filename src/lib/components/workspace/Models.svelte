@@ -51,11 +51,10 @@
 
 	let group_ids = [];
 
-	$: if (models) {
-		filteredItems = models.filter(
+	$: filteredItems = models.filter(
 			(m) => searchValue === '' || m.name.toLowerCase().includes(searchValue.toLowerCase())
 		);
-	}
+	
 
 	let searchValue = '';
 
