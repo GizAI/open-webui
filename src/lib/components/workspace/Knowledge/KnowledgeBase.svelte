@@ -568,6 +568,8 @@
 
 <NoteEditorModal
 	bind:show={showAddTextContentModal}
+	initialTitle={selectedFile?.meta?.name}
+	initialContent={selectedFile?.data?.content}
 	on:submit={(e) => {
 		const file = createFileFromText(e.detail.name, e.detail.content);
 		uploadFileHandler(file);
@@ -658,118 +660,11 @@
 
 		<div class="flex flex-row flex-1 h-full max-h-full pb-2.5 gap-3">
 			{#if largeScreen}
-				<div class="flex-1 flex justify-start w-full h-full max-h-full">
-					{#if selectedFile}
-						<div class=" flex flex-col w-full h-full max-h-full">
-							<div class="shrink-0 mb-2 flex items-center">
-								{#if !showSidepanel}
-									<div class="-translate-x-2">
-										<button
-											class="w-full text-left text-sm p-1.5 rounded-lg dark:text-gray-300 dark:hover:text-white hover:bg-black/5 dark:hover:bg-gray-850"
-											on:click={() => {
-												pane.expand();
-											}}
-										>
-											<ChevronLeft strokeWidth="2.5" />
-										</button>
-									</div>
-								{/if}
-
-								<div class=" flex-1 text-xl font-medium">
-									<a
-										class="hover:text-gray-500 dark:hover:text-gray-100 hover:underline grow line-clamp-1"
-										href={selectedFile.id ? `/api/v1/files/${selectedFile.id}/content` : '#'}
-										target="_blank"
-									>
-										{selectedFile?.meta?.name}
-									</a>
-								</div>
-
-								<div>
-									<button
-										class="self-center w-fit text-sm py-1 px-2.5 dark:text-gray-300 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5 rounded-lg"
-										on:click={() => {
-											updateFileContentHandler();
-										}}
-									>
-										{$i18n.t('Save')}
-									</button>
-								</div>
-							</div>
-
-							<div
-								class=" flex-1 w-full h-full max-h-full text-sm bg-transparent outline-hidden overflow-y-auto scrollbar-hidden"
-							>
-								{#key selectedFile.id}
-									<RichTextInput
-										className="input-prose-sm"
-										bind:value={selectedFile.data.content}
-										placeholder={$i18n.t('Add content here')}
-										preserveBreaks={true}
-									/>
-								{/key}
-							</div>
-						</div>
-					{:else}
-						<div class="h-full flex w-full">
-							<div class="m-auto text-xs text-center text-gray-200 dark:text-gray-700">
-								{$i18n.t('Drag and drop a file to upload or select a file to view')}
-							</div>
-						</div>
-					{/if}
-				</div>
-			{:else if !largeScreen && selectedFileId !== null}
-				<Drawer
-					className="h-full"
-					show={selectedFileId !== null}
-					on:close={() => {
-						selectedFileId = null;
-					}}
-				>
-					<div class="flex flex-col justify-start h-full max-h-full p-2">
-						<div class=" flex flex-col w-full h-full max-h-full">
-							<div class="shrink-0 mt-1 mb-2 flex items-center">
-								<div class="mr-2">
-									<button
-										class="w-full text-left text-sm p-1.5 rounded-lg dark:text-gray-300 dark:hover:text-white hover:bg-black/5 dark:hover:bg-gray-850"
-										on:click={() => {
-											selectedFileId = null;
-										}}
-									>
-										<ChevronLeft strokeWidth="2.5" />
-									</button>
-								</div>
-								<div class=" flex-1 text-xl line-clamp-1">
-									{selectedFile?.meta?.name}
-								</div>
-
-								<div>
-									<button
-										class="self-center w-fit text-sm py-1 px-2.5 dark:text-gray-300 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5 rounded-lg"
-										on:click={() => {
-											updateFileContentHandler();
-										}}
-									>
-										{$i18n.t('Save')}
-									</button>
-								</div>
-							</div>
-
-							<div
-								class=" flex-1 w-full h-full max-h-full py-2.5 px-3.5 rounded-lg text-sm bg-transparent overflow-y-auto scrollbar-hidden"
-							>
-								{#key selectedFile.id}
-									<RichTextInput
-										className="input-prose-sm"
-										bind:value={selectedFile.data.content}
-										placeholder={$i18n.t('Add content here')}
-										preserveBreaks={true}
-									/>
-								{/key}
-							</div>
-						</div>
+				<div class="flex-1 flex justify-center items-center w-full h-full">
+					<div class="text-xs text-center text-gray-200 dark:text-gray-700">
+						{$i18n.t('Drag and drop a file to upload or select a file to view')}
 					</div>
-				</Drawer>
+				</div>
 			{/if}
 
 			<div
@@ -831,19 +726,18 @@
 						{#if filteredItems.length > 0}
 							<div class=" flex overflow-y-auto h-full w-full scrollbar-hidden text-xs">
 								<Files
-									small
-									files={filteredItems}
-									{selectedFileId}
-									on:click={(e) => {
-										selectedFileId = selectedFileId === e.detail ? null : e.detail;
-									}}
-									on:delete={(e) => {
-										console.log(e.detail);
-
-										selectedFileId = null;
-										deleteFileHandler(e.detail);
-									}}
-								/>
+		small
+		files={filteredItems}
+		on:click={(e) => {
+			// 선택된 파일을 변수에 저장하고 모달을 오픈
+			selectedFile = (knowledge?.files ?? []).find(file => file.id === e.detail);
+			showAddTextContentModal = true;
+		}}
+		on:delete={(e) => {
+			console.log(e.detail);
+			deleteFileHandler(e.detail);
+		}}
+	/>
 							</div>
 						{:else}
 							<div class="my-3 flex flex-col justify-center text-center text-gray-500 text-xs">
