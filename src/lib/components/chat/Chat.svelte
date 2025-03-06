@@ -2072,8 +2072,7 @@
 									}
 								}}
 								on:modelChange={async (event) => {
-									//selectedModels = [event.detail.model_id.toString()];
-									atSelectedModel = event.detail;
+									selectedModels = [event.detail.id];
 								}}
 							/>
 
@@ -2119,8 +2118,7 @@
 									}
 								}}
 								on:modelChange={async (event) => {
-									//selectedModels = [event.detail.model_id.toString()];
-									atSelectedModel = event.detail;
+									selectedModels = [event.detail.id];
 								}}
 							/>
 						</div>
