@@ -23,7 +23,7 @@
 	import Spinner from '../common/Spinner.svelte';
 	import Tooltip from '../common/Tooltip.svelte';
 	import { capitalizeFirstLetter } from '$lib/utils';
-	import SortOptions, { sortItems, type SortDirection } from '../common/SortOptions.svelte';
+	import SortOptions, { type SortDirection, type SortState } from '../common/SortOptions.svelte';
 
 	const i18n = getContext('i18n');
 	let promptsImportInputElement: HTMLInputElement;
@@ -36,12 +36,13 @@
 
 	let showDeleteConfirm = false;
 	let deletePrompt = null;
-
-	// 정렬 관련 변수 추가
-	type SortField = 'title' | 'command' | 'updated_at';
-	let sortField: SortField = 'title';
-	let sortDirection: SortDirection = 'asc';
-	let sortInitialLoad = true;
+	
+	// 정렬 상태 객체로 통합
+	let sortState: SortState = {
+		field: 'title',
+		direction: 'asc',
+		initialLoad: true
+	};
 
 	const sortOptions = [
 		{ value: 'title', label: $i18n.t('Title') },
@@ -53,7 +54,7 @@
 		// 검색 필터링
 		let filtered = prompts.filter((p) => query === '' || p.command.includes(query));
 		// 정렬 적용
-		filteredItems = sortItems(filtered, sortField, sortDirection);
+		filteredItems = filtered;
 	}
 
 	const shareHandler = async (prompt) => {
@@ -147,14 +148,11 @@
 
 			<div class="flex items-center space-x-2 mr-2">
 				<SortOptions 
-					bind:sortField={sortField}
-					bind:sortDirection={sortDirection}
-					bind:initialLoad={sortInitialLoad}
+					bind:sortState={sortState}
+					items={filteredItems}
+					bind:sortedItems={filteredItems}
 					options={sortOptions}
 					storageKey="prompts"
-					on:change={({ detail }) => {
-						sortInitialLoad = false;
-					}}
 				/>
 			</div>
 

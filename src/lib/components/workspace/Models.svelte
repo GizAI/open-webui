@@ -34,7 +34,7 @@
 	import Switch from '../common/Switch.svelte';
 	import Spinner from '../common/Spinner.svelte';
 	import { capitalizeFirstLetter } from '$lib/utils';
-	import SortOptions, { sortItems, type SortDirection } from '../common/SortOptions.svelte';
+	import SortOptions, { type SortDirection, type SortState } from '../common/SortOptions.svelte';
 
 	let shiftKey = false;
 
@@ -51,11 +51,12 @@
 
 	let group_ids = [];
 
-	
-	
-	let sortField = 'name';
-	let sortDirection: SortDirection = 'asc';
-	let sortInitialLoad = true;
+	// 정렬 상태 객체로 통합
+	let sortState: SortState = {
+		field: 'name',
+		direction: 'asc',
+		initialLoad: true
+	};
 
 	const sortOptions = [
 		{ value: 'id', label: 'ID' },
@@ -63,12 +64,10 @@
 		{ value: 'updated_at', label: $i18n.t('Updated') }
 	];
 
-	$: if (models) {
-		let filtered = models.filter(
-			(m) => searchValue === '' || m.name.toLowerCase().includes(searchValue.toLowerCase())
-		);		
-		filteredModels = sortItems(filtered, sortField, sortDirection);
-	}
+	// 검색 필터링
+	$: filteredItems = models.filter(
+		(m) => searchValue === '' || m.name.toLowerCase().includes(searchValue.toLowerCase())
+	);
 
 	let searchValue = '';
 
@@ -250,14 +249,11 @@
 
 			<div class="flex items-center space-x-2 mr-2">
 				<SortOptions 
-					bind:sortField={sortField}
-					bind:sortDirection={sortDirection}
-					bind:initialLoad={sortInitialLoad}
+					bind:sortState={sortState}
+					items={filteredItems}
+					bind:sortedItems={filteredModels}
 					options={sortOptions}
 					storageKey="models"
-					on:change={({ detail }) => {
-						sortInitialLoad = false;
-					}}
 				/>
 			</div>
 
