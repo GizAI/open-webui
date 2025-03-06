@@ -660,9 +660,11 @@
 		editor = initEditor(storedUpdate, provider);
 
 		if (typeof storedUpdate === 'string') {
-			const yXmlFragment = provider.document.getXmlFragment('prosemirror');			// Y.Doc가 비어있으면 초기 HTML 콘텐츠를 에디터에 적용
-			if (yXmlFragment && yXmlFragment.length === 0) {
-				editor.commands.setContent(storedUpdate);
+			const yXmlFragment = provider.document.getXmlFragment('prosemirror');
+			if (yXmlFragment.length === 0) {
+				provider.on('synced', () => {
+					editor.commands.setContent(storedUpdate);
+				}, { once: true });
 			}
 		}
 
