@@ -57,6 +57,9 @@
 	
 
 	let searchValue = '';
+	
+	// 정렬 중인지 여부를 추적하는 플래그
+	let isSorting = false;
 
 	const deleteModelHandler = async (model) => {
 		const res = await deleteModelById(localStorage.token, model.id).catch((e) => {
@@ -238,6 +241,7 @@
 				<SortOptions 
 					items={filteredItems}
 					bind:sortedItems={filteredModels}
+					bind:isSorting={isSorting}
 					options={[
 						{ value: 'id', label: 'ID' },
 						{ value: 'name', label: $i18n.t('Name') },
@@ -392,6 +396,9 @@
 									<Switch
 										bind:state={model.is_active}
 										on:change={async (e) => {
+											// 정렬 중에는 API 요청을 하지 않음
+											if (isSorting) return;
+											
 											toggleModelById(localStorage.token, model.id);
 											_models.set(
 												await getModels(

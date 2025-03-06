@@ -73,7 +73,7 @@
 <script lang="ts">
 	import ChevronDown from '../icons/ChevronDown.svelte';
 	import ChevronUp from '../icons/ChevronUp.svelte';
-	import { getContext, createEventDispatcher } from 'svelte';
+	import { getContext, createEventDispatcher, tick } from 'svelte';
 	import type { Readable } from 'svelte/store';
 	import { onMount } from 'svelte';
 	
@@ -103,6 +103,9 @@
 	// 정렬된 항목 배열 (외부로 내보내기)
 	export let sortedItems: any[] = [];
 	
+	// 정렬 중임을 나타내는 플래그 (외부로 내보내기)
+	export let isSorting: boolean = false;
+	
 	// options가 변경되면 첫 번째 옵션의 value를 기본 field로 설정
 	$: if (options.length > 0 && sortState.initialLoad) {
 		sortState.field = options[0].value;
@@ -129,6 +132,9 @@
 	
 	// 정렬 필드 변경 함수
 	function changeSortField(field: string) {
+		// 정렬 중임을 표시
+		isSorting = true;
+		
 		// 초기 로딩 상태 해제
 		sortState.initialLoad = false;
 		
@@ -145,6 +151,11 @@
 			sortState.field = field;
 			sortState.direction = 'none';
 		}
+		
+		// 정렬이 완료된 후 다음 틱에서 정렬 중 플래그를 해제
+		tick().then(() => {
+			isSorting = false;
+		});
 	}
 </script>
 
