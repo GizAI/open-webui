@@ -1194,19 +1194,14 @@
 											
 											<Tooltip content={'지식전문봇'} placement="top">
 												<button
-													on:click|preventDefault={() => {
-														if(atSelectedModel == undefined){
-															showCategoryModal = true
-														}	else{
-															atSelectedModel = undefined;
-														}								
+													on:click|preventDefault={() => {	
+														showCategoryModal = true
 													}}
 													type="button"
-													class="px-1.5 @sm:px-2.5 py-1.5 flex gap-1.5 items-center text-sm rounded-full font-medium transition-colors duration-300 focus:outline-none max-w-full overflow-hidden {atSelectedModel !== undefined
+													class="px-1.5 @sm:px-2.5 py-1.5 flex gap-1.5 items-center text-sm rounded-full font-medium transition-colors duration-300 focus:outline-none max-w-full overflow-hidden {$models.find((m) => m.id === selectedModels[0])?.info?.base_model_id
 														? 'bg-blue-100 dark:bg-blue-500/20 text-blue-500 dark:text-blue-400'
 														: 'bg-transparent text-gray-600 dark:text-gray-300 border-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800'}"
 												>
-													
 													<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-bot "><path d="M12 8V4H8"></path><rect width="16" height="12" x="4" y="8" rx="2"></rect><path d="M2 14h2"></path><path d="M20 14h2"></path><path d="M15 13v2"></path><path d="M9 13v2"></path></svg>
 													<span class="hidden @sm:block whitespace-nowrap overflow-hidden text-ellipsis translate-y-[0.5px] mr-0.5">
 														{'지식전문봇'}
