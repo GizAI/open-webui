@@ -183,7 +183,6 @@
 
 	// 하위 아이템 클릭 시 상위에 이벤트 전달
 	function selectSubItem(item: SubItem) {
-		debugger;
 		dispatch('select', item.model);
 		show = false;
 	}
