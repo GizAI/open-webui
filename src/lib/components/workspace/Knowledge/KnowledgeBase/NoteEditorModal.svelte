@@ -28,10 +28,10 @@
 		}
 	}
 
-	function handleSubmit() {
+	async function handleSubmit() {
 		// 제출 전에 최신 내용과 제목 가져오기
-		updateContent();
-		updateTitle();
+		await updateContent();
+		await updateTitle();
 
 		if (name.trim() === '' || content.trim() === '') {
 			toast.error($i18n.t('Please fill in all fields.'));

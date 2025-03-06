@@ -56,61 +56,7 @@ const server = Server.configure({
           })
         ]
       : []),
-    
-    new Database({
-      fetch: async (data) => {
-        try {
-          const noteId = data.documentName.split(':')[1];
-          if (!noteId) return null;
-          
-          const token = data.requestHeaders.authorization?.replace('Bearer ', '');
-          const response = await axios.get(`${API_BASE_URL}/rooibos/notes/${noteId}`, {
-            headers: token ? { Authorization: `Bearer ${token}` } : {},
-            responseType: 'arraybuffer'
-          });
-          
-          return response.data.note;
-        } catch (error) {
-          console.error('문서 가져오기 오류:', error);
-          return null;
-        }
-      },
-      
-      // 저장 함수에 디바운스 적용: 1초 동안 입력이 없으면 저장
-      store: async (data) => {
-        const noteId = data.documentName.split(':')[1];
-        if (!noteId) return;
-        
-        // 기존에 타이머가 있으면 취소
-        if (debounceMap.has(noteId)) {
-          clearTimeout(debounceMap.get(noteId));
-        }
-        
-        debounceMap.set(noteId, setTimeout(async () => {
-          try {            
-            const update = Y.encodeStateAsUpdate(data.document);
-            const queryParams = new URLSearchParams({ noteId });
-            await fetch(
-                `${API_BASE_URL}/rooibos/notes/update/?${queryParams.toString()}`,
-                {
-                  method: 'PUT',
-                  headers: {
-                    Accept: 'application/json',
-                    'Content-Type': 'application/json'
-                  },
-                  body: JSON.stringify({ content: update })
-                }
-              )
-
-            console.log(`문서 저장 완료: ${noteId}`);
-          } catch (error) {
-            console.error('문서 저장 오류:', error);
-          } finally {
-            debounceMap.delete(noteId);
-          }
-        }, 1000));
-      }
-    })
+   
   ]
 });
 
