@@ -23,7 +23,6 @@
 	import Spinner from '../common/Spinner.svelte';
 	import Tooltip from '../common/Tooltip.svelte';
 	import { capitalizeFirstLetter } from '$lib/utils';
-	import SortOptions, { sortItems, type SortDirection } from '../common/SortOptions.svelte';
 
 	const i18n = getContext('i18n');
 	let promptsImportInputElement: HTMLInputElement;
@@ -37,32 +36,8 @@
 	let showDeleteConfirm = false;
 	let deletePrompt = null;
 
-	// 정렬 관련 변수
-	type SortField = 'command' | 'title' | 'user.name';
-	
-	let sortField: SortField = 'title'; // 기본 정렬 필드
-	let sortDirection: SortDirection = 'asc'; // 정렬 방향
-
-	// 정렬 옵션 정의
-	const sortOptions = [
-		{ value: 'command', label: $i18n.t('Command') },
-		{ value: 'title', label: $i18n.t('Title') },
-		{ value: 'user.name', label: $i18n.t('User') }
-	];
-
-	// 정렬 변경 이벤트 핸들러
-	const handleSortChange = (event: CustomEvent<{ field: string; direction: SortDirection }>) => {
-		sortField = event.detail.field as SortField;
-		sortDirection = event.detail.direction;
-	};
-
 	let filteredItems = [];
-	$: {
-		// 검색 필터링
-		let filtered = prompts.filter((p) => query === '' || p.command.includes(query));
-		// 정렬 적용
-		filteredItems = sortItems(filtered, sortField, sortDirection);
-	}
+	$: filteredItems = prompts.filter((p) => query === '' || p.command.includes(query));
 
 	const shareHandler = async (prompt) => {
 		toast.success($i18n.t('Redirecting you to Open WebUI Community'));
@@ -125,8 +100,8 @@
 			deleteHandler(deletePrompt);
 		}}
 	>
-		<div class="text-sm text-gray-500">
-			{$i18n.t('This will delete')} <span class="font-semibold">{deletePrompt.command}</span>.
+		<div class=" text-sm text-gray-500">
+			{$i18n.t('This will delete')} <span class="  font-semibold">{deletePrompt.command}</span>.
 		</div>
 	</DeleteConfirmDialog>
 
@@ -141,31 +116,21 @@
 			</div>
 		</div>
 
-		<div class="flex w-full space-x-2">
+		<div class=" flex w-full space-x-2">
 			<div class="flex flex-1">
-				<div class="self-center ml-1 mr-3">
+				<div class=" self-center ml-1 mr-3">
 					<Search className="size-3.5" />
 				</div>
 				<input
-					class="w-full text-sm pr-4 py-1 rounded-r-xl outline-hidden bg-transparent"
+					class=" w-full text-sm pr-4 py-1 rounded-r-xl outline-hidden bg-transparent"
 					bind:value={query}
 					placeholder={$i18n.t('Search Prompts')}
 				/>
 			</div>
 
-			<!-- 정렬 옵션 추가 -->
-			<div class="flex items-center space-x-2 mr-2">
-				<SortOptions 
-					bind:sortField={sortField}
-					bind:sortDirection={sortDirection}
-					options={sortOptions}
-					on:change={handleSortChange}
-				/>
-			</div>
-
 			<div>
 				<a
-					class="px-2 py-2 rounded-xl hover:bg-gray-700/10 dark:hover:bg-gray-100/10 dark:text-gray-300 dark:hover:text-white transition font-medium text-sm flex items-center space-x-1"
+					class=" px-2 py-2 rounded-xl hover:bg-gray-700/10 dark:hover:bg-gray-100/10 dark:text-gray-300 dark:hover:text-white transition font-medium text-sm flex items-center space-x-1"
 					href="/workspace/prompts/create"
 				>
 					<Plus className="size-3.5" />
@@ -177,18 +142,18 @@
 	<div class="mb-5 gap-2 grid lg:grid-cols-2 xl:grid-cols-3">
 		{#each filteredItems as prompt}
 			<div
-				class="flex space-x-4 cursor-pointer w-full px-3 py-2 dark:hover:bg-white/5 hover:bg-black/5 rounded-xl transition"
+				class=" flex space-x-4 cursor-pointer w-full px-3 py-2 dark:hover:bg-white/5 hover:bg-black/5 rounded-xl transition"
 			>
-				<div class="flex flex-1 space-x-4 cursor-pointer w-full">
+				<div class=" flex flex-1 space-x-4 cursor-pointer w-full">
 					<a href={`/workspace/prompts/edit?command=${encodeURIComponent(prompt.command)}`}>
-						<div class="flex-1 flex items-center gap-2 self-center">
-							<div class="font-semibold line-clamp-1 capitalize">{prompt.title}</div>
-							<div class="text-xs overflow-hidden text-ellipsis line-clamp-1">
+						<div class=" flex-1 flex items-center gap-2 self-center">
+							<div class=" font-semibold line-clamp-1 capitalize">{prompt.title}</div>
+							<div class=" text-xs overflow-hidden text-ellipsis line-clamp-1">
 								{prompt.command}
 							</div>
 						</div>
 
-						<div class="text-xs px-0.5">
+						<div class=" text-xs px-0.5">
 							<Tooltip
 								content={prompt?.user?.email ?? $i18n.t('Deleted User')}
 								className="flex shrink-0"
@@ -256,7 +221,7 @@
 	</div>
 
 	{#if $user?.role === 'admin'}
-		<div class="flex justify-end w-full mb-3">
+		<div class=" flex justify-end w-full mb-3">
 			<div class="flex space-x-2">
 				<input
 					id="prompts-import-input"
@@ -302,9 +267,9 @@
 						promptsImportInputElement.click();
 					}}
 				>
-					<div class="self-center mr-2 font-medium line-clamp-1">{$i18n.t('Import Prompts')}</div>
+					<div class=" self-center mr-2 font-medium line-clamp-1">{$i18n.t('Import Prompts')}</div>
 
-					<div class="self-center">
+					<div class=" self-center">
 						<svg
 							xmlns="http://www.w3.org/2000/svg"
 							viewBox="0 0 16 16"
@@ -330,9 +295,9 @@
 						saveAs(blob, `prompts-export-${Date.now()}.json`);
 					}}
 				>
-					<div class="self-center mr-2 font-medium line-clamp-1">{$i18n.t('Export Prompts')}</div>
+					<div class=" self-center mr-2 font-medium line-clamp-1">{$i18n.t('Export Prompts')}</div>
 
-					<div class="self-center">
+					<div class=" self-center">
 						<svg
 							xmlns="http://www.w3.org/2000/svg"
 							viewBox="0 0 16 16"
@@ -352,19 +317,19 @@
 	{/if}
 
 	{#if $config?.features.enable_community_sharing}
-		<div class="my-16">
-			<div class="text-xl font-medium mb-1 line-clamp-1">
+		<div class=" my-16">
+			<div class=" text-xl font-medium mb-1 line-clamp-1">
 				{$i18n.t('Made by Open WebUI Community')}
 			</div>
 
 			<a
-				class="flex cursor-pointer items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-850 w-full mb-2 px-3.5 py-1.5 rounded-xl transition"
+				class=" flex cursor-pointer items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-850 w-full mb-2 px-3.5 py-1.5 rounded-xl transition"
 				href="https://openwebui.com/#open-webui-community"
 				target="_blank"
 			>
-				<div class="self-center">
-					<div class="font-semibold line-clamp-1">{$i18n.t('Discover a prompt')}</div>
-					<div class="text-sm line-clamp-1">
+				<div class=" self-center">
+					<div class=" font-semibold line-clamp-1">{$i18n.t('Discover a prompt')}</div>
+					<div class=" text-sm line-clamp-1">
 						{$i18n.t('Discover, download, and explore custom prompts')}
 					</div>
 				</div>
