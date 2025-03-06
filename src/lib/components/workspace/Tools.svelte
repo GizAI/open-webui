@@ -60,8 +60,7 @@
 
 	const sortOptions = [
 		{ value: 'id', label: 'ID' },
-		{ value: 'name', label: $i18n.t('Name') },
-		{ value: 'updated_at', label: $i18n.t('Updated') }
+		{ value: 'name', label: $i18n.t('Name') }
 	];
 
 	const handleSortChange = (event: CustomEvent<{ field: string; direction: SortDirection }>) => {
