@@ -56,14 +56,12 @@
 	let sortField: SortField = 'name';
 	let sortDirection: SortDirection = 'asc';
 
-	// 정렬 옵션 정의
 	const sortOptions = [
 		{ value: 'id', label: 'ID' },
 		{ value: 'name', label: $i18n.t('Name') },
 		{ value: 'updated_at', label: $i18n.t('Updated') }
 	];
 
-	// 정렬 변경 이벤트 핸들러
 	const handleSortChange = (event: CustomEvent<{ field: string; direction: SortDirection }>) => {
 		sortField = event.detail.field as SortField;
 		sortDirection = event.detail.direction;
