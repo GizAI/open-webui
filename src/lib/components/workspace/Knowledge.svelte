@@ -26,6 +26,8 @@
 	import Spinner from '../common/Spinner.svelte';
 	import { capitalizeFirstLetter } from '$lib/utils';
 	import Tooltip from '../common/Tooltip.svelte';
+	import ChevronDown from '../icons/ChevronDown.svelte';
+	import ChevronUp from '../icons/ChevronUp.svelte';
 
 	let loaded = false;
 
@@ -38,6 +40,49 @@
 	let knowledgeBases = [];
 	let filteredItems = [];
 
+	// 정렬 관련 변수
+	type SortField = 'name' | 'updated_at';
+	type SortDirection = 'asc' | 'desc';
+	
+	let sortField: SortField = 'name'; // 기본 정렬 필드
+	let sortDirection: SortDirection = 'asc'; // 정렬 방향
+
+	// 정렬 함수
+	const sortItems = (items: any[], field: SortField, direction: SortDirection): any[] => {
+		return [...items].sort((a, b) => {
+			let valueA: string | number = '';
+			let valueB: string | number = '';
+			
+			// 필드에 따라 비교할 값 설정
+			if (field === 'name') {
+				valueA = a.name?.toLowerCase() || '';
+				valueB = b.name?.toLowerCase() || '';
+			} else if (field === 'updated_at') {
+				valueA = a.updated_at || 0;
+				valueB = b.updated_at || 0;
+			}
+			
+			// 정렬 방향에 따라 비교
+			if (direction === 'asc') {
+				return valueA > valueB ? 1 : valueA < valueB ? -1 : 0;
+			} else {
+				return valueA < valueB ? 1 : valueA > valueB ? -1 : 0;
+			}
+		});
+	};
+
+	// 정렬 필드 변경 함수
+	const changeSortField = (field: SortField) => {
+		if (sortField === field) {
+			// 같은 필드를 클릭한 경우 정렬 방향 전환
+			sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+		} else {
+			// 다른 필드를 클릭한 경우 해당 필드로 변경하고 오름차순으로 설정
+			sortField = field;
+			sortDirection = 'asc';
+		}
+	};
+
 	$: if (knowledgeBases) {
 		fuse = new Fuse(knowledgeBases, {
 			keys: ['name', 'description']
@@ -45,11 +90,14 @@
 	}
 
 	$: if (fuse) {
-		filteredItems = query
+		let items = query
 			? fuse.search(query).map((e) => {
 					return e.item;
 				})
 			: knowledgeBases;
+		
+		// 검색 결과에 정렬 적용
+		filteredItems = sortItems(items, sortField, sortDirection);
 	}
 
 	const deleteHandler = async (item) => {
@@ -95,21 +143,58 @@
 			</div>
 		</div>
 
-		<div class=" flex w-full space-x-2">
+		<div class="flex w-full space-x-2">
 			<div class="flex flex-1">
-				<div class=" self-center ml-1 mr-3">
+				<div class="self-center ml-1 mr-3">
 					<Search className="size-3.5" />
 				</div>
 				<input
-					class=" w-full text-sm py-1 rounded-r-xl outline-hidden bg-transparent"
+					class="w-full text-sm py-1 rounded-r-xl outline-hidden bg-transparent"
 					bind:value={query}
 					placeholder={$i18n.t('Search Knowledge')}
 				/>
 			</div>
 
+			<!-- 정렬 옵션 추가 -->
+			<div class="flex items-center space-x-2 mr-2">
+				<div class="text-sm text-gray-500 dark:text-gray-300">{$i18n.t('Sort by')}:</div>
+				<div class="flex space-x-1">
+					<button
+						class="px-2 py-1 text-xs rounded-lg {sortField === 'name' ? 'bg-gray-100 dark:bg-gray-700' : 'hover:bg-gray-50 dark:hover:bg-gray-800'} transition"
+						on:click={() => changeSortField('name')}
+					>
+						{$i18n.t('Name')}
+						{#if sortField === 'name'}
+							<span class="ml-1">
+								{#if sortDirection === 'asc'}
+									<ChevronUp className="w-3 h-3 inline" />
+								{:else}
+									<ChevronDown className="w-3 h-3 inline" />
+								{/if}
+							</span>
+						{/if}
+					</button>
+					<button
+						class="px-2 py-1 text-xs rounded-lg {sortField === 'updated_at' ? 'bg-gray-100 dark:bg-gray-700' : 'hover:bg-gray-50 dark:hover:bg-gray-800'} transition"
+						on:click={() => changeSortField('updated_at')}
+					>
+						{$i18n.t('Updated')}
+						{#if sortField === 'updated_at'}
+							<span class="ml-1">
+								{#if sortDirection === 'asc'}
+									<ChevronUp className="w-3 h-3 inline" />
+								{:else}
+									<ChevronDown className="w-3 h-3 inline" />
+								{/if}
+							</span>
+						{/if}
+					</button>
+				</div>
+			</div>
+
 			<div>
 				<button
-					class=" px-2 py-2 rounded-xl hover:bg-gray-700/10 dark:hover:bg-gray-100/10 dark:text-gray-300 dark:hover:text-white transition font-medium text-sm flex items-center space-x-1"
+					class="px-2 py-2 rounded-xl hover:bg-gray-700/10 dark:hover:bg-gray-100/10 dark:text-gray-300 dark:hover:text-white transition font-medium text-sm flex items-center space-x-1"
 					aria-label={$i18n.t('Create Knowledge')}
 					on:click={() => {
 						goto('/workspace/knowledge/create');
@@ -124,7 +209,7 @@
 	<div class="mb-5 grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-2">
 		{#each filteredItems as item}
 			<button
-				class=" flex space-x-4 cursor-pointer text-left w-full px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-850 transition rounded-xl"
+				class="flex space-x-4 cursor-pointer text-left w-full px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-850 transition rounded-xl"
 				on:click={() => {
 					if (item?.meta?.document) {
 						toast.error(
@@ -137,7 +222,7 @@
 					}
 				}}
 			>
-				<div class=" w-full">
+				<div class="w-full">
 					<div class="flex items-center justify-between -mt-1">
 						{#if item?.meta?.document}
 							<Badge type="muted" content={$i18n.t('Document')} />
@@ -145,7 +230,7 @@
 							<Badge type="success" content={$i18n.t('Collection')} />
 						{/if}
 
-						<div class=" flex self-center -mr-1 translate-y-1">
+						<div class="flex self-center -mr-1 translate-y-1">
 							<ItemMenu
 								on:delete={() => {
 									selectedItem = item;
@@ -155,10 +240,10 @@
 						</div>
 					</div>
 
-					<div class=" self-center flex-1 px-1 mb-1">
-						<div class=" font-semibold line-clamp-1 h-fit">{item.name}</div>
+					<div class="self-center flex-1 px-1 mb-1">
+						<div class="font-semibold line-clamp-1 h-fit">{item.name}</div>
 
-						<div class=" text-xs overflow-hidden text-ellipsis line-clamp-1">
+						<div class="text-xs overflow-hidden text-ellipsis line-clamp-1">
 							{item.description}
 						</div>
 
@@ -176,7 +261,7 @@
 									})}
 								</Tooltip>
 							</div>
-							<div class=" text-xs text-gray-500 line-clamp-1">
+							<div class="text-xs text-gray-500 line-clamp-1">
 								{$i18n.t('Updated')}
 								{dayjs(item.updated_at * 1000).fromNow()}
 							</div>
@@ -187,7 +272,7 @@
 		{/each}
 	</div>
 
-	<div class=" text-gray-500 text-xs mt-1 mb-2">
+	<div class="text-gray-500 text-xs mt-1 mb-2">
 		ⓘ {$i18n.t("Use '#' in the prompt input to load and include your knowledge.")}
 	</div>
 {:else}
