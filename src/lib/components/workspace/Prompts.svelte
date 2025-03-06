@@ -41,6 +41,7 @@
 	type SortField = 'title' | 'command' | 'updated_at';
 	let sortField: SortField = 'title';
 	let sortDirection: SortDirection = 'asc';
+	let sortInitialLoad = true;
 
 	const sortOptions = [
 		{ value: 'title', label: $i18n.t('Title') },
@@ -148,7 +149,12 @@
 				<SortOptions 
 					bind:sortField={sortField}
 					bind:sortDirection={sortDirection}
+					bind:initialLoad={sortInitialLoad}
 					options={sortOptions}
+					storageKey="prompts"
+					on:change={({ detail }) => {
+						sortInitialLoad = false;
+					}}
 				/>
 			</div>
 

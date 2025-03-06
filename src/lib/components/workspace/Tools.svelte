@@ -53,10 +53,11 @@
 	let tools = [];
 	let filteredItems = [];
 
-	// 정렬 관련 변수 추가
+	
 	type SortField = 'id' | 'name' | 'updated_at';
 	let sortField: SortField = 'name';
 	let sortDirection: SortDirection = 'asc';
+	let sortInitialLoad = true;
 
 	const sortOptions = [
 		{ value: 'id', label: 'ID' },
@@ -216,7 +217,12 @@
 				<SortOptions 
 					bind:sortField={sortField}
 					bind:sortDirection={sortDirection}
+					bind:initialLoad={sortInitialLoad}
 					options={sortOptions}
+					storageKey="tools"
+					on:change={({ detail }) => {
+						sortInitialLoad = false;
+					}}
 				/>
 			</div>
 

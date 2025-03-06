@@ -55,6 +55,7 @@
 	
 	let sortField = 'name';
 	let sortDirection: SortDirection = 'asc';
+	let sortInitialLoad = true;
 
 	const sortOptions = [
 		{ value: 'id', label: 'ID' },
@@ -251,7 +252,12 @@
 				<SortOptions 
 					bind:sortField={sortField}
 					bind:sortDirection={sortDirection}
+					bind:initialLoad={sortInitialLoad}
 					options={sortOptions}
+					storageKey="models"
+					on:change={({ detail }) => {
+						sortInitialLoad = false;
+					}}
 				/>
 			</div>
 

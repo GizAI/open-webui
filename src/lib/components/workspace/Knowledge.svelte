@@ -44,6 +44,7 @@
 	
 	let sortField: SortField = 'name'; // 기본 정렬 필드
 	let sortDirection: SortDirection = 'asc'; // 정렬 방향
+	let sortInitialLoad = true; // 초기 로딩 상태 추적 변수 추가
 
 	// 정렬 옵션 정의
 	const sortOptions = [
@@ -65,7 +66,7 @@
 			: knowledgeBases;
 		
 		// 검색 결과에 정렬 적용
-		filteredItems = sortItems(items, sortField, sortDirection);
+		filteredItems = sortItems(items, sortField, sortDirection, sortInitialLoad);
 	}
 
 	const deleteHandler = async (item) => {
@@ -128,7 +129,12 @@
 				<SortOptions 
 					bind:sortField={sortField}
 					bind:sortDirection={sortDirection}
+					bind:initialLoad={sortInitialLoad}
 					options={sortOptions}
+					storageKey="knowledge"
+					on:change={({ detail }) => {
+						sortInitialLoad = false;
+					}}
 				/>
 			</div>
 
