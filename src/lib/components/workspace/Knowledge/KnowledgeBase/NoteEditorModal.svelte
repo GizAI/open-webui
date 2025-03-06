@@ -11,6 +11,7 @@
 	export let show = false;
 	export let initialTitle: string = '';
 	export let initialContent: any = '';
+	export let selectedFile: any;
 
 	let name = 'Untitled';
 	let content = '';
@@ -73,6 +74,7 @@
 						on:titleChange={updateTitle}
 						initialTitle={initialTitle}
 						initialContent={initialContent}
+						selectedFile={selectedFile}
 					/>
 				{/if}
 			</div>
