@@ -570,9 +570,18 @@
 	bind:show={showAddTextContentModal}
 	initialTitle={selectedFile?.meta?.name}
 	initialContent={selectedFile?.data?.content}
-	on:submit={(e) => {
-		const file = createFileFromText(e.detail.name, e.detail.content);
-		uploadFileHandler(file);
+	selectedFile={selectedFile}
+	on:submit={async (e) => {
+		if (selectedFile && selectedFile.id) {
+			// 기존 파일 수정: update 처리
+			selectedFile.meta.name = e.detail.name;
+			selectedFile.data.content = e.detail.content;
+			await updateFileContentHandler();
+		} else {
+			// 신규 파일 생성: add 처리
+			const file = createFileFromText(e.detail.name, e.detail.content);
+			await uploadFileHandler(file);
+		}
 	}}
 />
 

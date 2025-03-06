@@ -60,6 +60,7 @@
 
 	export let initialTitle: string = '';
 	export let initialContent: any = '';
+	export let selectedFile: any;
 
 	let pageTitle = initialTitle || '새 페이지';
 
@@ -88,7 +89,7 @@
 		textAlignRight: false
 	};
 
-	const { id: noteId } = get(page).params;
+	const { id: noteId } = selectedFile;
 
 	let colorPickerPosition: Position = { x: 0, y: 0 };
 	let highlightPickerPosition: Position = { x: 0, y: 0 };
@@ -659,9 +660,11 @@
 		editor = initEditor(storedUpdate, provider);
 
 		if (typeof storedUpdate === 'string') {
-			const yXmlFragment = provider.document.getXmlFragment('prosemirror');			// Y.Doc가 비어있으면 초기 HTML 콘텐츠를 에디터에 적용
-			if (yXmlFragment && yXmlFragment.length === 0) {
-				editor.commands.setContent(storedUpdate);
+			const yXmlFragment = provider.document.getXmlFragment('prosemirror');
+			if (yXmlFragment.length === 0) {
+				provider.on('synced', () => {
+					editor.commands.setContent(storedUpdate);
+				}, { once: true });
 			}
 		}
 
