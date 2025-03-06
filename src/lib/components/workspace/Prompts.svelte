@@ -136,11 +136,6 @@
 
 			<div class="flex items-center space-x-2 mr-2">
 				<SortOptions 
-					sortState={{
-						field: 'title',
-						direction: 'asc',
-						initialLoad: true
-					}}
 					items={originalItems }
 					bind:sortedItems={filteredItems}
 					options={[

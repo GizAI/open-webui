@@ -113,11 +113,6 @@
 			<!-- 정렬 옵션 추가 -->
 			<div class="flex items-center space-x-2 mr-2">
 				<SortOptions 
-					sortState={{
-						field: 'name',
-						direction: 'asc',
-						initialLoad: true
-					}}
 					items={originalItems}
 					bind:sortedItems={filteredItems}
 					options={[

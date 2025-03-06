@@ -131,9 +131,8 @@
 				sortState.direction = 'asc';
 			}
 		} else {
-			// 다른 필드를 클릭한 경우 해당 필드로 변경하고 오름차순으로 설정
 			sortState.field = field;
-			sortState.direction = 'asc';
+			sortState.direction = 'none';
 		}
 	}
 </script>
