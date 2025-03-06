@@ -1362,16 +1362,6 @@ async def get_opensearch_xml():
     return Response(content=xml_content, media_type="application/xml")
 
 
-try:
-    from rooibos.main_extension import extend_app
-
-    extend_app(app)
-except ImportError as e:
-    import traceback
-
-    log.error(traceback.format_exc())
-
-
 @app.get("/health")
 async def healthcheck():
     return {"status": True}
@@ -1398,6 +1388,15 @@ def swagger_ui_html(*args, **kwargs):
 
 
 applications.get_swagger_ui_html = swagger_ui_html
+
+try:
+    from rooibos.main_extension import extend_app
+
+    extend_app(app)
+except ImportError as e:
+    import traceback
+
+    log.error(traceback.format_exc())
 
 if os.path.exists(FRONTEND_BUILD_DIR):
     mimetypes.add_type("text/javascript", ".js")
