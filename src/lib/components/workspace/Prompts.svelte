@@ -50,11 +50,11 @@
 	];
 
 	let filteredItems = [];
+	let searchResults = [];
+	
 	$: {
 		// 검색 필터링
-		let filtered = prompts.filter((p) => query === '' || p.command.includes(query));
-		// 정렬 적용
-		filteredItems = filtered;
+		searchResults = prompts.filter((p) => query === '' || p.command.includes(query));
 	}
 
 	const shareHandler = async (prompt) => {
@@ -149,7 +149,7 @@
 			<div class="flex items-center space-x-2 mr-2">
 				<SortOptions 
 					bind:sortState={sortState}
-					items={filteredItems}
+					items={searchResults}
 					bind:sortedItems={filteredItems}
 					options={sortOptions}
 					storageKey="prompts"

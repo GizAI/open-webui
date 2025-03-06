@@ -65,15 +65,17 @@
 		{ value: 'name', label: $i18n.t('Name') }
 	];
 
+	// 검색 결과를 저장할 변수 추가
+	let searchResults = [];
+	
 	$: {
 		// 검색 필터링
-		let filtered = tools.filter(
+		searchResults = tools.filter(
 			(t) =>
 				query === '' ||
 				t.name.toLowerCase().includes(query.toLowerCase()) ||
 				t.id.toLowerCase().includes(query.toLowerCase())
 		);
-		// 정렬은 SortOptions 컴포넌트에서 처리
 	}
 
 	const shareHandler = async (tool) => {
@@ -216,7 +218,7 @@
 			<div class="flex items-center space-x-2 mr-2">
 				<SortOptions 
 					bind:sortState={sortState}
-					items={filteredItems}
+					items={searchResults}
 					bind:sortedItems={filteredItems}
 					options={sortOptions}
 					storageKey="tools"

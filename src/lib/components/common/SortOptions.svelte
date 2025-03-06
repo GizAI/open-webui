@@ -146,7 +146,10 @@
 	export let sortedItems: any[] = [];
 	
 	// 정렬 상태나 항목이 변경될 때마다 정렬 적용
-	$: sortedItems = sortItems(items, sortState);
+	// 무한 루프 방지를 위해 items나 sortState가 변경될 때만 정렬 적용
+	$: if (items && items.length >= 0) {
+		sortedItems = sortItems(items, sortState);
+	}
 	
 	// 정렬된 항목이 변경될 때마다 이벤트 발생
 	$: if (sortedItems) {
