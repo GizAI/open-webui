@@ -113,7 +113,7 @@
 			<!-- 정렬 옵션 추가 -->
 			<div class="flex items-center space-x-2 mr-2">
 				<SortOptions 
-					bind:sortState={{
+					sortState={{
 						field: 'name',
 						direction: 'asc',
 						initialLoad: true

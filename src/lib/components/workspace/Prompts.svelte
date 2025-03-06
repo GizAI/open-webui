@@ -136,7 +136,7 @@
 
 			<div class="flex items-center space-x-2 mr-2">
 				<SortOptions 
-					bind:sortState={{
+					sortState={{
 						field: 'title',
 						direction: 'asc',
 						initialLoad: true
