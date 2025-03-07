@@ -6,6 +6,7 @@
 	import { selectedCompanyInfo } from '$rooibos/stores';
 	import { get } from 'svelte/store';
 	import DeleteConfirmDialog from '$lib/components/common/ConfirmDialog.svelte';
+	import FolderSelect from '$rooibos/components/folder/FolderSelect.svelte';
 
 	export let companyInfo: any = {};
 	export let financialData: any = {};
@@ -14,9 +15,11 @@
 
 	// 삭제 확인 대화상자 제어 변수
 	let showDeleteConfirm = false;
+	// 폴더 선택 모달 제어 변수
+	let showFolderSelect = false;
 
 	// 북마크 추가 요청
-	const addCompany = async (company: any) => {
+	const addCompany = async (company: any, folderId: string = '') => {
 		const response = await fetch(`${WEBUI_API_BASE_URL}/rooibos/corpbookmarks/add`, {
 			method: 'POST',
 			headers: {
@@ -26,7 +29,8 @@
 			body: JSON.stringify({
 				userId: currentUser?.id,
 				companyId: company.master_id,
-				business_registration_number: company.business_registration_number
+				business_registration_number: company.business_registration_number,
+				folderId: folderId // 선택한 폴더 ID 추가
 			})
 		});
 		const data = await response.json();
@@ -65,12 +69,29 @@
 	// 북마크 추가 또는 삭제(확인 후) 처리
 	const saveCompany = async (company: any) => {
 		if (!company.bookmark_user_id) {
-			// 북마크 추가
-			await addCompany(company);
+			// 북마크 추가 전 폴더 선택 모달 표시
+			showFolderSelect = true;
 		} else {
 			// 삭제 전 확인 대화상자 호출
 			showDeleteConfirm = true;
 		}
+	};
+
+	// 폴더 선택 후 북마크 추가 처리
+	const handleFolderSelect = async (event) => {
+		const selectedFolder = event.detail;
+		if (selectedFolder && selectedFolder.id) {
+			await addCompany(companyInfo, selectedFolder.id);
+		} else {
+			// 폴더 없이 추가 (루트에 추가)
+			await addCompany(companyInfo);
+		}
+		showFolderSelect = false;
+	};
+
+	// 폴더 선택 모달 닫기
+	const closeFolderSelect = () => {
+		showFolderSelect = false;
 	};
 
 	const openAIChat = async (company: any) => {
@@ -177,3 +198,14 @@
 	title="북마크를 삭제하시겠습니까?"
 	on:confirm={confirmDelete}
 />
+
+<!-- 폴더 선택 모달 -->
+{#if showFolderSelect}
+	<FolderSelect 
+		isOpen={showFolderSelect} 
+		onClose={closeFolderSelect}
+		folderType="corp"
+		bookmarkId=""
+		on:close={handleFolderSelect}
+	/>
+{/if}

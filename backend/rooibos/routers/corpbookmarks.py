@@ -330,37 +330,63 @@ async def add_corpbookmark(request: Request):
         user_id = body.get("userId")
         company_id = body.get("companyId")
         business_registration_number = body.get("business_registration_number")
+        folder_id = body.get("folderId")
 
         if not user_id or not company_id:
             raise HTTPException(status_code=400, detail="Invalid input. 'userId' and 'companyId' are required.")
 
-        sql_query = """
-        INSERT INTO corp_bookmark (user_id, company_id, business_registration_number, created_at, updated_at)
-        VALUES (:user_id, :company_id, :business_registration_number, now(), now())
-        RETURNING id
-        """
-        log.info(
-            f"Executing query: {sql_query} with parameters: user_id={user_id}, company_id={company_id}, business_registration_number={business_registration_number}"
-        )
-        with get_db() as db:
-            result = db.execute(
-                text(sql_query),
-                {
-                    "user_id": user_id,
-                    "company_id": company_id,
-                    "business_registration_number": business_registration_number,
-                },
+        if folder_id:
+            sql_query = """
+            INSERT INTO corp_bookmark (user_id, company_id, business_registration_number, folder_id, created_at, updated_at)
+            VALUES (:user_id, :company_id, :business_registration_number, :folder_id, now(), now())
+            RETURNING id
+            """
+            log.info(
+                f"Executing query: {sql_query} with parameters: user_id={user_id}, company_id={company_id}, business_registration_number={business_registration_number}, folder_id={folder_id}"
             )
-            row = result.fetchone()  # 한 번만 fetch하여 결과를 받아옵니다.
-            if row is None:
-                raise HTTPException(status_code=500, detail="Insertion failed, no ID returned.")
-            bookmark_id = row[0]
-            db.commit()
+            with get_db() as db:
+                result = db.execute(
+                    text(sql_query),
+                    {
+                        "user_id": user_id,
+                        "company_id": company_id,
+                        "business_registration_number": business_registration_number,
+                        "folder_id": folder_id,
+                    },
+                )
+                row = result.fetchone()
+                if row is None:
+                    raise HTTPException(status_code=500, detail="Insertion failed, no ID returned.")
+                bookmark_id = row[0]
+                db.commit()
+        else:
+            sql_query = """
+            INSERT INTO corp_bookmark (user_id, company_id, business_registration_number, created_at, updated_at)
+            VALUES (:user_id, :company_id, :business_registration_number, now(), now())
+            RETURNING id
+            """
+            log.info(
+                f"Executing query: {sql_query} with parameters: user_id={user_id}, company_id={company_id}, business_registration_number={business_registration_number}"
+            )
+            with get_db() as db:
+                result = db.execute(
+                    text(sql_query),
+                    {
+                        "user_id": user_id,
+                        "company_id": company_id,
+                        "business_registration_number": business_registration_number,
+                    },
+                )
+                row = result.fetchone()
+                if row is None:
+                    raise HTTPException(status_code=500, detail="Insertion failed, no ID returned.")
+                bookmark_id = row[0]
+                db.commit()
 
         return {
             "success": True,
             "message": "Bookmark successfully added.",
-            "id": bookmark_id  # 삽입된 id를 반환합니다.
+            "id": bookmark_id
         }
     except Exception as e:
         log.error("Add Bookmark API error: " + str(e))
