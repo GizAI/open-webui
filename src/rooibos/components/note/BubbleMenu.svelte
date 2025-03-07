@@ -41,13 +41,13 @@
 </script>
 
 <div
-	class="bubble-menu"
+	class="bubble-menu bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-200 border border-transparent dark:border-gray-600"
 	bind:this={menuElement}
-	style="visibility: hidden; position: absolute; display: inline-flex; align-items: stretch; background: white; overflow: hidden; font-size: 14px; line-height: 1.2; border-radius: 8px; box-shadow: rgba(0, 0, 0, 0.1) 0px 14px 28px -6px, rgba(0, 0, 0, 0.06) 0px 2px 4px -1px, rgba(84, 72, 49, 0.08) 0px 0px 0px 1px; pointer-events: auto; padding: 4px; flex-wrap: nowrap; white-space: nowrap;"
+	style="visibility: hidden; position: absolute; display: inline-flex; align-items: stretch; overflow: hidden; font-size: 14px; line-height: 1.2; border-radius: 8px; box-shadow: rgba(0, 0, 0, 0.1) 0px 14px 28px -6px, rgba(0, 0, 0, 0.06) 0px 2px 4px -1px, rgba(84, 72, 49, 0.08) 0px 0px 0px 1px; pointer-events: auto; padding: 4px; flex-wrap: nowrap; white-space: nowrap;"
 >
 	<!-- 굵게 -->
 	<button
-		class="bubble-menu-button"
+		class="bubble-menu-button text-gray-900 dark:text-gray-200"
 		on:click={onToggleBold}
 		class:active={editorState.bold}
 		title="굵게"
@@ -71,7 +71,7 @@
 	</button>
 	<!-- 기울임 -->
 	<button
-		class="bubble-menu-button"
+		class="bubble-menu-button text-gray-900 dark:text-gray-200"
 		on:click={onToggleItalic}
 		class:active={editorState.italic}
 		title="기울임"
@@ -96,7 +96,7 @@
 	</button>
 	<!-- 밑줄 -->
 	<button
-		class="bubble-menu-button"
+		class="bubble-menu-button text-gray-900 dark:text-gray-200"
 		on:click={onToggleUnderline}
 		class:active={editorState.underline}
 		title="밑줄"
@@ -120,7 +120,7 @@
 	</button>
 	<!-- 취소선 -->
 	<button
-		class="bubble-menu-button"
+		class="bubble-menu-button text-gray-900 dark:text-gray-200"
 		on:click={onToggleStrike}
 		class:active={editorState.strike}
 		title="취소선"
@@ -144,7 +144,7 @@
 	</button>
 	<!-- 텍스트 색상 -->
 	<button
-		class="bubble-menu-button"
+		class="bubble-menu-button text-gray-900 dark:text-gray-200"
 		on:click={onToggleColorPicker}
 		class:active={editorState.textStyle}
 		title="텍스트 색상"
@@ -171,7 +171,7 @@
 	</button>
 	<!-- 하이라이트 -->
 	<button
-		class="bubble-menu-button"
+		class="bubble-menu-button text-gray-900 dark:text-gray-200"
 		on:click={onToggleHighlightPicker}
 		class:active={editorState.highlight}
 		title="하이라이트"
@@ -195,7 +195,7 @@
 		</span>
 	</button>
 	<!-- 텍스트 정렬 -->
-	<button class="bubble-menu-button" on:click={onToggleAlignmentOptions} title="텍스트 정렬">
+	<button class="bubble-menu-button text-gray-900 dark:text-gray-200" on:click={onToggleAlignmentOptions} title="텍스트 정렬">
 		<span class="icon">
 			<svg
 				xmlns="http://www.w3.org/2000/svg"
@@ -216,7 +216,7 @@
 	</button>
 	<!-- 링크 추가 -->
 	<button
-		class="bubble-menu-button"
+		class="bubble-menu-button text-gray-900 dark:text-gray-200"
 		on:click={onSetLink}
 		class:active={editorState.link}
 		title="링크 추가"
@@ -239,7 +239,7 @@
 		</span>
 	</button>
 	<!-- 번역 -->
-	<button class="bubble-menu-button" on:click={onTranslate} title="번역">
+	<button class="bubble-menu-button text-gray-900 dark:text-gray-200" on:click={onTranslate} title="번역">
 		<span class="icon">
 			<svg
 				xmlns="http://www.w3.org/2000/svg"
@@ -262,7 +262,7 @@
 		</span>
 	</button>
 	<!-- 서식 제거 -->
-	<button class="bubble-menu-button" on:click={onRemoveFormat} title="서식 제거">
+	<button class="bubble-menu-button text-gray-900 dark:text-gray-200" on:click={onRemoveFormat} title="서식 제거">
 		<span class="icon">
 			<svg
 				xmlns="http://www.w3.org/2000/svg"
@@ -286,8 +286,8 @@
 <div class="portal-container">
 	{#if showColorPicker}
 		<div
-			class="floating-dropdown floating-color-picker"
-			style="position: fixed; left: {colorPickerPosition.x}px; top: {colorPickerPosition.y}px; border: 1px solid #ddd;"
+			class="floating-dropdown floating-color-picker bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-600"
+			style="position: fixed; left: {colorPickerPosition.x}px; top: {colorPickerPosition.y}px;"
 		>
 			<button
 				class="color-option"
@@ -329,8 +329,8 @@
 
 	{#if showHighlightPicker}
 		<div
-			class="floating-dropdown floating-color-picker"
-			style="position: fixed; left: {highlightPickerPosition.x}px; top: {highlightPickerPosition.y}px; border: 1px solid #ddd;"
+			class="floating-dropdown floating-color-picker bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-600"
+			style="position: fixed; left: {highlightPickerPosition.x}px; top: {highlightPickerPosition.y}px;"
 		>
 			<button
 				class="color-option"
@@ -362,11 +362,11 @@
 
 	{#if showAlignmentOptions}
 		<div
-			class="floating-dropdown floating-alignment-dropdown"
-			style="position: fixed; left: {alignmentDropdownPosition.x}px; top: {alignmentDropdownPosition.y}px; border: 1px solid #ddd;"
+			class="floating-dropdown floating-alignment-dropdown bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-600"
+			style="position: fixed; left: {alignmentDropdownPosition.x}px; top: {alignmentDropdownPosition.y}px;"
 		>
 			<button
-				class="alignment-option"
+				class="alignment-option text-gray-900 dark:text-gray-200"
 				on:click={setTextAlignLeft}
 				class:active={editorState.textAlignLeft}
 				title="왼쪽 정렬"
@@ -390,7 +390,7 @@
 				</span>
 			</button>
 			<button
-				class="alignment-option"
+				class="alignment-option text-gray-900 dark:text-gray-200"
 				on:click={setTextAlignCenter}
 				class:active={editorState.textAlignCenter}
 				title="가운데 정렬"
@@ -414,7 +414,7 @@
 				</span>
 			</button>
 			<button
-				class="alignment-option"
+				class="alignment-option text-gray-900 dark:text-gray-200"
 				on:click={setTextAlignRight}
 				class:active={editorState.textAlignRight}
 				title="오른쪽 정렬"
@@ -442,8 +442,8 @@
 
 	{#if showLinkInput}
 		<div
-			class="floating-dropdown floating-link-input"
-			style="position: fixed; left: {linkInputPosition.x}px; top: {linkInputPosition.y}px; border: 1px solid #ddd;"
+			class="floating-dropdown floating-link-input bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-600"
+			style="position: fixed; left: {linkInputPosition.x}px; top: {linkInputPosition.y}px;"
 		>
 			<div class="link-input-container">
 				<div class="link-input-row">
@@ -454,9 +454,10 @@
 						placeholder="URL 입력"
 						on:keydown={handleLinkInputKeydown}
 						autofocus
+						class="bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-200 border border-gray-200 dark:border-gray-600"
 					/>
-					<button class="link-button" on:click={applyLink}>적용</button>
-					<button class="link-button cancel-button" on:click={cancelLink}>취소</button>
+					<button class="link-button text-gray-900 dark:text-gray-200 border border-gray-200 dark:border-gray-600" on:click={applyLink}>적용</button>
+					<button class="link-button cancel-button text-gray-900 dark:text-gray-200 border border-gray-200 dark:border-gray-600" on:click={cancelLink}>취소</button>
 				</div>
 			</div>
 		</div>
@@ -476,6 +477,11 @@
 		background-color: rgba(0, 0, 0, 0.2);
 		border-radius: 4px;
 	}
+	
+	:global(.dark) .bubble-menu::-webkit-scrollbar-thumb {
+		background-color: rgba(255, 255, 255, 0.2);
+	}
+	
 	.bubble-menu-button {
 		background: none;
 		border: none;
@@ -497,6 +503,20 @@
 		background-color: rgba(0, 0, 0, 0.1);
 		color: #000;
 	}
+	
+	:global(.dark) .bubble-menu-button {
+		color: #e5e7eb;
+	}
+	
+	:global(.dark) .bubble-menu-button:hover {
+		background-color: rgba(255, 255, 255, 0.1);
+	}
+	
+	:global(.dark) .bubble-menu-button.active {
+		background-color: rgba(255, 255, 255, 0.2);
+		color: #fff;
+	}
+	
 	.icon {
 		display: flex;
 		align-items: center;
@@ -522,12 +542,15 @@
 	.floating-dropdown {
 		position: fixed !important;
 		display: flex;
-		background: white;
 		border-radius: 4px;
 		box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
 		padding: 4px;
 		z-index: 9999 !important;
 		pointer-events: auto;
+	}
+	
+	:global(.dark) .floating-dropdown {
+		box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
 	}
 
 	.floating-color-picker {
@@ -558,7 +581,6 @@
 	.link-input-container input {
 		flex: 1;
 		padding: 6px 8px;
-		border: 1px solid #ddd;
 		border-radius: 4px;
 		font-size: 14px;
 		margin-right: 4px;
@@ -567,15 +589,22 @@
 	.link-button {
 		padding: 6px 10px;
 		background-color: #f5f5f5;
-		border: 1px solid #ddd;
 		border-radius: 4px;
 		cursor: pointer;
 		font-size: 12px;
 		white-space: nowrap;
 	}
+	
+	:global(.dark) .link-button {
+		background-color: #374151;
+	}
 
 	.link-button:hover {
 		background-color: #e5e5e5;
+	}
+	
+	:global(.dark) .link-button:hover {
+		background-color: #4B5563;
 	}
 
 	.color-option {
@@ -585,6 +614,10 @@
 		border: 1px solid #ddd;
 		margin: 2px;
 		cursor: pointer;
+	}
+	
+	:global(.dark) .color-option {
+		border-color: #4B5563;
 	}
 
 	.color-option:hover {
@@ -609,20 +642,38 @@
 	.alignment-option:hover {
 		background-color: rgba(0, 0, 0, 0.05);
 	}
+	
+	:global(.dark) .alignment-option:hover {
+		background-color: rgba(255, 255, 255, 0.1);
+	}
 
 	.alignment-option.active {
 		background-color: rgba(0, 0, 0, 0.1);
 		color: #000;
+	}
+	
+	:global(.dark) .alignment-option.active {
+		background-color: rgba(255, 255, 255, 0.2);
+		color: #fff;
 	}
 
 	.cancel-button {
 		margin-left: 4px;
 		background-color: #f8f8f8;
 	}
+	
+	:global(.dark) .cancel-button {
+		background-color: #374151;
+	}
 
 	.cancel-button:hover {
 		background-color: #e0e0e0;
 	}
+	
+	:global(.dark) .cancel-button:hover {
+		background-color: #4B5563;
+	}
+	
 	:global(.bubble-menu) {
 		/* 기존 인라인 스타일을 덮어쓰려면 !important 사용 */
 		padding: 8px !important;

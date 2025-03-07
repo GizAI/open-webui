@@ -692,7 +692,7 @@
 		
 		// 에디터 영역 클릭 시 라인 메뉴 닫기
 		if (editorElement) {
-			const handleEditorClick = (e) => {
+			const handleEditorClick = (e: MouseEvent) => {
 				// 라인 아이콘 클릭이 아닌 경우에만 처리
 				if (!e.target || !(e.target as HTMLElement).closest('.line-icon')) {
 					const lineMenu = document.getElementById('line-menu-popup');
@@ -706,9 +706,11 @@
 			editorElement.addEventListener('click', handleEditorClick);
 			
 			// 이벤트 리스너 정리 함수 설정
-			editorElement.cleanupListeners = () => {
-				editorElement.removeEventListener('click', handleEditorClick);
-			};
+			if (editorElement) {
+				editorElement.cleanupListeners = () => {
+					editorElement?.removeEventListener('click', handleEditorClick);
+				};
+			}
 		}
 
 		// 에디터 초기화 후 상태 업데이트
@@ -763,7 +765,7 @@
 
 <CollaboratorsList users={activeUsers} />
 
-<div class="notion-page-container">
+<div class="notion-page-container bg-white dark:bg-gray-900">
 	<div class="editor-wrapper" bind:this={editorElement}></div>
 
 	<BubbleMenu
@@ -823,12 +825,20 @@
 			'Open Sans', 'Helvetica Neue', sans-serif;
 		color: #2e2e2e;
 	}
+	
+	:global(.dark) .notion-page-container {
+		color: #e5e7eb; /* gray-200 */
+	}
+	
 	.editor-wrapper {
 		min-height: 400px;
 		outline: none;
 		border: none;
 		padding: 0;
+		background-color: inherit;
+		color: inherit;
 	}
+	
 	.editor-wrapper:focus {
 		outline: none;
 	}
@@ -845,6 +855,10 @@
 		color: #0366d6;
 		text-decoration: underline;
 		cursor: pointer;
+	}
+	
+	:global(.dark) :global(.custom-link) {
+		color: #58a6ff;
 	}
 
 	:global(.custom-link:hover) {
@@ -876,5 +890,18 @@
 		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
 		transform: translateY(-2px);
 		z-index: 100;
+	}
+
+	:global(.ProseMirror) {
+		background-color: inherit;
+		color: inherit;
+	}
+
+	:global(.dark) :global(.ProseMirror) {
+		color: #e5e7eb;
+	}
+	
+	:global(.dark) :global(.line-highlight) {
+		background-color: rgba(255, 255, 0, 0.2); /* 다크모드에서 하이라이트 색상 조정 */
 	}
 </style>

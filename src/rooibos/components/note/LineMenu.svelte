@@ -35,6 +35,12 @@
     btn.style.fontSize = '14px';
     btn.style.color = '#333';
     
+    // 다크모드일 때만 색상 변경
+    const isDarkMode = document.documentElement.classList.contains('dark');
+    if (isDarkMode) {
+      btn.style.color = '#e5e7eb';
+    }
+    
     if (icon) {
       const iconSpan = document.createElement('span');
       iconSpan.innerHTML = icon;
@@ -47,7 +53,7 @@
     }
     
     btn.onmouseover = () => {
-      btn.style.background = '#f5f5f5';
+      btn.style.background = isDarkMode ? '#374151' : '#f5f5f5';
     };
     btn.onmouseout = () => {
       btn.style.background = 'transparent';
@@ -56,8 +62,10 @@
 
   // Menu item active styling function
   function styleActiveMenuItem(btn, isActive) {
+    const isDarkMode = document.documentElement.classList.contains('dark');
+    
     if (isActive) {
-      btn.style.background = '#f0f0f0';
+      btn.style.background = isDarkMode ? '#4B5563' : '#f0f0f0';
       btn.style.fontWeight = 'bold';
       
       // Add check icon
@@ -73,7 +81,8 @@
   function addDivider(menu) {
     const divider = document.createElement('div');
     divider.style.height = '1px';
-    divider.style.background = '#eee';
+    const isDarkMode = document.documentElement.classList.contains('dark');
+    divider.style.background = isDarkMode ? '#4B5563' : '#eee';
     divider.style.margin = '4px 0';
     menu.appendChild(divider);
   }
@@ -95,6 +104,8 @@
       }
     }
     
+    const isDarkMode = document.documentElement.classList.contains('dark');
+    
     const menu = document.createElement('div');
     menu.id = 'line-menu-popup';
     menu.style.position = 'absolute';
@@ -104,9 +115,19 @@
     menu.style.padding = '8px';
     menu.style.border = '1px solid #eee';
     menu.style.background = '#fff';
+    menu.style.color = '#333';
     menu.style.zIndex = '9999';
     menu.style.borderRadius = '6px';
     menu.style.boxShadow = '0 2px 10px rgba(0,0,0,0.1)';
+    
+    // 다크모드일 때만 스타일 변경
+    if (isDarkMode) {
+      menu.style.border = '1px solid #4B5563';
+      menu.style.background = '#111827';
+      menu.style.color = '#e5e7eb';
+      menu.style.boxShadow = '0 2px 10px rgba(0,0,0,0.3)';
+    }
+    
     menu.style.display = 'flex';
     menu.style.flexDirection = 'column';
     menu.style.gap = '4px';
@@ -286,6 +307,10 @@
     color: #555;
   }
   
+  :global(.dark) :global(.line-icon) {
+    color: #e5e7eb;
+  }
+  
   :global(.add-line-icon) {
     position: absolute;
     width: 24px;
@@ -300,6 +325,10 @@
     color: #555;
   }
   
+  :global(.dark) :global(.add-line-icon) {
+    color: #e5e7eb;
+  }
+  
   :global(.line-block:hover .line-icon),
   :global(.line-block:hover .add-line-icon) {
     opacity: 0.7;
@@ -311,12 +340,25 @@
     background-color: rgba(0, 0, 0, 0.05);
   }
   
+  :global(.dark) :global(.line-icon:hover),
+  :global(.dark) :global(.add-line-icon:hover) {
+    background-color: rgba(255, 255, 255, 0.1);
+  }
+  
   /* 메뉴 스타일 */
   :global(#line-menu-popup),
   :global(#add-menu-popup) {
     animation: fadeIn 0.15s ease-in-out;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
     border: 1px solid #eee;
+    background-color: #fff;
+  }
+  
+  :global(.dark) :global(#line-menu-popup),
+  :global(.dark) :global(#add-menu-popup) {
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+    border: 1px solid #4B5563;
+    background-color: #111827;
   }
   
   :global(#line-menu-popup button),
@@ -332,6 +374,12 @@
     border-radius: 4px;
     cursor: pointer;
     transition: background-color 0.2s;
+    color: #333;
+  }
+  
+  :global(.dark) :global(#line-menu-popup button),
+  :global(.dark) :global(#add-menu-popup button) {
+    color: #e5e7eb;
   }
   
   :global(#line-menu-popup button:hover),
@@ -339,10 +387,20 @@
     background-color: rgba(0, 0, 0, 0.05);
   }
   
+  :global(.dark) :global(#line-menu-popup button:hover),
+  :global(.dark) :global(#add-menu-popup button:hover) {
+    background-color: rgba(255, 255, 255, 0.1);
+  }
+  
   :global(#line-menu-popup button.active),
   :global(#add-menu-popup button.active) {
     background-color: rgba(0, 0, 0, 0.08);
     font-weight: 500;
+  }
+  
+  :global(.dark) :global(#line-menu-popup button.active),
+  :global(.dark) :global(#add-menu-popup button.active) {
+    background-color: rgba(255, 255, 255, 0.2);
   }
   
   @keyframes fadeIn {
