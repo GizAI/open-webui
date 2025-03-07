@@ -44,6 +44,7 @@
 		textAlignLeft: boolean;
 		textAlignCenter: boolean;
 		textAlignRight: boolean;
+		heading3: boolean; 
 	}
 
 	interface Position {
@@ -86,7 +87,8 @@
 		link: false,
 		textAlignLeft: false,
 		textAlignCenter: false,
-		textAlignRight: false
+		textAlignRight: false,
+		heading3: false
 	};
 
 	const { id: noteId } = selectedFile;
@@ -152,7 +154,8 @@
 			link: editor.isActive('link'),
 			textAlignLeft: editor.isActive({ textAlign: 'left' }),
 			textAlignCenter: editor.isActive({ textAlign: 'center' }),
-			textAlignRight: editor.isActive({ textAlign: 'right' })
+			textAlignRight: editor.isActive({ textAlign: 'right' }),
+			heading3: editor.isActive('heading', { level: 3 })
 		};
 	}
 
@@ -169,7 +172,6 @@
 		adjustBubbleMenuPosition();
 		updateEditorState();
 	}
-
 
 	/**
 	 * Translates selected text using an API
@@ -344,7 +346,8 @@
 			link: false,
 			textAlignLeft: true,
 			textAlignCenter: false,
-			textAlignRight: false
+			textAlignRight: false,
+			heading3: false
 		};
 
 		checkAlignmentState();
@@ -633,8 +636,7 @@
 
 	onMount(async () => {
 	try {
-		console.log('initialTitle', initialTitle);
-		console.log('initialContent', initialContent);
+		
 
 		provider = setupCollaboration();
 
@@ -663,10 +665,15 @@
 			const yXmlFragment = provider.document.getXmlFragment('prosemirror');
 			if (yXmlFragment.length === 0) {
 				provider.on('synced', () => {
-					editor.commands.setContent(storedUpdate);
-				}, { once: true });
+					if (editor) {
+						editor.commands.setContent(storedUpdate);
+					}
+				});
 			}
 		}
+
+		console.log('Editor 생성 완료:', editor);
+  console.log('Editor 명령어:', editor?.commands);
 
 		document.addEventListener('click', closeAllDropdowns);
 		window.addEventListener('resize', adjustBubbleMenuPosition);

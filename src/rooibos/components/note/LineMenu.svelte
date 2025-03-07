@@ -106,15 +106,15 @@
     
     // Paragraph
     const paragraphBtn = document.createElement('button');
-    paragraphBtn.textContent = 'Paragraph';
+    paragraphBtn.textContent = '본문';
     styleMenuItem(paragraphBtn, '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><text x="8" y="17" font-size="16" font-weight="bold" fill="currentColor">P</text></svg>');
     styleActiveMenuItem(paragraphBtn, isNodeType(editor, node, 'paragraph'));
     paragraphBtn.onclick = () => {
       try {
-        console.log('Paragraph 버튼 클릭됨');
+        console.log('본문 버튼 클릭됨');
         editor.chain().focus().setNode('paragraph').run();
       } catch (error) {
-        console.error('Paragraph 변환 중 오류:', error);
+        console.error('본문 변환 중 오류:', error);
       }
       closeMenu();
     };
@@ -122,15 +122,15 @@
     
     // Heading 1
     const heading1Btn = document.createElement('button');
-    heading1Btn.textContent = 'Heading 1';
+    heading1Btn.textContent = '제목1';
     styleMenuItem(heading1Btn, '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M6 4v16M18 4v16M6 12h12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>');
     styleActiveMenuItem(heading1Btn, isNodeType(editor, node, 'heading', { level: 1 }));
     heading1Btn.onclick = () => {
       try {
-        console.log('Heading 1 버튼 클릭됨');
+        console.log('제목1 버튼 클릭됨');
         editor.chain().focus().setNode('heading', { level: 1 }).run();
       } catch (error) {
-        console.error('Heading 1 변환 중 오류:', error);
+        console.error('제목1 변환 중 오류:', error);
       }
       closeMenu();
     };
@@ -138,15 +138,15 @@
     
     // Heading 2
     const heading2Btn = document.createElement('button');
-    heading2Btn.textContent = 'Heading 2';
+    heading2Btn.textContent = '제목2';
     styleMenuItem(heading2Btn, '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M6 4v16M18 4v16M6 12h12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>');
     styleActiveMenuItem(heading2Btn, isNodeType(editor, node, 'heading', { level: 2 }));
     heading2Btn.onclick = () => {
       try {
-        console.log('Heading 2 버튼 클릭됨');
+        console.log('제목2 버튼 클릭됨');
         editor.chain().focus().setNode('heading', { level: 2 }).run();
       } catch (error) {
-        console.error('Heading 2 변환 중 오류:', error);
+        console.error('제목2 변환 중 오류:', error);
       }
       closeMenu();
     };
@@ -154,15 +154,15 @@
     
     // Heading 3
     const heading3Btn = document.createElement('button');
-    heading3Btn.textContent = 'Heading 3';
+    heading3Btn.textContent = '제목3';
     styleMenuItem(heading3Btn, '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M6 4v16M18 4v16M6 12h12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>');
     styleActiveMenuItem(heading3Btn, isNodeType(editor, node, 'heading', { level: 3 }));
     heading3Btn.onclick = () => {
       try {
-        console.log('Heading 3 버튼 클릭됨');
+        console.log('제목3 버튼 클릭됨');
         editor.chain().focus().setNode('heading', { level: 3 }).run();
       } catch (error) {
-        console.error('Heading 3 변환 중 오류:', error);
+        console.error('제목3 변환 중 오류:', error);
       }
       closeMenu();
     };
@@ -172,15 +172,15 @@
     
     // Bullet list
     const bulletBtn = document.createElement('button');
-    bulletBtn.textContent = 'Bullet list';
+    bulletBtn.textContent = '글머리 기호';
     styleMenuItem(bulletBtn, '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>');
     styleActiveMenuItem(bulletBtn, isNodeType(editor, node, 'bulletList'));
     bulletBtn.onclick = () => {
       try {
-        console.log('Bullet list 버튼 클릭됨');
+        console.log('글머리 기호 버튼 클릭됨');
         editor.chain().focus().toggleBulletList().run();
       } catch (error) {
-        console.error('Bullet list 변환 중 오류:', error);
+        console.error('글머리 기호 변환 중 오류:', error);
       }
       closeMenu();
     };
@@ -188,15 +188,15 @@
     
     // Ordered list
     const orderedBtn = document.createElement('button');
-    orderedBtn.textContent = 'Ordered list';
+    orderedBtn.textContent = '번호 매기기';
     styleMenuItem(orderedBtn, '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M10 6h11M10 12h11M10 18h11M4 6h1v4M4 10h2M4 18h3M4 14h2v4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>');
     styleActiveMenuItem(orderedBtn, isNodeType(editor, node, 'orderedList'));
     orderedBtn.onclick = () => {
       try {
-        console.log('Ordered list 버튼 클릭됨');
+        console.log('번호 매기기 버튼 클릭됨');
         editor.chain().focus().toggleOrderedList().run();
       } catch (error) {
-        console.error('Ordered list 변환 중 오류:', error);
+        console.error('번호 매기기 변환 중 오류:', error);
       }
       closeMenu();
     };
@@ -204,14 +204,14 @@
     
     // Tasks list
     const tasksBtn = document.createElement('button');
-    tasksBtn.textContent = 'Tasks list';
+    tasksBtn.textContent = '할 일 목록';
     styleMenuItem(tasksBtn, '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M9 12l2 2 4-4M8 6h13M8 18h13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><rect x="3" y="6" width="4" height="4" rx="1" stroke="currentColor" stroke-width="2"/><rect x="3" y="16" width="4" height="4" rx="1" stroke="currentColor" stroke-width="2"/></svg>');
     tasksBtn.onclick = () => {
       try {
-        console.log('Tasks list 버튼 클릭됨');
+        console.log('할 일 목록 버튼 클릭됨');
         editor.chain().focus().toggleTaskList().run();
       } catch (error) {
-        console.error('Tasks list 변환 중 오류:', error);
+        console.error('할 일 목록 변환 중 오류:', error);
       }
       closeMenu();
     };
