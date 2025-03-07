@@ -105,10 +105,10 @@
 </script>
 
 <Modal on:close={onClose}>
-	<div class="p-4">
+	<div class="p-4 bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-white-200">
 		<div class="flex justify-between items-center mb-4">
-			<h2 class="text-lg font-bold">폴더 관리</h2>
-			<button type="button" on:click={onClose} class="text-gray-500 hover:text-gray-700">
+			<h2 class="text-lg font-bold text-gray-900 dark:text-gray-200">폴더 관리</h2>
+			<button type="button" on:click={onClose} class="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300">
 				<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
 					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
 				</svg>
@@ -117,7 +117,7 @@
 		{#if folder}
 			<div class="space-y-4">
 				<!-- Folder Information Card -->
-				<div class="w-full p-4 bg-gray-50 dark:bg-gray-800 rounded-lg shadow-sm">
+				<div class="w-full p-4 bg-gray-50 dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
 					<div class="flex flex-col gap-3">
 						<!-- Folder Name with Edit Option -->
 						<div class="flex flex-col">
@@ -127,14 +127,14 @@
 									<input 
 										type="text" 
 										bind:value={folderName} 
-										class="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+										class="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-200"
 										placeholder="폴더명을 입력하세요"
 										on:keydown={handleKeyPress}
 									/>
 									<div class="flex gap-1">
 										<button 
 											on:click={saveFolder} 
-											class="px-3 py-1 bg-white text-blue-500 border border-blue-500 rounded-md hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+											class="px-3 py-1 bg-white dark:bg-gray-700 text-blue-500 border border-blue-500 rounded-md hover:bg-blue-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
 											disabled={isSaving}
 										>
 											{#if isSaving}
@@ -148,7 +148,7 @@
 												isEditing = false;
 												folderName = folder?.name || '';
 											}} 
-											class="px-3 py-1 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500"
+											class="px-3 py-1 bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-200 rounded-md hover:bg-gray-400 dark:hover:bg-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-500"
 										>
 											취소
 										</button>
@@ -160,14 +160,14 @@
 							{:else}
 								<div class="flex justify-between items-center">
 									<div class="flex items-center">
-										<svg class="w-5 h-5 mr-2 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+										<svg class="w-5 h-5 mr-2 text-gray-500 dark:text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
 											<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7h4l2 2h8a2 2 0 012 2v7a2 2 0 01-2 2H5a2 2 0 01-2-2V7z" />
 										</svg>
-										<span class="font-medium">{folder.name}</span>
+										<span class="font-medium text-gray-900 dark:text-gray-200">{folder.name}</span>
 									</div>
 									<button 
 										on:click={toggleEditMode}
-										class="text-blue-500 hover:text-blue-600 focus:outline-none"
+										class="text-blue-500 hover:text-blue-600 dark:hover:text-blue-400 focus:outline-none"
 									>
 										<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
 											<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
@@ -184,14 +184,14 @@
 							{#if folder.created_at}
 								<div>
 									<label class="text-xs font-medium text-gray-500 dark:text-gray-400">생성일</label>
-									<p class="text-sm">{formatDate(folder.created_at)}</p>
+									<p class="text-sm text-gray-900 dark:text-gray-200">{formatDate(folder.created_at)}</p>
 								</div>
 							{/if}
 							
 							<!-- Updated At -->
 							<div>
 								<label class="text-xs font-medium text-gray-500 dark:text-gray-400">수정일</label>
-								<p class="text-sm">{formatDate(folder.updated_at)}</p>
+								<p class="text-sm text-gray-900 dark:text-gray-200">{formatDate(folder.updated_at)}</p>
 							</div>
 						</div>
 					</div>
