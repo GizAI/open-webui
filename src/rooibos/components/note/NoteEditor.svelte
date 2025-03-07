@@ -541,7 +541,19 @@
 											const editorInstance = extensionThis.editor || editor;
 											if (!editorInstance) return;
 											
-											if (isLineMenuOpen) return;
+											// 이미 라인 메뉴가 열려있는 경우 닫기
+											const existingMenu = document.getElementById('line-menu-popup');
+											if (existingMenu) {
+												existingMenu.remove();
+												isLineMenuOpen = false;
+											}
+											
+											// 같은 라인의 메뉴가 이미 열려있는 경우 닫고 종료
+											if (isLineMenuOpen && editorInstance.state.selection instanceof NodeSelection && 
+												editorInstance.state.selection.from === pos) {
+												isLineMenuOpen = false;
+												return;
+											}
 											
 											isLineMenuOpen = true;
 											
@@ -673,10 +685,31 @@
 		}
 
 		console.log('Editor 생성 완료:', editor);
-  console.log('Editor 명령어:', editor?.commands);
+		console.log('Editor 명령어:', editor?.commands);
 
 		document.addEventListener('click', closeAllDropdowns);
 		window.addEventListener('resize', adjustBubbleMenuPosition);
+		
+		// 에디터 영역 클릭 시 라인 메뉴 닫기
+		if (editorElement) {
+			const handleEditorClick = (e) => {
+				// 라인 아이콘 클릭이 아닌 경우에만 처리
+				if (!e.target || !(e.target as HTMLElement).closest('.line-icon')) {
+					const lineMenu = document.getElementById('line-menu-popup');
+					if (lineMenu) {
+						lineMenu.remove();
+						isLineMenuOpen = false;
+					}
+				}
+			};
+			
+			editorElement.addEventListener('click', handleEditorClick);
+			
+			// 이벤트 리스너 정리 함수 설정
+			editorElement.cleanupListeners = () => {
+				editorElement.removeEventListener('click', handleEditorClick);
+			};
+		}
 
 		// 에디터 초기화 후 상태 업데이트
 		setTimeout(() => {
@@ -699,6 +732,17 @@
 
 		document.removeEventListener('click', closeAllDropdowns);
 		window.removeEventListener('resize', adjustBubbleMenuPosition);
+		
+		// 에디터 클릭 이벤트 리스너 제거
+		if (editorElement && editorElement.cleanupListeners) {
+			editorElement.cleanupListeners();
+		}
+		
+		// 라인 메뉴가 열려있으면 닫기
+		const lineMenu = document.getElementById('line-menu-popup');
+		if (lineMenu) {
+			lineMenu.remove();
+		}
 	});
 
 	export function getContent() {

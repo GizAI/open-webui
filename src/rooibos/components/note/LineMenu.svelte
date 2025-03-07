@@ -78,13 +78,21 @@
     menu.appendChild(divider);
   }
 
+  // 현재 열려있는 메뉴 추적을 위한 전역 변수
+  let currentOpenMenu = null;
+  let currentClickOutsideHandler = null;
+
   // Show line menu function
   export function showLineMenu(x, y, editor, node, pos, openSidebarCallback) {
     console.log('showLineMenu 호출됨', { x, y, editor, node, pos });
     
-    const oldMenu = document.getElementById('line-menu-popup');
-    if (oldMenu) {
-      oldMenu.remove();
+    // 이미 열려있는 메뉴가 있으면 닫기
+    if (currentOpenMenu) {
+      currentOpenMenu.remove();
+      if (currentClickOutsideHandler) {
+        document.removeEventListener('mousedown', currentClickOutsideHandler);
+        currentClickOutsideHandler = null;
+      }
     }
     
     const menu = document.createElement('div');
@@ -227,16 +235,21 @@
         closeMenu();
       }
     }
+    currentClickOutsideHandler = handleClickOutside;
     document.addEventListener('mousedown', handleClickOutside);
     
     function closeMenu() {
       menu.remove();
       document.removeEventListener('mousedown', handleClickOutside);
-            
+      currentClickOutsideHandler = null;
+      currentOpenMenu = null;
+      
       if (typeof openSidebarCallback === 'function') {
         openSidebarCallback();
       }
     }
+    
+    currentOpenMenu = menu;
     
     return { closeMenu };
   }
