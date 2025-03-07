@@ -342,7 +342,8 @@
   
   :global(.dark) :global(.line-icon:hover),
   :global(.dark) :global(.add-line-icon:hover) {
-    background-color: rgba(255, 255, 255, 0.1);
+    background-color: rgba(255, 255, 255, 0.2);
+    color: #ffffff;
   }
   
   /* 메뉴 스타일 */

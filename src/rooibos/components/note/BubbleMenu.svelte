@@ -41,7 +41,7 @@
 </script>
 
 <div
-	class="bubble-menu bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-200 border border-transparent dark:border-gray-600"
+	class="bubble-menu bg-white dark:bg-[#111827] text-gray-900 dark:text-gray-200 border border-transparent dark:border-gray-600"
 	bind:this={menuElement}
 	style="visibility: hidden; position: absolute; display: inline-flex; align-items: stretch; overflow: hidden; font-size: 14px; line-height: 1.2; border-radius: 8px; box-shadow: rgba(0, 0, 0, 0.1) 0px 14px 28px -6px, rgba(0, 0, 0, 0.06) 0px 2px 4px -1px, rgba(84, 72, 49, 0.08) 0px 0px 0px 1px; pointer-events: auto; padding: 4px; flex-wrap: nowrap; white-space: nowrap;"
 >
@@ -286,7 +286,7 @@
 <div class="portal-container">
 	{#if showColorPicker}
 		<div
-			class="floating-dropdown floating-color-picker bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-600"
+			class="floating-dropdown floating-color-picker bg-white dark:bg-[#111827] border border-gray-200 dark:border-gray-600"
 			style="position: fixed; left: {colorPickerPosition.x}px; top: {colorPickerPosition.y}px;"
 		>
 			<button
@@ -329,7 +329,7 @@
 
 	{#if showHighlightPicker}
 		<div
-			class="floating-dropdown floating-color-picker bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-600"
+			class="floating-dropdown floating-color-picker bg-white dark:bg-[#111827] border border-gray-200 dark:border-gray-600"
 			style="position: fixed; left: {highlightPickerPosition.x}px; top: {highlightPickerPosition.y}px;"
 		>
 			<button
@@ -362,7 +362,7 @@
 
 	{#if showAlignmentOptions}
 		<div
-			class="floating-dropdown floating-alignment-dropdown bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-600"
+			class="floating-dropdown floating-alignment-dropdown bg-white dark:bg-[#111827] border border-gray-200 dark:border-gray-600"
 			style="position: fixed; left: {alignmentDropdownPosition.x}px; top: {alignmentDropdownPosition.y}px;"
 		>
 			<button
@@ -442,7 +442,7 @@
 
 	{#if showLinkInput}
 		<div
-			class="floating-dropdown floating-link-input bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-600"
+			class="floating-dropdown floating-link-input bg-white dark:bg-[#111827] border border-gray-200 dark:border-gray-600"
 			style="position: fixed; left: {linkInputPosition.x}px; top: {linkInputPosition.y}px;"
 		>
 			<div class="link-input-container">
@@ -454,7 +454,7 @@
 						placeholder="URL 입력"
 						on:keydown={handleLinkInputKeydown}
 						autofocus
-						class="bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-200 border border-gray-200 dark:border-gray-600"
+						class="bg-white dark:bg-[#111827] text-gray-900 dark:text-gray-200 border border-gray-200 dark:border-gray-600"
 					/>
 					<button class="link-button text-gray-900 dark:text-gray-200 border border-gray-200 dark:border-gray-600" on:click={applyLink}>적용</button>
 					<button class="link-button cancel-button text-gray-900 dark:text-gray-200 border border-gray-200 dark:border-gray-600" on:click={cancelLink}>취소</button>

@@ -110,12 +110,20 @@
     color: #333;
   }
   
+  :global(.dark) .page-title {
+    color: #e5e7eb;
+  }
+  
   .sidebar-toggle-button {
     background: none;
     border: none;
     cursor: pointer;
     padding: 0.5rem;
     color: #555;
+  }
+  
+  :global(.dark) .sidebar-toggle-button {
+    color: #e5e7eb;
   }
   
   .right .new-chat-btn {
@@ -133,6 +141,10 @@
     color: #555;
   }
   
+  :global(.dark) .icon {
+    color: #e5e7eb;
+  }
+  
   .btn-text {
     font-size: 0.75rem;
     margin-top: 0.25rem;
@@ -140,10 +152,18 @@
     color: #555;
   }
   
+  :global(.dark) .btn-text {
+    color: #e5e7eb;
+  }
+  
   .page-title-input {
     font-size: 1rem;
     font-weight: bold;
     border: none;
     outline: none;
+  }
+  
+  :global(.dark) .page-title-input {
+    color: #e5e7eb;
   }
 </style>
