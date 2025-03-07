@@ -8,6 +8,8 @@ import Highlight from '@tiptap/extension-highlight';
 import TextAlign from '@tiptap/extension-text-align';
 import Link from '@tiptap/extension-link';
 import TipTapBubbleMenu from '@tiptap/extension-bubble-menu';
+import TaskList from '@tiptap/extension-task-list';
+import TaskItem from '@tiptap/extension-task-item';
 import type { Extension } from '@tiptap/core';
 import type { Editor } from '@tiptap/core';
 
@@ -22,7 +24,18 @@ export function getExtensions(options: TiptapExtensionOptions): Extension[] {
 	return [
 		StarterKit.configure({
 			// 기본 Heading 확장을 비활성화합니다.
-			heading: false
+			heading: false,
+			// 리스트 관련 확장 설정
+			bulletList: {
+				HTMLAttributes: {
+					class: 'bullet-list',
+				},
+			},
+			orderedList: {
+				HTMLAttributes: {
+					class: 'ordered-list',
+				},
+			},
 		}),
 		Heading.configure({
 			levels: [1, 2, 3, 4, 5, 6]
@@ -42,6 +55,17 @@ export function getExtensions(options: TiptapExtensionOptions): Extension[] {
 				rel: 'noopener noreferrer',
 				contenteditable: 'false'
 			}
+		}) as unknown as Extension,
+		TaskList.configure({
+			HTMLAttributes: {
+				class: 'task-list',
+			},
+		}) as unknown as Extension,
+		TaskItem.configure({
+			nested: true,
+			HTMLAttributes: {
+				class: 'task-item',
+			},
 		}) as unknown as Extension,
 		TipTapBubbleMenu.configure({
 			element: bubbleMenuElement,

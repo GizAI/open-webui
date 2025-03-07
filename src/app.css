@@ -321,6 +321,39 @@ input[type='number'] {
 	margin-bottom: 2.33em;
 }
 
+/* 리스트 스타일 */
+.ProseMirror ul {
+	list-style-type: disc;
+	padding-left: 1.5em;
+	margin: 1em 0;
+}
+
+.ProseMirror ol {
+	list-style-type: decimal;
+	padding-left: 1.5em;
+	margin: 1em 0;
+}
+
+.ProseMirror .task-list {
+	list-style-type: none;
+	padding-left: 0.5em;
+	margin: 1em 0;
+}
+
+.ProseMirror .task-item {
+	display: flex;
+	align-items: flex-start;
+	margin-bottom: 0.5em;
+}
+
+.ProseMirror .task-item > label {
+	margin-right: 0.5em;
+}
+
+.ProseMirror .task-item > div {
+	flex: 1;
+}
+
 .ProseMirror p.is-editor-empty:first-child::before {
 	content: attr(data-placeholder);
 	float: left;
@@ -396,15 +429,6 @@ input[type='number'] {
 	margin-bottom: 2.33em;
 }
 
-.tiptap p code {
-	color: #eb5757;
-	border-width: 0px;
-	padding: 3px 8px;
-	font-size: 0.8em;
-	font-weight: 600;
-	@apply rounded-md dark:bg-gray-800 bg-gray-100 mx-0.5;
-}
-
 /* Code styling */
 .hljs-comment,
 .hljs-quote {
@@ -455,4 +479,46 @@ input[type='number'] {
 
 .hljs-strong {
 	font-weight: 700;
+}
+
+/* tiptap 에디터 스타일 */
+.tiptap ul {
+	list-style-type: disc;
+	padding-left: 1.5em;
+	margin: 1em 0;
+}
+
+.tiptap ol {
+	list-style-type: decimal;
+	padding-left: 1.5em;
+	margin: 1em 0;
+}
+
+.tiptap .task-list {
+	list-style-type: none;
+	padding-left: 0.5em;
+	margin: 1em 0;
+}
+
+.tiptap .task-item {
+	display: flex;
+	align-items: flex-start;
+	margin-bottom: 0.5em;
+}
+
+.tiptap .task-item > label {
+	margin-right: 0.5em;
+}
+
+.tiptap .task-item > div {
+	flex: 1;
+}
+
+.tiptap p code {
+	color: #eb5757;
+	border-width: 0px;
+	padding: 3px 8px;
+	font-size: 0.8em;
+	font-weight: 600;
+	@apply rounded-md dark:bg-gray-800 bg-gray-100 mx-0.5;
 }

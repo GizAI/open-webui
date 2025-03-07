@@ -13,6 +13,9 @@
     } else if (type === 'orderedList') {
       return node.type.name === 'orderedList' || 
         (node.type.name === 'listItem' && node.parent?.type.name === 'orderedList');
+    } else if (type === 'taskList') {
+      return node.type.name === 'taskList' || 
+        (node.type.name === 'taskItem' && node.parent?.type.name === 'taskList');
     }
     return false;
   }
