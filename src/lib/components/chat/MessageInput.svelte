@@ -1195,6 +1195,7 @@
 											<Tooltip content={'지식전문봇'} placement="top">
 												<button
 													on:click|preventDefault={() => {	
+														console.log($config?.default_models.split(',')[0])
 														showCategoryModal = true
 													}}
 													type="button"
