@@ -9,7 +9,7 @@ import { IncomingMessage } from 'http';
 // 서버 설정 상수
 const HOCUSPOCUS_HOST = '0.0.0.0';
 const HOCUSPOCUS_PORT = 1234;
-const API_BASE_URL = 'http://localhost:8000/api'; // 백엔드 API 주소
+const API_BASE_URL = 'http://localhost:8080/api/v1'; // 백엔드 API 주소
 
 // 인터페이스 정의
 interface FetchParams {

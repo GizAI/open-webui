@@ -9,7 +9,7 @@ import { IncomingMessage } from 'http';
 
 const HOCUSPOCUS_HOST = '0.0.0.0';
 const HOCUSPOCUS_PORT = 1234;
-const WEBUI_API_BASE_URL = 'http://localhost:8080///api/v1'; // 백엔드 API 주소
+const WEBUI_API_BASE_URL = 'http://localhost:8080/api/v1'; // 백엔드 API 주소
 
 interface FetchParams {
   documentName: string;
