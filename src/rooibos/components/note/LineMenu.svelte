@@ -138,8 +138,11 @@
     styleActiveMenuItem(heading1Btn, isNodeType(editor, node, 'heading', { level: 1 }));
     heading1Btn.onclick = () => {
       try {
-        console.log('제목1 버튼 클릭됨');
-        editor.chain().focus().setNode('heading', { level: 1 }).run();
+        if (editor.isActive('heading', { level: 1 })) {
+          editor.chain().focus().setNode('paragraph').run();
+        } else {
+          editor.chain().focus().setNode('heading', { level: 1 }).run();
+        }
       } catch (error) {
         console.error('제목1 변환 중 오류:', error);
       }
@@ -153,9 +156,12 @@
     styleMenuItem(heading2Btn, '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M6 4v16M18 4v16M6 12h12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>');
     styleActiveMenuItem(heading2Btn, isNodeType(editor, node, 'heading', { level: 2 }));
     heading2Btn.onclick = () => {
-      try {
-        console.log('제목2 버튼 클릭됨');
-        editor.chain().focus().setNode('heading', { level: 2 }).run();
+      try {        console.log('제목2 버튼 클릭됨');
+        if (editor.isActive('heading', { level: 2 })) {
+          editor.chain().focus().setNode('paragraph').run();
+        } else {
+          editor.chain().focus().setNode('heading', { level: 2 }).run();
+        }
       } catch (error) {
         console.error('제목2 변환 중 오류:', error);
       }
@@ -170,8 +176,11 @@
     styleActiveMenuItem(heading3Btn, isNodeType(editor, node, 'heading', { level: 3 }));
     heading3Btn.onclick = () => {
       try {
-        console.log('제목3 버튼 클릭됨');
-        editor.chain().focus().setNode('heading', { level: 3 }).run();
+        if (editor.isActive('heading', { level: 3 })) {
+          editor.chain().focus().setNode('paragraph').run();
+        } else {
+          editor.chain().focus().setNode('heading', { level: 3 }).run();
+        }
       } catch (error) {
         console.error('제목3 변환 중 오류:', error);
       }
