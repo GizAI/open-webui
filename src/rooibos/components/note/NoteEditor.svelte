@@ -44,6 +44,7 @@
 		textAlignLeft: boolean;
 		textAlignCenter: boolean;
 		textAlignRight: boolean;
+		heading3: boolean; 
 	}
 
 	interface Position {
@@ -86,7 +87,8 @@
 		link: false,
 		textAlignLeft: false,
 		textAlignCenter: false,
-		textAlignRight: false
+		textAlignRight: false,
+		heading3: false
 	};
 
 	const { id: noteId } = selectedFile;
@@ -152,7 +154,8 @@
 			link: editor.isActive('link'),
 			textAlignLeft: editor.isActive({ textAlign: 'left' }),
 			textAlignCenter: editor.isActive({ textAlign: 'center' }),
-			textAlignRight: editor.isActive({ textAlign: 'right' })
+			textAlignRight: editor.isActive({ textAlign: 'right' }),
+			heading3: editor.isActive('heading', { level: 3 })
 		};
 	}
 
@@ -169,7 +172,6 @@
 		adjustBubbleMenuPosition();
 		updateEditorState();
 	}
-
 
 	/**
 	 * Translates selected text using an API
@@ -344,7 +346,8 @@
 			link: false,
 			textAlignLeft: true,
 			textAlignCenter: false,
-			textAlignRight: false
+			textAlignRight: false,
+			heading3: false
 		};
 
 		checkAlignmentState();
@@ -538,7 +541,19 @@
 											const editorInstance = extensionThis.editor || editor;
 											if (!editorInstance) return;
 											
-											if (isLineMenuOpen) return;
+											// 이미 라인 메뉴가 열려있는 경우 닫기
+											const existingMenu = document.getElementById('line-menu-popup');
+											if (existingMenu) {
+												existingMenu.remove();
+												isLineMenuOpen = false;
+											}
+											
+											// 같은 라인의 메뉴가 이미 열려있는 경우 닫고 종료
+											if (isLineMenuOpen && editorInstance.state.selection instanceof NodeSelection && 
+												editorInstance.state.selection.from === pos) {
+												isLineMenuOpen = false;
+												return;
+											}
 											
 											isLineMenuOpen = true;
 											
@@ -633,8 +648,7 @@
 
 	onMount(async () => {
 	try {
-		console.log('initialTitle', initialTitle);
-		console.log('initialContent', initialContent);
+		
 
 		provider = setupCollaboration();
 
@@ -663,13 +677,41 @@
 			const yXmlFragment = provider.document.getXmlFragment('prosemirror');
 			if (yXmlFragment.length === 0) {
 				provider.on('synced', () => {
-					editor.commands.setContent(storedUpdate);
-				}, { once: true });
+					if (editor) {
+						editor.commands.setContent(storedUpdate);
+					}
+				});
 			}
 		}
 
+		console.log('Editor 생성 완료:', editor);
+		console.log('Editor 명령어:', editor?.commands);
+
 		document.addEventListener('click', closeAllDropdowns);
 		window.addEventListener('resize', adjustBubbleMenuPosition);
+		
+		// 에디터 영역 클릭 시 라인 메뉴 닫기
+		if (editorElement) {
+			const handleEditorClick = (e: MouseEvent) => {
+				// 라인 아이콘 클릭이 아닌 경우에만 처리
+				if (!e.target || !(e.target as HTMLElement).closest('.line-icon')) {
+					const lineMenu = document.getElementById('line-menu-popup');
+					if (lineMenu) {
+						lineMenu.remove();
+						isLineMenuOpen = false;
+					}
+				}
+			};
+			
+			editorElement.addEventListener('click', handleEditorClick);
+			
+			// 이벤트 리스너 정리 함수 설정
+			if (editorElement) {
+				editorElement.cleanupListeners = () => {
+					editorElement?.removeEventListener('click', handleEditorClick);
+				};
+			}
+		}
 
 		// 에디터 초기화 후 상태 업데이트
 		setTimeout(() => {
@@ -692,6 +734,17 @@
 
 		document.removeEventListener('click', closeAllDropdowns);
 		window.removeEventListener('resize', adjustBubbleMenuPosition);
+		
+		// 에디터 클릭 이벤트 리스너 제거
+		if (editorElement && editorElement.cleanupListeners) {
+			editorElement.cleanupListeners();
+		}
+		
+		// 라인 메뉴가 열려있으면 닫기
+		const lineMenu = document.getElementById('line-menu-popup');
+		if (lineMenu) {
+			lineMenu.remove();
+		}
 	});
 
 	export function getContent() {
@@ -712,7 +765,7 @@
 
 <CollaboratorsList users={activeUsers} />
 
-<div class="notion-page-container">
+<div class="notion-page-container bg-white dark:bg-gray-900">
 	<div class="editor-wrapper" bind:this={editorElement}></div>
 
 	<BubbleMenu
@@ -772,12 +825,20 @@
 			'Open Sans', 'Helvetica Neue', sans-serif;
 		color: #2e2e2e;
 	}
+	
+	:global(.dark) .notion-page-container {
+		color: #e5e7eb; /* gray-200 */
+	}
+	
 	.editor-wrapper {
 		min-height: 400px;
 		outline: none;
 		border: none;
 		padding: 0;
+		background-color: inherit;
+		color: inherit;
 	}
+	
 	.editor-wrapper:focus {
 		outline: none;
 	}
@@ -794,6 +855,10 @@
 		color: #0366d6;
 		text-decoration: underline;
 		cursor: pointer;
+	}
+	
+	:global(.dark) :global(.custom-link) {
+		color: #58a6ff;
 	}
 
 	:global(.custom-link:hover) {
@@ -825,5 +890,18 @@
 		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
 		transform: translateY(-2px);
 		z-index: 100;
+	}
+
+	:global(.ProseMirror) {
+		background-color: inherit;
+		color: inherit;
+	}
+
+	:global(.dark) :global(.ProseMirror) {
+		color: #e5e7eb;
+	}
+	
+	:global(.dark) :global(.line-highlight) {
+		background-color: rgba(255, 255, 0, 0.2); /* 다크모드에서 하이라이트 색상 조정 */
 	}
 </style>

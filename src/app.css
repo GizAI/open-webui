@@ -279,6 +279,81 @@ input[type='number'] {
 	outline: none;
 }
 
+.ProseMirror h1 {
+	font-size: 2em;
+	font-weight: bold;
+	margin-top: 0.67em;
+	margin-bottom: 0.67em;
+}
+
+.ProseMirror h2 {
+	font-size: 1.5em;
+	font-weight: bold;
+	margin-top: 0.83em;
+	margin-bottom: 0.83em;
+}
+
+.ProseMirror h3 {
+	font-size: 1.17em;
+	font-weight: bold;
+	margin-top: 1em;
+	margin-bottom: 1em;
+}
+
+.ProseMirror h4 {
+	font-size: 1em;
+	font-weight: bold;
+	margin-top: 1.33em;
+	margin-bottom: 1.33em;
+}
+
+.ProseMirror h5 {
+	font-size: 0.83em;
+	font-weight: bold;
+	margin-top: 1.67em;
+	margin-bottom: 1.67em;
+}
+
+.ProseMirror h6 {
+	font-size: 0.67em;
+	font-weight: bold;
+	margin-top: 2.33em;
+	margin-bottom: 2.33em;
+}
+
+/* 리스트 스타일 */
+.ProseMirror ul {
+	list-style-type: disc;
+	padding-left: 1.5em;
+	margin: 1em 0;
+}
+
+.ProseMirror ol {
+	list-style-type: decimal;
+	padding-left: 1.5em;
+	margin: 1em 0;
+}
+
+.ProseMirror .task-list {
+	list-style-type: none;
+	padding-left: 0.5em;
+	margin: 1em 0;
+}
+
+.ProseMirror .task-item {
+	display: flex;
+	align-items: flex-start;
+	margin-bottom: 0.5em;
+}
+
+.ProseMirror .task-item > label {
+	margin-right: 0.5em;
+}
+
+.ProseMirror .task-item > div {
+	flex: 1;
+}
+
 .ProseMirror p.is-editor-empty:first-child::before {
 	content: attr(data-placeholder);
 	float: left;
@@ -312,13 +387,46 @@ input[type='number'] {
 	@apply dark:bg-gray-800 bg-gray-100;
 }
 
-.tiptap p code {
-	color: #eb5757;
-	border-width: 0px;
-	padding: 3px 8px;
-	font-size: 0.8em;
-	font-weight: 600;
-	@apply rounded-md dark:bg-gray-800 bg-gray-100 mx-0.5;
+.tiptap h1 {
+	font-size: 2em;
+	font-weight: bold;
+	margin-top: 0.67em;
+	margin-bottom: 0.67em;
+}
+
+.tiptap h2 {
+	font-size: 1.5em;
+	font-weight: bold;
+	margin-top: 0.83em;
+	margin-bottom: 0.83em;
+}
+
+.tiptap h3 {
+	font-size: 1.17em;
+	font-weight: bold;
+	margin-top: 1em;
+	margin-bottom: 1em;
+}
+
+.tiptap h4 {
+	font-size: 1em;
+	font-weight: bold;
+	margin-top: 1.33em;
+	margin-bottom: 1.33em;
+}
+
+.tiptap h5 {
+	font-size: 0.83em;
+	font-weight: bold;
+	margin-top: 1.67em;
+	margin-bottom: 1.67em;
+}
+
+.tiptap h6 {
+	font-size: 0.67em;
+	font-weight: bold;
+	margin-top: 2.33em;
+	margin-bottom: 2.33em;
 }
 
 /* Code styling */
@@ -371,4 +479,46 @@ input[type='number'] {
 
 .hljs-strong {
 	font-weight: 700;
+}
+
+/* tiptap 에디터 스타일 */
+.tiptap ul {
+	list-style-type: disc;
+	padding-left: 1.5em;
+	margin: 1em 0;
+}
+
+.tiptap ol {
+	list-style-type: decimal;
+	padding-left: 1.5em;
+	margin: 1em 0;
+}
+
+.tiptap .task-list {
+	list-style-type: none;
+	padding-left: 0.5em;
+	margin: 1em 0;
+}
+
+.tiptap .task-item {
+	display: flex;
+	align-items: flex-start;
+	margin-bottom: 0.5em;
+}
+
+.tiptap .task-item > label {
+	margin-right: 0.5em;
+}
+
+.tiptap .task-item > div {
+	flex: 1;
+}
+
+.tiptap p code {
+	color: #eb5757;
+	border-width: 0px;
+	padding: 3px 8px;
+	font-size: 0.8em;
+	font-weight: 600;
+	@apply rounded-md dark:bg-gray-800 bg-gray-100 mx-0.5;
 }

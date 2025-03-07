@@ -13,6 +13,9 @@
     } else if (type === 'orderedList') {
       return node.type.name === 'orderedList' || 
         (node.type.name === 'listItem' && node.parent?.type.name === 'orderedList');
+    } else if (type === 'taskList') {
+      return node.type.name === 'taskList' || 
+        (node.type.name === 'taskItem' && node.parent?.type.name === 'taskList');
     }
     return false;
   }
@@ -32,6 +35,12 @@
     btn.style.fontSize = '14px';
     btn.style.color = '#333';
     
+    // 다크모드일 때만 색상 변경
+    const isDarkMode = document.documentElement.classList.contains('dark');
+    if (isDarkMode) {
+      btn.style.color = '#e5e7eb';
+    }
+    
     if (icon) {
       const iconSpan = document.createElement('span');
       iconSpan.innerHTML = icon;
@@ -44,7 +53,7 @@
     }
     
     btn.onmouseover = () => {
-      btn.style.background = '#f5f5f5';
+      btn.style.background = isDarkMode ? '#374151' : '#f5f5f5';
     };
     btn.onmouseout = () => {
       btn.style.background = 'transparent';
@@ -53,8 +62,10 @@
 
   // Menu item active styling function
   function styleActiveMenuItem(btn, isActive) {
+    const isDarkMode = document.documentElement.classList.contains('dark');
+    
     if (isActive) {
-      btn.style.background = '#f0f0f0';
+      btn.style.background = isDarkMode ? '#4B5563' : '#f0f0f0';
       btn.style.fontWeight = 'bold';
       
       // Add check icon
@@ -70,19 +81,30 @@
   function addDivider(menu) {
     const divider = document.createElement('div');
     divider.style.height = '1px';
-    divider.style.background = '#eee';
+    const isDarkMode = document.documentElement.classList.contains('dark');
+    divider.style.background = isDarkMode ? '#4B5563' : '#eee';
     divider.style.margin = '4px 0';
     menu.appendChild(divider);
   }
+
+  // 현재 열려있는 메뉴 추적을 위한 전역 변수
+  let currentOpenMenu = null;
+  let currentClickOutsideHandler = null;
 
   // Show line menu function
   export function showLineMenu(x, y, editor, node, pos, openSidebarCallback) {
     console.log('showLineMenu 호출됨', { x, y, editor, node, pos });
     
-    const oldMenu = document.getElementById('line-menu-popup');
-    if (oldMenu) {
-      oldMenu.remove();
+    // 이미 열려있는 메뉴가 있으면 닫기
+    if (currentOpenMenu) {
+      currentOpenMenu.remove();
+      if (currentClickOutsideHandler) {
+        document.removeEventListener('mousedown', currentClickOutsideHandler);
+        currentClickOutsideHandler = null;
+      }
     }
+    
+    const isDarkMode = document.documentElement.classList.contains('dark');
     
     const menu = document.createElement('div');
     menu.id = 'line-menu-popup';
@@ -93,9 +115,19 @@
     menu.style.padding = '8px';
     menu.style.border = '1px solid #eee';
     menu.style.background = '#fff';
+    menu.style.color = '#333';
     menu.style.zIndex = '9999';
     menu.style.borderRadius = '6px';
     menu.style.boxShadow = '0 2px 10px rgba(0,0,0,0.1)';
+    
+    // 다크모드일 때만 스타일 변경
+    if (isDarkMode) {
+      menu.style.border = '1px solid #4B5563';
+      menu.style.background = '#111827';
+      menu.style.color = '#e5e7eb';
+      menu.style.boxShadow = '0 2px 10px rgba(0,0,0,0.3)';
+    }
+    
     menu.style.display = 'flex';
     menu.style.flexDirection = 'column';
     menu.style.gap = '4px';
@@ -106,15 +138,15 @@
     
     // Paragraph
     const paragraphBtn = document.createElement('button');
-    paragraphBtn.textContent = 'Paragraph';
+    paragraphBtn.textContent = '본문';
     styleMenuItem(paragraphBtn, '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><text x="8" y="17" font-size="16" font-weight="bold" fill="currentColor">P</text></svg>');
     styleActiveMenuItem(paragraphBtn, isNodeType(editor, node, 'paragraph'));
     paragraphBtn.onclick = () => {
       try {
-        console.log('Paragraph 버튼 클릭됨');
+        console.log('본문 버튼 클릭됨');
         editor.chain().focus().setNode('paragraph').run();
       } catch (error) {
-        console.error('Paragraph 변환 중 오류:', error);
+        console.error('본문 변환 중 오류:', error);
       }
       closeMenu();
     };
@@ -122,15 +154,18 @@
     
     // Heading 1
     const heading1Btn = document.createElement('button');
-    heading1Btn.textContent = 'Heading 1';
+    heading1Btn.textContent = '제목1';
     styleMenuItem(heading1Btn, '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M6 4v16M18 4v16M6 12h12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>');
     styleActiveMenuItem(heading1Btn, isNodeType(editor, node, 'heading', { level: 1 }));
     heading1Btn.onclick = () => {
       try {
-        console.log('Heading 1 버튼 클릭됨');
-        editor.chain().focus().setNode('heading', { level: 1 }).run();
+        if (editor.isActive('heading', { level: 1 })) {
+          editor.chain().focus().setNode('paragraph').run();
+        } else {
+          editor.chain().focus().setNode('heading', { level: 1 }).run();
+        }
       } catch (error) {
-        console.error('Heading 1 변환 중 오류:', error);
+        console.error('제목1 변환 중 오류:', error);
       }
       closeMenu();
     };
@@ -138,15 +173,18 @@
     
     // Heading 2
     const heading2Btn = document.createElement('button');
-    heading2Btn.textContent = 'Heading 2';
+    heading2Btn.textContent = '제목2';
     styleMenuItem(heading2Btn, '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M6 4v16M18 4v16M6 12h12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>');
     styleActiveMenuItem(heading2Btn, isNodeType(editor, node, 'heading', { level: 2 }));
     heading2Btn.onclick = () => {
-      try {
-        console.log('Heading 2 버튼 클릭됨');
-        editor.chain().focus().setNode('heading', { level: 2 }).run();
+      try {        console.log('제목2 버튼 클릭됨');
+        if (editor.isActive('heading', { level: 2 })) {
+          editor.chain().focus().setNode('paragraph').run();
+        } else {
+          editor.chain().focus().setNode('heading', { level: 2 }).run();
+        }
       } catch (error) {
-        console.error('Heading 2 변환 중 오류:', error);
+        console.error('제목2 변환 중 오류:', error);
       }
       closeMenu();
     };
@@ -154,15 +192,18 @@
     
     // Heading 3
     const heading3Btn = document.createElement('button');
-    heading3Btn.textContent = 'Heading 3';
+    heading3Btn.textContent = '제목3';
     styleMenuItem(heading3Btn, '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M6 4v16M18 4v16M6 12h12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>');
     styleActiveMenuItem(heading3Btn, isNodeType(editor, node, 'heading', { level: 3 }));
     heading3Btn.onclick = () => {
       try {
-        console.log('Heading 3 버튼 클릭됨');
-        editor.chain().focus().setNode('heading', { level: 3 }).run();
+        if (editor.isActive('heading', { level: 3 })) {
+          editor.chain().focus().setNode('paragraph').run();
+        } else {
+          editor.chain().focus().setNode('heading', { level: 3 }).run();
+        }
       } catch (error) {
-        console.error('Heading 3 변환 중 오류:', error);
+        console.error('제목3 변환 중 오류:', error);
       }
       closeMenu();
     };
@@ -172,15 +213,15 @@
     
     // Bullet list
     const bulletBtn = document.createElement('button');
-    bulletBtn.textContent = 'Bullet list';
+    bulletBtn.textContent = '글머리 기호';
     styleMenuItem(bulletBtn, '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>');
     styleActiveMenuItem(bulletBtn, isNodeType(editor, node, 'bulletList'));
     bulletBtn.onclick = () => {
       try {
-        console.log('Bullet list 버튼 클릭됨');
+        console.log('글머리 기호 버튼 클릭됨');
         editor.chain().focus().toggleBulletList().run();
       } catch (error) {
-        console.error('Bullet list 변환 중 오류:', error);
+        console.error('글머리 기호 변환 중 오류:', error);
       }
       closeMenu();
     };
@@ -188,15 +229,15 @@
     
     // Ordered list
     const orderedBtn = document.createElement('button');
-    orderedBtn.textContent = 'Ordered list';
+    orderedBtn.textContent = '번호 매기기';
     styleMenuItem(orderedBtn, '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M10 6h11M10 12h11M10 18h11M4 6h1v4M4 10h2M4 18h3M4 14h2v4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>');
     styleActiveMenuItem(orderedBtn, isNodeType(editor, node, 'orderedList'));
     orderedBtn.onclick = () => {
       try {
-        console.log('Ordered list 버튼 클릭됨');
+        console.log('번호 매기기 버튼 클릭됨');
         editor.chain().focus().toggleOrderedList().run();
       } catch (error) {
-        console.error('Ordered list 변환 중 오류:', error);
+        console.error('번호 매기기 변환 중 오류:', error);
       }
       closeMenu();
     };
@@ -204,14 +245,14 @@
     
     // Tasks list
     const tasksBtn = document.createElement('button');
-    tasksBtn.textContent = 'Tasks list';
+    tasksBtn.textContent = '할 일 목록';
     styleMenuItem(tasksBtn, '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M9 12l2 2 4-4M8 6h13M8 18h13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><rect x="3" y="6" width="4" height="4" rx="1" stroke="currentColor" stroke-width="2"/><rect x="3" y="16" width="4" height="4" rx="1" stroke="currentColor" stroke-width="2"/></svg>');
     tasksBtn.onclick = () => {
       try {
-        console.log('Tasks list 버튼 클릭됨');
+        console.log('할 일 목록 버튼 클릭됨');
         editor.chain().focus().toggleTaskList().run();
       } catch (error) {
-        console.error('Tasks list 변환 중 오류:', error);
+        console.error('할 일 목록 변환 중 오류:', error);
       }
       closeMenu();
     };
@@ -224,16 +265,21 @@
         closeMenu();
       }
     }
+    currentClickOutsideHandler = handleClickOutside;
     document.addEventListener('mousedown', handleClickOutside);
     
     function closeMenu() {
       menu.remove();
       document.removeEventListener('mousedown', handleClickOutside);
-            
+      currentClickOutsideHandler = null;
+      currentOpenMenu = null;
+      
       if (typeof openSidebarCallback === 'function') {
         openSidebarCallback();
       }
     }
+    
+    currentOpenMenu = menu;
     
     return { closeMenu };
   }
@@ -261,6 +307,10 @@
     color: #555;
   }
   
+  :global(.dark) :global(.line-icon) {
+    color: #e5e7eb;
+  }
+  
   :global(.add-line-icon) {
     position: absolute;
     width: 24px;
@@ -275,6 +325,10 @@
     color: #555;
   }
   
+  :global(.dark) :global(.add-line-icon) {
+    color: #e5e7eb;
+  }
+  
   :global(.line-block:hover .line-icon),
   :global(.line-block:hover .add-line-icon) {
     opacity: 0.7;
@@ -286,12 +340,26 @@
     background-color: rgba(0, 0, 0, 0.05);
   }
   
+  :global(.dark) :global(.line-icon:hover),
+  :global(.dark) :global(.add-line-icon:hover) {
+    background-color: rgba(255, 255, 255, 0.2);
+    color: #ffffff;
+  }
+  
   /* 메뉴 스타일 */
   :global(#line-menu-popup),
   :global(#add-menu-popup) {
     animation: fadeIn 0.15s ease-in-out;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
     border: 1px solid #eee;
+    background-color: #fff;
+  }
+  
+  :global(.dark) :global(#line-menu-popup),
+  :global(.dark) :global(#add-menu-popup) {
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+    border: 1px solid #4B5563;
+    background-color: #111827;
   }
   
   :global(#line-menu-popup button),
@@ -307,6 +375,12 @@
     border-radius: 4px;
     cursor: pointer;
     transition: background-color 0.2s;
+    color: #333;
+  }
+  
+  :global(.dark) :global(#line-menu-popup button),
+  :global(.dark) :global(#add-menu-popup button) {
+    color: #e5e7eb;
   }
   
   :global(#line-menu-popup button:hover),
@@ -314,10 +388,20 @@
     background-color: rgba(0, 0, 0, 0.05);
   }
   
+  :global(.dark) :global(#line-menu-popup button:hover),
+  :global(.dark) :global(#add-menu-popup button:hover) {
+    background-color: rgba(255, 255, 255, 0.1);
+  }
+  
   :global(#line-menu-popup button.active),
   :global(#add-menu-popup button.active) {
     background-color: rgba(0, 0, 0, 0.08);
     font-weight: 500;
+  }
+  
+  :global(.dark) :global(#line-menu-popup button.active),
+  :global(.dark) :global(#add-menu-popup button.active) {
+    background-color: rgba(255, 255, 255, 0.2);
   }
   
   @keyframes fadeIn {

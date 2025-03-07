@@ -1,5 +1,6 @@
 // tiptapExtension.ts
 import StarterKit from '@tiptap/starter-kit';
+import Heading from '@tiptap/extension-heading';
 import Underline from '@tiptap/extension-underline';
 import TextStyle from '@tiptap/extension-text-style';
 import Color from '@tiptap/extension-color';
@@ -7,24 +8,38 @@ import Highlight from '@tiptap/extension-highlight';
 import TextAlign from '@tiptap/extension-text-align';
 import Link from '@tiptap/extension-link';
 import TipTapBubbleMenu from '@tiptap/extension-bubble-menu';
+import TaskList from '@tiptap/extension-task-list';
+import TaskItem from '@tiptap/extension-task-item';
 import type { Extension } from '@tiptap/core';
+import type { Editor } from '@tiptap/core';
 
 export interface TiptapExtensionOptions {
 	bubbleMenuElement: HTMLElement;
 	adjustBubbleMenuPosition: () => void;
 }
 
-/**
- * NoteEditor에서 사용할 tiptap 확장(extension)들을 반환합니다.
- *
- * @param options - bubbleMenuElement와 adjustBubbleMenuPosition 함수를 포함하는 옵션 객체
- * @returns Extension[] 배열
- */
 export function getExtensions(options: TiptapExtensionOptions): Extension[] {
 	const { bubbleMenuElement, adjustBubbleMenuPosition } = options;
 
 	return [
-		StarterKit,
+		StarterKit.configure({
+			// 기본 Heading 확장을 비활성화합니다.
+			heading: false,
+			// 리스트 관련 확장 설정
+			bulletList: {
+				HTMLAttributes: {
+					class: 'bullet-list',
+				},
+			},
+			orderedList: {
+				HTMLAttributes: {
+					class: 'ordered-list',
+				},
+			},
+		}),
+		Heading.configure({
+			levels: [1, 2, 3, 4, 5, 6]
+		}) as unknown as Extension,
 		Underline as unknown as Extension,
 		TextStyle as unknown as Extension,
 		Color,
@@ -41,9 +56,20 @@ export function getExtensions(options: TiptapExtensionOptions): Extension[] {
 				contenteditable: 'false'
 			}
 		}) as unknown as Extension,
+		TaskList.configure({
+			HTMLAttributes: {
+				class: 'task-list',
+			},
+		}) as unknown as Extension,
+		TaskItem.configure({
+			nested: true,
+			HTMLAttributes: {
+				class: 'task-item',
+			},
+		}) as unknown as Extension,
 		TipTapBubbleMenu.configure({
 			element: bubbleMenuElement,
-			shouldShow: ({ editor, from, to }: { editor: any; from: number; to: number }) => {
+			shouldShow: ({ editor, from, to }: { editor: Editor; from: number; to: number }) => {
 				const isVisible = from !== to && editor.isEditable;
 				if (isVisible) {
 					setTimeout(adjustBubbleMenuPosition, 0);
