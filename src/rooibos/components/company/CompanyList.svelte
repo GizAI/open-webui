@@ -78,7 +78,7 @@
 
 	import { showSidebar, mobile } from '$lib/stores';
 	import ActionButtons from '../common/ActionButtons.svelte';
-	import { formatBusinessNumber, formatDate, formatDistance } from '../common/helper';
+	import { formatBusinessNumber, formatDateForCompany, formatDistance } from '../common/helper';
 	export let companyList: SearchResult[] = [];
 
 	let fullscreenStates: Record<string, boolean> = {};
@@ -279,7 +279,7 @@
 							{/if}
 							{#if result.representative && !fullscreenStates[result.master_id]}
 								<div class="text-sm text-gray-500 mt-1">
-									대표자: {result.representative ?? '정보없음'} | 설립연도: {formatDate(
+									대표자: {result.representative ?? '정보없음'} | 설립연도: {formatDateForCompany(
 										result.establishment_date
 									)} | 직원수: {result.employee_count ?? '정보없음'} | 거리: {formatDistance(
 										result.distance_from_user
