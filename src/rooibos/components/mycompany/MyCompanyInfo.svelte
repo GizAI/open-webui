@@ -154,6 +154,21 @@
 	let folderId: string | null = null;
 	const currentUser = get(user);
 
+	// 모달이 닫힐 때 이전 상태를 저장
+	let previousModalState = false;
+	
+	// 모달 상태 변경 감지 및 처리
+	function handleModalStateChange(currentModalState: boolean) {
+		// 모달이 닫힐 때 (true → false)
+		if (previousModalState && !currentModalState) {
+			selectedFileId = null;
+			selectedFile = null;
+		}
+		previousModalState = currentModalState;
+	}
+	
+	$: handleModalStateChange(showAddTextContentModal);
+
 	$: if (bookmark && bookmark.files) {
 		fuse = new Fuse(bookmark.files, {
 			keys: ['meta.name', 'meta.description']
@@ -173,7 +188,10 @@
 		if (file) {
 			file.data = file.data ?? { content: '' };
 			selectedFile = file;
-			showAddTextContentModal = true;
+			// 여기서 모달 상태를 직접 변경하지 않고 별도 함수로 처리
+			if (!showAddTextContentModal) {
+				showAddTextContentModal = true;
+			}
 		} else {
 			selectedFile = null;
 		}
@@ -182,6 +200,12 @@
 	}
 
 	const createFileFromText = (name: string, content: string) => {
+		// 내용이 비어있는 경우 null 반환
+		// HTML 태그만 있는 경우(<p></p> 등)도 빈 내용으로 처리
+		if (!content.trim() || content.trim() === '<p></p>' || content.replace(/<[^>]*>/g, '').trim() === '') {
+			return null;
+		}
+		
 		const blob = new Blob([content], { type: 'text/plain' });
 		const file = blobToFile(blob, `${name}.txt`);
 
@@ -190,6 +214,11 @@
 	};
 
 	const uploadFileHandler = async (file: any) => {
+		// 파일이 null인 경우 처리하지 않음
+		if (!file) {
+			return null;
+		}
+		
 		const tempItemId = uuidv4();
 		const fileItem = {
 			type: 'file',
@@ -643,12 +672,17 @@
 	initialContent={selectedFile ? selectedFile?.data?.content || '' : ''}
 	selectedFile={selectedFile || tempFileForNoteEditor}
 	on:submit={(e) => {
+		// HTML 태그만 있는 경우(<p></p> 등)도 빈 내용으로 처리
+		if (!e.detail.content.trim() || e.detail.content.trim() === '<p></p>' || e.detail.content.replace(/<[^>]*>/g, '').trim() === '') {
+			showAddTextContentModal = false;
+			selectedFileId = null;
+			return;
+		}
+		
 		if (selectedFile) {
-			// 기존 파일 수정
 			selectedFile.data.content = e.detail.content;
 			updateFileContentHandler();
 		} else {
-			// 새 파일 생성
 			const file = createFileFromText(e.detail.name, e.detail.content);
 			uploadFileHandler(file);
 		}

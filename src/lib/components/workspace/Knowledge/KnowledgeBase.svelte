@@ -65,6 +65,16 @@
 	let showSyncConfirmModal = false;
 	let showAccessControlModal = false;
 
+	// 모달이 닫힐 때 이전 상태를 저장
+	let previousModalState = false;
+	$: if (previousModalState && !showAddTextContentModal) {
+		// 모달이 닫힐 때 (true -> false로 변경될 때)
+		// 선택된 파일 정보 초기화
+		selectedFileId = null;
+		selectedFile = null;
+	}
+	$: previousModalState = showAddTextContentModal;
+
 	let inputFiles = null;
 
 	let filteredItems = [];
@@ -84,6 +94,7 @@
 
 	let selectedFile = null;
 	let selectedFileId = null;
+	let tempFileForNoteEditor = { id: 'temp-id', meta: { name: '' }, data: { content: '' } };
 
 	$: if (selectedFileId) {
 		const file = (knowledge?.files ?? []).find((file) => file.id === selectedFileId);
@@ -103,6 +114,12 @@
 	let dragged = false;
 
 	const createFileFromText = (name, content) => {
+		// 내용이 비어있는 경우 null 반환
+		// HTML 태그만 있는 경우(<p></p> 등)도 빈 내용으로 처리
+		if (!content.trim() || content.trim() === '<p></p>' || content.replace(/<[^>]*>/g, '').trim() === '') {
+			return null;
+		}
+		
 		const blob = new Blob([content], { type: 'text/plain' });
 		const file = blobToFile(blob, `${name}.txt`);
 
@@ -111,6 +128,11 @@
 	};
 
 	const uploadFileHandler = async (file) => {
+		// 파일이 null인 경우 처리하지 않음
+		if (!file) {
+			return null;
+		}
+		
 		console.log(file);
 
 		const tempItemId = uuidv4();
@@ -377,23 +399,25 @@
 	};
 
 	const updateFileContentHandler = async () => {
+		if (!selectedFile) {
+			toast.error($i18n.t('No file selected.'));
+			return;
+		}
+		
+		if (selectedFile.id === 'temp-id') {
+			toast.error($i18n.t('Cannot update temporary file.'));
+			return;
+		}
+		
 		const fileId = selectedFile.id;
 		const content = selectedFile.data.content;
 
-		const res = updateFileDataContentById(localStorage.token, fileId, content).catch((e) => {
+		const res = await updateFileDataContentById(localStorage.token, fileId, content).catch((e) => {
 			toast.error(`${e}`);
+			return null;
 		});
 
-		const updatedKnowledge = await updateFileFromKnowledgeById(
-			localStorage.token,
-			id,
-			fileId
-		).catch((e) => {
-			toast.error(`${e}`);
-		});
-
-		if (res && updatedKnowledge) {
-			knowledge = updatedKnowledge;
+		if (res) {
 			toast.success($i18n.t('File content updated successfully.'));
 		}
 	};
@@ -570,9 +594,17 @@
 	bind:show={showAddTextContentModal}
 	initialTitle={selectedFile?.meta?.name}
 	initialContent={selectedFile?.data?.content}
-	selectedFile={selectedFile}
+	selectedFile={selectedFile || tempFileForNoteEditor}
 	on:submit={async (e) => {
-		if (selectedFile && selectedFile.id) {
+		// HTML 태그만 있는 경우(<p></p> 등)도 빈 내용으로 처리
+		if (!e.detail.content.trim() || e.detail.content.trim() === '<p></p>' || e.detail.content.replace(/<[^>]*>/g, '').trim() === '') {
+			// 내용이 비어있으면 저장하지 않고 모달만 닫음
+			selectedFileId = null;
+			selectedFile = null;
+			return;
+		}
+		
+		if (selectedFile && selectedFile.id !== 'temp-id') {
 			// 기존 파일 수정: update 처리
 			selectedFile.meta.name = e.detail.name;
 			selectedFile.data.content = e.detail.content;
@@ -582,6 +614,9 @@
 			const file = createFileFromText(e.detail.name, e.detail.content);
 			await uploadFileHandler(file);
 		}
+		// 모달이 닫힐 때 선택된 파일 정보 초기화
+		selectedFileId = null;
+		selectedFile = null;
 	}}
 />
 
@@ -719,6 +754,8 @@
 											if (e.detail.type === 'directory') {
 												uploadDirectoryHandler();
 											} else if (e.detail.type === 'text') {
+												selectedFileId = null;
+												selectedFile = null;
 												showAddTextContentModal = true;
 											} else {
 												document.getElementById('files-input').click();
@@ -735,18 +772,19 @@
 						{#if filteredItems.length > 0}
 							<div class=" flex overflow-y-auto h-full w-full scrollbar-hidden text-xs">
 								<Files
-		small
-		files={filteredItems}
-		on:click={(e) => {
-			// 선택된 파일을 변수에 저장하고 모달을 오픈
-			selectedFile = (knowledge?.files ?? []).find(file => file.id === e.detail);
-			showAddTextContentModal = true;
-		}}
-		on:delete={(e) => {
-			console.log(e.detail);
-			deleteFileHandler(e.detail);
-		}}
-	/>
+									small
+									files={filteredItems}
+									on:click={(e) => {
+										// 선택된 파일을 변수에 저장하고 모달을 오픈
+										selectedFileId = e.detail;
+										selectedFile = (knowledge?.files ?? []).find(file => file.id === e.detail);
+										showAddTextContentModal = true;
+									}}
+									on:delete={(e) => {
+										console.log(e.detail);
+										deleteFileHandler(e.detail);
+									}}
+								/>
 							</div>
 						{:else}
 							<div class="my-3 flex flex-col justify-center text-center text-gray-500 text-xs">

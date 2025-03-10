@@ -63,7 +63,7 @@
 	export let initialContent: any = '';
 	export let selectedFile: any;
 
-	let pageTitle = initialTitle || '새 페이지';
+	let pageTitle = initialTitle || '새 노트';
 
 	let editor: Editor | null = null;
 	let editorElement: HTMLDivElementWithCleanup | null = null;	
