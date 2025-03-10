@@ -3,6 +3,7 @@ from pydantic import BaseModel, Field
 from typing import Callable, Awaitable, Any, Optional, Dict
 import json
 import re
+from datetime import datetime
 
 from open_webui.models.users import Users
 from open_webui.utils.chat import generate_chat_completion
@@ -142,14 +143,48 @@ class Filter:
         섹션 주제에 맞는 검색 키워드를 자동 생성하기 위한 헬퍼 메서드.
         (체인오브띠록 없이, JSON 배열로만 반환되도록 유도)
         """
+        # 현재 날짜 정보 가져오기
+        current_date = datetime.now()
+        current_year = current_date.year
+        current_month = current_date.month
+        current_day = current_date.day
+        formatted_date = current_date.strftime("%Y-%m-%d")
+
         system_prompt = (
             "You are a search keyword generator. Given the user's overall question and a section topic, "
-            "generate a concise list of possible web search queries (keywords) in JSON array.\n"
-            "No chain-of-thought, no extra text. Just JSON array of strings."
+            "generate a concise list of possible web search queries (keywords) in a JSON array. "
+            f"Today's date is {formatted_date}. Use this information to create timely and relevant search queries.\n\n"
+            "Follow these guidelines:\n\n"
+            "1. Create 3-5 specific, targeted search queries that will yield relevant information for the section topic.\n"
+            "2. Include variations of keywords to maximize search coverage.\n"
+            "3. For data-specific queries, include concrete details like names, dates, metrics, and descriptors.\n"
+            "4. Ensure keywords are specific enough to return relevant results but not too narrow.\n\n"
+            "5. For queries requiring numerical or statistical data:\n"
+            "   - Include terms like 'dataset', 'table', 'statistics', 'numbers', 'figures', 'chart'\n"
+            "   - Specify the data format: 'CSV', 'Excel', 'database', 'API'\n"
+            f"   - Add time periods: 'historical', 'latest', 'quarterly', 'annual', '{current_year}', '{current_year-1}'\n"
+            "   - Include source references: 'official', 'government', 'research', 'published'\n\n"
+            "6. For financial or stock data specifically:\n"
+            "   - Use precise terms: 'stock price history', 'market cap', 'P/E ratio', 'dividend yield'\n"
+            f"   - Include time frames: 'daily stock data', 'weekly price movement', 'quarterly earnings {current_year} Q{(current_month-1)//3+1}'\n"
+            "   - Specify data sources: 'Yahoo Finance', 'Bloomberg', 'SEC filings', 'financial statements'\n"
+            "   - Add analysis terms: 'technical analysis', 'fundamental indicators', 'trading volume data'\n\n"
+            "7. For time-sensitive information:\n"
+            f"   - Use current time references: 'as of {formatted_date}', '{current_year} current', 'latest update'\n"
+            f"   - For recent events: '{current_month}/{current_year}', 'past month', 'recent developments'\n"
+            f"   - For seasonal data: '{current_year} {['winter', 'spring', 'summer', 'fall'][((current_month-1)//3)]}'\n\n"
+            "Examples:\n"
+            f"- For a query about 'Tesla financial performance', include: ['Tesla Q{(current_month-1)//3+1} {current_year} earnings report', 'Tesla annual revenue growth {current_year-1}', 'Tesla profit margin analysis {current_year}']\n"
+            f"- For a query about 'climate change impacts', include: ['recent climate change effects on agriculture {current_year}', 'sea level rise data {current_year}', 'climate change economic impact statistics {current_year-1}-{current_year}']\n"
+            "- For a query about 'machine learning algorithms', include: ['comparison of supervised learning algorithms', 'neural network vs random forest performance', 'latest machine learning benchmarks']\n"
+            f"- For a query about 'Samsung stock price history', include: ['Samsung Electronics stock price table {current_year-2}-{current_year}', 'Samsung daily stock data CSV download {formatted_date}', 'Samsung stock historical performance chart as of {current_month}/{current_year}']\n"
+            f"- For a query about 'COVID-19 statistics', include: ['COVID-19 infection rate by country dataset {current_year}', 'COVID-19 mortality statistics {current_year} official data', 'COVID-19 vaccination rate comparison table {current_year-1}-{current_year}']\n\n"
+            "No chain-of-thought, no extra text. Just output a JSON array of strings."
         )
         user_prompt = (
             f"User's question: {user_message}\n"
             f"Section topic: {section_topic}\n"
+            f"Current date: {formatted_date}\n"
             'Return a JSON array, e.g. ["keyword1", "keyword2", ...].'
         )
 
@@ -180,6 +215,7 @@ class Filter:
                     user_prompt = (
                         f"User's question: {user_message}\n"
                         f"Section topic: {section_topic}\n"
+                        f"Current date: {formatted_date}\n"
                         'Return ONLY a valid JSON array of strings, e.g. ["keyword1", "keyword2", ...]. '
                         "No explanations, just the JSON array."
                     )
@@ -192,6 +228,7 @@ class Filter:
                 user_prompt = (
                     f"User's question: {user_message}\n"
                     f"Section topic: {section_topic}\n"
+                    f"Current date: {formatted_date}\n"
                     'Return ONLY a valid JSON array of strings, e.g. ["keyword1", "keyword2", ...]. '
                     "No explanations, no markdown, just the raw JSON array."
                 )
@@ -365,7 +402,7 @@ class Filter:
         ):
             try:
                 section_payload = {
-                    "model": "o3",
+                    "model": "o3-mini",
                     "messages": [
                         {"role": "system", "content": system_context},
                         {
