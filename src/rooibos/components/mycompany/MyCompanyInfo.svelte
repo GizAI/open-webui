@@ -213,10 +213,9 @@
 		return file;
 	};
 
-	const uploadFileHandler = async (file: any) => {
-		// 파일이 null인 경우 처리하지 않음
+	const uploadFileHandler = async (file) => {
 		if (!file) {
-			return null;
+			return;
 		}
 		
 		const tempItemId = uuidv4();
@@ -255,16 +254,18 @@
 		try {
 			const uploadedFile = await uploadFile(localStorage.token, file);
 
-			if (uploadedFile) {
-				bookmark.files = bookmark.files.map((item) => {
-					if (item.itemId === tempItemId) {
-						item.id = uploadedFile.id;
-					}
-
-					delete item.itemId;
-					return item;
-				});
+			if (uploadedFile) {				
 				await addFileHandler(uploadedFile.id);
+				
+				// 업로드된 파일의 상태를 업데이트
+				if (bookmark && bookmark.files) {
+					bookmark.files = bookmark.files.map(f => {
+						if (f.itemId === tempItemId || (f.name === file.name && f.status === 'uploading')) {
+							return { ...f, status: 'completed', id: uploadedFile.id };
+						}
+						return f;
+					});
+				}
 			} else {
 				toast.error($i18n.t('Failed to upload file.'));
 			}
@@ -435,7 +436,7 @@
 	};
 
 	const addFileHandler = async (fileId: string) => {
-		const res = await fetch(`${WEBUI_API_BASE_URL}/rooibos/mycompanies/${id}/file/add`, {
+		const res = await fetch(`${WEBUI_API_BASE_URL}/rooibos/mycompanies/${fileId}/file/add`, {
 			method: 'POST',
 			headers: {
 				Accept: 'application/json',
@@ -448,8 +449,19 @@
 
 		if (res.ok) {
 			const data = await res.json();
-			bookmark = data.data[0];
-			filteredItems = data.data[0].files;
+			// bookmark = data.data[0];
+			// filteredItems = data.data[0].files;
+			
+			// 업로드 중인 파일의 상태를 업데이트
+			if (bookmark && bookmark.files) {
+				bookmark.files = bookmark.files.map(file => {
+					if (file.id === fileId || file.status === 'uploading') {
+						return { ...file, status: 'completed' };
+					}
+					return file;
+				});
+			}
+			
 			toast.success($i18n.t('File added successfully.'));
 		} else {
 			toast.error($i18n.t('Failed to add file.'));
