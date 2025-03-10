@@ -469,7 +469,7 @@
 		const providerInstance = new HocuspocusProvider({
 			url: window.location.hostname === 'localhost'
 				? 'ws://localhost:8443'
-				: `wss://${window.location.hostname}:8443`,
+				: `wss://${window.location.hostname}/ws/`,
 			name: documentName,
 			token: token,
 			connect: true,
