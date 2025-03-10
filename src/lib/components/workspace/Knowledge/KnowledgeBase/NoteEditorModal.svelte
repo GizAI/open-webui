@@ -16,6 +16,14 @@
 	let name = 'Untitled';
 	let content = '';
 	let noteEditor: any;
+	let prevShow = show;
+
+	$: if (prevShow && !show) {
+		dispatch('close');
+		prevShow = show;
+	} else if (!prevShow && show) {
+		prevShow = show;
+	}
 
 	function updateContent() {
 		if (noteEditor && noteEditor.getContent) {
@@ -51,13 +59,14 @@
 	}
 </script>
 
-<Modal size="full" containerClassName="" className="h-full bg-white dark:bg-gray-900" bind:show>
+<Modal size="full" containerClassName="" className="h-full bg-white dark:bg-gray-900" bind:show on:close={() => dispatch('close')}>
 	<div class="absolute top-0 right-0 p-5 z-10">
 		<button
 			class="self-center dark:text-white"
 			type="button"
 			on:click={() => {
 				show = false;
+				dispatch('close');
 			}}
 		>
 			<XMark className="size-3.5" />
