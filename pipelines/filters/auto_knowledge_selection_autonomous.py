@@ -38,63 +38,56 @@ class Filter:
                 }
             )
 
-    async def parse_json_response(self, content: str) -> Optional[Dict]:
+    async def parse_json_response(self, content: str) -> Optional[Any]:
         """
         Utility to parse JSON response from model output.
+        더 강력한 JSON 파싱 기능 제공
         """
+        if not content or not content.strip():
+            return None
+
         try:
+            # 1. 기본 정리: 코드블록, 따옴표 등 제거
             content = content.replace("```json", "").replace("```", "").strip()
-            content = content.replace(
-                "'", '"'
-            )  # Replace single quotes with double quotes
-            match = re.search(r"\{.*?\}", content, flags=re.DOTALL)
+
+            # 2. 단일 따옴표를 이중 따옴표로 변환 (JSON 표준)
+            content = content.replace("'", '"')
+
+            # 3. 중괄호 혹은 대괄호를 이용한 JSON 형태를 추출
+            match = re.search(r"(\{.*\}|\[.*\])", content, flags=re.DOTALL)
             if match:
                 content = match.group(0)
             else:
+                # JSON 형태가 없으면 None 반환
                 return None
 
+            # 4. 잘못된 쉼표 처리 (배열이나 객체 끝에 있는 쉼표 제거)
+            content = re.sub(r",\s*}", "}", content)
+            content = re.sub(r",\s*\]", "]", content)
+
+            # 5. 키에 따옴표가 없는 경우 추가 (예: {key: "value"} -> {"key": "value"})
+            content = re.sub(r"([{,])\s*([a-zA-Z0-9_]+)\s*:", r'\1"\2":', content)
+
+            # 6. 최종 파싱 시도
             return json.loads(content)
         except json.JSONDecodeError as e:
-            print(f"JSONDecodeError: {e}")
+            print(f"JSONDecodeError: {e}, Content: {content[:100]}...")
+
+            # 7. 마지막 시도: 정규식으로 배열 형태 추출 (키워드 생성 등에 유용)
+            if content.find("[") >= 0 and content.find("]") >= 0:
+                try:
+                    # 배열 내용만 추출
+                    array_match = re.search(r"\[(.*)\]", content, flags=re.DOTALL)
+                    if array_match:
+                        array_content = array_match.group(1)
+                        # 항목 추출 (따옴표로 둘러싸인 문자열)
+                        items = re.findall(r'"([^"]*)"', array_content)
+                        if items:
+                            return items
+                except Exception as e2:
+                    print(f"Final regex extraction failed: {e2}")
+
             return None
-
-    async def answer_plan(self, body: dict, __user__: Optional[dict]) -> Optional[dict]:
-        """
-        1) 사용자의 질의가 상세 보고서 형식(report_mode)을 요구하는지 먼저 파악
-        """
-        messages = body["messages"]
-        user_message = get_last_user_message(messages)
-        system_prompt = (
-            "Analyze the user's prompt to determine if a detailed report-style response is necessary. "
-            "Return your response in JSON format with the following structure:\n"
-            "{\n"
-            '  "report_mode": boolean (true if detailed report is needed, false otherwise),\n'
-            '  "contents": array of strings (table of contents if report_mode is true, null if false)\n'
-            "}\n"
-            "If this is the first message and a report-style conversation is already ongoing, return:\n"
-            "{\n"
-            '  "report_mode": false,\n'
-            '  "contents": null\n'
-            "}\n"
-            "Do not provide any additional explanations."
-        )
-
-        prompt = (
-            "History:\n"
-            + "\n".join(
-                [
-                    f"{message['role'].upper()}: \"\"\"{message['content']}\"\"\""
-                    for message in messages[::-1][:4]
-                ]
-            )
-            + f"\nQuery: {user_message}"
-        )
-
-        return {
-            "system_prompt": system_prompt,
-            "prompt": prompt,
-            "model": "gpt-4o",
-        }
 
     async def knowledge_plan(
         self,
@@ -102,42 +95,110 @@ class Filter:
         __user__: Optional[dict],
     ) -> Optional[dict]:
         """
-        2) 메시지(사용자 질의)에 대해 적절한 지식베이스를 선택할 것인지,
-           혹은 웹 검색이 필요한지 여부(web_search_enabled)를 판단
+        메시지(사용자 질의)에 대해 적절한 지식베이스 선택 & 웹 검색 필요 여부 판단
+           - id (선택된 KnowledgeBase ID, 없으면 null)
+           - name (선택된 KnowledgeBase 이름, 없으면 null)
+           - web_search_enabled (bool)
         """
         messages = body["messages"]
         user_message = get_last_user_message(messages)
+
+        # 유저에 연관된 지식베이스 목록
         all_knowledge_bases = Knowledges.get_knowledge_bases_by_user_id(
             __user__.get("id"), "read"
         )
-
         knowledge_bases_list = "\n".join(
             [
-                f"- ID: {getattr(knowledge_base, 'id', 'Unknown')}\n"
-                f"  Name: {getattr(knowledge_base, 'name', 'Unknown')}\n"
-                f"  Description: {getattr(knowledge_base, 'description', 'Unknown')}\n"
+                f"- ID: {getattr(knowledge_base, 'id', 'Unknown')} / "
+                f"Name: {getattr(knowledge_base, 'name', 'Unknown')} / "
+                f"Description: {getattr(knowledge_base, 'description', 'Unknown')}"
                 for knowledge_base in all_knowledge_bases
             ]
         )
 
-        system_prompt = f"""Based on the user's prompt, please find the knowledge base that the user desires.
-Available knowledge bases:
-{knowledge_bases_list}
-Please select the most suitable knowledge base from the above list that best fits the user's requirements.
-
-Additionally, analyze the user's prompt to determine if a web search is required to reflect the latest information. 
-Return your response in JSON format with the following fields:
-- "id": KnowledgeID (or null if no suitable knowledge base is found)
-- "name": Knowledge Name (or null if no suitable knowledge base is found)
-- "web_search_enabled": True if a web search is required, False otherwise.
-Do not provide any additional explanations.
-"""
+        system_prompt = (
+            "You are a knowledge selector. Below is a list of knowledge bases:\n"
+            f"{knowledge_bases_list}\n\n"
+            "Based on the user's query, choose the most relevant one or null.\n"
+            "Also determine if a web search is needed. Return JSON:\n"
+            "{\n"
+            '  "id": string or null,\n'
+            '  "name": string or null,\n'
+            '  "web_search_enabled": boolean\n'
+            "}\n"
+            "No additional explanation."
+        )
 
         return {
             "system_prompt": system_prompt,
             "prompt": user_message,
-            "model": "gpt-4o",
+            "model": "o3-mini",
         }
+
+    async def _generate_search_keywords(
+        self, section_topic: str, user_message: str, __request__: Any, user: Any
+    ) -> list:
+        """
+        섹션 주제에 맞는 검색 키워드를 자동 생성하기 위한 헬퍼 메서드.
+        (체인오브띠록 없이, JSON 배열로만 반환되도록 유도)
+        """
+        system_prompt = (
+            "You are a search keyword generator. Given the user's overall question and a section topic, "
+            "generate a concise list of possible web search queries (keywords) in JSON array.\n"
+            "No chain-of-thought, no extra text. Just JSON array of strings."
+        )
+        user_prompt = (
+            f"User's question: {user_message}\n"
+            f"Section topic: {section_topic}\n"
+            'Return a JSON array, e.g. ["keyword1", "keyword2", ...].'
+        )
+
+        max_retries = 3
+        retry_count = 0
+
+        while retry_count < max_retries:
+            payload = {
+                "model": "o3-mini",
+                "messages": [
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_prompt},
+                ],
+                "stream": False,
+            }
+
+            try:
+                resp = await generate_chat_completion(
+                    request=__request__, form_data=payload, user=user
+                )
+                content = resp["choices"][0]["message"]["content"]
+                parsed = await self.parse_json_response(content)
+
+                if isinstance(parsed, list):
+                    return parsed
+                else:
+                    retry_count += 1
+                    user_prompt = (
+                        f"User's question: {user_message}\n"
+                        f"Section topic: {section_topic}\n"
+                        'Return ONLY a valid JSON array of strings, e.g. ["keyword1", "keyword2", ...]. '
+                        "No explanations, just the JSON array."
+                    )
+                    continue
+            except Exception as e:
+                print(
+                    f"Keyword generation error (attempt {retry_count+1}/{max_retries}): {e}"
+                )
+                retry_count += 1
+                user_prompt = (
+                    f"User's question: {user_message}\n"
+                    f"Section topic: {section_topic}\n"
+                    'Return ONLY a valid JSON array of strings, e.g. ["keyword1", "keyword2", ...]. '
+                    "No explanations, no markdown, just the raw JSON array."
+                )
+                continue
+
+        print(f"All {max_retries} attempts to generate keywords failed.")
+        return []
 
     async def _process_toc_section(
         self,
@@ -149,14 +210,14 @@ Do not provide any additional explanations.
         __user__: Optional[dict],
     ) -> str:
         """
-        report_mode == True일 때, 각 TOC 항목을 처리하는 헬퍼 함수:
-        1) knowledge_plan 으로 적절한 지식베이스/검색 필요 여부 파악
-        2) 웹 검색이 필요하면 수행 -> 결과를 messages 또는 별도 구조에 반영
-        3) 지식베이스가 있으면 해당 파일 목록을 가져와 section_payload['files'] 에 담기
-        4) 최종 GPT 호출하여 섹션 분석 결과를 텍스트로 리턴
+        report 모드일 때, 각 TOC 항목을 순차적으로 처리:
+        1) knowledge_plan -> 지식베이스/검색 필요 여부 판단
+        2) 웹 검색이 필요하면, 검색 키워드 생성 및 검색 수행
+        3) 지식베이스가 있으면 해당 파일 목록 추출
+        4) GPT로 섹션 분석
+        5) 섹션별 분석 결과 반환
         """
-        # 1) 먼저 section 단위의 knowledge_plan 세팅
-        #    user_message + section 을 합쳐서 body를 구성
+        # 1) knowledge_plan
         temp_body = {
             "messages": [
                 {"role": "user", "content": f"{user_message}\n\n[Section: {section}]"}
@@ -164,243 +225,16 @@ Do not provide any additional explanations.
         }
         knowledge_plan_result = await self.knowledge_plan(temp_body, __user__)
         if knowledge_plan_result is None:
-            # knowledge_plan_result 못 구하면 그대로 섹션 분석 없이 반환
             return f"[No knowledge plan result for '{section}']"
 
-        # 2) knowledge_plan GPT 호출
-        plan_payload = {
-            "model": "gpt-4o",
-            "messages": [
-                {
-                    "role": "system",
-                    "content": knowledge_plan_result["system_prompt"],
-                },
-                {"role": "user", "content": knowledge_plan_result["prompt"]},
-            ],
-            "stream": False,
-        }
+        max_retries = 3
+        retry_count = 0
+        plan_parsed = None
 
-        plan_response = await generate_chat_completion(
-            request=__request__, form_data=plan_payload, user=user
-        )
-
-        plan_content = plan_response["choices"][0]["message"]["content"]
-        plan_parsed = await self.parse_json_response(plan_content)
-
-        selected_knowledge_base_id = None
-        selected_knowledge_base_info = None
-        web_search_required = False
-
-        if plan_parsed:
-            selected_knowledge_base_id = plan_parsed.get("id")
-            web_search_required = plan_parsed.get("web_search_enabled", False)
-
-        # 3) 웹 검색이 필요하다면 수행
-        #    - 실제론 검색 결과를 가져와야 하고, 그걸 messages 또는 files 형태로 넣어줄 수 있음
-        search_results_text = None
-        if web_search_required:
-            print(f"[Section: {section}] Web search required.")
-            # 웹 검색을 위해 임시 body를 구성
-            search_body = {
-                "messages": [
-                    {
-                        "role": "user",
-                        "content": f"User prompt + section: {user_message}\n\n{section}",
-                    }
-                ],
-                "model": "gpt-4o",
-            }
-            # chat_web_search_handler가 내부적으로 body["messages"]에 검색 결과를 append한다고 가정
-            await chat_web_search_handler(
-                __request__,
-                search_body,
-                {"__event_emitter__": __event_emitter__},
-                user,
-            )
-            # 이제 search_body["messages"] 안에 검색 결과 메시지가 들어있다고 가정
-            # 간단히 문자열로 합쳐 놓음
-            search_results_text = "\n".join(
-                f"{m['role']}: {m['content']}" for m in search_body["messages"]
-            )
-
-        # 4) 지식베이스가 있다면 파일 목록을 가져오기
-        knowledge_files_data = []
-        if selected_knowledge_base_id:
-            selected_knowledge_base_info = Knowledges.get_knowledge_by_id(
-                selected_knowledge_base_id
-            )
-            if selected_knowledge_base_info:
-                kb_file_ids = selected_knowledge_base_info.data["file_ids"]
-                kb_files = Files.get_file_metadatas_by_ids(kb_file_ids)
-                # 지식베이스를 GPT에 전달하기 위한 구조화
-                knowledge_files_data = [file.model_dump() for file in kb_files]
-
-        # 이제 섹션 분석을 위한 최종 Payload 준비
-        # - files 구조에 지식베이스 파일(knowledge_files_data)을 포함
-        # - 웹 검색 결과도 필요하다면 text 형태로 추가할 수도 있음
-        section_payload = {
-            "model": "gpt-4o",
-            "messages": [
-                {
-                    "role": "system",
-                    "content": (
-                        "You are ChatGPT. You will analyze the given section in detail.\n"
-                        "Please provide a thorough exploration of the following topic.\n\n"
-                        "If there are attached 'files' or 'search_results', use them as context.\n"
-                        "Do not summarize final output globally; just present your analysis."
-                    ),
-                },
-                {
-                    "role": "user",
-                    "content": (
-                        f"Original User Prompt:\n{user_message}\n\n"
-                        f"Section to analyze: {section}"
-                    ),
-                },
-            ],
-            "stream": False,
-        }
-
-        # files 구조를 넣어준다 (지식베이스), 필요하면 검색 결과도 함께
-        # 실제 LLM API가 'files' 파라미터를 인식하도록 구성돼 있어야 합니다.
-        # 혹은 message 내에 system 컨텍스트로 검색 결과를 실어줄 수도 있습니다.
-        # 예시로 "files" key를 추가:
-        if knowledge_files_data or search_results_text:
-            section_payload["files"] = []
-            # 지식베이스 파일
-            if knowledge_files_data:
-                section_payload["files"].append(
-                    {
-                        "type": "knowledge",
-                        "knowledge_base_name": getattr(
-                            selected_knowledge_base_info, "name", "Unknown KB"
-                        ),
-                        "files": knowledge_files_data,
-                    }
-                )
-            # 웹 검색 결과
-            if search_results_text:
-                section_payload["files"].append(
-                    {"type": "web_search", "content": search_results_text}
-                )
-
-        # 5) 최종 GPT 호출 (섹션 분석)
-        result_response = await generate_chat_completion(
-            request=__request__, form_data=section_payload, user=user
-        )
-        section_analysis_text = result_response["choices"][0]["message"]["content"]
-
-        # 섹션별 결과 반환
-        return f"--- [Section: {section}] ---\n{section_analysis_text}\n"
-
-    async def inlet(
-        self,
-        body: dict,
-        __event_emitter__: Callable[[Any], Awaitable[None]],
-        __request__: Any,
-        __user__: Optional[dict] = None,
-        __model__: Optional[dict] = None,
-    ) -> dict:
-        """
-        inlet: 메인 로직
-        1) answer_plan 호출 -> report_mode 체크
-        2) report_mode가 true라면, 각 TOC 항목마다 knowledge_plan -> 지식베이스/검색 -> gpt 분석
-        3) report_mode가 false라면, 기존 else 로직 그대로 유지
-        """
-        try:
-            user = Users.get_user_by_id(__user__["id"])
-            messages = body["messages"]
-            user_message = get_last_user_message(messages)
-
-            # Step 1) 먼저 answer_plan 호출
-            answer_plan_result = await self.answer_plan(body, __user__)
-            payload = {
-                "model": answer_plan_result["model"],
-                "messages": [
-                    {
-                        "role": "system",
-                        "content": answer_plan_result["system_prompt"],
-                    },
-                    {"role": "user", "content": answer_plan_result["prompt"]},
-                ],
-                "stream": False,
-            }
-
-            # (1-1) answer_plan GPT 호출
-            response = await generate_chat_completion(
-                request=__request__, form_data=payload, user=user
-            )
-            print(f"Answer Plan Response: {response}")
-
-            content = response["choices"][0]["message"]["content"]
-            answer_result = await self.parse_json_response(content)
-            print(f"Answer Plan Result: {answer_result}")
-
-            # Step 2) report_mode에 따라 분기
-            if answer_result.get("report_mode"):
-                # =========== report_mode == True ===========
-                toc = answer_result.get("contents")
-                print("Report mode is ============ true")
-                print(f"Table of contents: {toc}")
-
-                if not toc:
-                    await self.emit_status(
-                        __event_emitter__,
-                        level="status",
-                        message="Report mode is true, but no table of contents provided.",
-                        done=True,
-                    )
-                else:
-                    # ====== 변경된 부분: 병렬 처리 대신 순차 처리 ======
-                    results = []
-                    for section in toc:
-                        result = await self._process_toc_section(
-                            section=section,
-                            user_message=user_message,
-                            user=user,
-                            __request__=__request__,
-                            __event_emitter__=__event_emitter__,
-                            __user__=__user__,
-                        )
-                        results.append(result)
-                    # =====================================================
-
-                    final_merged_text = "\n".join(results)
-
-                    # 처리 완료 상태 전송
-                    await self.emit_status(
-                        __event_emitter__,
-                        level="status",
-                        message="Report mode: sections have been processed sequentially (with knowledge_plan).",
-                        done=True,
-                    )
-
-                    # 이후 사용자에게 전달될 최종 context_message
-                    # "절대 요약하지 말고 섹션별로 정리해서 보여달라"
-                    context_message = {
-                        "role": "system",
-                        "content": (
-                            "당신은 ChatGPT, OpenAI가 개발한 대형 언어 모델입니다.\n"
-                            "지금부터 아래 merged_text 내용을 **절대로 요약하지 말고**, "
-                            "섹션별로 잘 구분하여 그대로 보여주십시오.\n\n"
-                            f"merged_text:\n{final_merged_text}"
-                        ),
-                    }
-                    body.setdefault("messages", []).insert(0, context_message)
-
-                # report_mode == true에서는 여기서 body 리턴
-                return body
-
-            else:
-                # =========== report_mode == False ===========
-                print("Report mode is ============ false")
-                knowledge_plan_result = await self.knowledge_plan(body, __user__)
-
-                if knowledge_plan_result is None:
-                    raise ValueError("Plan result is None")
-
-                payload = {
-                    "model": knowledge_plan_result["model"],
+        while retry_count < max_retries and plan_parsed is None:
+            try:
+                plan_payload = {
+                    "model": "o3-mini",
                     "messages": [
                         {
                             "role": "system",
@@ -411,84 +245,255 @@ Do not provide any additional explanations.
                     "stream": False,
                 }
 
-                selected_knowledge_base = None
-                response = await generate_chat_completion(
-                    request=__request__, form_data=payload, user=user
+                plan_response = await generate_chat_completion(
+                    request=__request__, form_data=plan_payload, user=user
                 )
-                content = response["choices"][0]["message"]["content"]
+                plan_content = plan_response["choices"][0]["message"]["content"]
+                plan_parsed = await self.parse_json_response(plan_content)
 
-                result = await self.parse_json_response(content)
-                if result:
-                    print(f"result: {result}")
-                    selected_knowledge_base = result.get("id")
-                    user_data = __user__.copy()
-                    user_data.update(
-                        {
-                            "profile_image_url": "",
-                            "last_active_at": 0,
-                            "updated_at": 0,
-                            "created_at": 0,
-                        }
-                    )
-                    user_object = UserModel(**user_data)
-
-                    if result.get("web_search_enabled"):
-                        print("Web search required.")
-                        await chat_web_search_handler(
-                            __request__,
-                            body,
-                            {"__event_emitter__": __event_emitter__},
-                            user_object,
+                if plan_parsed is None:
+                    retry_count += 1
+                    if retry_count < max_retries:
+                        plan_payload["messages"][0]["content"] = (
+                            knowledge_plan_result["system_prompt"]
+                            + "\nIMPORTANT: Return ONLY valid JSON format. No explanations, no markdown."
                         )
-                    else:
-                        print("No web search required.")
-
-                selected_knowledge_base_info = (
-                    Knowledges.get_knowledge_by_id(selected_knowledge_base)
-                    if selected_knowledge_base
-                    else None
+                        print(
+                            f"JSON parsing failed for section '{section}', retrying ({retry_count}/{max_retries})..."
+                        )
+                        continue
+            except Exception as e:
+                print(
+                    f"Error processing section '{section}' (attempt {retry_count+1}/{max_retries}): {e}"
                 )
-
-                if selected_knowledge_base_info:
-                    knowledge_file_ids = selected_knowledge_base_info.data["file_ids"]
-                    knowledge_files = Files.get_file_metadatas_by_ids(
-                        knowledge_file_ids
-                    )
-                    knowledge_dict = selected_knowledge_base_info.model_dump()
-                    knowledge_dict["files"] = [
-                        file.model_dump() for file in knowledge_files
-                    ]
-                    knowledge_dict["type"] = "collection"
-
-                    body["files"] = body.get("files", []) + [knowledge_dict]
-
-                    await self.emit_status(
-                        __event_emitter__,
-                        level="status",
-                        message=f"Matching knowledge base found: {selected_knowledge_base_info.name}",
-                        done=True,
-                    )
+                retry_count += 1
+                if retry_count < max_retries:
+                    continue
                 else:
-                    await self.emit_status(
-                        __event_emitter__,
-                        level="status",
-                        message="No matching knowledge base found.",
-                        done=True,
-                    )
+                    return f"[Error processing section '{section}' after {max_retries} attempts]"
 
-                context_message = {
-                    "role": "system",
-                    "content": (
-                        "You are ChatGPT, a large language model trained by OpenAI. "
-                        "Please ensure that all your responses are presented in a clear and organized manner using "
-                        "bullet points, numbered lists, headings, and other formatting tools to enhance readability "
-                        "and user-friendliness. Additionally, please respond in the language used by the user "
-                        "in their input."
-                    ),
+        if plan_parsed is None:
+            return f"[Failed to parse JSON response for section '{section}' after {max_retries} attempts]"
+
+        selected_knowledge_base_id = plan_parsed.get("id")
+        web_search_required = plan_parsed.get("web_search_enabled", False)
+
+        # 2) 웹 검색이 필요하면, 섹션 주제에 맞는 검색 키워드 생성 후 검색 수행
+        search_results_text = None
+        if web_search_required:
+            keywords = await self._generate_search_keywords(
+                section_topic=section,
+                user_message=user_message,
+                __request__=__request__,
+                user=user,
+            )
+            if keywords:
+                search_prompts = []
+                for kw in keywords:
+                    search_prompts.append(f"Search keyword: {kw}")
+
+                combined_search_query = " OR ".join(keywords)
+                search_body = {
+                    "messages": [
+                        {
+                            "role": "user",
+                            "content": f"Search these keywords: {combined_search_query}",
+                        }
+                    ],
+                    "model": "o3-mini",
                 }
 
-                body.setdefault("messages", []).insert(0, context_message)
-                return body
+                await chat_web_search_handler(
+                    __request__,
+                    search_body,
+                    {"__event_emitter__": __event_emitter__},
+                    user,
+                )
+
+                web_search_results = []
+                if "files" in search_body and search_body["files"]:
+                    for file in search_body["files"]:
+                        if file.get("type") == "web_search":
+                            if "docs" in file:
+                                for doc in file.get("docs", []):
+                                    snippet = doc.get("content", "")
+                                    url = doc.get("url", "")
+                                    web_search_results.append(f"URL: {url}")
+                                    web_search_results.append(f"Content: {snippet}")
+
+                if web_search_results:
+                    search_results_text = "\n".join(web_search_results)
+
+        # 3) 지식베이스 파일
+        knowledge_files_data = []
+        if selected_knowledge_base_id:
+            selected_knowledge_base_info = Knowledges.get_knowledge_by_id(
+                selected_knowledge_base_id
+            )
+            if selected_knowledge_base_info:
+                kb_file_ids = selected_knowledge_base_info.data["file_ids"]
+                kb_files = Files.get_file_metadatas_by_ids(kb_file_ids)
+                knowledge_files_data = [file.model_dump() for file in kb_files]
+
+        # 4) 섹션 분석을 위한 최종 Payload 구성
+        context_parts = []
+        if selected_knowledge_base_id and knowledge_files_data:
+            context_parts.append(f"Knowledge Base: {selected_knowledge_base_info.name}")
+            for file in knowledge_files_data:
+                context_parts.append(f"File: {file.get('name', '')}")
+                context_parts.append(f"{file.get('content', '')}")
+
+        if search_results_text:
+            context_parts.append("\nWeb Search Results:")
+            context_parts.append(search_results_text)
+
+        system_context = (
+            "You are a specialized report writer. Analyze the 'section' thoroughly using the available context.\n"
+            "Provide a comprehensive and detailed analysis without summarizing. Include all relevant information and insights.\n"
+            "Present your analysis in a well-structured format with clear sections and bullet points where appropriate.\n"
+        )
+        if context_parts:
+            system_context += "\nRelevant context:\n" + "\n".join(context_parts)
+
+        max_analysis_retries = 2
+        analysis_retry_count = 0
+        section_analysis_text = None
+
+        while (
+            analysis_retry_count < max_analysis_retries
+            and section_analysis_text is None
+        ):
+            try:
+                section_payload = {
+                    "model": "o3",
+                    "messages": [
+                        {"role": "system", "content": system_context},
+                        {
+                            "role": "user",
+                            "content": f"Section topic: {section}\nUser's question:\n{user_message}\n\nProvide a comprehensive and detailed analysis of this section. Do not summarize or omit any important details. Include all relevant information, insights, and connections to the user's question.",
+                        },
+                    ],
+                    "stream": False,
+                }
+
+                result_response = await generate_chat_completion(
+                    request=__request__, form_data=section_payload, user=user
+                )
+                section_analysis_text = result_response["choices"][0]["message"][
+                    "content"
+                ]
+
+                if not section_analysis_text or section_analysis_text.strip() == "":
+                    analysis_retry_count += 1
+                    if analysis_retry_count < max_analysis_retries:
+                        print(
+                            f"Empty analysis result for section '{section}', retrying ({analysis_retry_count}/{max_analysis_retries})..."
+                        )
+                        continue
+                    else:
+                        section_analysis_text = f"[Failed to generate analysis for section '{section}' after {max_analysis_retries} attempts]"
+            except Exception as e:
+                print(
+                    f"Error analyzing section '{section}' (attempt {analysis_retry_count+1}/{max_analysis_retries}): {e}"
+                )
+                analysis_retry_count += 1
+                if analysis_retry_count < max_analysis_retries:
+                    continue
+                else:
+                    section_analysis_text = (
+                        f"[Error analyzing section '{section}': {str(e)}]"
+                    )
+
+        return f"--- [Section: {section}] ---\n{section_analysis_text}\n\n"
+
+    async def inlet(
+        self,
+        body: dict,
+        __event_emitter__: Callable[[Any], Awaitable[None]],
+        __request__: Any,
+        __user__: Optional[dict] = None,
+        __model__: Optional[dict] = None,
+    ) -> dict:
+        """
+        메인 로직:
+        1) 사용자 질의를 기반으로 TOC(목차)를 생성하여 보고서(report) 모드로 처리
+        2) 각 TOC 섹션을 순차적으로 처리하여 최종 보고서를 생성
+        """
+        try:
+            user = Users.get_user_by_id(__user__["id"])
+            messages = body["messages"]
+            user_message = get_last_user_message(messages)
+
+            # TOC(목차) 생성: 사용자의 질의를 바탕으로 보고서 섹션 제목 목록을 생성
+            toc_system_prompt = (
+                "You are a report planner. Generate a JSON array of section titles for a detailed report based on the user's query. "
+                "Return only a JSON array of strings without any additional explanation."
+            )
+            toc_prompt = f"User query: {user_message}"
+            toc_payload = {
+                "model": "o3-mini",
+                "messages": [
+                    {"role": "system", "content": toc_system_prompt},
+                    {"role": "user", "content": toc_prompt},
+                ],
+                "stream": False,
+            }
+            toc_response = await generate_chat_completion(
+                request=__request__, form_data=toc_payload, user=user
+            )
+            toc_content = toc_response["choices"][0]["message"]["content"]
+            toc = await self.parse_json_response(toc_content)
+
+            if not isinstance(toc, list) or not toc:
+                await self.emit_status(
+                    __event_emitter__,
+                    level="status",
+                    message="No TOC sections found, using default report sections.",
+                    done=False,
+                )
+                toc = ["Overview", "Details", "Conclusion"]
+
+            # TOC의 각 섹션을 순차 처리
+            results = []
+            for section in toc:
+                try:
+                    result = await self._process_toc_section(
+                        section=section,
+                        user_message=user_message,
+                        user=user,
+                        __request__=__request__,
+                        __event_emitter__=__event_emitter__,
+                        __user__=__user__,
+                    )
+                    results.append(result)
+                except Exception as e:
+                    print(f"Error processing section '{section}': {e}")
+                    results.append(f"Error in section {section}: {e}")
+
+            final_merged_text = "\n".join(results)
+
+            await self.emit_status(
+                __event_emitter__,
+                level="status",
+                message="All sections processed (report mode).",
+                done=True,
+            )
+
+            # 최종 보고서 생성: 모든 섹션 분석 결과를 하나의 보고서로 병합
+            context_message = {
+                "role": "system",
+                "content": (
+                    "You are a professional technical writer. "
+                    "Below is a merged analysis of all sections. "
+                    "Please format it as a cohesive final report.\n\n"
+                    f"{final_merged_text}\n\n"
+                    "No chain-of-thought, just the final report. "
+                    "Present in the same language as the user's query."
+                ),
+            }
+
+            body.setdefault("messages", []).insert(0, context_message)
+            return body
 
         except Exception as e:
             print(e)
@@ -499,11 +504,13 @@ Do not provide any additional explanations.
                 done=True,
             )
 
+            # fallback 메시지
             context_message = {
                 "role": "system",
                 "content": (
-                    "You are ChatGPT, a large language model trained by OpenAI. "
-                    "An error occurred during the request. Please proceed with caution."
+                    "You are a helpful assistant. An error occurred. "
+                    "Proceed with your best effort. No chain-of-thought. "
+                    "Respond in the same language as the user's query."
                 ),
             }
             body.setdefault("messages", []).insert(0, context_message)
