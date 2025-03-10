@@ -4,8 +4,9 @@ import uuid
 from pathlib import Path
 from typing import Optional
 from urllib.parse import quote
+import time
 
-from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile, status
+from fastapi import APIRouter, Depends, File as FastAPIFile, HTTPException, Request, UploadFile, status
 from fastapi.responses import FileResponse, StreamingResponse
 from open_webui.constants import ERROR_MESSAGES
 from open_webui.env import SRC_LOG_LEVELS
@@ -14,7 +15,9 @@ from open_webui.models.files import (
     FileModel,
     FileModelResponse,
     Files,
+    File,
 )
+from open_webui.internal.db import get_db
 from open_webui.routers.retrieval import ProcessFileForm, process_file
 from open_webui.routers.audio import transcribe
 from open_webui.storage.provider import Storage
@@ -35,7 +38,7 @@ router = APIRouter()
 @router.post("/", response_model=FileModelResponse)
 def upload_file(
     request: Request,
-    file: UploadFile = File(...),
+    file: UploadFile = FastAPIFile(...),
     user=Depends(get_verified_user),
     file_metadata: dict = {},
 ):
@@ -196,29 +199,99 @@ class ContentForm(BaseModel):
     content: str
 
 
+class FilenameForm(BaseModel):
+    filename: str
+
+
 @router.post("/{id}/data/content/update")
 async def update_file_data_content_by_id(
     request: Request, id: str, form_data: ContentForm, user=Depends(get_verified_user)
 ):
-    file = Files.get_file_by_id(id)
+    try:
+        file = Files.get_file_by_id(id=id)
 
-    if file and (file.user_id == user.id or user.role == "admin"):
-        try:
-            process_file(
-                request,
-                ProcessFileForm(file_id=id, content=form_data.content),
-                user=user,
+        if not file:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=ERROR_MESSAGES.FILE_NOT_FOUND,
             )
-            file = Files.get_file_by_id(id=id)
-        except Exception as e:
-            log.exception(e)
-            log.error(f"Error processing file: {file.id}")
 
-        return {"content": file.data.get("content", "")}
-    else:
+        # Update file data
+        file_data = file.data or {}
+        file_data["content"] = form_data.content
+
+        # Update file
+        updated_file = Files.update_file_data_by_id(id=id, data=file_data)
+
+        if updated_file:
+            try:
+                process_file(
+                    request,
+                    ProcessFileForm(file_id=id, content=form_data.content),
+                    user=user,
+                )
+            except Exception as e:
+                log.exception(e)
+                log.error(f"Error processing file: {id}")
+
+            return updated_file
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=ERROR_MESSAGES.FAILED_TO_UPDATE_FILE,
+            )
+    except HTTPException:
+        raise
+    except Exception as e:
+        log.exception(e)
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=ERROR_MESSAGES.NOT_FOUND,
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(e),
+        )
+
+
+@router.post("/{id}/filename/update")
+async def update_file_filename_by_id(
+    id: str, form_data: FilenameForm, user=Depends(get_verified_user)
+):
+    try:
+        file = Files.get_file_by_id(id=id)
+
+        if not file:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=ERROR_MESSAGES.FILE_NOT_FOUND,
+            )
+
+        # Update file metadata
+        file_meta = file.meta or {}
+        file_meta["name"] = form_data.filename
+        
+        # Update filename in database
+        Files.update_file_metadata_by_id(id=id, meta=file_meta)
+        
+        # Also update the filename field
+        with get_db() as db:
+            try:
+                file_obj = db.query(File).filter_by(id=id).first()
+                file_obj.filename = form_data.filename
+                file_obj.updated_at = int(time.time())
+                db.commit()
+                updated_file = Files.get_file_by_id(id=id)
+                return updated_file
+            except Exception as e:
+                log.exception(e)
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail=ERROR_MESSAGES.FAILED_TO_UPDATE_FILE,
+                )
+    except HTTPException:
+        raise
+    except Exception as e:
+        log.exception(e)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(e),
         )
 
 
@@ -337,7 +410,7 @@ async def get_file_content_by_id(id: str, user=Depends(get_verified_user)):
                     detail=ERROR_MESSAGES.NOT_FOUND,
                 )
         else:
-            # File path doesn’t exist, return the content as .txt if possible
+            # File path doesn't exist, return the content as .txt if possible
             file_content = file.content.get("content", "")
             file_name = file.filename
 
