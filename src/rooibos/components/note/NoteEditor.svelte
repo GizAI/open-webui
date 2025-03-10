@@ -449,8 +449,38 @@
 		showHighlightPicker = false;
 		showAlignmentOptions = false;
 	
+		// 라인 메뉴도 닫기
+		const lineMenu = document.getElementById('line-menu-popup');
+		if (lineMenu) {
+			lineMenu.remove();
+			isLineMenuOpen = false;
+		}
+	
 		if (editor) {
 			editor.view.dispatch(editor.state.tr.setMeta('toggleLineHighlight', null));
+		}
+	}
+
+	// 문서 전체 클릭 시 라인 메뉴 닫기 함수
+	function closeLineMenu(e: MouseEvent): void {
+		// 라인 아이콘이나 라인 메뉴 내부 클릭이 아닌 경우에만 처리
+		if (!e.target) return;
+		
+		const target = e.target as HTMLElement;
+		const isLineIconClick = target.closest('.line-icon') !== null;
+		const isLineMenuClick = target.closest('#line-menu-popup') !== null;
+		
+		if (!isLineIconClick && !isLineMenuClick) {
+			const lineMenu = document.getElementById('line-menu-popup');
+			if (lineMenu) {
+				lineMenu.remove();
+				isLineMenuOpen = false;
+				
+				// 라인 메뉴가 닫힐 때 버블 메뉴 상태 업데이트
+				setTimeout(() => {
+					forceBubbleMenuDisplay();
+				}, 50);
+			}
 		}
 	}
 
@@ -720,15 +750,29 @@
 		document.addEventListener('click', closeAllDropdowns);
 		window.addEventListener('resize', adjustBubbleMenuPosition);
 		
+		// 문서 전체 클릭 이벤트 리스너 추가
+		document.addEventListener('click', closeLineMenu);
+		
 		// 에디터 영역 클릭 시 라인 메뉴 닫기
 		if (editorElement) {
 			const handleEditorClick = (e: MouseEvent) => {
-				// 라인 아이콘 클릭이 아닌 경우에만 처리
-				if (!e.target || !(e.target as HTMLElement).closest('.line-icon')) {
+				// 라인 아이콘 클릭이나 라인 메뉴 클릭이 아닌 경우에만 처리
+				if (!e.target) return;
+				
+				const target = e.target as HTMLElement;
+				const isLineIconClick = target.closest('.line-icon') !== null;
+				const isLineMenuClick = target.closest('#line-menu-popup') !== null;
+				
+				if (!isLineIconClick && !isLineMenuClick) {
 					const lineMenu = document.getElementById('line-menu-popup');
 					if (lineMenu) {
 						lineMenu.remove();
 						isLineMenuOpen = false;
+						
+						// 라인 메뉴가 닫힐 때 버블 메뉴 상태 업데이트
+						setTimeout(() => {
+							forceBubbleMenuDisplay();
+						}, 50);
 					}
 				}
 			};
@@ -763,6 +807,7 @@
 		}
 
 		document.removeEventListener('click', closeAllDropdowns);
+		document.removeEventListener('click', closeLineMenu);
 		window.removeEventListener('resize', adjustBubbleMenuPosition);
 		
 		// 에디터 클릭 이벤트 리스너 제거
