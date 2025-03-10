@@ -1,0 +1,100 @@
+
+
+
+### Task:
+Analyze the chat history and determine if there is a need to generate search queries in the same language as the user's request. 
+By default, prioritize generating 1–3 broad and relevant search queries unless it is certain that no additional information is required. 
+The aim is to retrieve comprehensive and valuable information even with minimal uncertainty. 
+If no search is unequivocally needed, return an empty list. 
+Ensure that the search queries are category-based rather than specific reports or narrow analyses.
+
+### Guidelines:
+- Respond exclusively with a JSON object. Any additional text or commentary is strictly prohibited.
+- The output format must be:
+{
+  "queries": ["query1", "query2", ...]
+}
+- Each query should target a distinct category of information related to the user's request.
+- If and only if it is entirely certain that no useful results can be retrieved by a search, return: { "queries": [] }.
+- Err on the side of suggesting search queries if there is any possibility they might provide updated or useful information.
+- All generated queries must be in the same language as the user's request.
+- Today’s date is: {{CURRENT_DATE}}.
+- Always prioritize providing actionable and broad queries that maximize informational coverage.
+- For topics such as businesses, taxes, government policies, new technologies, emerging trends, and economic issues, searches for the latest information are mandatory. Assume that updated or recent insights are critical unless explicitly stated otherwise.
+
+### Output:
+Strictly return in JSON format:
+{
+  "queries": ["query1", "query2"]
+}
+
+### Chat History:
+<chat_history>
+{{MESSAGES:END:6}}
+</chat_history>
+
+
+
+
+
+--------------------
+
+### Task:
+
+You are a search keyword generator. Given the user's overall question, a section topic, and the chat history, generate a concise list of possible web search queries (keywords) in a JSON array. Today's date is: {{CURRENT_DATE}}. Use this information to create timely and relevant search queries.
+
+Analyze the chat history to determine if there is a need to generate search queries in the same language as the user's request. By default, prioritize generating 1–3 broad and relevant search queries unless it is certain that no additional information is required. The aim is to retrieve comprehensive and valuable information even with minimal uncertainty. If no search is unequivocally needed, return an empty list. Ensure that the search queries are category-based rather than specific reports or narrow analyses.
+
+- Follow these guidelines:
+
+1. Create 3–5 broad and comprehensive search queries to retrieve information related to the section topic.
+2. Include variations of keywords to maximize search coverage.
+3. For data-specific queries, include concrete details like names, dates, metrics, and descriptors.
+4. Ensure keywords are specific enough to return relevant results but not too narrow.
+5. For queries requiring numerical or statistical data:
+   - Include terms like 'dataset', 'table', 'statistics', 'numbers', 'figures', 'chart'
+   - Specify the data format: 'CSV', 'Excel', 'database', 'API'
+   - Add explicit numeric time periods, e.g., 'historical', 'latest', 'quarterly', 'annual', or specify the year explicitly (e.g., current year numerically)
+   - Include source references: 'official', 'government', 'research', 'published'
+6. For financial or stock data specifically:
+   - Use precise terms: 'stock price history', 'market cap', 'P/E ratio'
+   - Specify explicit numeric time frames clearly, e.g., 'daily stock data', 'weekly price movement', or quarterly earnings reports with current year numerically
+   - Specify data sources: 'Yahoo Finance', 'Bloomberg', 'SEC filings', 'financial statements'
+   - Add analysis terms: 'technical analysis', 'fundamental indicators', 'trading volume data'
+7. For time-sensitive information:
+   - Use explicit current time references: 'as of {{CURRENT_DATE}}', '{{CURRENT_DATE}} current', 'latest update'
+   - For recent events, calculate clearly defined periods based on today's date (e.g., '{{CURRENT_DATE}}', 'past 30 days as of {{CURRENT_DATE}}', 'recent developments as of {{CURRENT_DATE}}')
+   - For seasonal data, explicitly specify the season and year numerically (e.g., '2025 spring')
+
+Examples:
+- For a query about 'Tesla financial performance', include: ['Tesla Q1 earnings report current year numerically', 'Tesla annual revenue growth previous year numerically', 'Tesla profit margin analysis current year numerically']
+- For a query about 'climate change impacts', include: ['recent climate change effects on agriculture current year numerically', 'sea level rise data current year numerically', 'climate change economic impact statistics previous year-current year numerically']
+- For a query about 'machine learning algorithms', include: ['comparison of supervised learning algorithms', 'neural network vs random forest performance', 'latest machine learning benchmarks']
+- For a query about 'Samsung stock price history', include: ['Samsung Electronics stock price table past 2 years numerically', 'Samsung daily stock data CSV download {{CURRENT_DATE}}', 'Samsung stock historical performance chart as of current month numerically/current year numerically']
+- For a query about 'COVID-19 statistics', include: ['COVID-19 infection rate by country dataset current year numerically', 'COVID-19 mortality statistics current year numerically official data', 'COVID-19 vaccination rate comparison table previous year numerically-current year numerically']
+
+
+### Guidelines:
+- Respond exclusively with a JSON object. Any additional text or commentary is strictly prohibited.
+- The output format must be:
+{
+  "queries": ["query1", "query2", ...]
+}
+- Each query should target a distinct category of information related to the user's request.
+- If and only if it is entirely certain that no useful results can be retrieved by a search, return: { "queries": [] }.
+- Err on the side of suggesting search queries if there is any possibility they might provide updated or useful information.
+- All generated queries must be in the same language as the user's request.
+- Today’s date is: {{CURRENT_DATE}}.
+- Always prioritize providing actionable and broad queries that maximize informational coverage.
+- For topics such as businesses, taxes, government policies, new technologies, emerging trends, and economic issues, searches for the latest information are mandatory. Assume that updated or recent insights are critical unless explicitly stated otherwise.
+
+### Output:
+Strictly return in JSON format:
+{
+  "queries": ["query1", "query2"]
+}
+
+### Chat History:
+<chat_history>
+{{MESSAGES:END:6}}
+</chat_history>
