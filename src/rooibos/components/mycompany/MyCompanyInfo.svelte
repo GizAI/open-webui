@@ -253,10 +253,7 @@
 		}
 
 		try {
-			const uploadedFile = await uploadFile(localStorage.token, file).catch((e) => {
-				toast.error(e);
-				return null;
-			});
+			const uploadedFile = await uploadFile(localStorage.token, file);
 
 			if (uploadedFile) {
 				bookmark.files = bookmark.files.map((item) => {
@@ -272,7 +269,7 @@
 				toast.error($i18n.t('Failed to upload file.'));
 			}
 		} catch (e) {
-			toast.error(e);
+			toast.error($i18n.t('Failed to upload file.'));
 		}
 	};
 

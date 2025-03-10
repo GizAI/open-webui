@@ -46,6 +46,10 @@
 
   // 파일 ID가 유효한지 확인하는 함수
   function isValidFileId(id: string): boolean {
+    // temp-id는 유효한 파일 ID로 간주하지 않음
+    if (id && typeof id === 'string' && id.includes('temp-id')) {
+      return false;
+    }
     return Boolean(id && typeof id === 'string' && id.trim() !== '');
   }
 
@@ -69,6 +73,7 @@
     }
     editing = false;
     
+    // 파일 ID가 있을 때만 파일명 업데이트 API 호출
     if (isValidFileId(fileId) && pageTitle !== placeholder && pageTitle !== originalFilename) {
       try {
         await updateFileFilenameById(token, fileId, pageTitle);
