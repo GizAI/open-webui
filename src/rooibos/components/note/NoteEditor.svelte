@@ -546,6 +546,11 @@
 							
 							doc.descendants((node, pos) => {
 								if (node.isBlock && !node.isText) {
+									// taskItem 노드에 대해서는 라인 아이콘을 생성하지 않음
+									if (node.type.name === 'taskItem') {
+										return true;
+									}
+									
 									const classes = ['line-block'];
 									if (highlightedPos === pos) {
 										classes.push('line-highlight');

@@ -402,9 +402,13 @@ async def add_file_to_bookmark_by_id(request: Request, id: str):
     try:
         body = await request.json()
         file_id = body.get("file_id")
+        user_id = body.get("user_id")
 
         if not file_id:
             raise HTTPException(status_code=400, detail="Invalid input. 'file_id' is required.")
+
+        if not user_id:
+            raise HTTPException(status_code=400, detail="Invalid input. 'user_id' is required.")
 
         check_query = """
         SELECT data FROM corp_bookmark WHERE id = :id
@@ -437,15 +441,12 @@ async def add_file_to_bookmark_by_id(request: Request, id: str):
                 {"id": id, "new_data": json.dumps(new_data)}
             )
             db.commit()
-
-            # get_corpbookmark_by_id는 내부에서 쿼리 로그를 남기므로 그대로 호출
-            # corp_bookmark_data = await get_corpbookmark_by_id(id)
-                        
-        return {
-            "success": True,
-            # "data": corp_bookmark_data["data"],
-            "message": "File successfully added to bookmark."
-        }
+        
+        # get_corpbookmark_by_id 함수를 호출하여 완전한 데이터를 가져옴
+        # 이 함수는 이미 프론트엔드와 호환되는 형식으로 데이터를 반환함
+        mock_request = Request(scope={"type": "http", "query_string": f"user_id={user_id}".encode()})
+        return await get_corpbookmark_by_id(id, mock_request)
+        
     except Exception as e:
         log.error("Add File to Bookmark API error: " + str(e))
         return {
