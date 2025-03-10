@@ -655,10 +655,6 @@
 		showAddTextContentModal = false;
 		selectedFileId = null;
 	}}
-	on:close={() => {
-		showAddTextContentModal = false;
-		selectedFileId = null;
-	}}
 />
 
 <input
@@ -830,6 +826,8 @@
 												if (e.detail.type === 'directory') {
 													uploadDirectoryHandler();
 												} else if (e.detail.type === 'text') {
+													selectedFileId = null;
+													selectedFile = null;
 													showAddTextContentModal = true;
 												} else {
 													document.getElementById('files-input').click();

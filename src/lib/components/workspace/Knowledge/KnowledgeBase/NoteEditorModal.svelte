@@ -16,14 +16,6 @@
 	let name = 'Untitled';
 	let content = '';
 	let noteEditor: any;
-	let prevShow = show;
-
-	$: if (prevShow && !show) {
-		dispatch('close');
-		prevShow = show;
-	} else if (!prevShow && show) {
-		prevShow = show;
-	}
 
 	function updateContent() {
 		if (noteEditor && noteEditor.getContent) {
@@ -42,13 +34,6 @@
 		await updateContent();
 		await updateTitle();
 
-		if (name.trim() === '' || content.trim() === '') {
-			toast.error($i18n.t('Please fill in all fields.'));
-			name = name.trim();
-			content = content.trim();
-			return;
-		}
-
 		dispatch('submit', {
 			name,
 			content
@@ -59,14 +44,18 @@
 	}
 </script>
 
-<Modal size="full" containerClassName="" className="h-full bg-white dark:bg-gray-900" bind:show on:close={() => dispatch('close')}>
+<Modal 
+	size="full" 
+	containerClassName="" 
+	className="h-full bg-white dark:bg-gray-900" 
+	bind:show
+>
 	<div class="absolute top-0 right-0 p-5 z-10">
 		<button
 			class="self-center dark:text-white"
 			type="button"
-			on:click={() => {
-				show = false;
-				dispatch('close');
+			on:click={async () => {
+				await handleSubmit();
 			}}
 		>
 			<XMark className="size-3.5" />
@@ -87,15 +76,6 @@
 					/>
 				{/if}
 			</div>
-		</div>
-
-		<div class="flex flex-row items-center justify-end text-sm font-medium shrink-0 mt-1 p-4 gap-1.5">
-			<button
-				class="px-3.5 py-2 bg-black text-white dark:bg-white dark:text-black transition rounded-full"
-				on:click={handleSubmit}
-			>
-				{$i18n.t('Save')}
-			</button>
 		</div>
 	</div>
 </Modal> 
