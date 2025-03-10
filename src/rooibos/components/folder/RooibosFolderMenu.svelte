@@ -98,7 +98,7 @@
 <ul class="folder-list">
 	{#each folderList as folderId (folderId)}
 		<li class="folder-item group relative">
-			<div class="flex items-center justify-between hover:bg-gray-100 dark:hover:bg-gray-900 rounded-md">
+			<div class="flex items-center justify-between hover:bg-gray-100 dark:hover:bg-gray-900 rounded-md py-1">
 				{#if editingFolderId === folderId}
 					<input
 						type="text"
@@ -111,16 +111,16 @@
 						autofocus
 					/>
 				{:else}
-					<span on:click={() => handleFolderClick(folders[folderId])} class="cursor-pointer">
+					<span on:click={() => handleFolderClick(folders[folderId])} class="cursor-pointer flex items-center">
 						{folders[folderId].name}
 					</span>
 				{/if}
 
-				<div class="invisible group-hover:visible">
+				<div class="invisible group-hover:visible flex items-center">
 					<Dropdown>
 						<Tooltip content={$i18n.t('More')}>
-							<button class="p-1">
-								<span class="text-xl">…</span>
+							<button class="flex items-center justify-center h-6 w-6">
+								<span class="inline-block transform translate-y-[-2px]">...</span>
 							</button>
 						</Tooltip>
 						<div slot="content">
@@ -139,13 +139,13 @@
 									<div class="flex items-center">{$i18n.t('이름변경')}</div>
 								</DropdownMenu.Item>
 								<!-- 관리 메뉴 항목 추가 -->
-								<DropdownMenu.Item
+								<!-- <DropdownMenu.Item
 									class="flex gap-2 items-center px-3 py-1.5 text-sm cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 rounded-md"
 									on:click={(e) => { e.stopPropagation(); openManagement(folderId); }}
 								>
 									<Cog6 strokeWidth="2" />
 									<div class="flex items-center">{$i18n.t('폴더관리')}</div>
-								</DropdownMenu.Item>
+								</DropdownMenu.Item> -->
 								{#if folders[folderId].type === 'note'}
 									<DropdownMenu.Item
 										class="flex gap-2 items-center px-3 py-1.5 text-sm cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 rounded-md"
