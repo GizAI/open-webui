@@ -3,27 +3,80 @@
   import { showSidebar } from '$lib/stores';
   import MenuLines from '$lib/components/icons/MenuLines.svelte';
   import { createEventDispatcher } from 'svelte';
+  import { updateFileFilenameById } from '$lib/apis/files';
 
   const dispatch = createEventDispatcher();
   export let pageTitle = "";
   export let onNewChat = () => {};
+  export let fileId = "";
+  export let token = "";
+  export let originalFilename = "";
 
   let editing = false;
   let inputValue = "";
   const placeholder = "";
+  let displayTitle = "";
 
-  $: if (!editing) {
-    inputValue = pageTitle;
+  // 파일 확장자 추출 함수
+  function getFileExtension(filename: string): string {
+    const lastDotIndex = filename.lastIndexOf('.');
+    if (lastDotIndex === -1) return '';
+    return filename.substring(lastDotIndex);
   }
 
-  function handleBlur() {
-    if (!inputValue.trim()) {
-      pageTitle = placeholder;
-      inputValue = placeholder;
+  // 파일명에서 확장자를 제외한 부분 추출
+  function getFilenameWithoutExtension(filename: string): string {
+    const lastDotIndex = filename.lastIndexOf('.');
+    if (lastDotIndex === -1) return filename;
+    return filename.substring(0, lastDotIndex);
+  }
+
+  // 페이지 타이틀이 변경될 때 표시용 타이틀 업데이트
+  $: {
+    if (pageTitle) {
+      displayTitle = getFilenameWithoutExtension(pageTitle);
     } else {
-      pageTitle = inputValue;
+      displayTitle = placeholder;
+    }
+  }
+
+  $: if (!editing) {
+    inputValue = displayTitle;
+  }
+
+  // 파일 ID가 유효한지 확인하는 함수
+  function isValidFileId(id: string): boolean {
+    return Boolean(id && typeof id === 'string' && id.trim() !== '');
+  }
+
+  async function handleBlur() {
+    if (!inputValue.trim()) {
+      displayTitle = placeholder;
+      inputValue = placeholder;
+      pageTitle = originalFilename || placeholder;
+    } else {
+      displayTitle = inputValue;
+      
+      // 원본 파일명에서 확장자 추출
+      const extension = getFileExtension(originalFilename || "");
+      
+      // 새 파일명에 확장자 추가 (내부적으로만 사용)
+      if (extension) {
+        pageTitle = inputValue + extension;
+      } else {
+        pageTitle = inputValue;
+      }
     }
     editing = false;
+    
+    if (isValidFileId(fileId) && pageTitle !== placeholder && pageTitle !== originalFilename) {
+      try {
+        await updateFileFilenameById(token, fileId, pageTitle);
+      } catch (error) {
+        console.error('Failed to update file name:', error);
+      }
+    }
+    
     dispatch('titleChange', pageTitle);
   }
 
@@ -60,33 +113,13 @@
         class="page-title text-gray-900 dark:text-gray-200"
         on:click={() => {
           editing = true;
-          inputValue = pageTitle === placeholder ? "" : pageTitle;
+          inputValue = displayTitle === placeholder ? "" : displayTitle;
         }}
       >
-        {pageTitle === "" ? placeholder : pageTitle}
+        {displayTitle === "" ? placeholder : displayTitle}
       </span>
     {/if}
   </div>
-
-  <!-- <div class="right">
-    <button on:click={onNewChat} class="new-chat-btn">
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        class="icon dark:text-gray-200"
-        fill="none"
-        viewBox="0 0 24 24"
-        stroke="currentColor"
-      >
-        <path
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          stroke-width="2"
-          d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10"
-        />
-      </svg>
-      <span class="btn-text dark:text-gray-200">AI채팅</span>
-    </button>
-  </div> -->
 </div>
 
 <style>
@@ -123,36 +156,6 @@
   }
   
   :global(.dark) .sidebar-toggle-button {
-    color: #e5e7eb;
-  }
-  
-  .right .new-chat-btn {
-    background: none;
-    border: none;
-    cursor: pointer;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-  }
-  
-  .icon {
-    height: 1.25rem;
-    width: 1.25rem;
-    color: #555;
-  }
-  
-  :global(.dark) .icon {
-    color: #e5e7eb;
-  }
-  
-  .btn-text {
-    font-size: 0.75rem;
-    margin-top: 0.25rem;
-    white-space: nowrap;
-    color: #555;
-  }
-  
-  :global(.dark) .btn-text {
     color: #e5e7eb;
   }
   

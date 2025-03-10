@@ -65,6 +65,18 @@
 
 	let pageTitle = initialTitle || '새 노트';
 
+	// 파일 ID 확인
+	function getFileId(): string {
+		if (!selectedFile) return "";
+		return selectedFile.id || "";
+	}
+
+	// 파일명 확인
+	function getOriginalFilename(): string {
+		if (!selectedFile) return "";
+		return selectedFile.filename || selectedFile.name || "";
+	}
+
 	let editor: Editor | null = null;
 	let editorElement: HTMLDivElementWithCleanup | null = null;	
 	let showSidebar = false;
@@ -445,10 +457,23 @@
 	function handleTitleChange(e: CustomEvent<string>): void {
 		pageTitle = e.detail;
 		manualTitleEdited = true;
-		if (editor && noteId) {
-			const token = localStorage.getItem('token') || '';
-			renameNote(token, noteId, pageTitle);
+		
+		// selectedFile 객체의 파일명도 업데이트
+		if (selectedFile) {
+			// 파일명 업데이트 (확장자 제외)
+			if (selectedFile.name) {
+				selectedFile.name = pageTitle;
+			}
+			if (selectedFile.filename) {
+				// 확장자 유지
+				const extension = selectedFile.filename.substring(selectedFile.filename.lastIndexOf('.'));
+				selectedFile.filename = pageTitle + (pageTitle.endsWith(extension) ? '' : extension);
+			}
+			if (selectedFile.meta && selectedFile.meta.name) {
+				selectedFile.meta.name = pageTitle;
+			}
 		}
+		
 		dispatch('titleChange', pageTitle);
 	}
 
@@ -761,7 +786,14 @@
 	
 </script>
 
-<TopBar {pageTitle} on:titleChange={handleTitleChange} onNewChat={openSidebar} />
+<TopBar 
+	{pageTitle} 
+	on:titleChange={handleTitleChange} 
+	onNewChat={openSidebar} 
+	fileId={getFileId()} 
+	token={localStorage.getItem('token') || ""}
+	originalFilename={getOriginalFilename()}
+/>
 
 <CollaboratorsList users={activeUsers} />
 
