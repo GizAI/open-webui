@@ -39,6 +39,8 @@ class Chat(Base):
     meta = Column(JSON, server_default="{}")
     folder_id = Column(Text, nullable=True)
 
+    business_registration_number = Column(Text, nullable=True)
+
 
 class ChatModel(BaseModel):
     model_config = ConfigDict(from_attributes=True)
@@ -57,6 +59,8 @@ class ChatModel(BaseModel):
 
     meta: dict = {}
     folder_id: Optional[str] = None
+
+    business_registration_number: Optional[str] = None
 
 
 ####################
@@ -103,9 +107,27 @@ class ChatTitleIdResponse(BaseModel):
     updated_at: int
     created_at: int
 
+class ChatCompany(BaseModel):
+    business_registration_number: str
+
 
 class ChatTable:
-    def insert_new_chat(self, user_id: str, form_data: ChatForm) -> Optional[ChatModel]:
+    def update_business_registration_number_by_chat_id(
+        self, chat_id: str, business_registration_number: str
+    ) -> Optional[ChatModel]:
+        with get_db() as db:
+            chat = db.get(Chat, chat_id)
+            if not chat:
+                return None
+                
+            chat.business_registration_number = business_registration_number
+            
+            db.commit()
+            db.refresh(chat)
+            
+            return ChatModel.model_validate(chat) if chat else None
+
+    def insert_new_chat(self, user_id: str, form_data: ChatForm) -> str:
         with get_db() as db:
             id = str(uuid.uuid4())
             chat = ChatModel(
@@ -127,7 +149,9 @@ class ChatTable:
             db.add(result)
             db.commit()
             db.refresh(result)
-            return ChatModel.model_validate(result) if result else None
+            
+            
+            return id
 
     def import_chat(
         self, user_id: str, form_data: ChatImportForm

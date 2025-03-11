@@ -96,7 +96,10 @@ async def get_user_chat_list_by_user_id(
 @router.post("/new", response_model=Optional[ChatResponse])
 async def create_new_chat(form_data: ChatForm, user=Depends(get_verified_user)):
     try:
-        chat = Chats.insert_new_chat(user.id, form_data)
+        business_number = form_data.chat.get('selectedCompany', {}).get('business_registration_number', None)        
+        chat_id = Chats.insert_new_chat(user.id, form_data)
+        chat = Chats.update_business_registration_number_by_chat_id(chat_id, business_number)
+            
         return ChatResponse(**chat.model_dump())
     except Exception as e:
         log.exception(e)
