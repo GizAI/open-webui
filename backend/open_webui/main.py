@@ -51,6 +51,7 @@ from open_webui.utils.logger import start_logger
 from open_webui.socket.main import (
     app as socket_app,
     periodic_usage_pool_cleanup,
+    get_event_emitter,
 )
 from open_webui.routers import (
     audio,
@@ -354,8 +355,7 @@ from open_webui.utils.auth import (
 from open_webui.utils.oauth import OAuthManager
 from open_webui.utils.security_headers import SecurityHeadersMiddleware
 
-from open_webui.tasks import stop_task, list_tasks  # Import from tasks.py
-
+from open_webui.tasks import create_task, stop_task, list_tasks  # Import from tasks.py
 
 if SAFE_MODE:
     print("SAFE MODE ENABLED")
@@ -992,79 +992,115 @@ async def chat_completion(
     if not request.app.state.MODELS:
         await get_all_models(request, user=user)
 
-    model_item = form_data.pop("model_item", {})
-    tasks = form_data.pop("background_tasks", None)
+    form_data_copy = form_data.copy()
+    model_item = form_data_copy.pop("model_item", {})
+    tasks = form_data_copy.pop("background_tasks", None)
+
+    async def process_chat(form_data: dict, model_item: dict, tasks: dict):
+        try:
+            if not model_item.get("direct", False):
+                model_id = form_data.get("model", None)
+                if model_id not in request.app.state.MODELS:
+                    raise Exception("Model not found")
+
+                model = request.app.state.MODELS[model_id]
+                model_info = Models.get_model_by_id(model_id)
+
+                # Check if user has access to the model
+                if not BYPASS_MODEL_ACCESS_CONTROL and user.role == "user":
+                    try:
+                        check_model_access(user, model)
+                    except Exception as e:
+                        raise e
+            else:
+                model = model_item
+                model_info = None
+
+                request.state.direct = True
+                request.state.model = model
+
+            metadata = {
+                "user_id": user.id,
+                "chat_id": form_data.pop("chat_id", None),
+                "message_id": form_data.pop("id", None),
+                "session_id": form_data.pop("session_id", None),
+                "tool_ids": form_data.get("tool_ids", None),
+                "files": form_data.get("files", None),
+                "features": form_data.get("features", None),
+                "variables": form_data.get("variables", None),
+                "model": model,
+                "direct": model_item.get("direct", False),
+                **(
+                    {"function_calling": "native"}
+                    if form_data.get("params", {}).get("function_calling") == "native"
+                    or (
+                        model_info
+                        and model_info.params.model_dump().get("function_calling")
+                        == "native"
+                    )
+                    else {}
+                ),
+            }
+
+            request.state.metadata = metadata
+            form_data["metadata"] = metadata
+
+            form_data, metadata, events = await process_chat_payload(
+                request, form_data, user, metadata, model
+            )
+
+            response = await chat_completion_handler(request, form_data, user)
+
+            return await process_chat_response(
+                request, response, form_data, user, metadata, model, events, tasks
+            )
+
+        except asyncio.CancelledError:
+            log.warning("Task was cancelled!")
+            event_emitter = get_event_emitter(
+                {
+                    "chat_id": form_data.get("metadata", {}).get("chat_id"),
+                    "message_id": form_data.get("metadata", {}).get("message_id"),
+                    "session_id": form_data.get("metadata", {}).get("session_id"),
+                    "user_id": user.id,
+                }
+            )
+            await event_emitter(
+                {
+                    "type": "message",
+                    "data": {
+                        "content": " ",
+                    },
+                }
+            )
+            await event_emitter(
+                {
+                    "type": "status",
+                    "data": {
+                        "description": f"Task cancelled",
+                        "done": True,
+                    },
+                }
+            )
+            raise
+        except Exception as e:
+            log.debug(f"Error in chat completion: {e}")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=str(e),
+            )
 
     try:
-        if not model_item.get("direct", False):
-            model_id = form_data.get("model", None)
-            if model_id not in request.app.state.MODELS:
-                raise Exception("Model not found")
-
-            model = request.app.state.MODELS[model_id]
-            model_info = Models.get_model_by_id(model_id)
-
-            # Check if user has access to the model
-            if not BYPASS_MODEL_ACCESS_CONTROL and user.role == "user":
-                try:
-                    check_model_access(user, model)
-                except Exception as e:
-                    raise e
-        else:
-            model = model_item
-            model_info = None
-
-            request.state.direct = True
-            request.state.model = model
-
-        metadata = {
-            "user_id": user.id,
-            "chat_id": form_data.pop("chat_id", None),
-            "message_id": form_data.pop("id", None),
-            "session_id": form_data.pop("session_id", None),
-            "tool_ids": form_data.get("tool_ids", None),
-            "files": form_data.get("files", None),
-            "features": form_data.get("features", None),
-            "variables": form_data.get("variables", None),
-            "model": model,
-            "direct": model_item.get("direct", False),
-            **(
-                {"function_calling": "native"}
-                if form_data.get("params", {}).get("function_calling") == "native"
-                or (
-                    model_info
-                    and model_info.params.model_dump().get("function_calling")
-                    == "native"
-                )
-                else {}
-            ),
-        }
-
-        request.state.metadata = metadata
-        form_data["metadata"] = metadata
-
-        form_data, metadata, events = await process_chat_payload(
-            request, form_data, user, metadata, model
-        )
-
+        task_id, task = create_task(process_chat(form_data_copy, model_item, tasks))
     except Exception as e:
-        log.debug(f"Error processing chat payload: {e}")
+        log.error(f"Error creating task: {e}")
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=str(e),
         )
-
-    try:
-        response = await chat_completion_handler(request, form_data, user)
-
-        return await process_chat_response(
-            request, response, form_data, user, metadata, model, events, tasks
-        )
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e),
-        )
+    return {
+        "task_id": task_id,
+    }
 
 
 # Alias for chat_completion (Legacy)

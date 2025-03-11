@@ -873,7 +873,7 @@
 				}
 			}
 		}
-
+				
 		await tick();
 
 		if ($chatId == chatId) {
@@ -890,6 +890,8 @@
 				await chats.set(await getChatList(localStorage.token, $currentChatPage));
 			}
 		}
+		// If TaskId is not reset, an incorrect TaskId may be sent when canceling the next chat request.
+		taskId = null;
 	};
 
 	const chatActionHandler = async (chatId, actionId, modelId, responseMessageId, event = null) => {
