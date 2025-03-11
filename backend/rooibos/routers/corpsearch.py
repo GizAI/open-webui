@@ -232,6 +232,7 @@ async def search(request: Request):
                 rmc.new_reconfirmation_code,
                 sfd_latest.total_equity AS financial_total_equity,
                 cb.id as bookmark_id,
+                cb.user_id as bookmark_user_id,
                 cb.data as files
         """        
 
