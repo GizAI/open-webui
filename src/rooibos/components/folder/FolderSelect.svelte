@@ -2,30 +2,39 @@
 	import { onMount, getContext, createEventDispatcher } from 'svelte';
 	import Modal from '$lib/components/common/Modal.svelte';
 	import { WEBUI_API_BASE_URL } from '$lib/constants';
-	import { getRooibosFolders } from '../apis/folder';
+	import { getRooibosFolders, createNewRooibosFolder } from '../apis/folder';
 	import { user } from '$lib/stores';
 	import Spinner from '$lib/components/common/Spinner.svelte';
-	const i18n = getContext('i18n');
+	// Assuming toast is available in the global scope or needs to be implemented
+	
+	const i18n: any = getContext('i18n');
 
 	export let isOpen: boolean;
 	export let onClose: () => void;
 	export let folderType: string;
 	export let bookmarkId: string;
 
-	let folders = [];
+	let folders: any[] = [];
+	let isLoading = true;
+	let showCreateFolderInput = false;
+	let newFolderName = '';
 
 	const dispatch = createEventDispatcher();
 
 	// 폴더 목록 로드 함수
 	async function loadFolders() {
+		isLoading = true;
 		try {
 			const response = await getRooibosFolders(localStorage.token, $user?.id, folderType).catch((error) => {
-				toast.error(`${error}`);
+				console.error(`${error}`);
 				return null;
 			});
-			folders = await response;
+			folders = await response || [];
 		} catch (error) {
 			console.error("폴더 로드 실패:", error);
+			folders = [];
+		} finally {
+			isLoading = false;
 		}
 	}
 
@@ -33,7 +42,7 @@
 		loadFolders();
 	});
 
-	async function selectFolder(folder) {
+	async function selectFolder(folder: any) {
 		dispatch('close', folder);
 		onClose();
 	}
@@ -45,20 +54,79 @@
 		const day = date.getDate().toString().padStart(2, '0');
 		return `${year}-${month}-${day}`;
 	}
+
+	async function createFolder() {
+		if (!newFolderName.trim()) {
+			alert('폴더 이름을 입력해주세요.');
+			return;
+		}
+
+		try {
+			await createNewRooibosFolder(
+				localStorage.token,
+				newFolderName,
+				$user?.id,
+				folderType
+			);
+			newFolderName = '';
+			showCreateFolderInput = false;
+			await loadFolders();
+		} catch (error) {
+			alert(`폴더 생성 실패: ${error}`);
+		}
+	}
 </script>
 
-<Modal {isOpen} on:close={onClose}>
+<Modal show={isOpen} on:close={onClose}>
 	<div class="p-4 bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-white-200">
 		<div class="flex justify-between items-center mb-4">
-			<h2 class="text-lg font-bold text-gray-900 dark:text-gray-200">{$i18n.t('폴더 선택')}</h2>
-			<button type="button" on:click={onClose} class="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300">
-				<!-- 닫기 버튼 아이콘 -->
-				<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-				</svg>
-			</button>
+			<h2 class="text-lg font-bold text-gray-900 dark:text-gray-200">
+				{i18n && typeof i18n.t === 'function' ? i18n.t('폴더 선택') : '폴더 선택'}
+			</h2>
+			<div class="flex items-center">
+				<button 
+					type="button" 
+					on:click={() => showCreateFolderInput = !showCreateFolderInput}
+					class="mr-2 text-sm px-2 py-1 bg-gray-500 text-white rounded hover:bg-blue-400 transition-colors"
+				>
+					<svg class="w-4 h-4 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+					</svg>
+					폴더 생성
+				</button>
+				<button type="button" on:click={onClose} class="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300">
+					<!-- 닫기 버튼 아이콘 -->
+					<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+					</svg>
+				</button>
+			</div>
 		</div>
-		{#if folders.length > 0}
+
+		{#if showCreateFolderInput}
+			<div class="mb-4 p-2 bg-gray-100 dark:bg-gray-800 rounded">
+				<div class="flex items-center">
+					<input 
+						type="text" 
+						bind:value={newFolderName} 
+						placeholder="새 폴더 이름" 
+						class="flex-1 p-2 border border-gray-300 dark:border-gray-600 rounded-l bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+					/>
+					<button 
+						on:click={createFolder}
+						class="p-2 bg-gray-500 text-white rounded-r hover:bg-blue-400 transition-colors"
+					>
+						생성
+					</button>
+				</div>
+			</div>
+		{/if}
+
+		{#if isLoading}
+			<div class="w-full h-32 flex justify-center items-center">
+				<Spinner />
+			</div>
+		{:else if folders.length > 0}
 			<ul class="space-y-2">
 				{#each folders as folder}
 					<li>
@@ -79,8 +147,8 @@
 				{/each}
 			</ul>
 		{:else}
-			<div class="w-full h-full flex justify-center items-center">
-				<Spinner />
+			<div class="w-full h-32 flex justify-center items-center text-gray-500 dark:text-gray-400">
+				폴더가 없습니다.
 			</div>
 		{/if}
 	</div>

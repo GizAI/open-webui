@@ -97,7 +97,8 @@
 	const openAIChat = async (company: any) => {
 		selectedCompanyInfo.set({
 			...company,
-			financialData: financialData
+			financialData: financialData,
+			files: company.data_files?.file_ids ?? company.files?.file_ids
 		});
 		await goto('/');
 	};

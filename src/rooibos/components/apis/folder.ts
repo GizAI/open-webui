@@ -8,7 +8,7 @@ export const createNewRooibosFolder = async (
 ) => {
 	let error = null;
 
-	const res = await fetch(`${WEBUI_API_BASE_URL}/rooibos/folders/add/?userId=${userId}`, {
+	const res = await fetch(`${WEBUI_API_BASE_URL}/rooibos/folders/add?userId=${userId}`, {
 		method: 'POST',
 		headers: {
 			Accept: 'application/json',
