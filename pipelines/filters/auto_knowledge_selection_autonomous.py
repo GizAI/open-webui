@@ -12,13 +12,6 @@ from open_webui.utils.middleware import chat_web_search_handler
 
 
 def parse_json_content(content: str) -> Optional[dict]:
-    """
-    주어진 문자열에서 JSON 객체를 추출하고 dict로 변환합니다.
-    - 문자열 전체가 '{...}'로 감싸져 있다면 직접 파싱을 시도합니다.
-    - 아닐 경우, 정규표현식으로 첫 번째 JSON 객체를 추출하여 파싱 시도합니다.
-    - 파싱에 실패하면 None을 반환합니다.
-    - 필요 시(파싱 실패), 작은따옴표(')를 큰따옴표(")로 바꿔보는 시도도 합니다.
-    """
 
     def try_load_json(json_str: str) -> Optional[dict]:
         """주어진 json_str을 파싱 시도하고 실패 시 None을 반환합니다."""
@@ -204,10 +197,6 @@ Return the result in the following JSON format (no extra keys, no explanations):
             kb_content = (
                 kb_response["choices"][0]["message"]["content"] if kb_response else ""
             )
-            print("kb_content start: =================================")
-            print(kb_content)
-            print("kb_content end: =================================")
-
             if kb_content == "None":
                 selected_knowledge_bases = []
             else:
@@ -300,8 +289,5 @@ Return the result in the following JSON format (no extra keys, no explanations):
                 "Additionally, please respond in the language used by the user in their input. "
             ),
         }
-        print("body start: =================================")
-        print(body)
-        print("body end: =================================")
         body.setdefault("messages", []).insert(0, context_message)
         return body
