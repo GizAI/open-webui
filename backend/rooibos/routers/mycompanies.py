@@ -267,15 +267,9 @@ async def get_corpbookmark_by_id(id: str, request: Request):
                 }
             
             # Chat List 조회
-            business_reg_json = json.dumps({
-                "selectedCompany": {
-                    "business_registration_number": bookmark_data[0].business_registration_number
-                }
-            })
-            
             conditions = []
             conditions.append("user_id = " + format_parameter(user_id))
-            conditions.append("c.chat::jsonb @> " + format_parameter(business_reg_json) + "::jsonb")
+            conditions.append("c.business_registration_number = " + format_parameter(bookmark_data[0].business_registration_number))
             chat_query = "SELECT * FROM chat c WHERE " + " AND ".join(conditions)
             chat_query = get_executable_query(chat_query, [])
             
