@@ -290,7 +290,6 @@
 </script>
 
 <style>
-  /* 라인 아이콘 스타일 */
   :global(.line-icon) {
     position: absolute;
     left: -24px;
@@ -305,7 +304,11 @@
     cursor: pointer;
     color: #555;
   }
-  
+
+  :global(.heading1-line-icon) {
+    transform: translateY(+150%);
+  }
+
   :global(.dark) :global(.line-icon) {
     color: #e5e7eb;
   }

@@ -594,6 +594,10 @@
 									lineIcon.className = 'line-icon';
 									lineIcon.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="1" fill="currentColor"/><circle cx="12" cy="6" r="1" fill="currentColor"/><circle cx="12" cy="18" r="1" fill="currentColor"/></svg>';
 			
+									if (node.type.name === 'heading' && node.attrs.level === 1) {
+										lineIcon.classList.add('heading1-line-icon');
+									}
+									
 									lineIcon.addEventListener('click', (e) => {
 										e.preventDefault();
 										e.stopPropagation();
