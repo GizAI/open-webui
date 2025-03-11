@@ -231,7 +231,8 @@ async def search(request: Request):
                 rmc.confirming_authority,
                 rmc.new_reconfirmation_code,
                 sfd_latest.total_equity AS financial_total_equity,
-                cb.id as bookmark_id
+                cb.id as bookmark_id,
+                cb.data as files
         """        
 
         if not id:

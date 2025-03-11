@@ -209,6 +209,7 @@ type CompanySettings = {
 	confirming_authority?: string;
 	new_reconfirmation_code?: string;
 	financialData?: FinancialData;
+	files?: string[];
 };
 
 type FinancialData = {

@@ -86,6 +86,7 @@ async def get_corpbookmark_by_id(id: str, request: Request):
             f.created_at,
             f.updated_at,
             f.company_id, f.user_id as bookmark_user_id,
+            f.data::jsonb as data_files,
             jsonb_agg(DISTINCT
                 CASE
                     WHEN f.data IS NOT NULL
