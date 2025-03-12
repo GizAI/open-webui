@@ -9,7 +9,7 @@
 
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
-	import { mobile, showSidebar, knowledge as _knowledge, user } from '$lib/stores';
+	import { mobile, showSidebar, knowledge as _knowledge } from '$lib/stores';
 
 	import { updateFileDataContentById, uploadFile, deleteFileById } from '$lib/apis/files';
 	import {
@@ -31,7 +31,7 @@
 	import AddFilesPlaceholder from '$lib/components/AddFilesPlaceholder.svelte';
 
 	import AddContentMenu from './KnowledgeBase/AddContentMenu.svelte';
-	import NoteEditorModal from './KnowledgeBase/NoteEditorModal.svelte';
+	import AddTextContentModal from './KnowledgeBase/AddTextContentModal.svelte';
 
 	import SyncConfirmDialog from '../../common/ConfirmDialog.svelte';
 	import RichTextInput from '$lib/components/common/RichTextInput.svelte';
@@ -40,10 +40,7 @@
 	import ChevronLeft from '$lib/components/icons/ChevronLeft.svelte';
 	import LockClosed from '$lib/components/icons/LockClosed.svelte';
 	import AccessControlModal from '../common/AccessControlModal.svelte';
-	import { get } from 'svelte/store';
 
-	const currentUser = get(user);
-	
 	let largeScreen = true;
 
 	let pane;
@@ -68,16 +65,6 @@
 	let showSyncConfirmModal = false;
 	let showAccessControlModal = false;
 
-	// 모달이 닫힐 때 이전 상태를 저장
-	let previousModalState = false;
-	$: if (previousModalState && !showAddTextContentModal) {
-		// 모달이 닫힐 때 (true -> false로 변경될 때)
-		// 선택된 파일 정보 초기화
-		selectedFileId = null;
-		selectedFile = null;
-	}
-	$: previousModalState = showAddTextContentModal;
-
 	let inputFiles = null;
 
 	let filteredItems = [];
@@ -97,7 +84,6 @@
 
 	let selectedFile = null;
 	let selectedFileId = null;
-	let tempFileForNoteEditor = { id: 'temp-id', meta: { name: '' }, data: { content: '' } };
 
 	$: if (selectedFileId) {
 		const file = (knowledge?.files ?? []).find((file) => file.id === selectedFileId);
@@ -117,12 +103,6 @@
 	let dragged = false;
 
 	const createFileFromText = (name, content) => {
-		// 내용이 비어있는 경우 null 반환
-		// HTML 태그만 있는 경우(<p></p> 등)도 빈 내용으로 처리
-		if (!content.trim() || content.trim() === '<p></p>' || content.replace(/<[^>]*>/g, '').trim() === '') {
-			return null;
-		}
-		
 		const blob = new Blob([content], { type: 'text/plain' });
 		const file = blobToFile(blob, `${name}.txt`);
 
@@ -131,11 +111,6 @@
 	};
 
 	const uploadFileHandler = async (file) => {
-		// 파일이 null인 경우 처리하지 않음
-		if (!file) {
-			return null;
-		}
-		
 		console.log(file);
 
 		const tempItemId = uuidv4();
@@ -402,25 +377,23 @@
 	};
 
 	const updateFileContentHandler = async () => {
-		if (!selectedFile) {
-			toast.error($i18n.t('No file selected.'));
-			return;
-		}
-		
-		if (selectedFile.id === 'temp-id') {
-			toast.error($i18n.t('Cannot update temporary file.'));
-			return;
-		}
-		
 		const fileId = selectedFile.id;
 		const content = selectedFile.data.content;
 
-		const res = await updateFileDataContentById(localStorage.token, fileId, content).catch((e) => {
+		const res = updateFileDataContentById(localStorage.token, fileId, content).catch((e) => {
 			toast.error(`${e}`);
-			return null;
 		});
 
-		if (res) {
+		const updatedKnowledge = await updateFileFromKnowledgeById(
+			localStorage.token,
+			id,
+			fileId
+		).catch((e) => {
+			toast.error(`${e}`);
+		});
+
+		if (res && updatedKnowledge) {
+			knowledge = updatedKnowledge;
 			toast.success($i18n.t('File content updated successfully.'));
 		}
 	};
@@ -593,33 +566,11 @@
 	}}
 />
 
-<NoteEditorModal
+<AddTextContentModal
 	bind:show={showAddTextContentModal}
-	initialTitle={selectedFile?.meta?.name}
-	initialContent={selectedFile?.data?.content}
-	selectedFile={selectedFile || tempFileForNoteEditor}
-	on:submit={async (e) => {
-		// HTML 태그만 있는 경우(<p></p> 등)도 빈 내용으로 처리
-		if (!e.detail.content.trim() || e.detail.content.trim() === '<p></p>' || e.detail.content.replace(/<[^>]*>/g, '').trim() === '') {
-			// 내용이 비어있으면 저장하지 않고 모달만 닫음
-			selectedFileId = null;
-			selectedFile = null;
-			return;
-		}
-		
-		if (selectedFile && selectedFile.id !== 'temp-id') {
-			// 기존 파일 수정: update 처리
-			selectedFile.meta.name = e.detail.name;
-			selectedFile.data.content = e.detail.content;
-			await updateFileContentHandler();
-		} else {
-			// 신규 파일 생성: add 처리
-			const file = createFileFromText(e.detail.name, e.detail.content);
-			await uploadFileHandler(file);
-		}
-		// 모달이 닫힐 때 선택된 파일 정보 초기화
-		selectedFileId = null;
-		selectedFile = null;
+	on:submit={(e) => {
+		const file = createFileFromText(e.detail.name, e.detail.content);
+		uploadFileHandler(file);
 	}}
 />
 
@@ -674,7 +625,6 @@
 						</div>
 
 						<div class="self-center shrink-0">
-							{#if currentUser?.id === knowledge.user_id}
 							<button
 								class="bg-gray-50 hover:bg-gray-100 text-black dark:bg-gray-850 dark:hover:bg-gray-800 dark:text-white transition px-2 py-1 rounded-full flex gap-1 items-center"
 								type="button"
@@ -688,7 +638,6 @@
 									{$i18n.t('Access')}
 								</div>
 							</button>
-							{/if}
 						</div>
 					</div>
 
@@ -709,11 +658,118 @@
 
 		<div class="flex flex-row flex-1 h-full max-h-full pb-2.5 gap-3">
 			{#if largeScreen}
-				<div class="flex-1 flex justify-center items-center w-full h-full">
-					<div class="text-xs text-center text-gray-200 dark:text-gray-700">
-						{$i18n.t('Drag and drop a file to upload or select a file to view')}
-					</div>
+				<div class="flex-1 flex justify-start w-full h-full max-h-full">
+					{#if selectedFile}
+						<div class=" flex flex-col w-full h-full max-h-full">
+							<div class="shrink-0 mb-2 flex items-center">
+								{#if !showSidepanel}
+									<div class="-translate-x-2">
+										<button
+											class="w-full text-left text-sm p-1.5 rounded-lg dark:text-gray-300 dark:hover:text-white hover:bg-black/5 dark:hover:bg-gray-850"
+											on:click={() => {
+												pane.expand();
+											}}
+										>
+											<ChevronLeft strokeWidth="2.5" />
+										</button>
+									</div>
+								{/if}
+
+								<div class=" flex-1 text-xl font-medium">
+									<a
+										class="hover:text-gray-500 dark:hover:text-gray-100 hover:underline grow line-clamp-1"
+										href={selectedFile.id ? `/api/v1/files/${selectedFile.id}/content` : '#'}
+										target="_blank"
+									>
+										{selectedFile?.meta?.name}
+									</a>
+								</div>
+
+								<div>
+									<button
+										class="self-center w-fit text-sm py-1 px-2.5 dark:text-gray-300 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5 rounded-lg"
+										on:click={() => {
+											updateFileContentHandler();
+										}}
+									>
+										{$i18n.t('Save')}
+									</button>
+								</div>
+							</div>
+
+							<div
+								class=" flex-1 w-full h-full max-h-full text-sm bg-transparent outline-hidden overflow-y-auto scrollbar-hidden"
+							>
+								{#key selectedFile.id}
+									<RichTextInput
+										className="input-prose-sm"
+										bind:value={selectedFile.data.content}
+										placeholder={$i18n.t('Add content here')}
+										preserveBreaks={true}
+									/>
+								{/key}
+							</div>
+						</div>
+					{:else}
+						<div class="h-full flex w-full">
+							<div class="m-auto text-xs text-center text-gray-200 dark:text-gray-700">
+								{$i18n.t('Drag and drop a file to upload or select a file to view')}
+							</div>
+						</div>
+					{/if}
 				</div>
+			{:else if !largeScreen && selectedFileId !== null}
+				<Drawer
+					className="h-full"
+					show={selectedFileId !== null}
+					on:close={() => {
+						selectedFileId = null;
+					}}
+				>
+					<div class="flex flex-col justify-start h-full max-h-full p-2">
+						<div class=" flex flex-col w-full h-full max-h-full">
+							<div class="shrink-0 mt-1 mb-2 flex items-center">
+								<div class="mr-2">
+									<button
+										class="w-full text-left text-sm p-1.5 rounded-lg dark:text-gray-300 dark:hover:text-white hover:bg-black/5 dark:hover:bg-gray-850"
+										on:click={() => {
+											selectedFileId = null;
+										}}
+									>
+										<ChevronLeft strokeWidth="2.5" />
+									</button>
+								</div>
+								<div class=" flex-1 text-xl line-clamp-1">
+									{selectedFile?.meta?.name}
+								</div>
+
+								<div>
+									<button
+										class="self-center w-fit text-sm py-1 px-2.5 dark:text-gray-300 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5 rounded-lg"
+										on:click={() => {
+											updateFileContentHandler();
+										}}
+									>
+										{$i18n.t('Save')}
+									</button>
+								</div>
+							</div>
+
+							<div
+								class=" flex-1 w-full h-full max-h-full py-2.5 px-3.5 rounded-lg text-sm bg-transparent overflow-y-auto scrollbar-hidden"
+							>
+								{#key selectedFile.id}
+									<RichTextInput
+										className="input-prose-sm"
+										bind:value={selectedFile.data.content}
+										placeholder={$i18n.t('Add content here')}
+										preserveBreaks={true}
+									/>
+								{/key}
+							</div>
+						</div>
+					</div>
+				</Drawer>
 			{/if}
 
 			<div
@@ -759,8 +815,6 @@
 											if (e.detail.type === 'directory') {
 												uploadDirectoryHandler();
 											} else if (e.detail.type === 'text') {
-												selectedFileId = null;
-												selectedFile = null;
 												showAddTextContentModal = true;
 											} else {
 												document.getElementById('files-input').click();
@@ -779,14 +833,14 @@
 								<Files
 									small
 									files={filteredItems}
+									{selectedFileId}
 									on:click={(e) => {
-										// 선택된 파일을 변수에 저장하고 모달을 오픈
-										selectedFileId = e.detail;
-										selectedFile = (knowledge?.files ?? []).find(file => file.id === e.detail);
-										showAddTextContentModal = true;
+										selectedFileId = selectedFileId === e.detail ? null : e.detail;
 									}}
 									on:delete={(e) => {
 										console.log(e.detail);
+
+										selectedFileId = null;
 										deleteFileHandler(e.detail);
 									}}
 								/>
