@@ -88,6 +88,7 @@
 
 	let provider: HocuspocusProvider | null = null;
 	let activeUsers: ActiveUser[] = [];
+	let websocketCheckInterval: ReturnType<typeof setInterval> | null = null;
 
 	let editorState: EditorState = {
 		bold: false,
@@ -556,7 +557,25 @@
 			});
 		}
 
-		setInterval(() => {
+		// 웹소켓 상태 확인 인터벌 시작
+		startWebsocketCheck(providerInstance);
+
+		const yActiveUsers = providerInstance.document.getMap('activeUsers');
+		yActiveUsers.observe(() => {
+			activeUsers = Array.from(yActiveUsers.values()) as ActiveUser[];
+		});
+
+		return providerInstance;
+	}
+
+	// 웹소켓 상태 확인 시작 함수
+	function startWebsocketCheck(providerInstance: HocuspocusProvider): void {
+		// 이미 인터벌이 실행 중이면 중복 실행 방지
+		if (websocketCheckInterval) {
+			clearInterval(websocketCheckInterval);
+		}
+		
+		websocketCheckInterval = setInterval(() => {
 			if (providerInstance.websocket) {
 				const states = ['CONNECTING', 'OPEN', 'CLOSING', 'CLOSED'];
 				console.log('WebSocket status:', states[providerInstance.websocket.readyState]);
@@ -565,17 +584,16 @@
 					console.log('WebSocket is closed. Attempting to reconnect...');
 					providerInstance.connect();
 				}
-			} else {
-				console.log('WebSocket not initialized');
-			}
+			} 
 		}, 10000);
+	}
 
-		const yActiveUsers = providerInstance.document.getMap('activeUsers');
-		yActiveUsers.observe(() => {
-			activeUsers = Array.from(yActiveUsers.values()) as ActiveUser[];
-		});
-
-		return providerInstance;
+	// 웹소켓 상태 확인 중지 함수
+	function stopWebsocketCheck(): void {
+		if (websocketCheckInterval) {
+			clearInterval(websocketCheckInterval);
+			websocketCheckInterval = null;
+		}
 	}
 
 	const lineMenuExtension = Extension.create({
@@ -847,6 +865,9 @@
 		if (provider) {
 			provider.destroy();
 		}
+
+		// 웹소켓 상태 확인 인터벌 정리
+		stopWebsocketCheck();
 
 		document.removeEventListener('click', closeAllDropdowns);
 		document.removeEventListener('click', closeLineMenu);
