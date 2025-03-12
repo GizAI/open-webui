@@ -41,6 +41,8 @@
 	import LockClosed from '$lib/components/icons/LockClosed.svelte';
 	import AccessControlModal from '../common/AccessControlModal.svelte';
 
+	import NoteEditorModal from './KnowledgeBase/NoteEditorModal.svelte';
+
 	let largeScreen = true;
 
 	let pane;
@@ -62,6 +64,7 @@
 	let query = '';
 
 	let showAddTextContentModal = false;
+	let showCollaborationNoteModal = false;
 	let showSyncConfirmModal = false;
 	let showAccessControlModal = false;
 
@@ -823,6 +826,9 @@
 										on:sync={(e) => {
 											showSyncConfirmModal = true;
 										}}
+										on:new-collaboration-note={(e) => {
+											showCollaborationNoteModal = true;
+										}}
 									/>
 								</div>
 							</div>
@@ -860,3 +866,33 @@
 		<Spinner />
 	{/if}
 </div>
+
+<NoteEditorModal
+	bind:show={showCollaborationNoteModal}
+	initialTitle={selectedFile?.meta?.name}
+	initialContent={selectedFile?.data?.content}
+	selectedFile={selectedFile || tempFileForNoteEditor}
+	on:submit={async (e) => {
+		// HTML 태그만 있는 경우(<p></p> 등)도 빈 내용으로 처리
+		if (!e.detail.content.trim() || e.detail.content.trim() === '<p></p>' || e.detail.content.replace(/<[^>]*>/g, '').trim() === '') {
+			// 내용이 비어있으면 저장하지 않고 모달만 닫음
+			selectedFileId = null;
+			selectedFile = null;
+			return;
+		}
+		
+		if (selectedFile && selectedFile.id !== 'temp-id') {
+			// 기존 파일 수정: update 처리
+			selectedFile.meta.name = e.detail.name;
+			selectedFile.data.content = e.detail.content;
+			await updateFileContentHandler();
+		} else {
+			// 신규 파일 생성: add 처리
+			const file = createFileFromText(e.detail.name, e.detail.content);
+			await uploadFileHandler(file);
+		}
+		// 모달이 닫힐 때 선택된 파일 정보 초기화
+		selectedFileId = null;
+		selectedFile = null;
+	}}
+/>
