@@ -4,22 +4,57 @@
 	const i18n = getContext('i18n');
 
 	import { getGroups } from '$lib/apis/groups';
+	import { getUsers } from '$lib/apis/users';
 	import Tooltip from '$lib/components/common/Tooltip.svelte';
 	import Plus from '$lib/components/icons/Plus.svelte';
 	import UserCircleSolid from '$lib/components/icons/UserCircleSolid.svelte';
 	import XMark from '$lib/components/icons/XMark.svelte';
 	import Badge from '$lib/components/common/Badge.svelte';
+	import { WEBUI_API_BASE_URL } from '$lib/constants';
 
 	export let onChange: Function = () => {};
 
 	export let accessRoles = ['read'];
-	export let accessControl = null;
+	export let accessControl: {
+		read?: {
+			group_ids?: string[];
+			user_ids?: string[];
+		};
+		write?: {
+			group_ids?: string[];
+			user_ids?: string[];
+		};
+	} | null = null;
+
+	// API 호출 관련 상태
+	export let useApi = false;
+	export let apiEndpoint = '';
 
 	let selectedGroupId = '';
-	let groups = [];
+	let selectedUserId = '';
+	let groups: any[] = [];
+	let users: any[] = [];
+	let accessUsers: any[] = [];
+
+	// 사용자 필터링 함수
+	function filterAvailableUsers(users: any[], accessControlUserIds: string[] = []): any[] {
+		return users.filter(user => !accessControlUserIds.includes(user.id));
+	}
+
+	// 사용자 목록 계산 함수
+	function getAccessUsers() {
+		if (useApi) {
+			return accessUsers;
+		}
+		
+		if (!accessControl || !accessControl.read) return [];
+		return users.filter(user => accessControl.read.user_ids?.includes(user.id));
+	}
 
 	onMount(async () => {
 		groups = await getGroups(localStorage.token);
+		const allUsers = await getUsers(localStorage.token);
+		users = allUsers.filter((user: any) => user.role === 'user');
 
 		if (accessControl === null) {
 			accessControl = null;
@@ -35,30 +70,171 @@
 				}
 			};
 		}
+
+		// API를 사용하는 경우 사용자 목록 가져오기
+		if (useApi && apiEndpoint) {
+			// await fetchAccessUsers();
+		}
 	});
 
-	$: onChange(accessControl);
+	// API를 통해 접근 권한이 있는 사용자 목록 가져오기
+	async function fetchAccessUsers() {
+		if (!apiEndpoint) return;
+		
+		try {
+			const res = await fetch(
+				`${WEBUI_API_BASE_URL}${apiEndpoint}/users`,
+				{
+					headers: {
+						'Content-Type': 'application/json',
+						Authorization: `Bearer ${localStorage.token}`
+					}
+				}
+			);
+			const result = await res.json();
+			if (res.ok) {
+				accessUsers = result.data || [];
+				console.log('Fetched access users:', accessUsers);
+			} else {
+				console.error(result.message);
+			}
+		} catch (error) {
+			console.error('Error fetching access users:', error);
+		}
+	}
 
 	$: if (selectedGroupId) {
 		onSelectGroup();
 	}
 
-	const onSelectGroup = () => {
-		if (selectedGroupId !== '') {
-			accessControl.read.group_ids = [...accessControl.read.group_ids, selectedGroupId];
+	$: if (selectedUserId && selectedUserId !== '') {
+		if (useApi && apiEndpoint) {
+			onSelectUserApi();
+		} else {
+			onSelectUser();
+		}
+	}
 
+	const onSelectGroup = () => {
+		if (selectedGroupId !== '' && accessControl) {
+			accessControl.read.group_ids = [...accessControl.read.group_ids || [], selectedGroupId];
 			selectedGroupId = '';
+			// 강제로 UI 업데이트 트리거
+			accessControl = { ...accessControl };
+			// 변경사항 저장
+			onChange(accessControl);
 		}
 	};
+
+	const onSelectUser = () => {
+		if (selectedUserId !== '' && accessControl) {
+			accessControl.read.user_ids = [...accessControl.read.user_ids || [], selectedUserId];
+			selectedUserId = '';
+			// 강제로 UI 업데이트 트리거
+			accessControl = { ...accessControl };
+			// 변경사항 저장
+			onChange(accessControl);
+		}
+	};
+
+	// API를 통한 사용자 추가
+	async function onSelectUserApi() {
+		if (!apiEndpoint || selectedUserId === '') return;
+		
+		try {
+			const queryParams = new URLSearchParams({
+				user_id: selectedUserId
+			});
+			const res = await fetch(
+				`${WEBUI_API_BASE_URL}${apiEndpoint}/addUser?${queryParams.toString()}`,
+				{
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json',
+						Authorization: `Bearer ${localStorage.token}`
+					}
+				}
+			);
+			const result = await res.json();
+			if (res.ok) {
+				accessControl = result.data;
+				onChange(accessControl);
+				
+				// 사용자 목록 업데이트
+				if (result.users && Array.isArray(result.users)) {
+					accessUsers = result.users;
+					console.log('Updated access users after add:', accessUsers);
+				} else {
+					await fetchAccessUsers();
+				}
+			} else {
+				console.error('Error adding user:', result.message);
+			}
+		} catch (error) {
+			console.error('Error in onSelectUserApi:', error);
+		}
+		selectedUserId = '';
+	}
+
+	// API를 통한 사용자 제거
+	async function onRemoveUserApi(userId: string) {
+		if (!apiEndpoint) return;
+		
+		try {
+			const queryParams = new URLSearchParams({
+				user_id: userId
+			});
+			const res = await fetch(
+				`${WEBUI_API_BASE_URL}${apiEndpoint}/removeUser?${queryParams.toString()}`,
+				{
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json',
+						Authorization: `Bearer ${localStorage.token}`
+					}
+				}
+			);
+			const result = await res.json();
+			if (res.ok) {
+				accessControl = result.data;
+				onChange(accessControl);
+				
+				// 사용자 목록 업데이트
+				if (result.users && Array.isArray(result.users)) {
+					accessUsers = result.users;
+					console.log('Updated access users after remove:', accessUsers);
+				} else {
+					await fetchAccessUsers();
+				}
+			} else {
+				console.error('Error removing user:', result.message);
+			}
+		} catch (error) {
+			console.error('Error in onRemoveUserApi:', error);
+		}
+	}
+
+	// 일반 방식으로 사용자 제거
+	function onRemoveUser(userId: string) {
+		if (accessControl && accessControl.read) {
+			accessControl.read.user_ids = accessControl.read.user_ids?.filter(
+				(id) => id !== userId
+			);
+			// 강제로 UI 업데이트 트리거
+			accessControl = { ...accessControl };
+			// 변경사항 저장
+			onChange(accessControl);
+		}
+	}
 </script>
 
-<div class=" rounded-lg flex flex-col gap-2">
+<div class="rounded-lg flex flex-col gap-2">
 	<div class="">
-		<div class=" text-sm font-semibold mb-1">{$i18n.t('Visibility')}</div>
+		<div class="text-sm font-semibold mb-1">{$i18n.t('Visibility')}</div>
 
 		<div class="flex gap-2.5 items-center mb-1">
 			<div>
-				<div class=" p-2 bg-black/5 dark:bg-white/5 rounded-full">
+				<div class="p-2 bg-black/5 dark:bg-white/5 rounded-full">
 					{#if accessControl !== null}
 						<svg
 							xmlns="http://www.w3.org/2000/svg"
@@ -99,25 +275,31 @@
 					class="outline-hidden bg-transparent text-sm font-medium rounded-lg block w-fit pr-10 max-w-full placeholder-gray-400"
 					value={accessControl !== null ? 'private' : 'public'}
 					on:change={(e) => {
-						if (e.target.value === 'public') {
+						if (e.target && e.target.value === 'public') {
 							accessControl = null;
+							// 변경사항 저장
+							onChange(accessControl);
 						} else {
 							accessControl = {
 								read: {
-									group_ids: []
+									group_ids: [],
+									user_ids: []
 								},
 								write: {
-									group_ids: []
+									group_ids: [],
+									user_ids: []
 								}
 							};
+							// 변경사항 저장
+							onChange(accessControl);
 						}
 					}}
 				>
-					<option class=" text-gray-700" value="private" selected>Private</option>
-					<option class=" text-gray-700" value="public" selected>Public</option>
+					<option class="text-gray-700" value="private" selected>Private</option>
+					<option class="text-gray-700" value="public" selected>Public</option>
 				</select>
 
-				<div class=" text-xs text-gray-400 font-medium">
+				<div class="text-xs text-gray-400 font-medium">
 					{#if accessControl !== null}
 						{$i18n.t('Only select users and groups with permission can access')}
 					{:else}
@@ -128,8 +310,9 @@
 		</div>
 	</div>
 	{#if accessControl !== null}
+		<!-- 그룹 권한 관리 섹션 -->
 		{@const accessGroups = groups.filter((group) =>
-			accessControl.read.group_ids.includes(group.id)
+			accessControl.read.group_ids?.includes(group.id)
 		)}
 		<div>
 			<div class="">
@@ -149,30 +332,19 @@
 									dark:placeholder-gray-500"
 									bind:value={selectedGroupId}
 								>
-									<option class=" text-gray-700" value="" disabled selected
+									<option class="text-gray-700" value="" disabled selected
 										>{$i18n.t('Select a group')}</option
 									>
-									{#each groups.filter((group) => !accessControl.read.group_ids.includes(group.id)) as group}
-										<option class=" text-gray-700" value={group.id}>{group.name}</option>
+									{#each groups.filter((group) => !accessControl.read.group_ids?.includes(group.id)) as group}
+										<option class="text-gray-700" value={group.id}>{group.name}</option>
 									{/each}
 								</select>
 							</div>
-							<!-- <div>
-								<Tooltip content={$i18n.t('Add Group')}>
-									<button
-										class=" p-1 rounded-xl bg-transparent dark:hover:bg-white/5 hover:bg-black/5 transition font-medium text-sm flex items-center space-x-1"
-										type="button"
-										on:click={() => {}}
-									>
-										<Plus className="size-3.5" />
-									</button>
-								</Tooltip>
-							</div> -->
 						</div>
 					</div>
 				</div>
 
-				<hr class=" border-gray-100 dark:border-gray-700/10 mt-1.5 mb-2.5 w-full" />
+				<hr class="border-gray-100 dark:border-gray-700/10 mt-1.5 mb-2.5 w-full" />
 
 				<div class="flex flex-col gap-2 mb-1 px-0.5">
 					{#if accessGroups.length > 0}
@@ -193,21 +365,25 @@
 										class=""
 										type="button"
 										on:click={() => {
-											if (accessRoles.includes('write')) {
-												if (accessControl.write.group_ids.includes(group.id)) {
-													accessControl.write.group_ids = accessControl.write.group_ids.filter(
+											if (accessRoles.includes('write') && accessControl) {
+												if (accessControl.write?.group_ids?.includes(group.id)) {
+													accessControl.write.group_ids = accessControl.write.group_ids?.filter(
 														(group_id) => group_id !== group.id
 													);
 												} else {
 													accessControl.write.group_ids = [
-														...accessControl.write.group_ids,
+														...(accessControl.write?.group_ids || []),
 														group.id
 													];
 												}
+												// 강제로 UI 업데이트 트리거
+												accessControl = { ...accessControl };
+												// 변경사항 저장
+												onChange(accessControl);
 											}
 										}}
 									>
-										{#if accessControl.write.group_ids.includes(group.id)}
+										{#if accessControl.write?.group_ids?.includes(group.id)}
 											<Badge type={'success'} content={$i18n.t('Write')} />
 										{:else}
 											<Badge type={'info'} content={$i18n.t('Read')} />
@@ -215,12 +391,18 @@
 									</button>
 
 									<button
-										class=" rounded-full p-1 hover:bg-gray-100 dark:hover:bg-gray-850 transition"
+										class="rounded-full p-1 hover:bg-gray-100 dark:hover:bg-gray-850 transition"
 										type="button"
 										on:click={() => {
-											accessControl.read.group_ids = accessControl.read.group_ids.filter(
-												(id) => id !== group.id
-											);
+											if (accessControl) {
+												accessControl.read.group_ids = accessControl.read.group_ids?.filter(
+													(id) => id !== group.id
+												);
+												// 강제로 UI 업데이트 트리거
+												accessControl = { ...accessControl };
+												// 변경사항 저장
+												onChange(accessControl);
+											}
 										}}
 									>
 										<XMark />
@@ -236,6 +418,143 @@
 						</div>
 					{/if}
 				</div>
+			</div>
+		</div>
+		
+		<!-- 사용자 권한 관리 섹션 -->
+		<div class="mt-4 border-t pt-3 border-gray-100 dark:border-gray-700/10">
+			<div class="flex justify-between mb-1.5">
+				<div class="text-sm font-semibold">
+					{$i18n.t('Users')}
+				</div>
+			</div>
+			
+			<div class="mb-1">
+				<div class="flex w-full">
+					<div class="flex flex-1 items-center">
+						<div class="w-full px-0.5">
+							<select
+								class="outline-hidden bg-transparent text-sm rounded-lg block w-full pr-10 max-w-full
+								{selectedUserId ? '' : 'text-gray-500'}
+								dark:placeholder-gray-500"
+								bind:value={selectedUserId}
+							>
+								<option class="text-gray-700" value="" disabled selected
+									>{$i18n.t('Select a user')}</option
+								>
+								{#if useApi}
+									{#each users.filter(user => !accessUsers.some(au => au.id === user.id)) as user}
+										<option class="text-gray-700" value={user.id}>{user.name}</option>
+									{/each}
+								{:else}
+									{#each filterAvailableUsers(users, accessControl?.read?.user_ids || []) as user}
+										<option class="text-gray-700" value={user.id}>{user.name}</option>
+									{/each}
+								{/if}
+							</select>
+						</div>
+					</div>
+				</div>
+			</div>
+			
+			<hr class="border-gray-100 dark:border-gray-700/10 mt-1.5 mb-2.5 w-full" />
+			
+			<div class="flex flex-col gap-2 mb-1 px-0.5">
+				{#if useApi}
+					{#if accessUsers && accessUsers.length > 0}
+						{#each accessUsers as user}
+							<div class="flex items-center gap-3 justify-between text-xs w-full transition">
+								<div class="flex items-center gap-1.5 w-full font-medium">
+									<div>
+										<UserCircleSolid className="size-4" />
+									</div>
+
+									<div>
+										{user.name}
+									</div>
+								</div>
+
+								<div class="w-full flex justify-end items-center gap-0.5">
+									<button
+										class="rounded-full p-1 hover:bg-gray-100 dark:hover:bg-gray-850 transition"
+										type="button"
+										on:click={() => onRemoveUserApi(user.id)}
+									>
+										<XMark />
+									</button>
+								</div>
+							</div>
+						{/each}
+					{:else}
+						<div class="flex items-center justify-center">
+							<div class="text-gray-500 text-xs text-center py-2 px-10">
+								{$i18n.t('No users with access, add a user to grant access')}
+							</div>
+						</div>
+					{/if}
+				{:else}
+					{@const accessUsers = users.filter(user => accessControl?.read?.user_ids?.includes(user.id))}
+					{#if accessUsers.length > 0}
+						{#each accessUsers as user}
+							<div class="flex items-center gap-3 justify-between text-xs w-full transition">
+								<div class="flex items-center gap-1.5 w-full font-medium">
+									<div>
+										<UserCircleSolid className="size-4" />
+									</div>
+
+									<div>
+										{user.name}
+									</div>
+								</div>
+
+								<div class="w-full flex justify-end items-center gap-0.5">
+									<button
+										class=""
+										type="button"
+										on:click={() => {
+											if (accessRoles.includes('write') && accessControl) {
+												if (accessControl.write?.user_ids?.includes(user.id)) {
+													accessControl.write.user_ids = accessControl.write.user_ids?.filter(
+														(userId) => userId !== user.id
+													);
+												} else {
+													accessControl.write.user_ids = [
+														...(accessControl.write?.user_ids || []),
+														user.id
+													];
+												}
+												// 강제로 UI 업데이트 트리거
+												accessControl = { ...accessControl };
+												// 변경사항 저장
+												onChange(accessControl);
+											}
+										}}
+									>
+										{#if accessControl.write?.user_ids?.includes(user.id)}
+											<Badge type={'success'} content={$i18n.t('Write')} />
+										{:else}
+											<Badge type={'info'} content={$i18n.t('Read')} />
+										{/if}
+									</button>
+
+									<button
+										class="rounded-full p-1 hover:bg-gray-100 dark:hover:bg-gray-850 transition"
+										type="button"
+										on:click={() => onRemoveUser(user.id)}
+									>
+										<XMark />
+									</button>
+								</div>
+							</div>
+						{/each}
+					{:else}
+						<div class="flex items-center justify-center">
+							<div class="text-gray-500 text-xs text-center py-2 px-10">
+								{$i18n.t('No users with access, add a user to grant access')}
+							</div>
+						</div>
+					{/if}
+				{/if}
 			</div>
 		</div>
 	{/if}
