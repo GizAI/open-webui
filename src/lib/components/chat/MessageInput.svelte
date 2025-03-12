@@ -452,6 +452,16 @@
 										</div>
 										<div class=" translate-y-[0.5px]">{$selectedCompanyInfo.company_name}</div>
 									</div>
+									<div>
+										<button
+											class="flex items-center dark:text-gray-500"
+											on:click={() => {
+												selectedCompanyInfo.clearCompany()
+											}}
+										>
+											<XMark />
+										</button>
+									</div>
 								</div>
 							{/if}
 
