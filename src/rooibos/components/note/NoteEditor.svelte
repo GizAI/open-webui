@@ -534,10 +534,12 @@
 			onSynced: () => {
 				console.log('문서 동기화 완료');
 			},
-			onClose: () => {
-				console.log('협업 서버와 연결 끊김');
+			onClose: (event) => {
+				console.error('협업 서버와 연결 끊김:', event);
 			},
-			onMessage: (message) => {}
+			onMessage: (message) => {
+				console.log('메시지 수신:', message);
+			}
 		});
 
 		const yActiveUsers = providerInstance.document.getMap('activeUsers');
