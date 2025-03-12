@@ -33,7 +33,8 @@
 	import CompanyDetail from '../company/CompanyDetail.svelte';
 	import { get } from 'svelte/store';
 	import LockClosed from '$lib/components/icons/LockClosed.svelte';
-	import RooibosAccessControlModal from '../common/RooibosAccessControlModal.svelte';
+	import Modal from '$lib/components/common/Modal.svelte';
+	import AccessControl from '$lib/components/workspace/common/AccessControl.svelte';
 
 	type Bookmark = {
 		id: string;
@@ -98,6 +99,16 @@
 		confirming_authority?: string;
 		new_reconfirmation_code?: string;
 		postal_code?: string;
+		access_control?: {
+			read?: {
+				group_ids?: string[];
+				user_ids?: string[];
+			};
+			write?: {
+				group_ids?: string[];
+				user_ids?: string[];
+			};
+		} | null;
 	};
 
 	type FinancialData = {
@@ -140,6 +151,7 @@
 	let showAddTextContentModal = false;
 	let showSyncConfirmModal = false;
 	let showAccessControlModal = false;
+	let showCompanyDetailModal = false;
 	let chatList: any = null;
 	let inputFiles: any = null;
 	let filteredItems: any = [];
@@ -156,6 +168,7 @@
 
 	// 모달이 닫힐 때 이전 상태를 저장
 	let previousModalState = false;
+	let previousAccessControlModalState = false;
 	
 	// 모달 상태 변경 감지 및 처리
 	function handleModalStateChange(currentModalState: boolean) {
@@ -167,7 +180,17 @@
 		previousModalState = currentModalState;
 	}
 	
+	// 액세스 컨트롤 모달 상태 변경 감지 및 처리
+	function handleAccessControlModalStateChange(currentModalState: boolean) {
+		// 모달이 닫힐 때 (true → false)
+		if (previousAccessControlModalState && !currentModalState) {
+			console.log('액세스 컨트롤 모달이 닫혔습니다. 현재 액세스 컨트롤:', bookmark?.access_control);
+		}
+		previousAccessControlModalState = currentModalState;
+	}
+	
 	$: handleModalStateChange(showAddTextContentModal);
+	$: handleAccessControlModalStateChange(showAccessControlModal);
 
 	$: if (bookmark && bookmark.files) {
 		fuse = new Fuse(bookmark.files, {
@@ -614,6 +637,11 @@
 		bookmark = data.bookmark[0];
 		chatList = data.chatList;
 
+		// 액세스 컨트롤 초기화
+		if (!bookmark.access_control) {
+			bookmark.access_control = null;
+		}
+
 		filteredItems = bookmark?.files ?? [];
 
 		const dropZone = document.querySelector('body');
@@ -638,7 +666,61 @@
 	}
 
 	function moveToExistingChat(chat: any) {
-		goto(`/c/${chat.id}`);
+		goto(`/chat/${chat.id}`);
+	}
+
+	// 액세스 컨트롤 변경 시 처리 함수
+	async function handleAccessControlChange(newAccessControl) {
+		if (!bookmark || !bookmark.bookmark_id) return;
+		
+		try {
+			console.log('변경 전 액세스 컨트롤:', bookmark.access_control);
+			console.log('변경할 액세스 컨트롤:', newAccessControl);
+			
+			// 회사 북마크의 액세스 컨트롤 업데이트 API 엔드포인트
+			const response = await fetch(
+				`${WEBUI_API_BASE_URL}/rooibos/mycompanies/${bookmark.bookmark_id}/accessControl`,
+				{
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json',
+						Authorization: `Bearer ${localStorage.token}`
+					},
+					body: JSON.stringify({ access_control: newAccessControl })
+				}
+			);
+			
+			const result = await response.json();
+			console.log('API 응답:', result);
+			
+			if (response.ok) {
+				// 서버에서 반환된 액세스 컨트롤 데이터를 사용하여 북마크 객체 업데이트
+				const updatedAccessControl = result.data.access_control;
+				console.log('서버에서 반환된 액세스 컨트롤:', updatedAccessControl);
+				
+				// 북마크 객체 복제 후 액세스 컨트롤 업데이트
+				const updatedBookmark = { ...bookmark };
+				
+				// 명시적으로 null 처리
+				if (newAccessControl === null) {
+					updatedBookmark.access_control = null;
+				} else {
+					// 서버에서 반환된 액세스 컨트롤 데이터에서 read.user_ids를 빈 배열로 설정
+					if (updatedAccessControl && updatedAccessControl.read) {
+						updatedAccessControl.read.user_ids = [];
+					}
+					updatedBookmark.access_control = updatedAccessControl;
+				}
+				
+				bookmark = updatedBookmark;
+				
+			} else {
+				console.error(result.message);
+			}
+		} catch (error) {
+			toast.error($i18n.t('Failed to update access control'));
+			console.error(error);
+		}
 	}
 </script>
 
@@ -749,8 +831,7 @@
 			</div>
 
 			<div class="flex items-center space-x-1">
-				<!-- {#if bookmark.bookmark_user_id == currentUser.id} -->
-				{#if false}
+				{#if currentUser && bookmark}
 					<div class="self-center shrink-0">
 						<button
 							class="bg-gray-50 hover:bg-gray-100 text-black dark:bg-gray-850 dark:hover:bg-gray-800 dark:text-white transition px-2 py-1 rounded-full flex gap-1 items-center"
@@ -792,12 +873,44 @@
 
 <div class="flex flex-col w-full translate-y-1" id="collection-container">
 	{#if bookmark}
-		<RooibosAccessControlModal
-			bind:show={showAccessControlModal}
-			bind:accessControl={bookmark.access_control}
-			bind:bookmarkId={bookmark.bookmark_id}
-			accessRoles={['read', 'write']}
-		/>
+		<Modal size="sm" bind:show={showAccessControlModal}>
+			<div>
+				<div class="flex justify-between dark:text-gray-100 px-5 pt-3 pb-1">
+					<div class="text-lg font-medium self-center font-primary">
+						{$i18n.t('Access Control')}
+					</div>
+					<button
+						class="self-center"
+						on:click={() => {
+							console.log('모달 닫기 버튼 클릭. 현재 액세스 컨트롤:', bookmark.access_control);
+							showAccessControlModal = false;
+						}}
+					>
+						<svg
+							xmlns="http://www.w3.org/2000/svg"
+							viewBox="0 0 20 20"
+							fill="currentColor"
+							class="w-5 h-5"
+						>
+							<path
+								d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z"
+							/>
+						</svg>
+					</button>
+				</div>
+
+				<div class="w-full px-5 pb-4 dark:text-white">
+					<AccessControl 
+						bind:accessControl={bookmark.access_control} 
+						onChange={(newAccessControl) => {
+							console.log('AccessControl onChange 호출됨. 새 액세스 컨트롤:', newAccessControl);
+							handleAccessControlChange(newAccessControl);
+						}}
+						accessRoles={['read', 'write']}
+					/>
+				</div>
+			</div>
+		</Modal>
 		<div
 			class="company-info-wrapper active {isFullscreen
 				? 'fullscreen'

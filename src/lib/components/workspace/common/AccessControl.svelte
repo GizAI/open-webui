@@ -45,8 +45,8 @@
 		} else {
 			accessControl = {
 				read: {
-					group_ids: accessControl?.read?.group_ids ?? [],
-					user_ids: accessControl?.read?.user_ids ?? []
+					group_ids: [],
+					user_ids: []
 				},
 				write: {
 					group_ids: accessControl?.write?.group_ids ?? [],
@@ -81,7 +81,8 @@
 
 	const onSelectUser = () => {
 		if (selectedUserId !== '' && accessControl) {
-			accessControl.read.user_ids = [...accessControl.read.user_ids || [], selectedUserId];
+			// read 권한에는 추가하지 않음
+			// accessControl.read.user_ids = [...accessControl.read.user_ids || [], selectedUserId];
 			
 			if (accessControl.write) {
 				accessControl.write.user_ids = [...accessControl.write.user_ids || [], selectedUserId];

@@ -668,6 +668,91 @@ async def remove_user_access_control(id: str, request: Request):
                 "message": str(e)
             }
         } 
+
+@router.post("/{id}/accessControl")
+async def update_access_control(id: str, request: Request):
+    """
+    북마크의 액세스 컨트롤 설정을 업데이트합니다.
+    
+    요청 본문 예시:
+    {
+        "access_control": {
+            "read": {
+                "group_ids": ["group1", "group2"],
+                "user_ids": ["user1", "user2"]
+            },
+            "write": {
+                "group_ids": ["group1"],
+                "user_ids": ["user1"]
+            }
+        }
+    }
+    
+    또는 액세스 컨트롤을 제거하려면:
+    {
+        "access_control": null
+    }
+    """
+    try:
+        body = await request.json()
+        access_control = body.get("access_control")
+        
+        log.info(f"Updating access control for bookmark {id}: {access_control}")
+        
+        with get_db() as db:
+            # 북마크가 존재하는지 확인
+            check_query = "SELECT id, access_control FROM corp_bookmark WHERE id = :id"
+            result = db.execute(text(check_query), {"id": id})
+            bookmark = result.fetchone()
+            if not bookmark:
+                log.error(f"Bookmark with id '{id}' not found")
+                return {
+                    "success": False,
+                    "error": "Bookmark not found",
+                    "message": f"Bookmark with id '{id}' does not exist."
+                }
+            
+            log.info(f"Current access control for bookmark {id}: {bookmark[1]}")
+            
+            # 액세스 컨트롤 업데이트
+            update_query = """
+                UPDATE corp_bookmark 
+                SET access_control = :access_control, 
+                    updated_at = now() 
+                WHERE id = :id 
+                RETURNING id, access_control
+            """
+            
+            # access_control이 None이면 NULL로 설정, 그렇지 않으면 JSON으로 변환
+            access_control_param = json.dumps(access_control) if access_control is not None else None
+            
+            log.info(f"Setting access_control to: {access_control_param}")
+            
+            result = db.execute(
+                text(update_query),
+                {"id": id, "access_control": access_control_param}
+            )
+            updated = result.fetchone()
+            db.commit()
+            
+            log.info(f"Updated access control for bookmark {id}: {updated[1]}")
+            
+            return {
+                "success": True,
+                "message": "Access control updated successfully",
+                "data": {
+                    "id": updated[0],
+                    "access_control": updated[1]
+                }
+            }
+            
+    except Exception as e:
+        log.error("Update access control error: " + str(e))
+        return {
+            "success": False,
+            "error": "Update failed",
+            "message": str(e)
+        }
     
 @router.post("/move")
 async def moveBookmark(request: Request):
