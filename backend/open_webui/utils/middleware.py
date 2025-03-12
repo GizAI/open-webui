@@ -2056,6 +2056,9 @@ async def process_chat_response(
 
                 await background_tasks_handler()
             except asyncio.CancelledError:
+                log.warning("Task was cancelled!")
+                await event_emitter({"type": "task-cancelled"})
+
                 if not ENABLE_REALTIME_CHAT_SAVE:
                     # Save message in the database
                     Chats.upsert_message_to_chat_by_id_and_message_id(
@@ -2065,12 +2068,14 @@ async def process_chat_response(
                             "content": serialize_content_blocks(content_blocks),
                         },
                     )
-                raise asyncio.CancelledError
 
             if response.background is not None:
                 await response.background()
 
-        await post_response_handler(response, events)
+        # background_tasks.add_task(post_response_handler, response, events)
+        task_id, _ = create_task(post_response_handler(response, events))
+        return {"status": True, "task_id": task_id}
+
     else:
         # Fallback to the original response
         async def stream_wrapper(original_generator, events):
