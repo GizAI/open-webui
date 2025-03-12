@@ -627,6 +627,14 @@
 									if (node.type.name === 'heading' && node.attrs.level === 1) {
 										lineIcon.classList.add('heading1-line-icon');
 									}
+
+									if (node.type.name === 'heading' && node.attrs.level === 2) {
+										lineIcon.classList.add('heading2-line-icon');
+									}
+
+									if (node.type.name === 'heading' && node.attrs.level === 3) {
+										lineIcon.classList.add('heading3-line-icon');
+									}
 									
 									lineIcon.addEventListener('click', (e) => {
 										e.preventDefault();
