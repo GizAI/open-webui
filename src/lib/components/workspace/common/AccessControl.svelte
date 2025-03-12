@@ -66,11 +66,15 @@
 
 	const onSelectGroup = () => {
 		if (selectedGroupId !== '' && accessControl) {
-			accessControl.read.group_ids = [...accessControl.read.group_ids || [], selectedGroupId];
+			// read 권한에는 추가하지 않음
+			// accessControl.read.group_ids = [...accessControl.read.group_ids || [], selectedGroupId];
+			
+			if (accessControl.write) {
+				accessControl.write.group_ids = [...accessControl.write.group_ids || [], selectedGroupId];
+			}
+			
 			selectedGroupId = '';
-			// 강제로 UI 업데이트 트리거
 			accessControl = { ...accessControl };
-			// 변경사항 저장
 			onChange(accessControl);
 		}
 	};
@@ -78,18 +82,21 @@
 	const onSelectUser = () => {
 		if (selectedUserId !== '' && accessControl) {
 			accessControl.read.user_ids = [...accessControl.read.user_ids || [], selectedUserId];
+			
+			if (accessControl.write) {
+				accessControl.write.user_ids = [...accessControl.write.user_ids || [], selectedUserId];
+			}
+			
 			selectedUserId = '';
-			// 강제로 UI 업데이트 트리거
 			accessControl = { ...accessControl };
-			// 변경사항 저장
 			onChange(accessControl);
 		}
 	};
 
 	// 사용자 제거
 	function onRemoveUser(userId: string) {
-		if (accessControl && accessControl.read) {
-			accessControl.read.user_ids = accessControl.read.user_ids?.filter(
+		if (accessControl && accessControl.write) {
+			accessControl.write.user_ids = accessControl.write.user_ids?.filter(
 				(id) => id !== userId
 			);
 			// 강제로 UI 업데이트 트리거
@@ -184,7 +191,7 @@
 	{#if accessControl !== null}
 		<!-- 그룹 권한 관리 섹션 -->
 		{@const accessGroups = groups.filter((group) =>
-			accessControl.read.group_ids?.includes(group.id)
+			accessControl.write?.group_ids?.includes(group.id)
 		)}
 		<div>
 			<div class="">
@@ -207,7 +214,7 @@
 									<option class="text-gray-700" value="" disabled selected
 										>{$i18n.t('Select a group')}</option
 									>
-									{#each groups.filter((group) => !accessControl.read.group_ids?.includes(group.id)) as group}
+									{#each groups.filter((group) => !accessControl.write?.group_ids?.includes(group.id)) as group}
 										<option class="text-gray-700" value={group.id}>{group.name}</option>
 									{/each}
 								</select>
@@ -266,8 +273,8 @@
 										class="rounded-full p-1 hover:bg-gray-100 dark:hover:bg-gray-850 transition"
 										type="button"
 										on:click={() => {
-											if (accessControl) {
-												accessControl.read.group_ids = accessControl.read.group_ids?.filter(
+											if (accessControl && accessControl.write) {
+												accessControl.write.group_ids = accessControl.write.group_ids?.filter(
 													(id) => id !== group.id
 												);
 												// 강제로 UI 업데이트 트리거
@@ -314,7 +321,7 @@
 								<option class="text-gray-700" value="" disabled selected
 									>{$i18n.t('Select a user')}</option
 								>
-								{#each filterAvailableUsers(users, accessControl?.read?.user_ids || []) as user}
+								{#each filterAvailableUsers(users, accessControl?.write?.user_ids || []) as user}
 									<option class="text-gray-700" value={user.id}>{user.name}</option>
 								{/each}
 							</select>
@@ -326,8 +333,8 @@
 			<hr class="border-gray-100 dark:border-gray-700/10 mt-1.5 mb-2.5 w-full" />
 			
 			<div class="flex flex-col gap-2 mb-1 px-0.5">
-				{#if accessControl && accessControl.read}
-					{#each users.filter(user => accessControl.read.user_ids?.includes(user.id)) as user}
+				{#if accessControl && accessControl.write}
+					{#each users.filter(user => accessControl.write?.user_ids?.includes(user.id)) as user}
 						<div class="flex items-center gap-3 justify-between text-xs w-full transition">
 							<div class="flex items-center gap-1.5 w-full font-medium">
 								<div>
