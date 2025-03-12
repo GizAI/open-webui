@@ -533,7 +533,7 @@
 		const providerInstance = new HocuspocusProvider({
 			url: window.location.hostname === 'localhost'
 				? 'ws://localhost:8443'
-				: 'wss://hocuspocus.conting.ai',
+				: 'wss://hocuspocus.conting.ai/ws',
 			name: documentName,
 			token: token,
 			connect: true,
@@ -557,24 +557,6 @@
 					console.log('Attempting to reconnect to collaboration server...');
 					providerInstance.connect();
 				}, 3000);
-			},
-			
-			// Use only the properties that are supported by the HocuspocusProviderConfiguration
-			onError: (error) => {
-				console.error('WebSocket error:', error);
-				console.log('WebSocket connection details:', {
-					url: providerInstance.url,
-					connected: providerInstance.isConnected
-				});
-				
-				// Try to get more information about the websocket if available
-				try {
-					if (providerInstance.websocket) {
-						console.log('WebSocket readyState:', providerInstance.websocket.readyState);
-					}
-				} catch (e) {
-					console.error('Error accessing websocket properties:', e);
-				}
 			},
 			onMessage: (message) => {
 				console.log('Message received from server:', message);
