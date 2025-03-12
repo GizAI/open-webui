@@ -524,7 +524,7 @@
 		console.log('Setting up collaboration with:', {
 			url: window.location.hostname === 'localhost'
 				? 'ws://localhost:8443'
-				: 'wss://hocuspocus.conting.ai',
+				: 'wss://hocuspocus.conting.ai/ws',
 			documentName,
 			token: token ? 'Token exists (not shown)' : 'No token',
 			userId: currentUser?.id || 'Unknown'
