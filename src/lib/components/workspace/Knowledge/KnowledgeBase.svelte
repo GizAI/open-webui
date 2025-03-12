@@ -871,7 +871,7 @@
 	bind:show={showCollaborationNoteModal}
 	initialTitle={selectedFile?.meta?.name}
 	initialContent={selectedFile?.data?.content}
-	selectedFile={selectedFile || tempFileForNoteEditor}
+	selectedFile={selectedFile || { id: 'temp-id', meta: { name: '' }, data: { content: '' } }}
 	on:submit={async (e) => {
 		// HTML 태그만 있는 경우(<p></p> 등)도 빈 내용으로 처리
 		if (!e.detail.content.trim() || e.detail.content.trim() === '<p></p>' || e.detail.content.replace(/<[^>]*>/g, '').trim() === '') {
