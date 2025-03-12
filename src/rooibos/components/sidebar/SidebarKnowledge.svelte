@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { getContext ,onMount} from 'svelte';
+	import { getContext, onMount } from 'svelte';
 	const i18n = getContext('i18n');
 	import { goto } from '$app/navigation';
 	import { mobile, showSidebar, chatId, knowledge } from '$lib/stores';
@@ -14,20 +14,27 @@
 		description?: string;
 		created_at?: number;
 		updated_at?: number;
+		collection_name?: string;
+		filename?: string;
+		title?: string;
 	}
 
-	let knowledgeBases: any[] = [];
+	let knowledgeBases: KnowledgeBase[] = [];
 
-	onMount(async () => {
+	async function fetchKnowledgeBases() {
 		try {
-			const bases = await getKnowledgeBaseList(localStorage.token);
-			knowledge.set(bases);
+			knowledgeBases = await getKnowledgeBaseList(localStorage.token);
 		} catch (e) {
 			toast.error(`${e}`);
 		}
-	});
+	}
 
-	$: knowledgeBases = $knowledge || [];
+	onMount(fetchKnowledgeBases);
+
+	// knowledge 스토어가 변경될 때마다 getKnowledgeBaseList 호출
+	knowledge.subscribe(() => {
+		fetchKnowledgeBases();
+	});
 
 	const handleAddClick = () => {
 		chatId.set('');
