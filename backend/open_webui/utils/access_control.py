@@ -113,7 +113,7 @@ def has_access(
     access_control: Optional[dict] = None,
 ) -> bool:
     if access_control is None:
-        return False  # access_control이 None이면 항상 권한 없음으로 처리
+        return type == "read"
 
     user_groups = Groups.get_groups_by_member_id(user_id)
     user_group_ids = [group.id for group in user_groups]
