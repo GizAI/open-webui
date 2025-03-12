@@ -523,7 +523,7 @@
 		
 		console.log('Setting up collaboration with:', {
 			url: window.location.hostname === 'localhost'
-				? 'ws://localhost:8443'
+				? 'ws://localhost:8444'
 				: 'wss://hocuspocus.conting.ai/ws',
 			documentName,
 			token: token ? 'Token exists (not shown)' : 'No token',
@@ -532,8 +532,8 @@
 
 		const providerInstance = new HocuspocusProvider({
 			url: window.location.hostname === 'localhost'
-				? 'ws://localhost:8443'
-				: 'wss://hocuspocus.conting.ai',
+				? 'ws://localhost:8444'
+				: 'wss://hocuspocus.conting.ai/ws',
 			name: documentName,
 			token: token,
 			connect: true,
@@ -543,41 +543,10 @@
 			onSynced: () => {
 				console.log('Document synchronized successfully');
 			},
-			onClose: (event) => {
-				console.error('Connection closed:', event);
-				// Log detailed information about the connection closure
-				if (event && typeof event === 'object') {
-					console.log('Connection close details:', JSON.stringify(event));
-				}
-			},
-			onDisconnect: (data) => {
-				console.error('Disconnected from collaboration server:', data);
-				console.log('Attempting to reconnect in 3 seconds...');
-				setTimeout(() => {
-					console.log('Attempting to reconnect to collaboration server...');
-					providerInstance.connect();
-				}, 3000);
-			},
-			
-			// Use only the properties that are supported by the HocuspocusProviderConfiguration
-			onError: (error) => {
-				console.error('WebSocket error:', error);
-				console.log('WebSocket connection details:', {
-					url: providerInstance.url,
-					connected: providerInstance.isConnected
-				});
-				
-				// Try to get more information about the websocket if available
-				try {
-					if (providerInstance.websocket) {
-						console.log('WebSocket readyState:', providerInstance.websocket.readyState);
-					}
-				} catch (e) {
-					console.error('Error accessing websocket properties:', e);
-				}
+			onClose: () => {
+				console.error('Connection closed:');
 			},
 			onMessage: (message) => {
-				console.log('Message received from server:', message);
 			}
 		});
 
