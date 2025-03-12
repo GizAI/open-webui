@@ -29,6 +29,7 @@
 	let selectedUserId = '';
 	let groups: any[] = [];
 	let users: any[] = [];
+	let isPublic = false;
 
 	// 사용자 필터링 함수
 	function filterAvailableUsers(users: any[], accessControlUserIds: string[] = []): any[] {
@@ -41,7 +42,16 @@
 		users = allUsers.filter((user: any) => user.role === 'user');
 
 		if (accessControl === null) {
-			accessControl = null;
+			accessControl = {
+				read: {
+					group_ids: [],
+					user_ids: []
+				},
+				write: {
+					group_ids: [],
+					user_ids: []
+				}
+			};
 		} else {
 			accessControl = {
 				read: {
@@ -54,6 +64,12 @@
 				}
 			};
 		}
+		
+		// Public 모드 여부 초기화
+		isPublic = accessControl.read?.user_ids?.length === 0 && 
+				   accessControl.read?.group_ids?.length === 0 && 
+				   accessControl.write?.user_ids?.length === 0 && 
+				   accessControl.write?.group_ids?.length === 0;
 	});
 
 	$: if (selectedGroupId) {
@@ -66,8 +82,13 @@
 
 	const onSelectGroup = () => {
 		if (selectedGroupId !== '' && accessControl) {
+			// Public 모드에서 그룹을 추가하면 Private 모드로 전환
+			isPublic = false;
+			
 			// read 권한에 추가
-			accessControl.read.group_ids = [...accessControl.read.group_ids || [], selectedGroupId];
+			if (accessControl.read) {
+				accessControl.read.group_ids = [...accessControl.read.group_ids || [], selectedGroupId];
+			}
 			
 			if (accessControl.write) {
 				accessControl.write.group_ids = [...accessControl.write.group_ids || [], selectedGroupId];
@@ -81,8 +102,13 @@
 
 	const onSelectUser = () => {
 		if (selectedUserId !== '' && accessControl) {
+			// Public 모드에서 사용자를 추가하면 Private 모드로 전환
+			isPublic = false;
+			
 			// read 권한에 추가
-			accessControl.read.user_ids = [...accessControl.read.user_ids || [], selectedUserId];
+			if (accessControl.read) {
+				accessControl.read.user_ids = [...accessControl.read.user_ids || [], selectedUserId];
+			}
 			
 			if (accessControl.write) {
 				accessControl.write.user_ids = [...accessControl.write.user_ids || [], selectedUserId];
@@ -126,7 +152,7 @@
 		<div class="flex gap-2.5 items-center mb-1">
 			<div>
 				<div class="p-2 bg-black/5 dark:bg-white/5 rounded-full">
-					{#if accessControl !== null}
+					{#if !isPublic}
 						<svg
 							xmlns="http://www.w3.org/2000/svg"
 							fill="none"
@@ -164,13 +190,24 @@
 				<select
 					id="models"
 					class="outline-hidden bg-transparent text-sm font-medium rounded-lg block w-fit pr-10 max-w-full placeholder-gray-400"
-					value={accessControl !== null ? 'private' : 'public'}
+					value={isPublic ? 'public' : 'private'}
 					on:change={(e) => {
 						if (e.target && e.target.value === 'public') {
-							accessControl = null;
+							isPublic = true;
+							accessControl = {
+								read: {
+									group_ids: [],
+									user_ids: []
+								},
+								write: {
+									group_ids: [],
+									user_ids: []
+								}
+							};
 							// 변경사항 저장
 							onChange(accessControl);
 						} else {
+							isPublic = false;
 							accessControl = {
 								read: {
 									group_ids: [],
@@ -191,7 +228,7 @@
 				</select>
 
 				<div class="text-xs text-gray-400 font-medium">
-					{#if accessControl !== null}
+					{#if !isPublic}
 						{$i18n.t('Only select users and groups with permission can access')}
 					{:else}
 						{$i18n.t('Accessible to all users')}
@@ -200,7 +237,7 @@
 			</div>
 		</div>
 	</div>
-	{#if accessControl !== null}
+	{#if !isPublic}
 		<!-- 그룹 권한 관리 섹션 -->
 		{@const accessGroups = groups.filter((group) =>
 			accessControl.write?.group_ids?.includes(group.id)
