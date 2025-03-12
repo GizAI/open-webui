@@ -550,14 +550,12 @@
 			}
 		});
 
-		// Add event listener for WebSocket errors
 		if (providerInstance.websocket) {
 			providerInstance.websocket.addEventListener('error', (error) => {
 				console.error('Raw WebSocket error event:', error);
 			});
 		}
 
-		// Monitor connection status
 		setInterval(() => {
 			if (providerInstance.websocket) {
 				const states = ['CONNECTING', 'OPEN', 'CLOSING', 'CLOSED'];
