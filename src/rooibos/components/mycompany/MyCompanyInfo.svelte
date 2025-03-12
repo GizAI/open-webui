@@ -163,14 +163,11 @@
 	let mediaQuery: any;
 	let dragged = false;
 	let id: any = null;
-	let folderId: string | null = null;
 	const currentUser = get(user);
 
-	// 모달이 닫힐 때 이전 상태를 저장
 	let previousModalState = false;
 	let previousAccessControlModalState = false;
 	
-	// 모달 상태 변경 감지 및 처리
 	function handleModalStateChange(currentModalState: boolean) {
 		// 모달이 닫힐 때 (true → false)
 		if (previousModalState && !currentModalState) {
@@ -180,9 +177,7 @@
 		previousModalState = currentModalState;
 	}
 	
-	// 액세스 컨트롤 모달 상태 변경 감지 및 처리
 	function handleAccessControlModalStateChange(currentModalState: boolean) {
-		// 모달이 닫힐 때 (true → false)
 		if (previousAccessControlModalState && !currentModalState) {
 			console.log('액세스 컨트롤 모달이 닫혔습니다. 현재 액세스 컨트롤:', bookmark?.access_control);
 		}
@@ -211,7 +206,7 @@
 		if (file) {
 			file.data = file.data ?? { content: '' };
 			selectedFile = file;
-			// 여기서 모달 상태를 직접 변경하지 않고 별도 함수로 처리
+
 			if (!showAddTextContentModal) {
 				showAddTextContentModal = true;
 			}
@@ -223,8 +218,6 @@
 	}
 
 	const createFileFromText = (name: string, content: string) => {
-		// 내용이 비어있는 경우 null 반환
-		// HTML 태그만 있는 경우(<p></p> 등)도 빈 내용으로 처리
 		if (!content.trim() || content.trim() === '<p></p>' || content.replace(/<[^>]*>/g, '').trim() === '') {
 			return null;
 		}
@@ -280,7 +273,6 @@
 			if (uploadedFile) {				
 				await addFileHandler(uploadedFile.id);
 				
-				// 업로드된 파일의 상태를 업데이트
 				if (bookmark && bookmark.files) {
 					bookmark.files = bookmark.files.map(f => {
 						if (f.itemId === tempItemId || (f.name === file.name && f.status === 'uploading')) {
@@ -450,7 +442,6 @@
 			if (res) {
 				toast.success($i18n.t('Bookmark reset successfully.'));
 
-				// Upload directory
 				uploadDirectoryHandler();
 			}
 		} else {
@@ -472,10 +463,6 @@
 
 		if (res.ok) {
 			const data = await res.json();
-			// bookmark = data.data[0];
-			// filteredItems = data.data[0].files;
-			
-			// 업로드 중인 파일의 상태를 업데이트
 			if (bookmark && bookmark.files) {
 				bookmark.files = bookmark.files.map(file => {
 					if (file.id === fileId || file.status === 'uploading') {
@@ -609,10 +596,6 @@
 
 		id = $page.params.id;
 
-		// Get folderId from URL query parameters
-		const urlParams = new URLSearchParams(window.location.search);
-		folderId = urlParams.get('folderId');
-
 		const queryParams = new URLSearchParams({
 			business_registration_number:
 				bookmark?.business_registration_number !== undefined
@@ -634,13 +617,15 @@
 		);
 
 		const data = await response.json();
+		
+		if(data.success === false) {
+			await goto('/');
+			return;
+		}
+		
 		bookmark = data.bookmark[0];
 		chatList = data.chatList;
-
-		// 액세스 컨트롤 초기화
-		if (!bookmark.access_control) {
-			bookmark.access_control = null;
-		}
+		
 
 		filteredItems = bookmark?.files ?? [];
 
@@ -662,14 +647,12 @@
 
 	function closeCompanyInfo() {
 		isFullscreen = false;
-		goto(`/rooibos/folder/${folderId}/companies`);
 	}
 
 	function moveToExistingChat(chat: any) {
 		goto(`/chat/${chat.id}`);
 	}
 
-	// 액세스 컨트롤 변경 시 처리 함수
 	async function handleAccessControlChange(newAccessControl) {
 		if (!bookmark || !bookmark.bookmark_id) return;
 		
@@ -677,7 +660,6 @@
 			console.log('변경 전 액세스 컨트롤:', bookmark.access_control);
 			console.log('변경할 액세스 컨트롤:', newAccessControl);
 			
-			// 회사 북마크의 액세스 컨트롤 업데이트 API 엔드포인트
 			const response = await fetch(
 				`${WEBUI_API_BASE_URL}/rooibos/mycompanies/${bookmark.bookmark_id}/accessControl`,
 				{
@@ -759,7 +741,6 @@
 	initialContent={selectedFile ? selectedFile?.data?.content || '' : ''}
 	selectedFile={selectedFile || tempFileForNoteEditor}
 	on:submit={(e) => {
-		// HTML 태그만 있는 경우(<p></p> 등)도 빈 내용으로 처리
 		if (!e.detail.content.trim() || e.detail.content.trim() === '<p></p>' || e.detail.content.replace(/<[^>]*>/g, '').trim() === '') {
 			showAddTextContentModal = false;
 			selectedFileId = null;
@@ -846,7 +827,7 @@
 				{/if}
 				<ActionButtons companyInfo={bookmark} />
 
-				<button class="hover:bg-gray-100 rounded-full" on:click={closeCompanyInfo}>
+				<!-- <button class="hover:bg-gray-100 rounded-full" on:click={closeCompanyInfo}>
 					<svg
 						xmlns="http://www.w3.org/2000/svg"
 						class="h-5 w-5 text-gray-500"
@@ -861,7 +842,7 @@
 							d="M6 18L18 6M6 6l12 12"
 						/>
 					</svg>
-				</button>
+				</button> -->
 			</div>
 		</div>
 	</div>

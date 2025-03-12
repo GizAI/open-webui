@@ -520,25 +520,88 @@
 		const currentUser = get(user);
 
 		const token = localStorage.getItem('token') || '';
+		
+		console.log('Setting up collaboration with:', {
+			url: window.location.hostname === 'localhost'
+				? 'ws://localhost:8443'
+				: 'wss://hocuspocus.conting.ai/ws',
+			documentName,
+			token: token ? 'Token exists (not shown)' : 'No token',
+			userId: currentUser?.id || 'Unknown'
+		});
 
 		const providerInstance = new HocuspocusProvider({
 			url: window.location.hostname === 'localhost'
 				? 'ws://localhost:8443'
-				: `wss://45.132.75.98:8443`,
+				: 'wss://hocuspocus.conting.ai',
 			name: documentName,
 			token: token,
 			connect: true,
 			onAuthenticated: () => {
-				console.log('협업 서버에 인증됨');
+				console.log('Collaboration server authenticated successfully');
 			},
 			onSynced: () => {
-				console.log('문서 동기화 완료');
+				console.log('Document synchronized successfully');
 			},
-			onClose: () => {
-				console.log('협업 서버와 연결 끊김');
+			onClose: (event) => {
+				console.error('Connection closed:', event);
+				// Log detailed information about the connection closure
+				if (event && typeof event === 'object') {
+					console.log('Connection close details:', JSON.stringify(event));
+				}
 			},
-			onMessage: (message) => {}
+			onDisconnect: (data) => {
+				console.error('Disconnected from collaboration server:', data);
+				console.log('Attempting to reconnect in 3 seconds...');
+				setTimeout(() => {
+					console.log('Attempting to reconnect to collaboration server...');
+					providerInstance.connect();
+				}, 3000);
+			},
+			
+			// Use only the properties that are supported by the HocuspocusProviderConfiguration
+			onError: (error) => {
+				console.error('WebSocket error:', error);
+				console.log('WebSocket connection details:', {
+					url: providerInstance.url,
+					connected: providerInstance.isConnected
+				});
+				
+				// Try to get more information about the websocket if available
+				try {
+					if (providerInstance.websocket) {
+						console.log('WebSocket readyState:', providerInstance.websocket.readyState);
+					}
+				} catch (e) {
+					console.error('Error accessing websocket properties:', e);
+				}
+			},
+			onMessage: (message) => {
+				console.log('Message received from server:', message);
+			}
 		});
+
+		// Add event listener for WebSocket errors
+		if (providerInstance.websocket) {
+			providerInstance.websocket.addEventListener('error', (error) => {
+				console.error('Raw WebSocket error event:', error);
+			});
+		}
+
+		// Monitor connection status
+		setInterval(() => {
+			if (providerInstance.websocket) {
+				const states = ['CONNECTING', 'OPEN', 'CLOSING', 'CLOSED'];
+				console.log('WebSocket status:', states[providerInstance.websocket.readyState]);
+				
+				if (providerInstance.websocket.readyState === WebSocket.CLOSED) {
+					console.log('WebSocket is closed. Attempting to reconnect...');
+					providerInstance.connect();
+				}
+			} else {
+				console.log('WebSocket not initialized');
+			}
+		}, 10000);
 
 		const yActiveUsers = providerInstance.document.getMap('activeUsers');
 		yActiveUsers.observe(() => {
