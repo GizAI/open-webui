@@ -543,23 +543,10 @@
 			onSynced: () => {
 				console.log('Document synchronized successfully');
 			},
-			onClose: (event) => {
-				console.error('Connection closed:', event);
-				// Log detailed information about the connection closure
-				if (event && typeof event === 'object') {
-					console.log('Connection close details:', JSON.stringify(event));
-				}
-			},
-			onDisconnect: (data) => {
-				console.error('Disconnected from collaboration server:', data);
-				console.log('Attempting to reconnect in 3 seconds...');
-				setTimeout(() => {
-					console.log('Attempting to reconnect to collaboration server...');
-					providerInstance.connect();
-				}, 3000);
+			onClose: () => {
+				console.error('Connection closed:');
 			},
 			onMessage: (message) => {
-				console.log('Message received from server:', message);
 			}
 		});
 
