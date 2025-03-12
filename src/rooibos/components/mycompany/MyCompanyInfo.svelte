@@ -629,7 +629,15 @@
 		);
 
 		const data = await response.json();
-		if(!data.success) goto('/rooibos/mycompanies');
+		console.log("API 응답 데이터:", data);
+		
+		// success가 false인 경우 명시적으로 체크하고 리다이렉트
+		if(data.success === false) {
+			console.log("권한 없음, 리다이렉트 실행");
+			await goto('/rooibos/mycompanies');
+			return; // 리다이렉트 후 함수 종료
+		}
+		
 		bookmark = data.bookmark[0];
 		chatList = data.chatList;
 		
