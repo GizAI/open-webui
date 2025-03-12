@@ -3,7 +3,7 @@
 	const i18n = getContext('i18n');
 	import { goto } from '$app/navigation';
 	import { mobile, showSidebar, chatId, knowledge } from '$lib/stores';
-	import { getKnowledgeBases } from '$lib/apis/knowledge';
+	import { getKnowledgeBaseList } from '$lib/apis/knowledge';
 	import { toast } from 'svelte-sonner';
 	import Folder from '$lib/components/common/Folder.svelte';
 
@@ -20,7 +20,7 @@
 
 	onMount(async () => {
 		try {
-			const bases = await getKnowledgeBases(localStorage.token);
+			const bases = await getKnowledgeBaseList(localStorage.token);
 			knowledge.set(bases);
 		} catch (e) {
 			toast.error(`${e}`);
