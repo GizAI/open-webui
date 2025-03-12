@@ -23,6 +23,16 @@ export default {
 					950: 'var(--color-gray-950, #0d0d0d)'
 				}
 			},
+			fontFamily: {
+				'sans': ['system-ui', '-apple-system', 'BlinkMacSystemFont', 'Microsoft YaHei', 'PingFang SC', 'Segoe UI', 'Roboto', 'Helvetica Neue', 'Arial', 'Noto Sans', 'Source Han Sans SC', 'sans-serif', 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji'],
+			},
+			fontSize: {
+				'sm': '16px',
+				'xs': '14px',
+				'base': '18px',
+				'lg' : '20px',
+				'xl' : '22px',
+			},
 			typography: {
 				DEFAULT: {
 					css: {

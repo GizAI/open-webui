@@ -1195,8 +1195,14 @@
 											<Tooltip content={'지식전문봇'} placement="top">
 												<button
 													on:click|preventDefault={() => {	
-														console.log($config?.default_models.split(',')[0])
-														showCategoryModal = true
+														if($models.find((m) => m.id === selectedModels[0])?.info?.base_model_id){
+															const defaultModel = $config?.default_models.split(',')[0];
+															const model = $models.find((m) => m.id === defaultModel);
+															dispatch('modelChange', model);
+															showCategoryModal = false;
+														}else{
+															showCategoryModal = true
+														}
 													}}
 													type="button"
 													class="px-1.5 @sm:px-2.5 py-1.5 flex gap-1.5 items-center text-sm rounded-full font-medium transition-colors duration-300 focus:outline-none max-w-full overflow-hidden {$models.find((m) => m.id === selectedModels[0])?.info?.base_model_id
