@@ -115,7 +115,7 @@
 			<button
 				class=" flex space-x-4 cursor-pointer text-left w-full px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-850 transition rounded-xl"
 				on:click={() => {
-					goto(`/rooibos/mycompanies/${bookmark.id}?folderId=${$page.params.id}`);
+					goto(`/rooibos/mycompanies/${bookmark.id}`);
 				}}
 			>
 				<div class=" w-full">
@@ -129,7 +129,6 @@
 									showDeleteConfirm = true;
 								}}
 								on:moved={() => {
-									// 이동한 북마크는 리스트에서 제거
 									bookmarks = bookmarks.filter((b) => b.id !== bookmark.id);
 								}}
 							/>

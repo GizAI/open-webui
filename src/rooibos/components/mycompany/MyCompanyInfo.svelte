@@ -163,7 +163,6 @@
 	let mediaQuery: any;
 	let dragged = false;
 	let id: any = null;
-	let folderId: string | null = null;
 	const currentUser = get(user);
 
 	// 모달이 닫힐 때 이전 상태를 저장
@@ -609,10 +608,6 @@
 
 		id = $page.params.id;
 
-		// Get folderId from URL query parameters
-		const urlParams = new URLSearchParams(window.location.search);
-		folderId = urlParams.get('folderId');
-
 		const queryParams = new URLSearchParams({
 			business_registration_number:
 				bookmark?.business_registration_number !== undefined
@@ -634,10 +629,10 @@
 		);
 
 		const data = await response.json();
+		if(!data.success) goto('/rooibos/mycompanies');
 		bookmark = data.bookmark[0];
 		chatList = data.chatList;
 		
-		if(!bookmark) goto('/workspace/knowledge');
 
 		filteredItems = bookmark?.files ?? [];
 
@@ -659,7 +654,6 @@
 
 	function closeCompanyInfo() {
 		isFullscreen = false;
-		goto(`/rooibos/folder/${folderId}/companies`);
 	}
 
 	function moveToExistingChat(chat: any) {
@@ -843,7 +837,7 @@
 				{/if}
 				<ActionButtons companyInfo={bookmark} />
 
-				<button class="hover:bg-gray-100 rounded-full" on:click={closeCompanyInfo}>
+				<!-- <button class="hover:bg-gray-100 rounded-full" on:click={closeCompanyInfo}>
 					<svg
 						xmlns="http://www.w3.org/2000/svg"
 						class="h-5 w-5 text-gray-500"
@@ -858,7 +852,7 @@
 							d="M6 18L18 6M6 6l12 12"
 						/>
 					</svg>
-				</button>
+				</button> -->
 			</div>
 		</div>
 	</div>

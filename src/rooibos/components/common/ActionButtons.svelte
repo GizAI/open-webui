@@ -68,12 +68,10 @@
 
 	// 북마크 추가 또는 삭제(확인 후) 처리
 	const saveCompany = async (company: any) => {
-		if (!company.bookmark_user_id) {
-			// 북마크 추가 전 폴더 선택 모달 표시
-			showFolderSelect = true;
-		} else {
-			// 삭제 전 확인 대화상자 호출
+		if (company.bookmark_user_id != null && company.bookmark_user_id == currentUser?.id) {
 			showDeleteConfirm = true;
+		} else {
+			showFolderSelect = true;
 		}
 	};
 
