@@ -7,6 +7,7 @@ const Y = require('yjs'); // Yjs 임포트
 
 const HOCUSPOCUS_HOST = '0.0.0.0';
 const HOCUSPOCUS_PORT = 8444;
+const WEBSOCKET_PATH = '/ws';
 
 
 const debounceMap = new Map();
@@ -14,6 +15,7 @@ const debounceMap = new Map();
 const server = Server.configure({
   address: HOCUSPOCUS_HOST,
   port: HOCUSPOCUS_PORT,
+  path: WEBSOCKET_PATH,
   
   async onConnect(data) {
     const { request, requestHeaders, documentName } = data;

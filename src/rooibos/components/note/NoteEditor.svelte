@@ -532,7 +532,7 @@
 
 		const providerInstance = new HocuspocusProvider({
 			url: window.location.hostname === 'localhost'
-				? 'ws://localhost:8443'
+				? 'ws://localhost:8444'
 				: 'wss://hocuspocus.conting.ai/ws',
 			name: documentName,
 			token: token,
