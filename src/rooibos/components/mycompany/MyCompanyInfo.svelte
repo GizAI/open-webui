@@ -636,11 +636,8 @@
 		const data = await response.json();
 		bookmark = data.bookmark[0];
 		chatList = data.chatList;
-
-		// 액세스 컨트롤 초기화
-		if (!bookmark.access_control) {
-			bookmark.access_control = null;
-		}
+		
+		if(!bookmark) goto('/workspace/knowledge');
 
 		filteredItems = bookmark?.files ?? [];
 

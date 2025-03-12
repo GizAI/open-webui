@@ -4,6 +4,7 @@ from open_webui.internal.db import get_db
 from sqlalchemy import text
 from open_webui.env import SRC_LOG_LEVELS
 from open_webui.models.users import UserModel, Users
+from open_webui.utils.access_control import has_access
 
 import json
 import logging
@@ -87,6 +88,7 @@ async def get_corpbookmark_by_id(id: str, request: Request):
             f.updated_at,
             f.company_id, f.user_id as bookmark_user_id,
             f.data::jsonb as data_files,
+            f.access_control,
             jsonb_agg(DISTINCT
                 CASE
                     WHEN f.data IS NOT NULL
@@ -257,9 +259,19 @@ async def get_corpbookmark_by_id(id: str, request: Request):
             if not bookmark_data:
                 return {
                     "success": False,
-                    "error": "권한 없음",
-                    "message": f"Bookmark with id '{id}' 에 대한 접근 권한이 없습니다."
+                    "error": "북마크를 찾을 수 없음",
+                    "message": f"Bookmark with id '{id}' 를 찾을 수 없습니다."
                 }
+            
+            # 권한 체크 추가
+            if user_id and bookmark_data[0].bookmark_user_id != user_id:
+                # 북마크 소유자가 아닌 경우 access_control 확인
+                if not has_access(user_id, "read", bookmark_data[0].access_control):
+                    return {
+                        "success": False,
+                        "error": "권한 없음",
+                        "message": f"Bookmark with id '{id}' 에 대한 접근 권한이 없습니다."
+                    }
             
             # Chat List 조회
             conditions = []
