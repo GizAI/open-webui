@@ -1,8 +1,9 @@
 <script lang="ts">
+	import { getContext ,onMount} from 'svelte';
+	const i18n = getContext('i18n');
 	import { goto } from '$app/navigation';
 	import { mobile, showSidebar, chatId, knowledge } from '$lib/stores';
 	import { getKnowledgeBases } from '$lib/apis/knowledge';
-	import { onMount } from 'svelte';
 	import { toast } from 'svelte-sonner';
 	import Folder from '$lib/components/common/Folder.svelte';
 
@@ -35,29 +36,32 @@
 			showSidebar.set(false);
 		}
 	};
+
+	const handleKnowledgeClick = (baseId: string) => {
+		chatId.set('');
+		goto(`/workspace/knowledge/${baseId}`);
+		if ($mobile) {
+			showSidebar.set(false);
+		}
+	};
 </script>
 
 <div class="px-1.5 flex justify-center text-gray-800 dark:text-gray-200">
 	<Folder
 		className="w-full"
-		name="지식 기반"
+		name={$i18n.t('Knowledge')}
 		onAdd={handleAddClick}
-		onAddLabel="새 지식베이스"
+		onAddLabel={$i18n.t('Create a knowledge base')}
 	>
 		{#each knowledgeBases as base}
-			<a
-				href="/workspace/knowledge/{base.id}"
-				class="flex items-center space-x-3 px-2 py-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-900 transition text-sm"
-				on:click={() => {
-					if ($mobile) {
-						showSidebar.set(false);
-					}
-				}}
+			<button
+				class="w-full flex items-center space-x-3 px-2 py-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-900 transition text-sm text-left"
+				on:click={() => handleKnowledgeClick(base.id)}
 			>
 				<div class="flex-1 truncate text-gray-700 dark:text-gray-300">
 					{base.name}
 				</div>
-			</a>
+			</button>
 		{/each}
 	</Folder>
 </div> 
