@@ -10,7 +10,6 @@
 	import UserCircleSolid from '$lib/components/icons/UserCircleSolid.svelte';
 	import XMark from '$lib/components/icons/XMark.svelte';
 	import Badge from '$lib/components/common/Badge.svelte';
-	import { WEBUI_API_BASE_URL } from '$lib/constants';
 
 	export let onChange: Function = () => {};
 
@@ -26,29 +25,14 @@
 		};
 	} | null = null;
 
-	// API 호출 관련 상태
-	export let useApi = false;
-	export let apiEndpoint = '';
-
 	let selectedGroupId = '';
 	let selectedUserId = '';
 	let groups: any[] = [];
 	let users: any[] = [];
-	let accessUsers: any[] = [];
 
 	// 사용자 필터링 함수
 	function filterAvailableUsers(users: any[], accessControlUserIds: string[] = []): any[] {
 		return users.filter(user => !accessControlUserIds.includes(user.id));
-	}
-
-	// 사용자 목록 계산 함수
-	function getAccessUsers() {
-		if (useApi) {
-			return accessUsers;
-		}
-		
-		if (!accessControl || !accessControl.read) return [];
-		return users.filter(user => accessControl.read.user_ids?.includes(user.id));
 	}
 
 	onMount(async () => {
@@ -70,49 +54,14 @@
 				}
 			};
 		}
-
-		// API를 사용하는 경우 사용자 목록 가져오기
-		if (useApi && apiEndpoint) {
-			// await fetchAccessUsers();
-		}
 	});
-
-	// API를 통해 접근 권한이 있는 사용자 목록 가져오기
-	async function fetchAccessUsers() {
-		if (!apiEndpoint) return;
-		
-		try {
-			const res = await fetch(
-				`${WEBUI_API_BASE_URL}${apiEndpoint}/users`,
-				{
-					headers: {
-						'Content-Type': 'application/json',
-						Authorization: `Bearer ${localStorage.token}`
-					}
-				}
-			);
-			const result = await res.json();
-			if (res.ok) {
-				accessUsers = result.data || [];
-				console.log('Fetched access users:', accessUsers);
-			} else {
-				console.error(result.message);
-			}
-		} catch (error) {
-			console.error('Error fetching access users:', error);
-		}
-	}
 
 	$: if (selectedGroupId) {
 		onSelectGroup();
 	}
 
 	$: if (selectedUserId && selectedUserId !== '') {
-		if (useApi && apiEndpoint) {
-			onSelectUserApi();
-		} else {
-			onSelectUser();
-		}
+		onSelectUser();
 	}
 
 	const onSelectGroup = () => {
@@ -137,84 +86,7 @@
 		}
 	};
 
-	// API를 통한 사용자 추가
-	async function onSelectUserApi() {
-		if (!apiEndpoint || selectedUserId === '') return;
-		
-		try {
-			const queryParams = new URLSearchParams({
-				user_id: selectedUserId
-			});
-			const res = await fetch(
-				`${WEBUI_API_BASE_URL}${apiEndpoint}/addUser?${queryParams.toString()}`,
-				{
-					method: 'POST',
-					headers: {
-						'Content-Type': 'application/json',
-						Authorization: `Bearer ${localStorage.token}`
-					}
-				}
-			);
-			const result = await res.json();
-			if (res.ok) {
-				accessControl = result.data;
-				onChange(accessControl);
-				
-				// 사용자 목록 업데이트
-				if (result.users && Array.isArray(result.users)) {
-					accessUsers = result.users;
-					console.log('Updated access users after add:', accessUsers);
-				} else {
-					await fetchAccessUsers();
-				}
-			} else {
-				console.error('Error adding user:', result.message);
-			}
-		} catch (error) {
-			console.error('Error in onSelectUserApi:', error);
-		}
-		selectedUserId = '';
-	}
-
-	// API를 통한 사용자 제거
-	async function onRemoveUserApi(userId: string) {
-		if (!apiEndpoint) return;
-		
-		try {
-			const queryParams = new URLSearchParams({
-				user_id: userId
-			});
-			const res = await fetch(
-				`${WEBUI_API_BASE_URL}${apiEndpoint}/removeUser?${queryParams.toString()}`,
-				{
-					method: 'POST',
-					headers: {
-						'Content-Type': 'application/json',
-						Authorization: `Bearer ${localStorage.token}`
-					}
-				}
-			);
-			const result = await res.json();
-			if (res.ok) {
-				accessControl = result.data;
-				onChange(accessControl);
-				
-				// 사용자 목록 업데이트
-				if (result.users && Array.isArray(result.users)) {
-					accessUsers = result.users;
-					console.log('Updated access users after remove:', accessUsers);
-				} else {
-					await fetchAccessUsers();
-				}
-			} else {
-				console.error('Error removing user:', result.message);
-			}
-		} catch (error) {
-			console.error('Error in onRemoveUserApi:', error);
-		}
-	}
-
-	// 일반 방식으로 사용자 제거
+	// 사용자 제거
 	function onRemoveUser(userId: string) {
 		if (accessControl && accessControl.read) {
 			accessControl.read.user_ids = accessControl.read.user_ids?.filter(
@@ -442,15 +314,9 @@
 								<option class="text-gray-700" value="" disabled selected
 									>{$i18n.t('Select a user')}</option
 								>
-								{#if useApi}
-									{#each users.filter(user => !accessUsers.some(au => au.id === user.id)) as user}
-										<option class="text-gray-700" value={user.id}>{user.name}</option>
-									{/each}
-								{:else}
-									{#each filterAvailableUsers(users, accessControl?.read?.user_ids || []) as user}
-										<option class="text-gray-700" value={user.id}>{user.name}</option>
-									{/each}
-								{/if}
+								{#each filterAvailableUsers(users, accessControl?.read?.user_ids || []) as user}
+									<option class="text-gray-700" value={user.id}>{user.name}</option>
+								{/each}
 							</select>
 						</div>
 					</div>
@@ -460,74 +326,39 @@
 			<hr class="border-gray-100 dark:border-gray-700/10 mt-1.5 mb-2.5 w-full" />
 			
 			<div class="flex flex-col gap-2 mb-1 px-0.5">
-				{#if useApi}
-					{#if accessUsers && accessUsers.length > 0}
-						{#each accessUsers as user}
-							<div class="flex items-center gap-3 justify-between text-xs w-full transition">
-								<div class="flex items-center gap-1.5 w-full font-medium">
-									<div>
-										<UserCircleSolid className="size-4" />
-									</div>
-
-									<div>
-										{user.name}
-									</div>
+				{#if accessControl && accessControl.read}
+					{#each users.filter(user => accessControl.read.user_ids?.includes(user.id)) as user}
+						<div class="flex items-center gap-3 justify-between text-xs w-full transition">
+							<div class="flex items-center gap-1.5 w-full font-medium">
+								<div>
+									<UserCircleSolid className="size-4" />
 								</div>
 
-								<div class="w-full flex justify-end items-center gap-0.5">
-									<button
-										class="rounded-full p-1 hover:bg-gray-100 dark:hover:bg-gray-850 transition"
-										type="button"
-										on:click={() => onRemoveUserApi(user.id)}
-									>
-										<XMark />
-									</button>
+								<div>
+									{user.name}
 								</div>
 							</div>
-						{/each}
-					{:else}
-						<div class="flex items-center justify-center">
-							<div class="text-gray-500 text-xs text-center py-2 px-10">
-								{$i18n.t('No users with access, add a user to grant access')}
-							</div>
-						</div>
-					{/if}
-				{:else}
-					{@const accessUsers = users.filter(user => accessControl?.read?.user_ids?.includes(user.id))}
-					{#if accessUsers.length > 0}
-						{#each accessUsers as user}
-							<div class="flex items-center gap-3 justify-between text-xs w-full transition">
-								<div class="flex items-center gap-1.5 w-full font-medium">
-									<div>
-										<UserCircleSolid className="size-4" />
-									</div>
 
-									<div>
-										{user.name}
-									</div>
-								</div>
-
-								<div class="w-full flex justify-end items-center gap-0.5">
+							<div class="w-full flex justify-end items-center gap-0.5">
+								{#if accessRoles.includes('write') && accessControl.write}
 									<button
 										class=""
 										type="button"
 										on:click={() => {
-											if (accessRoles.includes('write') && accessControl) {
-												if (accessControl.write?.user_ids?.includes(user.id)) {
-													accessControl.write.user_ids = accessControl.write.user_ids?.filter(
-														(userId) => userId !== user.id
-													);
-												} else {
-													accessControl.write.user_ids = [
-														...(accessControl.write?.user_ids || []),
-														user.id
-													];
-												}
-												// 강제로 UI 업데이트 트리거
-												accessControl = { ...accessControl };
-												// 변경사항 저장
-												onChange(accessControl);
+											if (accessControl.write?.user_ids?.includes(user.id)) {
+												accessControl.write.user_ids = accessControl.write.user_ids?.filter(
+													(userId) => userId !== user.id
+												);
+											} else {
+												accessControl.write.user_ids = [
+													...(accessControl.write?.user_ids || []),
+													user.id
+												];
 											}
+											// 강제로 UI 업데이트 트리거
+											accessControl = { ...accessControl };
+											// 변경사항 저장
+											onChange(accessControl);
 										}}
 									>
 										{#if accessControl.write?.user_ids?.includes(user.id)}
@@ -536,24 +367,30 @@
 											<Badge type={'info'} content={$i18n.t('Read')} />
 										{/if}
 									</button>
+								{/if}
 
-									<button
-										class="rounded-full p-1 hover:bg-gray-100 dark:hover:bg-gray-850 transition"
-										type="button"
-										on:click={() => onRemoveUser(user.id)}
-									>
-										<XMark />
-									</button>
-								</div>
+								<button
+									class="rounded-full p-1 hover:bg-gray-100 dark:hover:bg-gray-850 transition"
+									type="button"
+									on:click={() => onRemoveUser(user.id)}
+								>
+									<XMark />
+								</button>
 							</div>
-						{/each}
+						</div>
 					{:else}
 						<div class="flex items-center justify-center">
 							<div class="text-gray-500 text-xs text-center py-2 px-10">
 								{$i18n.t('No users with access, add a user to grant access')}
 							</div>
 						</div>
-					{/if}
+					{/each}
+				{:else}
+					<div class="flex items-center justify-center">
+						<div class="text-gray-500 text-xs text-center py-2 px-10">
+							{$i18n.t('No users with access, add a user to grant access')}
+						</div>
+					</div>
 				{/if}
 			</div>
 		</div>
