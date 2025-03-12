@@ -45,8 +45,8 @@
 		} else {
 			accessControl = {
 				read: {
-					group_ids: [],
-					user_ids: []
+					group_ids: accessControl?.read?.group_ids ?? [],
+					user_ids: accessControl?.read?.user_ids ?? []
 				},
 				write: {
 					group_ids: accessControl?.write?.group_ids ?? [],
@@ -66,8 +66,8 @@
 
 	const onSelectGroup = () => {
 		if (selectedGroupId !== '' && accessControl) {
-			// read 권한에는 추가하지 않음
-			// accessControl.read.group_ids = [...accessControl.read.group_ids || [], selectedGroupId];
+			// read 권한에 추가
+			accessControl.read.group_ids = [...accessControl.read.group_ids || [], selectedGroupId];
 			
 			if (accessControl.write) {
 				accessControl.write.group_ids = [...accessControl.write.group_ids || [], selectedGroupId];
@@ -81,8 +81,8 @@
 
 	const onSelectUser = () => {
 		if (selectedUserId !== '' && accessControl) {
-			// read 권한에는 추가하지 않음
-			// accessControl.read.user_ids = [...accessControl.read.user_ids || [], selectedUserId];
+			// read 권한에 추가
+			accessControl.read.user_ids = [...accessControl.read.user_ids || [], selectedUserId];
 			
 			if (accessControl.write) {
 				accessControl.write.user_ids = [...accessControl.write.user_ids || [], selectedUserId];
@@ -96,10 +96,21 @@
 
 	// 사용자 제거
 	function onRemoveUser(userId: string) {
-		if (accessControl && accessControl.write) {
-			accessControl.write.user_ids = accessControl.write.user_ids?.filter(
-				(id) => id !== userId
-			);
+		if (accessControl) {
+			// write 권한에서 제거
+			if (accessControl.write) {
+				accessControl.write.user_ids = accessControl.write.user_ids?.filter(
+					(id) => id !== userId
+				);
+			}
+			
+			// read 권한에서도 제거
+			if (accessControl.read) {
+				accessControl.read.user_ids = accessControl.read.user_ids?.filter(
+					(id) => id !== userId
+				);
+			}
+			
 			// 강제로 UI 업데이트 트리거
 			accessControl = { ...accessControl };
 			// 변경사항 저장
@@ -274,10 +285,21 @@
 										class="rounded-full p-1 hover:bg-gray-100 dark:hover:bg-gray-850 transition"
 										type="button"
 										on:click={() => {
-											if (accessControl && accessControl.write) {
-												accessControl.write.group_ids = accessControl.write.group_ids?.filter(
-													(id) => id !== group.id
-												);
+											if (accessControl) {
+												// write 권한에서 제거
+												if (accessControl.write) {
+													accessControl.write.group_ids = accessControl.write.group_ids?.filter(
+														(id) => id !== group.id
+													);
+												}
+												
+												// read 권한에서도 제거
+												if (accessControl.read) {
+													accessControl.read.group_ids = accessControl.read.group_ids?.filter(
+														(id) => id !== group.id
+													);
+												}
+												
 												// 강제로 UI 업데이트 트리거
 												accessControl = { ...accessControl };
 												// 변경사항 저장

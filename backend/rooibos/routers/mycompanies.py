@@ -177,12 +177,7 @@ async def get_corpbookmark_by_id(id: str, request: Request):
             ON fi.id::text = ANY(ARRAY(
                 SELECT jsonb_array_elements_text(f.data::jsonb->'file_ids')
             ))
-        WHERE f.id = :id 
-          AND (
-            f.user_id = :userId
-            OR f.access_control IS NULL
-            OR (f.access_control::jsonb->'user_ids') ? :userId
-          )
+        WHERE f.id = :id           
         GROUP BY
             f.id, f.created_at, f.updated_at, f.company_id, f.user_id,
             rmc.master_id,
@@ -250,7 +245,7 @@ async def get_corpbookmark_by_id(id: str, request: Request):
         """
         
         stmt = text(bookmark_sql_query)
-        params = {"id": id, "userId": user_id}
+        params = {"id": id}
         
         with get_db() as db:
             compiled_query = stmt.compile(dialect=db.bind.dialect, compile_kwargs={"literal_binds": True})

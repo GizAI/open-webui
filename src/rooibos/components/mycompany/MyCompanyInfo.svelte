@@ -694,18 +694,14 @@
 			console.log('API 응답:', result);
 			
 			if (response.ok) {
-				// 서버에서 반환된 액세스 컨트롤 데이터를 사용하여 북마크 객체 업데이트
 				const updatedAccessControl = result.data.access_control;
 				console.log('서버에서 반환된 액세스 컨트롤:', updatedAccessControl);
 				
-				// 북마크 객체 복제 후 액세스 컨트롤 업데이트
 				const updatedBookmark = { ...bookmark };
 				
-				// 명시적으로 null 처리
 				if (newAccessControl === null) {
 					updatedBookmark.access_control = null;
 				} else {
-					// 서버에서 반환된 액세스 컨트롤 데이터에서 read.user_ids를 빈 배열로 설정
 					if (updatedAccessControl && updatedAccessControl.read) {
 						updatedAccessControl.read.user_ids = [];
 					}
@@ -831,7 +827,7 @@
 			</div>
 
 			<div class="flex items-center space-x-1">
-				{#if currentUser && bookmark}
+				{#if currentUser.id == bookmark.bookmark_user_id && bookmark}
 					<div class="self-center shrink-0">
 						<button
 							class="bg-gray-50 hover:bg-gray-100 text-black dark:bg-gray-850 dark:hover:bg-gray-800 dark:text-white transition px-2 py-1 rounded-full flex gap-1 items-center"

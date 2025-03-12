@@ -9,7 +9,7 @@
 
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
-	import { mobile, showSidebar, knowledge as _knowledge } from '$lib/stores';
+	import { mobile, showSidebar, knowledge as _knowledge, user } from '$lib/stores';
 
 	import { updateFileDataContentById, uploadFile, deleteFileById } from '$lib/apis/files';
 	import {
@@ -40,7 +40,10 @@
 	import ChevronLeft from '$lib/components/icons/ChevronLeft.svelte';
 	import LockClosed from '$lib/components/icons/LockClosed.svelte';
 	import AccessControlModal from '../common/AccessControlModal.svelte';
+	import { get } from 'svelte/store';
 
+	const currentUser = get(user);
+	
 	let largeScreen = true;
 
 	let pane;
@@ -645,7 +648,7 @@
 />
 
 <div class="flex flex-col w-full translate-y-1" id="collection-container">
-	{#if id && knowledge}
+	{#if id && knowledge && currentUser?.id === knowledge.user_id}
 		<AccessControlModal
 			bind:show={showAccessControlModal}
 			bind:accessControl={knowledge.access_control}
