@@ -648,7 +648,7 @@
 />
 
 <div class="flex flex-col w-full translate-y-1" id="collection-container">
-	{#if id && knowledge && currentUser?.id === knowledge.user_id}
+	{#if id && knowledge}
 		<AccessControlModal
 			bind:show={showAccessControlModal}
 			bind:accessControl={knowledge.access_control}
@@ -674,6 +674,7 @@
 						</div>
 
 						<div class="self-center shrink-0">
+							{#if currentUser?.id === knowledge.user_id}
 							<button
 								class="bg-gray-50 hover:bg-gray-100 text-black dark:bg-gray-850 dark:hover:bg-gray-800 dark:text-white transition px-2 py-1 rounded-full flex gap-1 items-center"
 								type="button"
@@ -687,6 +688,7 @@
 									{$i18n.t('Access')}
 								</div>
 							</button>
+							{/if}
 						</div>
 					</div>
 
