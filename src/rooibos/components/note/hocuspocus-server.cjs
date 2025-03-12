@@ -6,7 +6,7 @@ const axios = require('axios');
 const Y = require('yjs'); // Yjs 임포트
 
 const HOCUSPOCUS_HOST = '0.0.0.0';
-const HOCUSPOCUS_PORT = 8443;
+const HOCUSPOCUS_PORT = 8444;
 
 
 const debounceMap = new Map();
