@@ -59,6 +59,7 @@
 	import { createNewRooibosFolder, getRooibosFolders } from '$rooibos/components/apis/folder';
 	import RooibosFolderMenu from '$rooibos/components/folder/RooibosFolderMenu.svelte';
 	import RooibosFolder from '$rooibos/components/folder/RooibosFolder.svelte';
+	import SidebarKnowledge from '$rooibos/components/sidebar/SidebarKnowledge.svelte';
 
 	const BREAKPOINT = 768;
 
@@ -666,6 +667,7 @@
 				? 'opacity-20'
 				: ''}"
 		>
+			<SidebarKnowledge />
 			{#if $config?.features?.enable_channels && ($user.role === 'admin' || $channels.length > 0) && !search}
 				<Folder
 					className="px-2 mt-0.5"
