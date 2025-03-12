@@ -340,12 +340,6 @@
 								</div>
 							</div>
 						{/each}
-					{:else}
-						<div class="flex items-center justify-center">
-							<div class="text-gray-500 text-xs text-center py-2 px-10">
-								{$i18n.t('No groups with access, add a group to grant access')}
-							</div>
-						</div>
 					{/if}
 				</div>
 			</div>
@@ -435,13 +429,7 @@
 								</button>
 							</div>
 						</div>
-					{/each}
-				{:else}
-					<div class="flex items-center justify-center">
-						<div class="text-gray-500 text-xs text-center py-2 px-10">
-							{$i18n.t('No users with access, add a user to grant access')}
-						</div>
-					</div>
+					{/each}				
 				{/if}
 			</div>
 		</div>
