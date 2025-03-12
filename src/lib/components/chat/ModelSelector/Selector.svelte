@@ -91,13 +91,13 @@
 				})
 				.filter((item) => {
 					if (selectedTag === '') {
-						return true;
+						return item.model?.info?.base_model_id == null;
 					}
 					return item.model?.info?.meta?.tags?.map((tag) => tag.name).includes(selectedTag);
 				})
 		: items.filter((item) => {
 				if (selectedTag === '') {
-					return true;
+					return item.model?.info?.base_model_id == null;
 				}
 				return item.model?.info?.meta?.tags?.map((tag) => tag.name).includes(selectedTag);
 			});
@@ -339,7 +339,7 @@
 									selectedTag = '';
 								}}
 							>
-								{$i18n.t('All')}
+								{$i18n.t('Default Model')}
 							</button>
 
 							{#each tags as tag}
