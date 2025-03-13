@@ -98,7 +98,7 @@
 <ul class="folder-list">
 	{#each folderList as folderId (folderId)}
 		<li class="folder-item group relative">
-			<div class="flex items-center justify-between hover:bg-gray-100 dark:hover:bg-gray-900 rounded-md py-1">
+			<div class="flex items-center justify-between hover:bg-gray-100 dark:hover:bg-gray-900 rounded-md py-1 text-xs">
 				{#if editingFolderId === folderId}
 					<input
 						type="text"

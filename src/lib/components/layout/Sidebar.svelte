@@ -639,6 +639,7 @@
 					className="px-2 mt-0.5"
 					name={$i18n.t('Channels')}
 					dragAndDrop={false}
+					open={false}
 					onAdd={async () => {
 						if ($user.role === 'admin') {
 							await tick();
