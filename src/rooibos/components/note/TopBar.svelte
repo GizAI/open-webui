@@ -94,16 +94,6 @@
 
 <div class="top-bar bg-white dark:bg-gray-900">
   <div class="left">
-    {#if !$showSidebar}
-      <button
-        id="sidebar-toggle-button"
-        class="sidebar-toggle-button dark:text-gray-200"
-        on:click={() => showSidebar.set(true)}
-        aria-label="Toggle Sidebar"
-      >
-        <MenuLines />
-      </button>
-    {/if}
     {#if editing}
       <input
         class="page-title-input bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-200"

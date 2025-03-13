@@ -20,7 +20,7 @@
 
 	// 북마크 추가 요청
 	const addCompany = async (company: any, folderId: string = '') => {
-		const response = await fetch(`${WEBUI_API_BASE_URL}/rooibos/corpbookmarks/add`, {
+		const response = await fetch(`${WEBUI_API_BASE_URL}/rooibos/mycompanies/add`, {
 			method: 'POST',
 			headers: {
 				'Content-Type': 'application/json',
@@ -42,7 +42,7 @@
 	const confirmDelete = async () => {
 		try {
 			const response = await fetch(
-				`${WEBUI_API_BASE_URL}/rooibos/corpbookmarks/${companyInfo.bookmark_id}/delete`,
+				`${WEBUI_API_BASE_URL}/rooibos/mycompanies/${companyInfo.bookmark_id}/delete`,
 				{
 					method: 'DELETE',
 					headers: {

@@ -36,7 +36,7 @@ def get_executable_query(sql_query: str, params: list) -> str:
     return executable_query
 
 @router.get("/user/{user_id}")
-async def get_corpbookmarks(user_id: str):
+async def get_mycompanies(user_id: str):
     try:
         params = [user_id]
         sql_query = """
@@ -76,7 +76,7 @@ async def get_corpbookmarks(user_id: str):
 
     
 @router.get("/{id}")
-async def get_corpbookmark_by_id(id: str, request: Request):
+async def get_mycompany_by_id(id: str, request: Request):
     search_params = request.query_params
     user_id = search_params.get("user_id")
     
@@ -292,7 +292,7 @@ async def get_corpbookmark_by_id(id: str, request: Request):
             "chat_total": len(chat_list)
         }
     except Exception as e:
-        log.error("Get CorpBookmark by ID error: " + str(e))
+        log.error("Get mycompany by ID error: " + str(e))
         return {
             "success": False,
             "error": "Fetch failed",
@@ -302,7 +302,7 @@ async def get_corpbookmark_by_id(id: str, request: Request):
 
 
 @router.delete("/{id}/delete")
-async def delete_corpbookmark(id: str):
+async def delete_mycompany(id: str):
     try:
         sql_query = """
         DELETE FROM corp_bookmark
@@ -326,38 +326,41 @@ async def delete_corpbookmark(id: str):
         }
     
 @router.post("/add")
-async def add_corpbookmark(request: Request):
+async def add_mycompany(request: Request):
     try:
         body = await request.json()
         user_id = body.get("userId")
         company_id = body.get("companyId")
         business_registration_number = body.get("business_registration_number")
+        folder_id = body.get("folderId")
 
         if not user_id or not company_id:
             raise HTTPException(status_code=400, detail="Invalid input. 'userId' and 'companyId' are required.")
 
-        sql_query = """
-        INSERT INTO corp_bookmark (user_id, company_id, business_registration_number, created_at, updated_at)
-        VALUES (:user_id, :company_id, :business_registration_number, now(), now())
-        RETURNING id
-        """
-        log.info(
-            f"Executing query: {sql_query} with parameters: user_id={user_id}, company_id={company_id}, business_registration_number={business_registration_number}"
-        )
-        with get_db() as db:
-            result = db.execute(
-                text(sql_query),
-                {
-                    "user_id": user_id,
-                    "company_id": company_id,
-                    "business_registration_number": business_registration_number,
-                },
+        if folder_id:
+            sql_query = """
+            INSERT INTO corp_bookmark (user_id, company_id, business_registration_number, folder_id, created_at, updated_at)
+            VALUES (:user_id, :company_id, :business_registration_number, :folder_id, now(), now())
+            RETURNING id
+            """
+            log.info(
+                f"Executing query: {sql_query} with parameters: user_id={user_id}, company_id={company_id}, business_registration_number={business_registration_number}, folder_id={folder_id}"
             )
-            row = result.fetchone()  # 한 번만 fetch하여 결과를 받아옵니다.
-            if row is None:
-                raise HTTPException(status_code=500, detail="Insertion failed, no ID returned.")
-            bookmark_id = row[0]
-            db.commit()
+            with get_db() as db:
+                result = db.execute(
+                    text(sql_query),
+                    {
+                        "user_id": user_id,
+                        "company_id": company_id,
+                        "business_registration_number": business_registration_number,
+                        "folder_id": folder_id,
+                    },
+                )
+                row = result.fetchone()
+                if row is None:
+                    raise HTTPException(status_code=500, detail="Insertion failed, no ID returned.")
+                bookmark_id = row[0]
+                db.commit()
 
         return {
             "success": True,
@@ -413,9 +416,6 @@ async def add_file_to_bookmark_by_id(request: Request, id: str):
                 {"id": id, "new_data": json.dumps(new_data)}
             )
             db.commit()
-
-            # get_corpbookmark_by_id는 내부에서 쿼리 로그를 남기므로 그대로 호출
-            # corp_bookmark_data = await get_corpbookmark_by_id(id)
                         
         return {
             "success": True,
@@ -500,7 +500,7 @@ async def remove_file_from_bookmark_by_id(request: Request, id: str):
         }
 
 @router.post("/{id}/file/reset")
-async def file_reset_corpbookmark_by_id(id: str):
+async def file_reset_mycompany_by_id(id: str):
     try:
         # corp_bookmark의 data 컬럼 초기화
         check_query = """

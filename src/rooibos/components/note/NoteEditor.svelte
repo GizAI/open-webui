@@ -1129,38 +1129,5 @@
 		background-color: rgba(255, 255, 0, 0.2); /* 다크모드에서 하이라이트 색상 조정 */
 	}
 
-	/* 텍스트 정렬 스타일 */
-	:global(.ProseMirror [data-text-align="center"]) {
-		text-align: center !important;
-		width: 100% !important;
-		display: block !important;
-		margin: 0.5em 0;
-	}
-
-	:global(.ProseMirror [data-text-align="right"]) {
-		text-align: right !important;
-		width: 100% !important;
-		display: block !important;
-		margin: 0.5em 0;
-	}
-
-	:global(.ProseMirror [data-text-align="left"]) {
-		text-align: left !important;
-		width: 100% !important;
-		display: block !important;
-		margin: 0.5em 0;
-	}
-
 	
-
-	/* 에디터 내 제목 스타일 */
-	:global(.ProseMirror h1),
-	:global(.ProseMirror h2),
-	:global(.ProseMirror h3),
-	:global(.ProseMirror h4),
-	:global(.ProseMirror h5),
-	:global(.ProseMirror h6) {
-		margin: 1em 0 0.5em;
-		line-height: 1.3;
-	}
 </style>
