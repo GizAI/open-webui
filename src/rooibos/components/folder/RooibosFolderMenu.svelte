@@ -111,10 +111,10 @@
 						autofocus
 					/>
 				{:else}
-					<span on:click={() => handleFolderClick(folders[folderId])} class="cursor-pointer flex items-center gap-1.5">
+					<button on:click={() => handleFolderClick(folders[folderId])} class="cursor-pointer flex items-center gap-1.5 text-left bg-transparent border-0 p-0 text-xs">
 						<FolderIcon size={16} strokeWidth={1.5} />
 						{folders[folderId].name}
-					</span>
+					</button>
 				{/if}
 
 				<div class="invisible group-hover:visible flex items-center">

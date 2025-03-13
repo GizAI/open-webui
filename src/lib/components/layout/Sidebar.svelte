@@ -626,9 +626,9 @@
 				placeholder={$i18n.t('Search')}
 			/>
 		</div>
-
-		<SidebarCorpFolder open={false}/>
-
+		{#if !search}
+			<SidebarCorpFolder open={false}/>
+		{/if}
 		<div
 			class="relative flex flex-col flex-1 overflow-y-auto overflow-x-hidden {$temporaryChatEnabled
 				? 'opacity-20'
