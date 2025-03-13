@@ -605,28 +605,38 @@
 					</div>
 				</a>
 			</div>
-			<div class="px-1.5 flex justify-center text-gray-800 dark:text-gray-200">
-				<div class="flex self-center w-full">
-					<RooibosFolder
-						collapsible={!search}
-						className="w-full flex justify-between items-center"
-						name="나의 기업"
-						onAdd={() => createRooibosFolder('Untitled', 'corp')}
-						onAddLabel={$i18n.t('New Folder')}
-						open={false}
-					>
-						<RooibosFolderMenu
-							folders={Object.values(rooibosFolders)
-								.filter((folder) => folder.type === 'corp')
-								.reduce((acc, folder) => {
-									acc[folder.id] = folder;
-									return acc;
-								}, {})}
-							parentId={null}
-						/>
-					</RooibosFolder>
-				</div>
+
+			<div class="relative {$temporaryChatEnabled ? 'opacity-20' : ''}">
+				{#if $temporaryChatEnabled}
+					<div class="absolute z-40 w-full h-full flex justify-center"></div>
+				{/if}
+				<SearchInput
+					bind:value={search}
+					on:input={searchDebounceHandler}
+					placeholder={$i18n.t('Search')}
+				/>
 			</div>
+			
+			<RooibosFolder
+				collapsible={!search}
+				className="px-2 mt-0.5"
+				name="나의 기업"
+				onAdd={() => createRooibosFolder('Untitled', 'corp')}
+				onAddLabel={$i18n.t('New Folder')}
+				open={false}
+			>
+				<RooibosFolderMenu
+					folders={Object.values(rooibosFolders)
+						.filter((folder) => folder.type === 'corp')
+						.reduce((acc, folder) => {
+							acc[folder.id] = folder;
+							return acc;
+						}, {})}
+					parentId={null}
+				/>
+			</RooibosFolder>
+		
+		
 			
 			<!-- Notes 폴더 컴포넌트 추가 -->
 			
@@ -650,17 +660,6 @@
 			</RooibosFolder> -->
 			
 		{/if}
-
-		<div class="relative {$temporaryChatEnabled ? 'opacity-20' : ''}">
-			{#if $temporaryChatEnabled}
-				<div class="absolute z-40 w-full h-full flex justify-center"></div>
-			{/if}
-			<SearchInput
-				bind:value={search}
-				on:input={searchDebounceHandler}
-				placeholder={$i18n.t('Search')}
-			/>
-		</div>
 
 		<div
 			class="relative flex flex-col flex-1 overflow-y-auto overflow-x-hidden {$temporaryChatEnabled
@@ -793,6 +792,7 @@
 					/>
 				{/if}
 
+			
 				<div class="flex-1 flex flex-col overflow-y-auto scrollbar-hidden">
 					<div class="pt-1.5">
 						{#if $chats}
