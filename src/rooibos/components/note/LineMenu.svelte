@@ -15,6 +15,8 @@
       return node.type.name === 'taskList';
     } else if (type === 'codeBlock') {
       return node.type.name === 'codeBlock';
+    } else if (type === 'blockquote') {
+      return node.type.name === 'blockquote';
     }
     return false;
   }
@@ -275,6 +277,25 @@
       closeMenu();
     };
     menu.appendChild(codeBlockBtn);
+    
+    // 구분선 추가
+    addDivider(menu);
+    
+    // 인용구 버튼 추가
+    const blockquoteBtn = document.createElement('button');
+    blockquoteBtn.textContent = '인용구';
+    styleMenuItem(blockquoteBtn, '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M10 11H6V7H10V11ZM14 17H10V13H14V17ZM18 11H14V7H18V11Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>');
+    styleActiveMenuItem(blockquoteBtn, isNodeType(editor, node, 'blockquote'));
+    blockquoteBtn.onclick = () => {
+      try {
+        console.log('인용구 버튼 클릭됨');
+        editor.chain().focus().toggleBlockquote().run();
+      } catch (error) {
+        console.error('인용구 변환 중 오류:', error);
+      }
+      closeMenu();
+    };
+    menu.appendChild(blockquoteBtn);
     
     document.body.appendChild(menu);
     
