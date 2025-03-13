@@ -299,23 +299,74 @@
 
 	function setTextAlignLeft(): void {
 		if (!editor) return;
-		editor.chain().focus().setTextAlign('left').run();
+		
+		// 현재 선택 영역 저장
+		const { from, to } = editor.state.selection;
+		
+		// 정렬 적용
+		editor.chain()
+			.focus()
+			.unsetTextAlign()
+			.setTextAlign('left')
+			.run();
+		
+		// 정렬 후 선택 영역 유지
+		editor.commands.setTextSelection({ from, to });
+		
+		showAlignmentOptions = false;
 		checkAlignmentState();
 		updateEditorState();
+		
+		// 콘솔에 로그 출력
+		console.log('왼쪽 정렬 적용됨');
 	}
 
 	function setTextAlignCenter(): void {
 		if (!editor) return;
-		editor.chain().focus().setTextAlign('center').run();
+		
+		// 현재 선택 영역 저장
+		const { from, to } = editor.state.selection;
+		
+		// 정렬 적용
+		editor.chain()
+			.focus()
+			.unsetTextAlign()
+			.setTextAlign('center')
+			.run();
+		
+		// 정렬 후 선택 영역 유지
+		editor.commands.setTextSelection({ from, to });
+		
+		showAlignmentOptions = false;
 		checkAlignmentState();
 		updateEditorState();
+		
+		// 콘솔에 로그 출력
+		console.log('가운데 정렬 적용됨');
 	}
 
 	function setTextAlignRight(): void {
 		if (!editor) return;
-		editor.chain().focus().setTextAlign('right').run();
+		
+		// 현재 선택 영역 저장
+		const { from, to } = editor.state.selection;
+		
+		// 정렬 적용
+		editor.chain()
+			.focus()
+			.unsetTextAlign()
+			.setTextAlign('right')
+			.run();
+		
+		// 정렬 후 선택 영역 유지
+		editor.commands.setTextSelection({ from, to });
+		
+		showAlignmentOptions = false;
 		checkAlignmentState();
 		updateEditorState();
+		
+		// 콘솔에 로그 출력
+		console.log('오른쪽 정렬 적용됨');
 	}
 
 	function checkAlignmentState(): void {
@@ -963,9 +1014,10 @@
 	}
 
 	.notion-page-container {
-		max-width: 800px;
+		max-width: 1000px;
+		width: 100%;
 		margin: 0 auto;
-		padding: 2rem;
+		padding: 2rem 1rem;
 		font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell,
 			'Open Sans', 'Helvetica Neue', sans-serif;
 		color: #2e2e2e;
@@ -976,7 +1028,8 @@
 	}
 	
 	.editor-wrapper {
-		min-height: 400px;
+		min-height: 500px;
+		width: 100%;
 		outline: none;
 		border: none;
 		padding: 0;
@@ -1040,6 +1093,8 @@
 	:global(.ProseMirror) {
 		background-color: inherit;
 		color: inherit;
+		width: 100%;
+		padding: 1rem;
 	}
 
 	:global(.dark) :global(.ProseMirror) {
@@ -1048,5 +1103,44 @@
 	
 	:global(.dark) :global(.line-highlight) {
 		background-color: rgba(255, 255, 0, 0.2); /* 다크모드에서 하이라이트 색상 조정 */
+	}
+
+	/* 텍스트 정렬 스타일 */
+	:global(.ProseMirror [data-text-align="center"]) {
+		text-align: center !important;
+		width: 100% !important;
+		display: block !important;
+		margin: 0.5em 0;
+	}
+
+	:global(.ProseMirror [data-text-align="right"]) {
+		text-align: right !important;
+		width: 100% !important;
+		display: block !important;
+		margin: 0.5em 0;
+	}
+
+	:global(.ProseMirror [data-text-align="left"]) {
+		text-align: left !important;
+		width: 100% !important;
+		display: block !important;
+		margin: 0.5em 0;
+	}
+
+	/* 에디터 내 단락 스타일 */
+	:global(.ProseMirror p) {
+		margin: 0.8em 0;
+		line-height: 1.5;
+	}
+
+	/* 에디터 내 제목 스타일 */
+	:global(.ProseMirror h1),
+	:global(.ProseMirror h2),
+	:global(.ProseMirror h3),
+	:global(.ProseMirror h4),
+	:global(.ProseMirror h5),
+	:global(.ProseMirror h6) {
+		margin: 1em 0 0.5em;
+		line-height: 1.3;
 	}
 </style>
