@@ -100,7 +100,7 @@
 				}}
 			>
 				<BarsArrowUp strokeWidth="2" />
-				<div class="flex items-center">{$i18n.t('Add text content')}</div>
+				<div class="flex items-center">{$i18n.t('Add collaboration note')}</div>
 			</DropdownMenu.Item>
 		</DropdownMenu.Content>
 	</div>

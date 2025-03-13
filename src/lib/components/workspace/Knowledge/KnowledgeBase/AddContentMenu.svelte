@@ -93,7 +93,7 @@
 				</DropdownMenu.Item>
 			</Tooltip>
 
-			<DropdownMenu.Item
+			<!-- <DropdownMenu.Item
 				class="flex  gap-2  items-center px-3 py-2 text-sm  cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 rounded-md"
 				on:click={() => {
 					dispatch('upload', { type: 'text' });
@@ -101,7 +101,7 @@
 			>
 				<BarsArrowUp strokeWidth="2" />
 				<div class="flex items-center">{$i18n.t('Add text content')}</div>
-			</DropdownMenu.Item>
+			</DropdownMenu.Item> -->
 			<DropdownMenu.Item
 				class="flex  gap-2  items-center px-3 py-2 text-sm  cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 rounded-md"
 				on:click={() => {
