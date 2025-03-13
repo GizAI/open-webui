@@ -66,6 +66,7 @@
 	import RooibosFolder from '$rooibos/components/folder/RooibosFolder.svelte';
 	import SidebarKnowledge from '$rooibos/components/sidebar/SidebarKnowledge.svelte';
 	import SidebarCorpSearch from '$rooibos/components/sidebar/SidebarCorpSearch.svelte';
+	import SidebarCorpFolder from '$rooibos/components/sidebar/SidebarCorpFolder.svelte';
 
 
 	const BREAKPOINT = 768;
@@ -613,7 +614,7 @@
 		{/if}
 		
 		<SidebarCorpSearch bind:selectedChatId />
-
+		
 		<div class="relative {$temporaryChatEnabled ? 'opacity-20' : ''}">
 			{#if $temporaryChatEnabled}
 				<div class="absolute z-40 w-full h-full flex justify-center"></div>
@@ -625,6 +626,8 @@
 				placeholder={$i18n.t('Search')}
 			/>
 		</div>
+
+		<SidebarCorpFolder open={false}/>
 
 		<div
 			class="relative flex flex-col flex-1 overflow-y-auto overflow-x-hidden {$temporaryChatEnabled
