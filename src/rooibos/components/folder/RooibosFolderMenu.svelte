@@ -12,7 +12,7 @@
 	import { user } from '$lib/stores';
 	import Pencil from '$lib/components/icons/Pencil.svelte';
 	import FolderForm from './FolderForm.svelte';
-	import { NotebookIcon } from 'lucide-svelte';
+	import { NotebookIcon, FolderIcon } from 'lucide-svelte';
 	import Cog6 from '$lib/components/icons/Cog6.svelte';
 
 	// i18n 스토어 설정
@@ -98,7 +98,7 @@
 <ul class="folder-list">
 	{#each folderList as folderId (folderId)}
 		<li class="folder-item group relative">
-			<div class="flex items-center justify-between hover:bg-gray-100 dark:hover:bg-gray-900 rounded-md py-1">
+			<div class="flex items-center justify-between hover:bg-gray-100 dark:hover:bg-gray-900 rounded-md py-1 text-xs">
 				{#if editingFolderId === folderId}
 					<input
 						type="text"
@@ -111,7 +111,8 @@
 						autofocus
 					/>
 				{:else}
-					<span on:click={() => handleFolderClick(folders[folderId])} class="cursor-pointer flex items-center">
+					<span on:click={() => handleFolderClick(folders[folderId])} class="cursor-pointer flex items-center gap-1.5">
+						<FolderIcon size={16} strokeWidth={1.5} />
 						{folders[folderId].name}
 					</span>
 				{/if}
