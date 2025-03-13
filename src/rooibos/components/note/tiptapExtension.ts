@@ -36,6 +36,12 @@ export function getExtensions(options: TiptapExtensionOptions): Extension[] {
 					class: 'ordered-list',
 				},
 			},
+			// 코드블록 설정 추가
+			codeBlock: {
+				HTMLAttributes: {
+					class: 'code-block',
+				},
+			},
 		}),
 		Heading.configure({
 			levels: [1, 2, 3, 4, 5, 6]

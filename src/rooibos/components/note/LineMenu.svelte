@@ -13,6 +13,8 @@
       return node.type.name === 'orderedList';
     } else if (type === 'taskList') {
       return node.type.name === 'taskList';
+    } else if (type === 'codeBlock') {
+      return node.type.name === 'codeBlock';
     }
     return false;
   }
@@ -254,6 +256,25 @@
       closeMenu();
     };
     menu.appendChild(tasksBtn);
+    
+    // 구분선 추가
+    addDivider(menu);
+    
+    // 코드블록 버튼 추가
+    const codeBlockBtn = document.createElement('button');
+    codeBlockBtn.textContent = '코드블록';
+    styleMenuItem(codeBlockBtn, '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M8 3H7C5.89543 3 5 3.89543 5 5V19C5 20.1046 5.89543 21 7 21H17C18.1046 21 19 20.1046 19 19V5C19 3.89543 18.1046 3 17 3H16M8 3V5H16V3M8 3H16M10 12L8 14L10 16M14 12L16 14L14 16" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>');
+    styleActiveMenuItem(codeBlockBtn, isNodeType(editor, node, 'codeBlock'));
+    codeBlockBtn.onclick = () => {
+      try {
+        console.log('코드블록 버튼 클릭됨');
+        editor.chain().focus().toggleCodeBlock().run();
+      } catch (error) {
+        console.error('코드블록 변환 중 오류:', error);
+      }
+      closeMenu();
+    };
+    menu.appendChild(codeBlockBtn);
     
     document.body.appendChild(menu);
     
