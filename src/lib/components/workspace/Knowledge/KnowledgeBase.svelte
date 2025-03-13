@@ -41,7 +41,7 @@
 	import LockClosed from '$lib/components/icons/LockClosed.svelte';
 	import AccessControlModal from '../common/AccessControlModal.svelte';
 
-	import NoteEditorModal from './KnowledgeBase/NoteEditorModal.svelte';
+	import NoteEditorModal from '$rooibos/components/note/NoteEditorModal.svelte';
 
 	let largeScreen = true;
 
@@ -841,7 +841,15 @@
 									files={filteredItems}
 									{selectedFileId}
 									on:click={(e) => {
-										selectedFileId = selectedFileId === e.detail ? null : e.detail;
+										const fileId = e.detail;
+										const file = (knowledge?.files ?? []).find((file) => file.id === fileId);
+										
+										if (file && file.meta && file.meta.content_type === 'text/plain') {
+											selectedFile = file;
+											showCollaborationNoteModal = true;
+										} else {
+											selectedFileId = selectedFileId === fileId ? null : fileId;
+										}
 									}}
 									on:delete={(e) => {
 										console.log(e.detail);

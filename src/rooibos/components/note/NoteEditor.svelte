@@ -680,6 +680,30 @@
 										return true;
 									}
 									
+									// listItem 노드에 대해서도 라인 아이콘을 생성하지 않음
+									if (node.type.name === 'listItem') {
+										return true;
+									}
+									
+									// bulletList와 orderedList 노드에 대해서도 라인 아이콘을 생성하지 않음
+									if (node.type.name === 'bulletList' || node.type.name === 'orderedList') {
+										return true;
+									}
+									
+									// taskList 노드에 대해서도 라인 아이콘을 생성하지 않음
+									if (node.type.name === 'taskList') {
+										return true;
+									}
+									
+									// 부모 노드가 리스트 관련 노드인 경우에도 라인 아이콘을 생성하지 않음
+									if (node.parent && (
+										(node.parent as any).type?.name === 'bulletList' || 
+										(node.parent as any).type?.name === 'orderedList' || 
+										(node.parent as any).type?.name === 'taskList'
+									)) {
+										return true;
+									}
+									
 									const classes = ['line-block'];
 									if (highlightedPos === pos) {
 										classes.push('line-highlight');

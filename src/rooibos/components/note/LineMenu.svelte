@@ -8,11 +8,9 @@
     } else if (type === 'heading') {
       return node.type.name === 'heading' && node.attrs.level === attrs.level;
     } else if (type === 'bulletList') {
-      return node.type.name === 'bulletList' || 
-        (node.type.name === 'listItem' && node.parent?.type.name === 'bulletList');
+      return node.type.name === 'bulletList';
     } else if (type === 'orderedList') {
-      return node.type.name === 'orderedList' || 
-        (node.type.name === 'listItem' && node.parent?.type.name === 'orderedList');
+      return node.type.name === 'orderedList';
     } else if (type === 'taskList') {
       return node.type.name === 'taskList';
     }

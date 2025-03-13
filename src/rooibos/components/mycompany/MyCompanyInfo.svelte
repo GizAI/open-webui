@@ -20,7 +20,7 @@
 	import AddFilesPlaceholder from '$lib/components/AddFilesPlaceholder.svelte';
 
 	import AddContentMenu from './CorpBookmarksBase/AddContentMenu.svelte';
-	import NoteEditorModal from '$lib/components/workspace/Knowledge/KnowledgeBase/NoteEditorModal.svelte';
+	import NoteEditorModal from '$rooibos/components/note/NoteEditorModal.svelte';
 
 	import SyncConfirmDialog from '$lib/components/common/ConfirmDialog.svelte';
 	import RichTextInput from '$lib/components/common/RichTextInput.svelte';
