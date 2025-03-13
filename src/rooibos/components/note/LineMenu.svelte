@@ -306,15 +306,15 @@
   }
 
   :global(.heading1-line-icon) {
-    transform: translateY(+70%);
+    transform: translateY(+120%);
   }
 
   :global(.heading2-line-icon) {
-    transform: translateY(+20%);
+    transform: translateY(+60%);
   }
 
   :global(.heading3-line-icon) {
-    transform: translateY(0%);
+    transform: translateY(20%);
   }
 
   :global(.dark) :global(.line-icon) {
