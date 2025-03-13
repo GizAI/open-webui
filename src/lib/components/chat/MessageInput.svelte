@@ -1207,7 +1207,10 @@
 													on:click|preventDefault={() => {	
 														if($models.find((m) => m.id === selectedModels[0])?.info?.base_model_id){
 															const defaultModel = $config?.default_models.split(',')[0];
-															const model = $models.find((m) => m.id === defaultModel);
+															let model = $models.find((m) => m.id === defaultModel);
+															if(!model){
+																model = $models.find((m) => m.info?.base_model_id == null);
+															}
 															dispatch('modelChange', model);
 															showCategoryModal = false;
 														}else{
