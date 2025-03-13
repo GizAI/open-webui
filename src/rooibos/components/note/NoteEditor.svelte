@@ -1119,6 +1119,8 @@
 		color: inherit;
 		width: 100%;
 		padding: 1rem;
+		min-height: 70vh;
+		cursor: text;
 	}
 
 	:global(.dark) :global(.ProseMirror) {

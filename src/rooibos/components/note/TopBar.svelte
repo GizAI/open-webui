@@ -104,15 +104,22 @@
         autofocus
       />
     {:else}
-      <span
-        class="page-title text-gray-900 dark:text-gray-200"
+      <button
+        type="button"
+        class="page-title text-gray-900 dark:text-gray-200 bg-transparent border-none p-0 cursor-pointer"
         on:click={() => {
           editing = true;
           inputValue = displayTitle === placeholder ? "" : displayTitle;
         }}
+        on:keydown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            editing = true;
+            inputValue = displayTitle === placeholder ? "" : displayTitle;
+          }
+        }}
       >
         {displayTitle === "" ? placeholder : displayTitle}
-      </span>
+      </button>
     {/if}
   </div>
 </div>

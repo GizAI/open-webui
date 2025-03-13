@@ -290,7 +290,7 @@
 <style>
   :global(.line-icon) {
     position: absolute;
-    left: -24px;
+    left: -5px;
     width: 24px;
     height: 24px;
     display: flex;
@@ -304,15 +304,15 @@
   }
 
   :global(.heading1-line-icon) {
-    transform: translateY(+120%);
+    transform: translateY(+140%);
   }
 
   :global(.heading2-line-icon) {
-    transform: translateY(+60%);
+    transform: translateY(+20%);
   }
 
   :global(.heading3-line-icon) {
-    transform: translateY(20%);
+    transform: translateY(0%);
   }
 
   :global(.dark) :global(.line-icon) {
