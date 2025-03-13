@@ -1151,11 +1151,7 @@
 		margin: 0.5em 0;
 	}
 
-	/* 에디터 내 단락 스타일 */
-	:global(.ProseMirror p) {
-		margin: 0.8em 0;
-		line-height: 1.5;
-	}
+	
 
 	/* 에디터 내 제목 스타일 */
 	:global(.ProseMirror h1),
