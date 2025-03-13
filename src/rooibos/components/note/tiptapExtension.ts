@@ -42,6 +42,12 @@ export function getExtensions(options: TiptapExtensionOptions): Extension[] {
 					class: 'code-block',
 				},
 			},
+			// 인용구 설정 추가
+			blockquote: {
+				HTMLAttributes: {
+					class: 'blockquote',
+				},
+			},
 		}),
 		Heading.configure({
 			levels: [1, 2, 3, 4, 5, 6]

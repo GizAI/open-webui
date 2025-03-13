@@ -3,7 +3,6 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from rooibos.config_extension import init_extended_config
 from rooibos.routers import (
     corpsearch,
-    corpbookmarks,
     mycompanies,
     folders,
     notes
@@ -23,7 +22,6 @@ def extend_app(app: FastAPI):
     """
 
     app.include_router(corpsearch.router, prefix="/api/v1/rooibos/corpsearch", tags=["corpsearch"])
-    app.include_router(corpbookmarks.router, prefix="/api/v1/rooibos/corpbookmarks", tags=["corpbookmarks"])
     app.include_router(mycompanies.router, prefix="/api/v1/rooibos/mycompanies", tags=["mycompanies"])
     app.include_router(folders.router, prefix="/api/v1/rooibos/folders", tags=["folders"])
     app.include_router(notes.router, prefix="/api/v1/rooibos/notes", tags=["notes"])

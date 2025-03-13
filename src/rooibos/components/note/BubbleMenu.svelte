@@ -234,7 +234,7 @@
 		</span>
 	</button>
 	<!-- 번역 -->
-	<button class="bubble-menu-button text-gray-900 dark:text-gray-200" on:click={onTranslate} title="번역">
+	<!-- <button class="bubble-menu-button text-gray-900 dark:text-gray-200" on:click={onTranslate} title="번역">
 		<span class="icon">
 			<svg
 				xmlns="http://www.w3.org/2000/svg"
@@ -255,7 +255,7 @@
 				<path d="M14 18h6"></path>
 			</svg>
 		</span>
-	</button>
+	</button> -->
 	<!-- 서식 제거 -->
 	<button class="bubble-menu-button text-gray-900 dark:text-gray-200" on:click={onRemoveFormat} title="서식 제거">
 		<span class="icon">

@@ -1131,21 +1131,18 @@
 		background-color: rgba(255, 255, 0, 0.2); /* 다크모드에서 하이라이트 색상 조정 */
 	}
 
-	/* 코드블록 스타일 */
-	:global(.code-block) {
-		background-color: #f5f5f5;
-		border-radius: 4px;
-		padding: 1rem;
-		font-family: 'Courier New', Courier, monospace;
-		font-size: 0.9em;
-		overflow-x: auto;
-		margin: 1rem 0;
-	}
-
-	:global(.dark) :global(.code-block) {
-		background-color: #1e1e1e;
-		color: #e5e7eb;
-		border: 1px solid #333;
+	/* 인용구 스타일 */
+	:global(.blockquote) {
+		border-left: 4px solid #e5e5e5;
+		padding-left: 1rem;
+		margin-left: 0;
+		margin-right: 0;
+		font-style: italic;
+		color: #666;
 	}
 	
+	:global(.dark) :global(.blockquote) {
+		border-left-color: #4a5568;
+		color: #a0aec0;
+	}
 </style>
