@@ -1,3 +1,4 @@
+#범용 보고서
 from pydantic import BaseModel, Field
 from typing import Callable, Awaitable, Any, Optional
 from typing import Callable, Awaitable, Any, Optional, TypedDict, List, Dict, Union
@@ -238,14 +239,7 @@ class Filter:
                     }
                 }
                 
-                만약 질문이 기업이나 회사에 관한 것이라면, 반드시 다음 단계들을 research_steps에 포함시켜야 합니다:
-                
-                1. 기업 기본 정보 조사: 설립 연도, 본사 위치, 주요 사업 영역, 경영진 정보 등
-                2. 기업 재무 정보 분석: 최근 재무제표, 매출액, 영업이익, 순이익, 주가 동향(상장 기업의 경우) 등
-                3. 최신 뉴스 및 시장 동향: 해당 기업 관련 최근 뉴스, 시장에서의 위치, 경쟁사 비교 등
-                4. 기업의 최근 제품/서비스 동향: 신제품 출시, 서비스 변경, 기술 혁신 등
-                
-                각 단계에 적절한 검색 쿼리를 포함시키고, 기업명과 함께 "재무제표", "실적", "최신 뉴스", "주가", "경쟁사" 등의 키워드를 조합하여 검색 쿼리를 구성하세요.
+             
                 """
                 },
                 {"role": "user", "content": f"""
