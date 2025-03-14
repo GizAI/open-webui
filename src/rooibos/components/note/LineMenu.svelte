@@ -110,7 +110,7 @@
     const menu = document.createElement('div');
     menu.id = 'line-menu-popup';
     menu.style.position = 'absolute';
-    menu.style.left = x + 'px';
+    menu.style.left = (x + 30) + 'px'; // 라인 아이콘으로부터 오른쪽으로 30px 이동
     menu.style.top = y + 'px';
     menu.style.transform = 'translateY(10px)';
     menu.style.padding = '8px';
@@ -299,6 +299,25 @@
     
     document.body.appendChild(menu);
     
+    // 메뉴가 화면 밖으로 나가는지 확인하고 위치 조정
+    setTimeout(() => {
+      const menuRect = menu.getBoundingClientRect();
+      const viewportHeight = window.innerHeight;
+      const viewportWidth = window.innerWidth;
+      
+      // 화면 하단을 벗어나는 경우
+      if (menuRect.bottom > viewportHeight) {
+        // 메뉴를 위쪽으로 표시 (버튼 위에 표시)
+        menu.style.top = (y - menuRect.height - 10) + 'px';
+        menu.style.transform = 'translateY(0)';
+      }
+      
+      // 화면 오른쪽을 벗어나는 경우
+      if (menuRect.right > viewportWidth) {
+        menu.style.left = (viewportWidth - menuRect.width - 10) + 'px';
+      }
+    }, 0);
+    
     function handleClickOutside(e) {
       if (!menu.contains(e.target)) {
         closeMenu();
@@ -309,7 +328,7 @@
     
     function closeMenu() {
       menu.remove();
-      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('mousedown', currentClickOutsideHandler);
       currentClickOutsideHandler = null;
       currentOpenMenu = null;
       
