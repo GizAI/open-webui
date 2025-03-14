@@ -343,4 +343,37 @@ async def remove_user_access_control(id: str, request: Request):
             "message": str(e)
         }
 
+@router.delete("/{id}/delete")
+async def delete_folder(id: str, request: Request):
+    try:
+        with get_db() as db:
+            # 폴더 삭제
+            delete_query = """
+                DELETE FROM rb_folder
+                WHERE id = :id
+                RETURNING id
+            """
+            result = db.execute(text(delete_query), {"id": id})
+            deleted = result.fetchone()
+            
+            if not deleted:
+                raise HTTPException(status_code=404, detail="Folder not found")
+            
+            db.commit()
+            
+        return {
+            "success": True,
+            "message": "Folder deleted successfully"
+        }
+    except Exception as e:
+        log.error("Failed to delete folder: %s", e)
+        raise HTTPException(
+            status_code=500,
+            detail={
+                "success": False,
+                "error": "Failed to delete folder",
+                "message": str(e)
+            }
+        )
+
 
