@@ -136,7 +136,7 @@ class Filter:
 
             analysis_prompt = [
                 {"role": "system", "content": """
-                사용자가 요청한 기업 분석 질문을 분석하고 다음 정보를 JSON 형식으로 반환하세요:
+                Analyze the user's corporate analysis request and return the following information in JSON format:
                 {
                     "company_name": "분석 대상 기업명",
                     "industry": "기업이 속한 산업 분야",
@@ -149,16 +149,15 @@ class Filter:
                     "preliminary_search_keywords": ["키워드1", "키워드2", "..."] // 사전 웹 검색을 위한 키워드
                 }
                 
-                만약 다음과 같은 경우에는 빈 객체({})만 반환하세요:
-                1. 사용자의 질문에서 특정 기업명을 식별할 수 없는 경우
-                2. 질문이 기업 분석이나 기업 리포트와 관련이 없는 경우
-                3. 일반적인 대화나 인사말인 경우
-                4. 기업 분석을 위한 충분한 정보가 제공되지 않은 경우
-                5. 기업 분석이 아닌 다른 주제에 관한 질문인 경우
-                
+                Return an empty object ({}) in the following cases:
+                1. If a specific company name cannot be identified in the user's question
+                2. If the question is not related to corporate analysis or corporate reporting
+                3. If it's a general conversation or greeting
+                4. If insufficient information is provided for corporate analysis
+                5. If the question is about a topic other than corporate analysis
                 """
                 },
-                {"role": "user", "content": f"다음 기업 분석 요청을 분석해주세요: {user_message}"}
+                {"role": "user", "content": f"Please analyze the following corporate analysis request: {user_message}"}
             ]
 
             analysis_payload = {
@@ -235,30 +234,29 @@ class Filter:
             # 검색 결과 검증 및 요약 프롬프트
             validation_prompt = [
                 {"role": "system", "content": """
-                당신은 기업 분석 보고서 작성을 위한 검색 결과를 검증하고 요약하는 전문가입니다.
-                사용자의 기업 분석 요청과 웹 검색 결과를 분석하여 다음을 JSON 형식으로 반환하세요:
+                You are an expert in validating and summarizing search results for corporate analysis reports.
+                Analyze the user's corporate analysis request and web search results to return the following in JSON format:
                 
                 {
-                    "content": "검색 결과에서 불필요한 텍스트를 제외하고 기업 분석 리포트에 사용할 수 있는 형태로 정돈된 텍스트. 광고, 중복 내용, 관련 없는 내용은 제외하고 기업 정보, 재무 데이터, 시장 정보, 경쟁사 정보 등 유용한 정보만 포함해주세요.",
+                    "content": "Organized text that can be used for corporate analysis reports, excluding unnecessary text from search results. Please exclude advertisements, duplicate content, irrelevant content, and include only useful information such as company information, financial data, market information, competitor information, etc.",
                 }
                 
-                다음과 같은 경우에는 빈 객체({})를 반환하세요:
-                1. 검색 결과에서 특정 기업을 식별할 수 없는 경우
-                2. 검색 결과가 기업 분석과 관련이 없는 경우
-                3. 검색 결과가 너무 일반적이거나 불충분하여 기업 보고서를 작성하기 어려운 경우
-                4. 검색 결과가 기업이 아닌 다른 주제(예: 일반 제품, 서비스, 개인 등)에 관한 경우
-                5. 실존하는 기업이 아닌경우
-                6. 기업이름에 오타가 포함되어 있는 경우
+                Return an empty object ({}) in the following cases:
+                1. If a specific company cannot be identified from the search results
+                2. If the search results are not related to corporate analysis
+                3. If the search results are too general or insufficient to write a corporate report
+                4. If the search results are about topics other than companies (e.g., general products, services, individuals, etc.)
+                5. If it's not an existing company
+                6. If there are typos in the company name
                 """
                 },
                 {"role": "user", "content": f"""
-                사용자의 기업 분석 요청: {user_message}
+                User's corporate analysis request: {user_message}
                                                                 
-                검색 결과 내용 샘플:
+                Sample search result content:
                 {search_content[:5000] if len(search_content) > 5000 else search_content}
                 
-                위 정보를 바탕으로 검색 결과가 기업 분석 보고서 작성에 적합한지 검증하고 Plan 에서 활용 할 수 있게 
-                핵심 내용을 요약해주세요.
+                Based on the above information, please verify if the search results are suitable for writing a corporate analysis report and summarize the key content for use in the Plan.
                 """}
             ]
             
@@ -301,8 +299,8 @@ class Filter:
             # 계획 생성을 위한 프롬프트 작성
             plan_prompt = [
                 {"role": "system", "content": """
-                당신은 기업 분석 계획을 수립하는 전문가입니다. 사용자의 기업 분석 요청과 초기 웹 검색 결과를 바탕으로 
-                상세한 기업 분석 계획을 JSON 형식으로 작성해주세요:
+                You are an expert in developing corporate analysis plans. Based on the user's corporate analysis request and initial web search results,
+                please create a detailed corporate analysis plan in JSON format:
                 
                 {
                     "analysis_plan": {
@@ -319,24 +317,24 @@ class Filter:
                             },
                             ...
                         ],
-                        "required_financial_data": ["매출액", "영업이익", "순이익", "부채비율", "ROE", ...],
-                        "required_market_data": ["시장 규모", "시장 점유율", "경쟁사 현황", ...],
-                        "information_gaps": ["현재 부족한 정보 1", "현재 부족한 정보 2", ...],
+                        "required_financial_data": ["Revenue", "Operating Profit", "Net Profit", "Debt Ratio", "ROE", ...],
+                        "required_market_data": ["Market Size", "Market Share", "Competitor Status", ...],
+                        "information_gaps": ["Currently missing information 1", "Currently missing information 2", ...],
                         "estimated_completion_steps": 5
                     }
                 }
                 """
                 },
                 {"role": "user", "content": f"""
-                기업 분석 요청: {user_message}
+                Corporate analysis request: {user_message}
                 
-                초기 분석 결과: {json.dumps(analysis_obj, ensure_ascii=False)}
+                Initial analysis results: {json.dumps(analysis_obj, ensure_ascii=False)}
                 
-                초기 웹 검색 키워드: {websearch_keywords}
+                Initial web search keywords: {websearch_keywords}
 
-                초기 웹 검색 요약: {json.dumps(validation_obj, ensure_ascii=False)}
+                Initial web search summary: {json.dumps(validation_obj, ensure_ascii=False)}
                 
-                위 정보를 바탕으로 상세한 기업 분석 계획을 JSON 형식으로 작성해주세요.
+                Based on the above information, please create a detailed corporate analysis plan in JSON format.
                 """}
             ]
             
@@ -425,23 +423,23 @@ class Filter:
                     {
                         "role": "system",
                         "content": (
-                            "당신은 기업 분석 보고서를 작성하는 전문가입니다. 아래의 정보를 바탕으로 해당 분석 단계에 대한 "
-                            "상세 보고서를 작성해주세요. 보고서는 사실에 기반하여 객관적이고 자세하게 작성되어야 하며, "
-                            "필요시 3000단어까지 허용됩니다. 재무 데이터, 시장 데이터, 경쟁사 정보 등은 최대한 정확한 수치와 "
-                            "출처를 포함해주세요."
+                            "You are an expert in writing corporate analysis reports. Based on the information below, please write a detailed "
+                            "report for this analysis step. The report should be objective and detailed, based on facts, "
+                            "and up to 3000 words if necessary. Financial data, market data, competitor information, etc. should include "
+                            "accurate figures and sources as much as possible."
                         )
                     },
                     {
                         "role": "user",
                         "content": f"""
-기업명: {research_plan.get("analysis_plan", {}).get("company_name", "명시되지 않음")}
-산업: {research_plan.get("analysis_plan", {}).get("industry", "명시되지 않음")}
-분석 단계: {step_number}
-단계 설명: {step_description}
-검색 키워드: {step_search_queries}
-예상 결과: {step_expected_outcomes}
+Company Name: {research_plan.get("analysis_plan", {}).get("company_name", "Not specified")}
+Industry: {research_plan.get("analysis_plan", {}).get("industry", "Not specified")}
+Analysis Step: {step_number}
+Step Description: {step_description}
+Search Keywords: {step_search_queries}
+Expected Outcomes: {step_expected_outcomes}
 
-[검색 결과 요약]
+[Search Results Summary]
 {combined_search_text}
                         """
                     }
@@ -490,34 +488,31 @@ class Filter:
                 {
                     "role": "system",
                     "content": (
-                        "당신은 기업 분석 종합 보고서를 작성하는 전문가입니다. 아래에 각 분석 단계에 대한 보고서가 있습니다. "
-                        "이를 바탕으로 최종 기업 분석 종합 보고서를 작성해주세요. 보고서는 다음 구조를 따라야 합니다:\n\n"
-                        "1. 요약(Executive Summary): 핵심 분석 결과와 투자 의견을 간략히 요약\n"
-                        "2. 기업 개요: 기업의 역사, 사업 영역, 주요 제품/서비스, 경영진 등\n"
-                        "3. 산업 분석: 기업이 속한 산업의 현황, 트렌드, 성장성, 규제 환경 등\n"
-                        "4. 재무 분석: 매출, 이익, 성장률, 수익성, 부채비율 등 주요 재무지표 분석\n"
-                        "5. 경쟁사 분석: 주요 경쟁사와의 비교, 시장 점유율, 경쟁 우위 요소 등\n"
-                        "6. SWOT 분석: 강점, 약점, 기회, 위협 요소 분석\n"
-                        "7. 미래 전망: 기업의 성장 전략, 신규 사업, 리스크 요소 등\n"
-                        "8. 투자 의견: 투자 추천 여부, 목표 주가, 투자 리스크 등\n\n"
-                        "보고서는 사실에 기반하여 객관적이고 상세하게 작성되어야 하며, 모든 수치와 주장에는 가능한 출처를 명시해주세요. "
-                        "필요시 4000단어까지 허용됩니다."
+                        "You are an expert in writing comprehensive corporate analysis reports. Below are reports for each analysis step. "
+                        "Based on these, please write a final comprehensive corporate analysis report. The report should follow this structure:\n\n"
+                        "1. Executive Summary: Briefly summarize key analysis results and investment opinions\n"
+                        "2. Company Overview: Company history, business areas, main products/services, management, etc.\n"
+                        "3. Industry Analysis: Current status, trends, growth potential, regulatory environment, etc. of the industry\n"
+                        "4. Financial Analysis: Analysis of key financial indicators such as sales, profits, growth rate, profitability, debt ratio, etc.\n"
+                        "5. Competitor Analysis: Comparison with major competitors, market share, competitive advantages, etc.\n"
+                        "6. SWOT Analysis: Analysis of strengths, weaknesses, opportunities, and threats\n"
+                        "7. Future Outlook: Company growth strategy, new businesses, risk factors, etc.\n"
+                        "8. Investment Opinion: Investment recommendation, target price, investment risks, etc.\n\n"
+                        "The report should be objective and detailed, based on facts, and all figures and claims should include sources when possible. "
+                        "Up to 4000 words are allowed if necessary."
                     )
                 },
                 {
                     "role": "user",
                     "content": f"""
-사용자의 기업 분석 요청: {user_message}
+User's corporate analysis request: {user_message}
 
-기업명: {research_plan.get("analysis_plan", {}).get("company_name", "명시되지 않음")}
-산업: {research_plan.get("analysis_plan", {}).get("industry", "명시되지 않음")}
+Corporate Analysis Plan Overview: {json.dumps(research_plan, ensure_ascii=False, indent=2)}
 
-기업 분석 계획 개요: {json.dumps(research_plan, ensure_ascii=False, indent=2)}
-
-각 분석 단계별 보고서:
+Reports for each analysis step:
 {combined_step_reports_text}
 
-위 정보를 바탕으로 사용자의 기업 분석 요청에 대한 종합적이고 상세한 최종 기업 분석 보고서를 작성해주세요.
+Based on the above information, please write a comprehensive and detailed final corporate analysis report in response to the user's request.
 """
                 }
             ]
