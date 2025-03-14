@@ -218,21 +218,7 @@ class Filter:
             # 중복 URL 제거
             combined_urls = list(dict.fromkeys(combined_urls))
             
-            # 취합된 검색 결과
-            combined_search_result = {
-                "docs": combined_docs,
-                "urls": combined_urls,
-                "keywords": websearch_keywords,
-                "type": "combined_web_search"
-            }
-            
-            await self.emit_status(
-                __event_emitter__,
-                level="status",
-                message="웹 검색 결과 취합 완료",
-                done=True,
-            )
-            
+                   
             # 검색 결과 검증 및 요약 단계 추가
             await self.emit_status(
                 __event_emitter__,
@@ -253,36 +239,26 @@ class Filter:
                 사용자의 기업 분석 요청과 웹 검색 결과를 분석하여 다음을 JSON 형식으로 반환하세요:
                 
                 {
-                    "is_valid_company_data": true/false, // 검색 결과가 특정 기업에 관한 유효한 데이터인지 여부
-                    "company_name": "검색 결과에서 확인된 기업명",
-                    "industry": "검색 결과에서 확인된 산업 분야",
-                    "search_summary": "검색 결과 요약 (500자 이내)",
-                    "key_findings": ["주요 발견 1", "주요 발견 2", ...],
-                    "missing_information": ["부족한 정보 1", "부족한 정보 2", ...],
-                    "additional_search_needed": true/false, // 추가 검색이 필요한지 여부
-                    "recommended_additional_keywords": ["추가 키워드 1", "추가 키워드 2", ...]
+                    "content": "검색 결과에서 불필요한 텍스트를 제외하고 기업 분석 리포트에 사용할 수 있는 형태로 정돈된 텍스트. 광고, 중복 내용, 관련 없는 내용은 제외하고 기업 정보, 재무 데이터, 시장 정보, 경쟁사 정보 등 유용한 정보만 포함해주세요.",
                 }
                 
-                다음과 같은 경우에는 is_valid_company_data를 false로 설정하고 빈 객체({})를 반환하세요:
+                다음과 같은 경우에는 빈 객체({})를 반환하세요:
                 1. 검색 결과에서 특정 기업을 식별할 수 없는 경우
                 2. 검색 결과가 기업 분석과 관련이 없는 경우
                 3. 검색 결과가 너무 일반적이거나 불충분하여 기업 보고서를 작성하기 어려운 경우
                 4. 검색 결과가 기업이 아닌 다른 주제(예: 일반 제품, 서비스, 개인 등)에 관한 경우
+                5. 실존하는 기업이 아닌경우
+                6. 기업이름에 오타가 포함되어 있는 경우
                 """
                 },
                 {"role": "user", "content": f"""
                 사용자의 기업 분석 요청: {user_message}
-                
-                초기 분석 결과: {json.dumps(analysis_obj, ensure_ascii=False)}
-                
-                검색 키워드: {websearch_keywords}
-                
-                검색된 URL: {combined_urls[:10] if len(combined_urls) > 10 else combined_urls}
-                
+                                                                
                 검색 결과 내용 샘플:
-                {search_content[:3000] if len(search_content) > 3000 else search_content}
+                {search_content[:5000] if len(search_content) > 5000 else search_content}
                 
-                위 정보를 바탕으로 검색 결과가 기업 분석 보고서 작성에 적합한지 검증하고 요약해주세요.
+                위 정보를 바탕으로 검색 결과가 기업 분석 보고서 작성에 적합한지 검증하고 Plan 에서 활용 할 수 있게 
+                핵심 내용을 요약해주세요.
                 """}
             ]
             
@@ -306,11 +282,11 @@ class Filter:
             validation_obj = extract_json_from_markdown(validation_content)
             
             # 검증 결과가 유효하지 않은 경우 함수 종료
-            if not validation_obj or not validation_obj.get("is_valid_company_data", False):
+            if not validation_obj or len(validation_obj) == 0:
                 await self.emit_status(
                     __event_emitter__,
                     level="status",
-                    message="검색 결과가 기업 분석 보고서 작성에 적합하지 않습니다. 일반 대화 모드로 전환합니다.",
+                    message="기업 분석을 위한 충분한 정보가 없습니다. 일반 대화 모드로 전환합니다.",
                     done=True,
                 )
                 return body
@@ -358,10 +334,7 @@ class Filter:
                 
                 초기 웹 검색 키워드: {websearch_keywords}
 
-                검색 결과 검증 및 요약: {json.dumps(validation_obj, ensure_ascii=False)}
-                
-                검색된 URL 수: {len(combined_urls)}
-                검색된 문서 수: {len(combined_docs)}
+                초기 웹 검색 요약: {json.dumps(validation_obj, ensure_ascii=False)}
                 
                 위 정보를 바탕으로 상세한 기업 분석 계획을 JSON 형식으로 작성해주세요.
                 """}
@@ -528,7 +501,7 @@ class Filter:
                         "7. 미래 전망: 기업의 성장 전략, 신규 사업, 리스크 요소 등\n"
                         "8. 투자 의견: 투자 추천 여부, 목표 주가, 투자 리스크 등\n\n"
                         "보고서는 사실에 기반하여 객관적이고 상세하게 작성되어야 하며, 모든 수치와 주장에는 가능한 출처를 명시해주세요. "
-                        "필요시 5000단어까지 허용됩니다."
+                        "필요시 4000단어까지 허용됩니다."
                     )
                 },
                 {
