@@ -7,13 +7,14 @@
 	import { goto } from '$app/navigation';
 	import { v4 as uuidv4 } from 'uuid';
 	import { toast } from 'svelte-sonner';
-	import { renameNoteFolder } from '$rooibos/components/apis/folder';
+	import { renameNoteFolder, deleteFolderById } from '$rooibos/components/apis/folder';
 	import { createNote } from '$rooibos/components/apis/note';
 	import { user } from '$lib/stores';
 	import Pencil from '$lib/components/icons/Pencil.svelte';
 	import FolderForm from './FolderForm.svelte';
-	import { NotebookIcon, FolderIcon } from 'lucide-svelte';
+	import { NotebookIcon, FolderIcon, Trash2Icon } from 'lucide-svelte';
 	import Cog6 from '$lib/components/icons/Cog6.svelte';
+	import ConfirmDialog from '$lib/components/common/ConfirmDialog.svelte';
 
 	// i18n 스토어 설정
 	const i18n: { subscribe: any; t: (key: string) => string } = getContext('i18n');
@@ -38,6 +39,10 @@
 	// 관리 폴더 관련 상태
 	let showManagementForm = false;
 	let managementFolderId: string | null = null;
+
+	// 삭제 확인 대화상자 관련 상태
+	let showDeleteConfirm = false;
+	let deletingFolderId: string | null = null;
 
 	function handleFolderClick(folder: any) {
 		if (folder.type === 'note') {
@@ -73,6 +78,30 @@
 			}
 		}
 		editingFolderId = null;
+	}
+
+	// 폴더 삭제 확인 대화상자 표시
+	function showDeleteConfirmDialog(e: Event, folderId: string) {
+		e.stopPropagation();
+		deletingFolderId = folderId;
+		showDeleteConfirm = true;
+	}
+
+	// 폴더 삭제 함수
+	async function deleteFolder() {
+		if (!deletingFolderId) return;
+		
+		try {
+			await deleteFolderById(localStorage.token, deletingFolderId);
+			delete folders[deletingFolderId];
+			dispatch('delete', { folderId: deletingFolderId });
+			toast.success($i18n.t('폴더가 삭제되었습니다.'));
+		} catch (error) {
+			toast.error(`${error}`);
+		} finally {
+			deletingFolderId = null;
+			showDeleteConfirm = false;
+		}
 	}
 
 	// 관리 메뉴 열기/닫기
@@ -139,6 +168,13 @@
 									<Pencil strokeWidth="2" />
 									<div class="flex items-center">{$i18n.t('이름변경')}</div>
 								</DropdownMenu.Item>
+								<DropdownMenu.Item
+									class="flex gap-2 items-center px-3 py-1.5 text-sm cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 rounded-md"
+									on:click={(e) => showDeleteConfirmDialog(e, folderId)}
+								>
+									<Trash2Icon strokeWidth="2" />
+									<div class="flex items-center">{$i18n.t('폴더삭제')}</div>
+								</DropdownMenu.Item>
 								<!-- 관리 메뉴 항목 추가 -->
 								<!-- <DropdownMenu.Item
 									class="flex gap-2 items-center px-3 py-1.5 text-sm cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 rounded-md"
@@ -177,6 +213,21 @@
 		on:close={closeManagementForm}
 		on:update={handleFolderUpdate}
 	/>
+{/if}
+
+<!-- 삭제 확인 대화상자 -->
+{#if showDeleteConfirm && deletingFolderId}
+	<ConfirmDialog
+		bind:show={showDeleteConfirm}
+		title={$i18n.t('폴더 삭제')}
+		on:confirm={deleteFolder}
+	>
+		<div class="text-sm text-gray-700 dark:text-gray-300 flex-1 line-clamp-3">
+			{$i18n.t('이 작업은 "{{NAME}}" 폴더와 모든 내용을 삭제합니다.', {
+				NAME: folders[deletingFolderId].name
+			})}
+		</div>
+	</ConfirmDialog>
 {/if}
 
 <style>
