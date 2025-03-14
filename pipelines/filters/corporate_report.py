@@ -148,6 +148,14 @@ class Filter:
                     "needs_financial_data": true/false - 재무 데이터가 필요한지 여부,
                     "preliminary_search_keywords": ["키워드1", "키워드2", "..."] // 사전 웹 검색을 위한 키워드
                 }
+                
+                만약 다음과 같은 경우에는 빈 객체({})만 반환하세요:
+                1. 사용자의 질문에서 특정 기업명을 식별할 수 없는 경우
+                2. 질문이 기업 분석이나 기업 리포트와 관련이 없는 경우
+                3. 일반적인 대화나 인사말인 경우
+                4. 기업 분석을 위한 충분한 정보가 제공되지 않은 경우
+                5. 기업 분석이 아닌 다른 주제에 관한 질문인 경우
+                
                 """
                 },
                 {"role": "user", "content": f"다음 기업 분석 요청을 분석해주세요: {user_message}"}
@@ -169,6 +177,16 @@ class Filter:
             
             # 공통 함수를 사용하여 JSON 객체 추출
             analysis_obj = extract_json_from_markdown(content)
+            
+            # 빈 객체인 경우 함수 종료
+            if not analysis_obj or len(analysis_obj) == 0:
+                await self.emit_status(
+                    __event_emitter__,
+                    level="status",
+                    message="기업 분석을 위한 충분한 정보가 없습니다. 일반 대화 모드로 전환합니다.",
+                    done=True,
+                )
+                return body
             
 
             websearch_keywords = analysis_obj.get("preliminary_search_keywords", [])
