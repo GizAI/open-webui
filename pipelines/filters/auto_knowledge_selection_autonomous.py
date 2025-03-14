@@ -1,7 +1,7 @@
 import json
 import re
 from pydantic import BaseModel, Field
-from typing import Callable, Awaitable, Any, Optional
+from typing import Callable, Awaitable, Any, Optional, TypedDict, List, Dict, Union
 
 from open_webui.models.users import Users, UserModel
 from open_webui.utils.chat import generate_chat_completion
@@ -9,6 +9,53 @@ from open_webui.utils.misc import get_last_user_message
 from open_webui.models.knowledge import Knowledges
 from open_webui.models.files import Files
 from open_webui.utils.middleware import chat_web_search_handler
+from open_webui.routers.retrieval import process_web_search, SearchForm
+
+class Doc(TypedDict):
+    # 문서의 실제 내용
+    content: str
+    # 메타데이터 예시:
+    # - source: 문서 출처 URL (예: "https://en.wikipedia.org/wiki/NewJeans")
+    # - title: 문서 제목 (예: "NewJeans - Wikipedia") 
+    # - language: 문서 언어 코드 (예: "en")
+    metadata: Dict[str, Any]
+
+class SearchResultWithDocs(TypedDict):
+    status: bool
+    collection_name: None
+    # filenames: 검색 결과 URL 목록
+    filenames: List[str]
+    docs: List[Doc]
+    loaded_count: int
+
+class SearchResultWithoutDocs(TypedDict):
+    status: bool
+    collection_name: str
+    filenames: List[str]
+    loaded_count: int
+
+SearchResult = Union[SearchResultWithDocs, SearchResultWithoutDocs]
+
+async def web_search(request: any, query: str) -> SearchResult:
+    request.app.state.config.BYPASS_WEB_SEARCH_EMBEDDING_AND_RETRIEVAL = True
+    form_data = SearchForm(query=query)
+    
+    try:
+        result = await process_web_search(request, form_data)
+        return {
+            "docs": result.get("docs", []),
+            "name": query,
+            "type": "web_search",
+            "urls": result["filenames"],
+        }
+    except Exception as e:
+        print(f"웹 검색 중 오류 발생: {str(e)}")
+        return {
+            "status": False,
+            "collection_name": None,
+            "filenames": [],
+            "loaded_count": 0
+        }
 
 
 def parse_json_content(content: str) -> Optional[dict]:
