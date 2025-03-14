@@ -162,21 +162,12 @@ class Filter:
                 form_data=analysis_payload,
                 user=user,
             )
-
-            print("############################################ analysis_response start ##############################################")
-            print(analysis_response)
-            print("################################################ analysis_response end #########################################")
-
             # analysis_response에서 content 추출
             content = analysis_response.get('choices', [{}])[0].get('message', {}).get('content', '')
             
             # 공통 함수를 사용하여 JSON 객체 추출
             analysis_obj = extract_json_from_markdown(content)
             
-            print("############################################ 분석 결과 객체 ##############################################")
-            print(analysis_obj)
-            print("################################################ 분석 결과 객체 끝 #########################################")
-
 
             websearch_keywords = analysis_obj.get("preliminary_search_keywords", [])
 
@@ -279,15 +270,121 @@ class Filter:
             print(research_plan)
             print("################################################ 연구 계획 끝 #########################################")
 
-            # 연구 계획 스탭 별 웹 검색 수행
+            # 연구 계획 스탭 별 상세 검색 및 개별 보고서 생성
+            step_reports = []  # 각 스탭별 보고서를 저장할 리스트
+            
             for step in research_plan.get("research_steps", []):
-                await self.emit_status(__event_emitter__, "info", f"연구 계획 스탭 {step.get('step')} 웹 검색 중...", False)
-                web_search_result = await web_search(__request__, step.get("search_queries", []))
+                step_number = step.get("step", "N/A")
+                step_description = step.get("description", "")
+                step_search_queries = step.get("search_queries", [])
+                step_expected_outcomes = step.get("expected_outcomes", "")
+                
+                await self.emit_status(__event_emitter__, "info", f"연구 계획 스탭 {step_number}에 대한 상세 검색 및 보고서 작성 시작...", False)
+                
+                # 각 스탭의 검색 결과 취합
+                step_combined_docs = []
+                step_combined_urls = []
+                for query in step_search_queries:
+                    await self.emit_status(__event_emitter__, "info", f"스탭 {step_number}: 키워드 '{query}' 웹 검색 중...", False)
+                    search_result = await web_search(__request__, query)
+                    if search_result:
+                        if "docs" in search_result:
+                            step_combined_docs.extend(search_result.get("docs", []))
+                        if "urls" in search_result:
+                            step_combined_urls.extend(search_result.get("urls", []))
+                
+                # 중복 URL 제거
+                step_combined_urls = list(dict.fromkeys(step_combined_urls))
+                
+                # 검색 결과의 요약 텍스트 생성 (docs의 content를 간단히 결합)
+                combined_search_text = ""
+                for doc in step_combined_docs:
+                    combined_search_text += doc.get("content", "") + "\n"
+                if step_combined_urls:
+                    combined_search_text += "\n관련 URL: " + ", ".join(step_combined_urls)
+                
+                # 스탭별 보고서 생성을 위한 프롬프트 구성
+                step_prompt = [
+                    {
+                        "role": "system",
+                        "content": (
+                            "당신은 조사 보고서를 작성하는 전문가입니다. 아래의 정보를 바탕으로 해당 연구 단계에 대한 "
+                            "상세 보고서를 작성해주세요. 보고서는 최대한 자세하게 작성되어야 하며, 필요시 3000단어까지 허용됩니다."
+                        )
+                    },
+                    {
+                        "role": "user",
+                        "content": f"""
+연구 단계: {step_number}
+단계 설명: {step_description}
+검색 키워드: {step_search_queries}
+예상 결과: {step_expected_outcomes}
 
+[검색 결과 요약]
+{combined_search_text}
+                        """
+                    }
+                ]
+                
+                await self.emit_status(__event_emitter__, "info", f"연구 계획 스탭 {step_number}에 대한 보고서 작성 중...", False)
+                
+                # LLM을 통해 스탭별 보고서 생성 요청
+                step_report_response = await generate_chat_completion(
+                    request=__request__,
+                    form_data={
+                        "model": "o3-mini",
+                        "messages": step_prompt,
+                        "stream": False,
+                    },
+                    user=user,
+                )
+                
+                step_report_content = step_report_response.get("choices", [{}])[0].get("message", {}).get("content", "")
+                
+                # 개별 스탭 보고서 저장
+                step_reports.append({
+                    "step": step_number,
+                    "report": step_report_content,
+                })
+                
+                await self.emit_status(__event_emitter__, "info", f"연구 계획 스탭 {step_number} 보고서 작성 완료", True)
+            
+            
+            # 모든 스탭의 개별 보고서가 생성된 후 최종 종합 보고서 요청 프롬프트 생성
+            combined_step_reports_text = ""
+            for step_report in step_reports:
+                combined_step_reports_text += f"연구 단계 {step_report['step']} 보고서:\n{step_report['report']}\n\n"
+            
+            final_report_prompt = [
+                {
+                    "role": "system",
+                    "content": (
+                        "당신은 종합 보고서를 작성하는 전문가입니다. 아래에 각 연구 단계에 대한 보고서가 있습니다. "
+                        "이를 바탕으로 최종 종합 보고서를 작성해주세요. 보고서는 최대한 자세하게 작성되어야 하며, "
+                        "필요시 3000단어까지 허용됩니다."
+                    )
+                },
+                {
+                    "role": "user",
+                    "content": f"""
+사용자의 최초 질문: {user_message}
 
-            ## 연구용으로 수집된 모든 데이터를 취합하고 body["messages"] 에 추가하면서 최종 보고서 
-            # 취합을 요청한다. 내용은 최대한 자세하고 1000단이 이상 필요하면 3000단어까지 
-            ## 보고서를 작성하도록 요청한다.
+연구 계획 개요: {json.dumps(research_plan, ensure_ascii=False, indent=2)}
+
+각 연구 단계별 보고서:
+{combined_step_reports_text}
+
+위 정보를 바탕으로 사용자의 최초 질문에 대한 종합적이고 상세한 최종 보고서를 작성해주세요.
+"""
+                }
+            ]
+            print("############################################ final_report_prompt start ##############################################")
+            print(final_report_prompt)
+            print("################################################ final_report_prompt end #########################################")
+            # 최종 보고서 요청 프롬프트를 body에 저장하여 후속 처리하도록 함
+            body["messages"] = final_report_prompt
+            
+            await self.emit_status(__event_emitter__, "info", "최종 보고서 요청 프롬프트 생성 완료", True)
             
                     
        
