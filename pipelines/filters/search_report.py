@@ -176,7 +176,12 @@ class Filter:
             
             # 각 키워드에 대한 웹 검색 수행 및 결과 저장
             for keyword in websearch_keywords:
-                await self.emit_status(__event_emitter__, "info", f"키워드 '{keyword}'에 대한 웹 검색 중...", False)
+                await self.emit_status(
+                    __event_emitter__,
+                    level="status",
+                    message=f"키워드 '{keyword}'에 대한 웹 검색 중...",
+                    done=False,
+                )
                 web_search_result = await web_search(__request__, keyword)
                 search_results.append(web_search_result)
                 
@@ -201,7 +206,12 @@ class Filter:
                 "type": "combined_web_search"
             }
             
-            await self.emit_status(__event_emitter__, "info", "웹 검색 결과 취합 완료", True)
+            await self.emit_status(
+                __event_emitter__,
+                level="status",
+                message="웹 검색 결과 취합 완료",
+                done=True,
+            )
             
             # 계획 생성을 위한 프롬프트 작성
             plan_prompt = [
@@ -250,7 +260,12 @@ class Filter:
                 "stream": False,
             }
             
-            await self.emit_status(__event_emitter__, "info", "연구 계획 생성 중...", False)
+            await self.emit_status(
+                __event_emitter__,
+                level="status",
+                message="연구 계획 생성 중...",
+                done=False,
+            )
             
             plan_response = await generate_chat_completion(
                 request=__request__,
@@ -264,7 +279,12 @@ class Filter:
             # JSON 객체 추출
             research_plan = extract_json_from_markdown(plan_content)
             
-            await self.emit_status(__event_emitter__, "info", "연구 계획 생성 완료", True)
+            await self.emit_status(
+                __event_emitter__,
+                level="status",
+                message="연구 계획 생성 완료",
+                done=True,
+            )
             
             print("############################################ 연구 계획 ##############################################")
             print(research_plan)
@@ -279,13 +299,23 @@ class Filter:
                 step_search_queries = step.get("search_queries", [])
                 step_expected_outcomes = step.get("expected_outcomes", "")
                 
-                await self.emit_status(__event_emitter__, "info", f"연구 계획 스탭 {step_number}에 대한 상세 검색 및 보고서 작성 시작...", False)
+                await self.emit_status(
+                    __event_emitter__,
+                    level="status",
+                    message=f"연구 계획 스탭 {step_number}에 대한 상세 검색 및 보고서 작성 시작...",
+                    done=False,
+                )
                 
                 # 각 스탭의 검색 결과 취합
                 step_combined_docs = []
                 step_combined_urls = []
                 for query in step_search_queries:
-                    await self.emit_status(__event_emitter__, "info", f"스탭 {step_number}: 키워드 '{query}' 웹 검색 중...", False)
+                    await self.emit_status(
+                        __event_emitter__,
+                        level="status",
+                        message=f"스탭 {step_number}: 키워드 '{query}' 웹 검색 중...",
+                        done=False,
+                    )
                     search_result = await web_search(__request__, query)
                     if search_result:
                         if "docs" in search_result:
@@ -326,7 +356,12 @@ class Filter:
                     }
                 ]
                 
-                await self.emit_status(__event_emitter__, "info", f"연구 계획 스탭 {step_number}에 대한 보고서 작성 중...", False)
+                await self.emit_status(
+                    __event_emitter__,
+                    level="status",
+                    message=f"연구 계획 스탭 {step_number}에 대한 보고서 작성 중...",
+                    done=False,
+                )
                 
                 # LLM을 통해 스탭별 보고서 생성 요청
                 step_report_response = await generate_chat_completion(
@@ -347,7 +382,12 @@ class Filter:
                     "report": step_report_content,
                 })
                 
-                await self.emit_status(__event_emitter__, "info", f"연구 계획 스탭 {step_number} 보고서 작성 완료", True)
+                await self.emit_status(
+                    __event_emitter__,
+                    level="status",
+                    message=f"연구 계획 스탭 {step_number} 보고서 작성 완료",
+                    done=True,
+                )
             
             
             # 모든 스탭의 개별 보고서가 생성된 후 최종 종합 보고서 요청 프롬프트 생성
@@ -384,7 +424,12 @@ class Filter:
             # 최종 보고서 요청 프롬프트를 body에 저장하여 후속 처리하도록 함
             body["messages"] = final_report_prompt
             
-            await self.emit_status(__event_emitter__, "info", "최종 보고서 요청 프롬프트 생성 완료", True)
+            await self.emit_status(
+                __event_emitter__,
+                level="status",
+                message="최종 보고서 요청 프롬프트 생성 완료",
+                done=True,
+            )
             
                     
        
