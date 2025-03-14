@@ -499,7 +499,11 @@ Expected Outcomes: {step_expected_outcomes}
                         "7. Future Outlook: Company growth strategy, new businesses, risk factors, etc.\n"
                         "8. Investment Opinion: Investment recommendation, target price, investment risks, etc.\n\n"
                         "The report should be objective and detailed, based on facts, and all figures and claims should include sources when possible. "
-                        "Up to 4000 words are allowed if necessary."
+                        "Up to 4000 words are allowed if necessary.\n\n"
+                        "**IMPORTANT**: You MUST write the final report in the SAME LANGUAGE as the user's original request. "
+                        "If the user's request is in Korean, write the entire report in Korean. "
+                        "If the user's request is in English, write the entire report in English. "
+                        "Match the language of the user's original input exactly."
                     )
                 },
                 {
@@ -513,12 +517,12 @@ Reports for each analysis step:
 {combined_step_reports_text}
 
 Based on the above information, please write a comprehensive and detailed final corporate analysis report in response to the user's request.
+
+**IMPORTANT**: Your final report MUST be written in the SAME LANGUAGE as my original request above. Match the language I used in my request.
 """
                 }
             ]
-            print("############################################ final_report_prompt start ##############################################")
-            print(final_report_prompt)
-            print("################################################ final_report_prompt end #########################################")
+          
             # 최종 보고서 요청 프롬프트를 body에 저장하여 후속 처리하도록 함
             body["messages"] = final_report_prompt
             
