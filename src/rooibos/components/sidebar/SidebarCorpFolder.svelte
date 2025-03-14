@@ -111,7 +111,11 @@
 		}
 	};
 
-	// 컴포넌트 초기화 시 폴더 목록 가져오기
+	const handleFolderDelete = async (event) => {
+		await initRooibosFolders();
+	};
+
+
 	initRooibosFolders();
 </script>
 
@@ -131,5 +135,6 @@
 				return acc;
 			}, {})}
 		parentId={null}
+		on:delete={handleFolderDelete}
 	/>
 </RooibosFolder> 
