@@ -369,11 +369,11 @@
   }
 
   :global(.heading2-line-icon) {
-    transform: translateY(+20%);
+    transform: translateY(+100%);
   }
 
   :global(.heading3-line-icon) {
-    transform: translateY(0%);
+    transform: translateY(+80%);
   }
 
   :global(.dark) :global(.line-icon) {
