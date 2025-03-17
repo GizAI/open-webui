@@ -369,7 +369,7 @@
   }
 
   :global(.heading2-line-icon) {
-    transform: translateY(+20%);
+    transform: translateY(+100%);
   }
 
   :global(.heading3-line-icon) {
