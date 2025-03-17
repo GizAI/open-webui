@@ -105,16 +105,16 @@
 
 		{#if showCreateFolderInput}
 			<div class="mb-4 p-2 bg-gray-100 dark:bg-gray-800 rounded">
-				<div class="flex items-center">
+				<div class="flex flex-wrap items-center gap-2">
 					<input 
 						type="text" 
 						bind:value={newFolderName} 
 						placeholder="새 폴더 이름" 
-						class="flex-1 p-2 border border-gray-300 dark:border-gray-600 rounded-l bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+						class="flex-1 min-w-[200px] p-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
 					/>
 					<button 
 						on:click={createFolder}
-						class="p-2 bg-gray-500 text-white rounded-r hover:bg-blue-400 transition-colors"
+						class="p-2 bg-gray-500 text-white hover:bg-blue-400 transition-colors rounded-md"
 					>
 						생성
 					</button>
@@ -135,7 +135,6 @@
 							on:click={() => selectFolder(folder)}
 						>
 							<div class="flex items-center">
-								<!-- 폴더 아이콘 (Heroicons) -->
 								<svg class="w-5 h-5 mr-2 text-gray-500 dark:text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
 									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7h4l2 2h8a2 2 0 012 2v7a2 2 0 01-2 2H5a2 2 0 01-2-2V7z" />
 								</svg>
