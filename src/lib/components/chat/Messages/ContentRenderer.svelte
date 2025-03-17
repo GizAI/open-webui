@@ -4,9 +4,10 @@
 	const dispatch = createEventDispatcher();
 
 	import Markdown from './Markdown.svelte';
-	import { chatId, mobile, showArtifacts, showControls, showOverview } from '$lib/stores';
+	import { chatId, mobile, showArtifacts, showControls, showOverview, user } from '$lib/stores';
 	import FloatingButtons from '../ContentRenderer/FloatingButtons.svelte';
 	import { createMessagesList } from '$lib/utils';
+	
 
 	export let id;
 	export let content;
@@ -120,7 +121,7 @@
 		sourceIds={(sources ?? []).reduce((acc, s) => {
 			let ids = [];
 			s.document.forEach((document, index) => {
-				if (model?.info?.meta?.capabilities?.citations == false) {
+				if (model?.info?.meta?.capabilities?.citations == false && $user.role !== 'admin') {
 					ids.push('N/A');
 					return ids;
 				}
