@@ -1476,11 +1476,20 @@
 			),
 			...(responseMessage?.files ?? []).filter((item) => ['web_search_results'].includes(item.type))
 		);
+
+		if ($selectedCompanyInfo?.files && $selectedCompanyInfo?.files.length > 0) {
+			$selectedCompanyInfo?.files.forEach((file) => {
+				files.push({type:'file' , id: file})
+			});
+		}
+
 		// Remove duplicates
 		files = files.filter(
 			(item, index, array) =>
 				array.findIndex((i) => JSON.stringify(i) === JSON.stringify(item)) === index
 		);
+
+		console.log(files);
 
 		scrollToBottom();
 		eventTarget.dispatchEvent(
