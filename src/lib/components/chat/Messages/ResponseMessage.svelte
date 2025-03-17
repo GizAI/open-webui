@@ -802,7 +802,7 @@
 									<Error content={message?.error?.content ?? message.content} />
 								{/if}
 
-								{#if (message?.sources || message?.citations) && ($user.role === 'user' || (model?.info?.meta?.capabilities?.citations ?? true))}
+								{#if (message?.sources || message?.citations) && ($user.role === 'admin' || (model?.info?.meta?.capabilities?.citations ?? true))}
 									<Citations id={message?.id} sources={message?.sources ?? message?.citations} />
 								{/if}
 
