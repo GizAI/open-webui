@@ -844,9 +844,18 @@
 		
 		editorElement.addEventListener('click', handleEditorClick);
 		
+		// 모바일 기본 메뉴(잘라내기, 복사, 모두선택) 방지
+		const preventDefaultContextMenu = (e: Event) => {
+			e.preventDefault();
+			return false;
+		};
+		
+		editorElement.addEventListener('contextmenu', preventDefaultContextMenu);
+		
 		if (editorElement) {
 			editorElement.cleanupListeners = () => {
 				editorElement?.removeEventListener('click', handleEditorClick);
+				editorElement?.removeEventListener('contextmenu', preventDefaultContextMenu);
 			};
 		}
 	}
@@ -958,6 +967,7 @@
 		transform: translateY(-15px) !important;
 		visibility: visible !important;
 		display: flex !important;
+		z-index: 9999 !important;
 	}
 
 	.notion-page-container {
@@ -982,6 +992,12 @@
 		padding: 0;
 		background-color: inherit;
 		color: inherit;
+		-webkit-touch-callout: none;
+		-webkit-user-select: none;
+		-khtml-user-select: none;
+		-moz-user-select: none;
+		-ms-user-select: none;
+		user-select: none;
 	}
 	
 	.editor-wrapper:focus {
@@ -1044,6 +1060,12 @@
 		padding: 1rem;
 		min-height: 70vh;
 		cursor: text;
+		-webkit-touch-callout: none;
+		-webkit-user-select: text;
+		-khtml-user-select: text;
+		-moz-user-select: text;
+		-ms-user-select: text;
+		user-select: text;
 	}
 
 	:global(.dark) :global(.ProseMirror) {
