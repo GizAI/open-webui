@@ -450,7 +450,7 @@
 	};
 
 	const addFileHandler = async (fileId: string) => {
-		const res = await fetch(`${WEBUI_API_BASE_URL}/rooibos/mycompanies/${fileId}/file/add`, {
+		const res = await fetch(`${WEBUI_API_BASE_URL}/rooibos/mycompanies/${bookmark.bookmark_id}/file/add`, {
 			method: 'POST',
 			headers: {
 				Accept: 'application/json',
