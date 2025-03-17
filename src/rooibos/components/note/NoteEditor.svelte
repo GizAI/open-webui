@@ -14,16 +14,11 @@
 	import CollaboratorsList from './CollaboratorsList.svelte';
 	import { showLineMenu } from './LineMenu.svelte';
 	import { HocuspocusProvider } from '@hocuspocus/provider';
-	import { page } from '$app/stores';
 	import { get } from 'svelte/store';
 	import { user } from '$lib/stores';
-	import { getNote, renameNote } from '../apis/note';
 
-	// Initialize the event dispatcher
 	const dispatch = createEventDispatcher();
 
-	// Type declarations
-	// Add custom type declaration for HTMLDivElement with cleanupListeners property
 	interface HTMLDivElementWithCleanup extends HTMLDivElement {
 		cleanupListeners?: () => void;
 	}
@@ -65,13 +60,11 @@
 
 	let pageTitle = initialTitle || '새 노트';
 
-	// 파일 ID 확인
 	function getFileId(): string {
 		if (!selectedFile) return "";
 		return selectedFile.id || "";
 	}
 
-	// 파일명 확인
 	function getOriginalFilename(): string {
 		if (!selectedFile) return "";
 		return selectedFile.filename || selectedFile.name || "";
@@ -135,24 +128,21 @@
 	function updateEditorState(): void {
 		if (!editor) return;
 
-		// Hide bubble menu if line menu is active or selection is empty
 		if (isLineMenuOpen) {
 			if (bubbleMenuElement) {
 				bubbleMenuElement.style.visibility = 'hidden';
 				bubbleMenuElement.style.display = 'none';
 			}
 		} else if (editor.state.selection.empty) {
-			// Selection is empty
 			if (bubbleMenuElement) {
 				bubbleMenuElement.style.visibility = 'hidden';
 				bubbleMenuElement.style.display = 'none';
 			}
 		} else {
-			// Selection exists and line menu is not active
 			if (bubbleMenuElement) {
 				bubbleMenuElement.style.visibility = 'visible';
 				bubbleMenuElement.style.display = 'flex';
-				// Ensure position adjustment when bubble menu is displayed
+				
 				setTimeout(adjustBubbleMenuPosition, 0);
 			}
 		}
@@ -172,12 +162,8 @@
 		};
 	}
 
-	/**
-	 * Forces the bubble menu to display if conditions are met
-	 */
 	 function forceBubbleMenuDisplay(): void {
 		if (!bubbleMenuElement || !editor || isLineMenuOpen) return;
-		// 버블 메뉴는 TextSelection일 때만 나타나야 함
 		if (!(editor.state.selection instanceof TextSelection) || editor.state.selection.empty) return;
 		
 		bubbleMenuElement.style.visibility = 'visible';
@@ -186,9 +172,6 @@
 		updateEditorState();
 	}
 
-	/**
-	 * Translates selected text using an API
-	 */
 	async function translateSelectedText(): Promise<void> {
 		if (!editor) return;
 
@@ -213,7 +196,6 @@
 		}
 	}
 
-	// Text formatting functions
 	function toggleBold(): void {
 		if (!editor) return;
 		editor.chain().focus().toggleBold().run();
@@ -300,73 +282,55 @@
 	function setTextAlignLeft(): void {
 		if (!editor) return;
 		
-		// 현재 선택 영역 저장
 		const { from, to } = editor.state.selection;
 		
-		// 정렬 적용
 		editor.chain()
 			.focus()
 			.unsetTextAlign()
 			.setTextAlign('left')
 			.run();
 		
-		// 정렬 후 선택 영역 유지
 		editor.commands.setTextSelection({ from, to });
 		
 		showAlignmentOptions = false;
 		checkAlignmentState();
-		updateEditorState();
-		
-		// 콘솔에 로그 출력
-		console.log('왼쪽 정렬 적용됨');
+		updateEditorState();		
 	}
 
 	function setTextAlignCenter(): void {
 		if (!editor) return;
 		
-		// 현재 선택 영역 저장
 		const { from, to } = editor.state.selection;
 		
-		// 정렬 적용
 		editor.chain()
 			.focus()
 			.unsetTextAlign()
 			.setTextAlign('center')
 			.run();
 		
-		// 정렬 후 선택 영역 유지
 		editor.commands.setTextSelection({ from, to });
 		
 		showAlignmentOptions = false;
 		checkAlignmentState();
-		updateEditorState();
-		
-		// 콘솔에 로그 출력
-		console.log('가운데 정렬 적용됨');
+		updateEditorState();		
 	}
 
 	function setTextAlignRight(): void {
 		if (!editor) return;
 		
-		// 현재 선택 영역 저장
 		const { from, to } = editor.state.selection;
 		
-		// 정렬 적용
 		editor.chain()
 			.focus()
 			.unsetTextAlign()
 			.setTextAlign('right')
 			.run();
 		
-		// 정렬 후 선택 영역 유지
 		editor.commands.setTextSelection({ from, to });
 		
 		showAlignmentOptions = false;
 		checkAlignmentState();
 		updateEditorState();
-		
-		// 콘솔에 로그 출력
-		console.log('오른쪽 정렬 적용됨');
 	}
 
 	function checkAlignmentState(): void {
@@ -384,11 +348,6 @@
 				textAlignRight: isRightAligned
 			};
 
-			console.log('정렬 상태:', {
-				왼쪽: isLeftAligned,
-				가운데: isCenterAligned,
-				오른쪽: isRightAligned
-			});
 		} catch (error) {
 			console.error('정렬 상태 확인 중 오류:', error);
 		}
@@ -501,7 +460,6 @@
 		showHighlightPicker = false;
 		showAlignmentOptions = false;
 	
-		// 라인 메뉴도 닫기
 		const lineMenu = document.getElementById('line-menu-popup');
 		if (lineMenu) {
 			lineMenu.remove();
@@ -513,9 +471,7 @@
 		}
 	}
 
-	// 문서 전체 클릭 시 라인 메뉴 닫기 함수
 	function closeLineMenu(e: MouseEvent): void {
-		// 라인 아이콘이나 라인 메뉴 내부 클릭이 아닌 경우에만 처리
 		if (!e.target) return;
 		
 		const target = e.target as HTMLElement;
@@ -528,7 +484,6 @@
 				lineMenu.remove();
 				isLineMenuOpen = false;
 				
-				// 라인 메뉴가 닫힐 때 버블 메뉴 상태 업데이트
 				setTimeout(() => {
 					forceBubbleMenuDisplay();
 				}, 50);
@@ -540,14 +495,11 @@
 		pageTitle = e.detail;
 		manualTitleEdited = true;
 		
-		// selectedFile 객체의 파일명도 업데이트
 		if (selectedFile) {
-			// 파일명 업데이트 (확장자 제외)
 			if (selectedFile.name) {
 				selectedFile.name = pageTitle;
 			}
 			if (selectedFile.filename) {
-				// 확장자 유지
 				const extension = selectedFile.filename.substring(selectedFile.filename.lastIndexOf('.'));
 				selectedFile.filename = pageTitle + (pageTitle.endsWith(extension) ? '' : extension);
 			}
@@ -573,15 +525,6 @@
 
 		const token = localStorage.getItem('token') || '';
 		
-		console.log('Setting up collaboration with:', {
-			url: window.location.hostname === 'localhost'
-				? 'ws://localhost:8444'
-				: 'wss://hocuspocus.conting.ai/ws',
-			documentName,
-			token: token ? 'Token exists (not shown)' : 'No token',
-			userId: currentUser?.id || 'Unknown'
-		});
-
 		const providerInstance = new HocuspocusProvider({
 			url: window.location.hostname === 'localhost'
 				? 'ws://localhost:8444'
@@ -608,7 +551,6 @@
 			});
 		}
 
-		// 웹소켓 상태 확인 인터벌 시작
 		startWebsocketCheck(providerInstance);
 
 		const yActiveUsers = providerInstance.document.getMap('activeUsers');
@@ -619,9 +561,7 @@
 		return providerInstance;
 	}
 
-	// 웹소켓 상태 확인 시작 함수
 	function startWebsocketCheck(providerInstance: HocuspocusProvider): void {
-		// 이미 인터벌이 실행 중이면 중복 실행 방지
 		if (websocketCheckInterval) {
 			clearInterval(websocketCheckInterval);
 		}
@@ -639,7 +579,6 @@
 		}, 10000);
 	}
 
-	// 웹소켓 상태 확인 중지 함수
 	function stopWebsocketCheck(): void {
 		if (websocketCheckInterval) {
 			clearInterval(websocketCheckInterval);
@@ -675,27 +614,22 @@
 							
 							doc.descendants((node, pos) => {
 								if (node.isBlock && !node.isText) {
-									// taskItem 노드에 대해서는 라인 아이콘을 생성하지 않음
 									if (node.type.name === 'taskItem') {
 										return true;
 									}
 									
-									// listItem 노드에 대해서도 라인 아이콘을 생성하지 않음
 									if (node.type.name === 'listItem') {
 										return true;
 									}
 									
-									// bulletList와 orderedList 노드에 대해서도 라인 아이콘을 생성하지 않음
 									if (node.type.name === 'bulletList' || node.type.name === 'orderedList') {
 										return true;
 									}
 									
-									// taskList 노드에 대해서도 라인 아이콘을 생성하지 않음
 									if (node.type.name === 'taskList') {
 										return true;
 									}
 									
-									// 부모 노드가 리스트 관련 노드인 경우에도 라인 아이콘을 생성하지 않음
 									if (node.parent && (
 										(node.parent as any).type?.name === 'bulletList' || 
 										(node.parent as any).type?.name === 'orderedList' || 
@@ -736,14 +670,12 @@
 											const editorInstance = extensionThis.editor || editor;
 											if (!editorInstance) return;
 											
-											// 이미 라인 메뉴가 열려있는 경우 닫기
 											const existingMenu = document.getElementById('line-menu-popup');
 											if (existingMenu) {
 												existingMenu.remove();
 												isLineMenuOpen = false;
 											}
 											
-											// 같은 라인의 메뉴가 이미 열려있는 경우 닫고 종료
 											if (isLineMenuOpen && editorInstance.state.selection instanceof NodeSelection && 
 												editorInstance.state.selection.from === pos) {
 												isLineMenuOpen = false;
@@ -836,6 +768,9 @@
 				setTimeout(() => {
 					updateEditorState();
 				}, 0);
+			},
+			onUpdate({ editor }) {
+				dispatch('change', editor.getHTML());
 			}
 		});
 		return editorInstance;
@@ -855,8 +790,7 @@
 				try {
 					storedUpdate = JSON.parse(storedUpdate);
 				} catch (e) {
-					console.error('노트 content 파싱 오류:', e);
-					console.log('Treating content as plain text/HTML');
+					console.log('노트 content 파싱 오류:', e);
 				}
 			}
 		}
@@ -879,58 +813,51 @@
 			}
 		}
 
-		console.log('Editor 생성 완료:', editor);
-		console.log('Editor 명령어:', editor?.commands);
+	console.log('Editor 생성 완료:', editor);
+	console.log('Editor 명령어:', editor?.commands);
 
-		document.addEventListener('click', closeAllDropdowns);
-		window.addEventListener('resize', adjustBubbleMenuPosition);
-		
-		// 문서 전체 클릭 이벤트 리스너 추가
-		document.addEventListener('click', closeLineMenu);
-		
-		// 에디터 영역 클릭 시 라인 메뉴 닫기
-		if (editorElement) {
-			const handleEditorClick = (e: MouseEvent) => {
-				// 라인 아이콘 클릭이나 라인 메뉴 클릭이 아닌 경우에만 처리
-				if (!e.target) return;
-				
-				const target = e.target as HTMLElement;
-				const isLineIconClick = target.closest('.line-icon') !== null;
-				const isLineMenuClick = target.closest('#line-menu-popup') !== null;
-				
-				if (!isLineIconClick && !isLineMenuClick) {
-					const lineMenu = document.getElementById('line-menu-popup');
-					if (lineMenu) {
-						lineMenu.remove();
-						isLineMenuOpen = false;
-						
-						// 라인 메뉴가 닫힐 때 버블 메뉴 상태 업데이트
-						setTimeout(() => {
-							forceBubbleMenuDisplay();
-						}, 50);
-					}
+	document.addEventListener('click', closeAllDropdowns);
+	window.addEventListener('resize', adjustBubbleMenuPosition);
+	
+	document.addEventListener('click', closeLineMenu);
+	
+	if (editorElement) {
+		const handleEditorClick = (e: MouseEvent) => {
+			if (!e.target) return;
+			
+			const target = e.target as HTMLElement;
+			const isLineIconClick = target.closest('.line-icon') !== null;
+			const isLineMenuClick = target.closest('#line-menu-popup') !== null;
+			
+			if (!isLineIconClick && !isLineMenuClick) {
+				const lineMenu = document.getElementById('line-menu-popup');
+				if (lineMenu) {
+					lineMenu.remove();
+					isLineMenuOpen = false;
+					
+					setTimeout(() => {
+						forceBubbleMenuDisplay();
+					}, 50);
 				}
-			};
-			
-			editorElement.addEventListener('click', handleEditorClick);
-			
-			// 이벤트 리스너 정리 함수 설정
-			if (editorElement) {
-				editorElement.cleanupListeners = () => {
-					editorElement?.removeEventListener('click', handleEditorClick);
-				};
 			}
+		};
+		
+		editorElement.addEventListener('click', handleEditorClick);
+		
+		if (editorElement) {
+			editorElement.cleanupListeners = () => {
+				editorElement?.removeEventListener('click', handleEditorClick);
+			};
 		}
+	}
 
-		// 에디터 초기화 후 상태 업데이트
 		setTimeout(() => {
 			updateEditorState();
 		}, 100);
-	} catch (error) {
-		console.error('에디터 초기화 중 오류:', error);
-	}
-});
-
+		} catch (error) {
+			console.error('에디터 초기화 중 오류:', error);
+		}
+	});
 
 	onDestroy(() => {
 		if (editor) {
@@ -941,19 +868,16 @@
 			provider.destroy();
 		}
 
-		// 웹소켓 상태 확인 인터벌 정리
 		stopWebsocketCheck();
 
 		document.removeEventListener('click', closeAllDropdowns);
 		document.removeEventListener('click', closeLineMenu);
 		window.removeEventListener('resize', adjustBubbleMenuPosition);
 		
-		// 에디터 클릭 이벤트 리스너 제거
 		if (editorElement && editorElement.cleanupListeners) {
 			editorElement.cleanupListeners();
 		}
 		
-		// 라인 메뉴가 열려있으면 닫기
 		const lineMenu = document.getElementById('line-menu-popup');
 		if (lineMenu) {
 			lineMenu.remove();
@@ -962,12 +886,11 @@
 
 	export function getContent() {
 		if (!editor) return '';
-		// 에디터 내용을 문자열 또는 필요한 형식으로 반환
-		return editor.getHTML(); // 또는 다른 적절한 메서드
+
+		return editor.getHTML();
 	}
 
 	export function getTitle() {
-		// 페이지 제목 반환
 		return pageTitle;
 	}
 
@@ -1026,7 +949,7 @@
 
 <style>
 	:global(.line-highlight) {
-		background-color: #ffff99; /* 원하는 하이라이트 색상으로 수정 가능 */
+		background-color: #ffff99;
 	}
 
 	:global(.tippy-box[data-theme~='bubble-menu-theme']) {
@@ -1128,10 +1051,9 @@
 	}
 	
 	:global(.dark) :global(.line-highlight) {
-		background-color: rgba(255, 255, 0, 0.2); /* 다크모드에서 하이라이트 색상 조정 */
+		background-color: rgba(255, 255, 0, 0.2);
 	}
 
-	/* 인용구 스타일 */
 	:global(.blockquote) {
 		border-left: 4px solid #e5e5e5;
 		padding-left: 1rem;

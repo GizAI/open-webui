@@ -23,9 +23,6 @@
 	import NoteEditorModal from '$rooibos/components/note/NoteEditorModal.svelte';
 
 	import SyncConfirmDialog from '$lib/components/common/ConfirmDialog.svelte';
-	import RichTextInput from '$lib/components/common/RichTextInput.svelte';
-	import Drawer from '$lib/components/common/Drawer.svelte';
-	import ChevronLeft from '$lib/components/icons/ChevronLeft.svelte';
 	import MenuLines from '$lib/components/icons/MenuLines.svelte';
 	import { WEBUI_API_BASE_URL } from '$lib/constants';
 	import { goto } from '$app/navigation';
@@ -151,7 +148,6 @@
 	let showAddTextContentModal = false;
 	let showSyncConfirmModal = false;
 	let showAccessControlModal = false;
-	let showCompanyDetailModal = false;
 	let chatList: any = null;
 	let inputFiles: any = null;
 	let filteredItems: any = [];
@@ -169,7 +165,6 @@
 	let previousAccessControlModalState = false;
 	
 	function handleModalStateChange(currentModalState: boolean) {
-		// 모달이 닫힐 때 (true → false)
 		if (previousModalState && !currentModalState) {
 			selectedFileId = null;
 			selectedFile = null;
@@ -178,9 +173,6 @@
 	}
 	
 	function handleAccessControlModalStateChange(currentModalState: boolean) {
-		if (previousAccessControlModalState && !currentModalState) {
-			console.log('액세스 컨트롤 모달이 닫혔습니다. 현재 액세스 컨트롤:', bookmark?.access_control);
-		}
 		previousAccessControlModalState = currentModalState;
 	}
 	
@@ -652,10 +644,7 @@
 	async function handleAccessControlChange(newAccessControl) {
 		if (!bookmark || !bookmark.bookmark_id) return;
 		
-		try {
-			console.log('변경 전 액세스 컨트롤:', bookmark.access_control);
-			console.log('변경할 액세스 컨트롤:', newAccessControl);
-			
+		try {			
 			const response = await fetch(
 				`${WEBUI_API_BASE_URL}/rooibos/mycompanies/${bookmark.bookmark_id}/accessControl`,
 				{
@@ -669,11 +658,9 @@
 			);
 			
 			const result = await response.json();
-			console.log('API 응답:', result);
 			
 			if (response.ok) {
 				const updatedAccessControl = result.data.access_control;
-				console.log('서버에서 반환된 액세스 컨트롤:', updatedAccessControl);
 				
 				const updatedBookmark = { ...bookmark };
 				
