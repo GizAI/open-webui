@@ -503,10 +503,6 @@
 		const res = await updateFileDataContentById(localStorage.token, fileId, content).catch((e) => {
 			toast.error(e);
 		});
-
-		if (res) {
-			toast.success($i18n.t('File content updated successfully.'));
-		}
 	};
 
 	const changeDebounceHandler = () => {
@@ -740,6 +736,12 @@
 	initialTitle={selectedFile ? selectedFile?.meta?.name || '' : ''}
 	initialContent={selectedFile ? selectedFile?.data?.content || '' : ''}
 	selectedFile={selectedFile || tempFileForNoteEditor}
+	on:autosave={(e) => {
+		if (selectedFile) {
+			selectedFile.data.content = e.detail.content;
+			updateFileContentHandler();
+		}
+	}}
 	on:submit={(e) => {
 		if (!e.detail.content.trim() || e.detail.content.trim() === '<p></p>' || e.detail.content.replace(/<[^>]*>/g, '').trim() === '') {
 			showAddTextContentModal = false;
