@@ -121,7 +121,7 @@
 		sourceIds={(sources ?? []).reduce((acc, s) => {
 			let ids = [];
 			s.document.forEach((document, index) => {
-				if (model?.info?.meta?.capabilities?.citations == false && $user.role !== 'admin') {
+				if (model?.info?.meta?.capabilities?.citations == false && $user.role == 'user') {
 					ids.push('N/A');
 					return ids;
 				}
