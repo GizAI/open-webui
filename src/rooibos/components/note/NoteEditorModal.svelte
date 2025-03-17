@@ -111,6 +111,18 @@
 	});
 
 	$: if (show) {
+		if(selectedFile.id === 'temp-id') {
+			dispatch('uploadRequest', {
+				name: '새노트',
+				content: '<p></p>',
+				callback: (uploadedFile: any) => {
+					if (uploadedFile) {
+						selectedFile = uploadedFile;
+					}
+				}
+			});
+		
+		}
 		setupAutoSaveInterval();
 	}
 

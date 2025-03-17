@@ -210,10 +210,6 @@
 	}
 
 	const createFileFromText = (name: string, content: string) => {
-		if (!content.trim() || content.trim() === '<p></p>' || content.replace(/<[^>]*>/g, '').trim() === '') {
-			return null;
-		}
-		
 		const blob = new Blob([content], { type: 'text/plain' });
 		const file = blobToFile(blob, `${name}.txt`);
 
@@ -238,11 +234,6 @@
 			error: '',
 			itemId: tempItemId
 		};
-
-		if (fileItem.size == 0) {
-			toast.error($i18n.t('You cannot upload an empty file.'));
-			return null;
-		}
 
 		bookmark.files = [...(bookmark.files ?? []), fileItem];
 
@@ -273,6 +264,7 @@
 						return f;
 					});
 				}
+				return uploadedFile;
 			} else {
 				toast.error($i18n.t('Failed to upload file.'));
 			}
@@ -462,9 +454,7 @@
 					}
 					return file;
 				});
-			}
-			
-			toast.success($i18n.t('File added successfully.'));
+			}			
 		} else {
 			toast.error($i18n.t('Failed to add file.'));
 		}
@@ -729,13 +719,7 @@
 			updateFileContentHandler();
 		}
 	}}
-	on:submit={(e) => {
-		if (!e.detail.content.trim() || e.detail.content.trim() === '<p></p>' || e.detail.content.replace(/<[^>]*>/g, '').trim() === '') {
-			showAddTextContentModal = false;
-			selectedFileId = null;
-			return;
-		}
-		
+	on:submit={(e) => {		
 		if (selectedFile) {
 			selectedFile.data.content = e.detail.content;
 			updateFileContentHandler();
@@ -745,6 +729,17 @@
 		}
 		showAddTextContentModal = false;
 		selectedFileId = null;
+	}}
+	on:uploadRequest={async (e) => {
+		const file = createFileFromText(e.detail.name, e.detail.content);
+		if (file) {
+		  const uploadedFile = await uploadFileHandler(file);
+		  if (uploadedFile && e.detail.callback) {
+			e.detail.callback(uploadedFile);
+		  }
+		  selectedFile = uploadedFile;
+		}
+		showAddTextContentModal = true;
 	}}
 />
 
