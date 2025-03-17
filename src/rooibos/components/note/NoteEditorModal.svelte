@@ -126,7 +126,7 @@
 	className="h-full bg-white dark:bg-gray-900" 
 	bind:show
 >
-	<div class="absolute top-0 right-0 p-5 z-10">
+	<div class="absolute top-0 right-0 pt-2 pr-5 pl-5 pb-5 z-10">
 		<button
 			class="self-center dark:text-white"
 			type="button"
