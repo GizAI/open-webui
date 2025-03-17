@@ -686,6 +686,10 @@
 											const editorInstance = extensionThis.editor || editor;
 											if (!editorInstance) return;
 											
+											if (document.activeElement instanceof HTMLElement) {
+												document.activeElement.blur();
+											}
+											
 											const existingMenu = document.getElementById('line-menu-popup');
 											if (existingMenu) {
 												existingMenu.remove();
@@ -719,6 +723,11 @@
 													}, 50);
 												}
 											);
+											
+											// 모바일에서 키보드가 나타나지 않도록 에디터 포커스 제거
+											if (window.innerWidth <= 768) {
+												editorInstance.commands.blur();
+											}
 										} catch (error) {
 											console.error('라인 메뉴 표시 중 오류:', error);
 										}
