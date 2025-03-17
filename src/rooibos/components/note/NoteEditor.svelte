@@ -19,6 +19,19 @@
 
 	const dispatch = createEventDispatcher();
 
+	// HocuspocusProvider 타입 확장
+	interface ExtendedHocuspocusProvider extends HocuspocusProvider {
+		websocket?: WebSocket;
+	}
+
+	// ProseMirror Node 타입 확장
+	interface ExtendedNode extends Node {
+		parent?: any;
+		type?: {
+			name?: string;
+		};
+	}
+
 	interface HTMLDivElementWithCleanup extends HTMLDivElement {
 		cleanupListeners?: () => void;
 	}
@@ -79,7 +92,7 @@
 	let bubbleMenuElement: HTMLElement | null = null;
 	let isLineMenuOpen = false;
 
-	let provider: HocuspocusProvider | null = null;
+	let provider: ExtendedHocuspocusProvider | null = null;
 	let activeUsers: ActiveUser[] = [];
 	let websocketCheckInterval: ReturnType<typeof setInterval> | null = null;
 
@@ -519,7 +532,7 @@
 		showSidebar = false;
 	}
 
-	function setupCollaboration(): HocuspocusProvider {
+	function setupCollaboration(): ExtendedHocuspocusProvider {
 		const documentName = `note:${noteId}`;
 		const currentUser = get(user);
 
@@ -561,7 +574,7 @@
 		return providerInstance;
 	}
 
-	function startWebsocketCheck(providerInstance: HocuspocusProvider): void {
+	function startWebsocketCheck(providerInstance: ExtendedHocuspocusProvider): void {
 		if (websocketCheckInterval) {
 			clearInterval(websocketCheckInterval);
 		}
@@ -630,10 +643,10 @@
 										return true;
 									}
 									
-									if (node.parent && (
-										(node.parent as any).type?.name === 'bulletList' || 
-										(node.parent as any).type?.name === 'orderedList' || 
-										(node.parent as any).type?.name === 'taskList'
+									if ((node as ExtendedNode).parent && (
+										(node as ExtendedNode).parent.type?.name === 'bulletList' || 
+										(node as ExtendedNode).parent.type?.name === 'orderedList' || 
+										(node as ExtendedNode).parent.type?.name === 'taskList'
 									)) {
 										return true;
 									}
@@ -643,12 +656,14 @@
 										classes.push('line-highlight');
 									}
 									const blockDeco = Decoration.node(pos, pos + node.nodeSize, {
-										class: classes.join(' ')
+										class: classes.join(' '),
+										'data-pos': pos.toString()
 									});
 									decorations.push(blockDeco);
 				
 									const lineIcon = document.createElement('div');
 									lineIcon.className = 'line-icon';
+									lineIcon.setAttribute('data-pos', pos.toString());
 									lineIcon.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="1" fill="currentColor"/><circle cx="12" cy="6" r="1" fill="currentColor"/><circle cx="12" cy="18" r="1" fill="currentColor"/></svg>';
 			
 									if (node.type.name === 'heading' && node.attrs.level === 1) {
@@ -666,6 +681,7 @@
 									lineIcon.addEventListener('click', (e) => {
 										e.preventDefault();
 										e.stopPropagation();
+										
 										try {
 											const editorInstance = extensionThis.editor || editor;
 											if (!editorInstance) return;
@@ -724,7 +740,7 @@
 		},
 	});
 
-	function initEditor(content: any, provider: HocuspocusProvider): Editor {
+	function initEditor(content: any, provider: ExtendedHocuspocusProvider): Editor {
 		const currentUser = get(user);
 		const getRandomColor = (): string => {
 			const colors = [
@@ -828,13 +844,26 @@
 			const target = e.target as HTMLElement;
 			const isLineIconClick = target.closest('.line-icon') !== null;
 			const isLineMenuClick = target.closest('#line-menu-popup') !== null;
-			
+
+			if (window.innerWidth <= 768) {
+				document.querySelectorAll('.line-icon.visible').forEach(icon => icon.classList.remove('visible'));
+				
+				const lineBlock = target.closest('.line-block');
+				
+				if (lineBlock) {
+					const blockPos = lineBlock.getAttribute('data-pos');
+					const lineIcon = document.querySelector(`.line-icon[data-pos="${blockPos}"]`);
+					if (lineIcon) {
+						lineIcon.classList.add('visible');
+					}
+				}
+			}
+
 			if (!isLineIconClick && !isLineMenuClick) {
 				const lineMenu = document.getElementById('line-menu-popup');
 				if (lineMenu) {
 					lineMenu.remove();
 					isLineMenuOpen = false;
-					
 					setTimeout(() => {
 						forceBubbleMenuDisplay();
 					}, 50);
@@ -844,7 +873,6 @@
 		
 		editorElement.addEventListener('click', handleEditorClick);
 		
-		// 모바일 기본 메뉴(잘라내기, 복사, 모두선택) 방지
 		const preventDefaultContextMenu = (e: Event) => {
 			e.preventDefault();
 			return false;
@@ -1089,4 +1117,15 @@
 		border-left-color: #4a5568;
 		color: #a0aec0;
 	}
+
+	@media (max-width: 768px) {
+		:global(.line-icon) {
+			opacity: 0;
+			transition: opacity 0.3s;
+		}
+		:global(.line-icon.visible) {
+			opacity: 1;
+		}
+	}
+
 </style>
