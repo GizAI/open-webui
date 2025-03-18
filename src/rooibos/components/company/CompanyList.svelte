@@ -270,7 +270,7 @@
 											}
 										}}
 									>
-										<ActionButtons companyInfo={result} />
+										<ActionButtons companyInfo={result} type="companylist" />
 									</div>
 								{/if}
 							</div>

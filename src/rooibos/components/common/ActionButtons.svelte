@@ -10,15 +10,13 @@
 
 	export let companyInfo: any = {};
 	export let financialData: any = {};
+	export let type: string = 'mycompany';
 
 	const currentUser = get(user);
 
-	// 삭제 확인 대화상자 제어 변수
 	let showDeleteConfirm = false;
-	// 폴더 선택 모달 제어 변수
 	let showFolderSelect = false;
 
-	// 북마크 추가 요청
 	const addCompany = async (company: any, folderId: string = '') => {
 		const response = await fetch(`${WEBUI_API_BASE_URL}/rooibos/mycompanies/add`, {
 			method: 'POST',
@@ -30,7 +28,7 @@
 				userId: currentUser?.id,
 				companyId: company.master_id,
 				business_registration_number: company.business_registration_number,
-				folderId: folderId // 선택한 폴더 ID 추가
+				folderId: folderId
 			})
 		});
 		const data = await response.json();
@@ -38,7 +36,6 @@
 		companyInfo.bookmark_user_id = currentUser?.id;
 	};
 
-	// 삭제 요청을 실제 진행하는 함수
 	const confirmDelete = async () => {
 		try {
 			const response = await fetch(
@@ -55,18 +52,14 @@
 				companyInfo.bookmark_user_id = null;
 			} else {
 				console.error('Delete failed:', data);
-				alert(`북마크 삭제 실패: ${data.error || '알 수 없는 오류'}`);
 			}
 		} catch (error) {
 			console.error('Error in confirmDelete:', error);
-			alert('북마크 삭제 중 예기치 못한 오류가 발생했습니다.');
 		} finally {
-			// 대화상자 닫기
 			showDeleteConfirm = false;
 		}
 	};
 
-	// 북마크 추가 또는 삭제(확인 후) 처리
 	const saveCompany = async (company: any) => {
 		if (company.bookmark_user_id != null && company.bookmark_user_id == currentUser?.id) {
 			showDeleteConfirm = true;
@@ -75,51 +68,84 @@
 		}
 	};
 
-	// 폴더 선택 후 북마크 추가 처리
 	const handleFolderSelect = async (event) => {
 		const selectedFolder = event.detail;
 		if (selectedFolder && selectedFolder.id) {
 			await addCompany(companyInfo, selectedFolder.id);
 		} else {
-			// 폴더 없이 추가 (루트에 추가)
 			await addCompany(companyInfo);
 		}
 		showFolderSelect = false;
 	};
 
-	// 폴더 선택 모달 닫기
 	const closeFolderSelect = () => {
 		showFolderSelect = false;
 	};
 
-	const openAIChat = async (company: any) => {		
-		const response = await fetch(`${WEBUI_API_BASE_URL}/rooibos/mycompanies/${company.bookmark_id}?business_registration_number=${company.business_registration_number}&user_id=${currentUser?.id}`, {
-			method: 'GET',
-			headers: {
-				Accept: 'application/json',
-				'Content-Type': 'application/json',
-				Authorization: `Bearer ${localStorage.token}`
-			}
-		});
+	const openAIChat = async (company: any) => {	
+		console.log('Before setting selectedCompanyInfo:', get(selectedCompanyInfo));
+		console.log('Company data received:', company);
 		
-		const data = await response.json();
-		
-		if (data.success !== false && data.bookmark && data.bookmark[0]) {
-			const updatedCompany = data.bookmark[0];
-			
-			selectedCompanyInfo.set({
-				...updatedCompany,
-				financialData: financialData,
-				files: updatedCompany.files
+		if (type == 'mycompany') {
+			const response = await fetch(`${WEBUI_API_BASE_URL}/rooibos/mycompanies/${company.bookmark_id}?business_registration_number=${company.business_registration_number}&user_id=${currentUser?.id}`, {
+				method: 'GET',
+				headers: {
+					Accept: 'application/json',
+					'Content-Type': 'application/json',
+					Authorization: `Bearer ${localStorage.token}`
+				}
 			});
+			
+			const data = await response.json();
+			console.log('API response data:', data);
+			
+			if (data.success !== false && data.bookmark && data.bookmark[0]) {
+				const updatedCompany = data.bookmark[0];
+				
+				selectedCompanyInfo.set({
+					...updatedCompany,
+					financialData: financialData,
+					files: updatedCompany.files
+				});
+				console.log('Set selectedCompanyInfo with bookmark data:', get(selectedCompanyInfo));
+			} else {
+				selectedCompanyInfo.set({
+					...company,
+					financialData: financialData,
+					files: company.files
+				});
+				console.log('Set selectedCompanyInfo with company data (bookmark not found):', get(selectedCompanyInfo));
+			}	
+		} else if (type == 'companylist') {
+			const financialResponse = await fetch(
+				`${WEBUI_API_BASE_URL}/rooibos/corpsearch/${company.master_id}/financialData`,
+				{
+					method: 'GET',
+					headers: {
+						Accept: 'application/json',
+						'Content-Type': 'application/json',
+						authorization: `Bearer ${localStorage.token}`
+					}
+				}
+			);
+			const data = await financialResponse.json();
+			financialData = data.financial_data;
+
+			selectedCompanyInfo.set({
+				...company,
+				financialData: financialData,
+				files: company.files
+			});
+			console.log('Set selectedCompanyInfo with company data (not companylist type):', get(selectedCompanyInfo));
 		} else {
 			selectedCompanyInfo.set({
 				...company,
 				financialData: financialData,
 				files: company.files
 			});
-		}	
-		
+			console.log('Set selectedCompanyInfo with company data (not companyinfo type):', get(selectedCompanyInfo));
+		}
+			
 		await goto('/');
 	};
 
@@ -132,7 +158,6 @@
 </script>
 
 <div class="flex items-center space-x-1">
-	<!-- 저장 버튼 (추가/삭제) -->
 	<button
 		class="flex flex-col items-center hover:bg-gray-100 dark:hover:bg-gray-300 rounded-lg"
 		on:click={() => saveCompany(companyInfo)}
@@ -184,7 +209,6 @@
 		<span class="text-xs text-gray-500 mt-1 whitespace-nowrap">새채팅</span>
 	</button>
 
-	<!-- 네이버지도 버튼 -->
 	<button
 		class="flex flex-col items-center hover:bg-gray-100 dark:hover:bg-gray-300 rounded-lg"
 		on:click={() => searchNaver(companyInfo)}
@@ -213,14 +237,12 @@
 	</button>
 </div>
 
-<!-- 삭제 확인 대화상자 -->
 <DeleteConfirmDialog
 	bind:show={showDeleteConfirm}
 	title="북마크를 삭제하시겠습니까?"
 	on:confirm={confirmDelete}
 />
 
-<!-- 폴더 선택 모달 -->
 {#if showFolderSelect}
 	<FolderSelect 
 		isOpen={showFolderSelect} 
