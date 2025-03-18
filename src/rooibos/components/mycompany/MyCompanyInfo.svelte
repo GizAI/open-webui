@@ -922,12 +922,15 @@
 
 									<div>
 										<AddContentMenu
-											on:upload={(e) => {
+											on:upload={async(e) => {
 												if (e.detail.type === 'directory') {
 													uploadDirectoryHandler();
 												} else if (e.detail.type === 'text') {
 													selectedFileId = null;
 													selectedFile = null;
+													const file = await createFileFromText('새노트', '<p></p>');
+													const uploadedFile = await uploadFileHandler(file);
+													selectedFileId = uploadedFile.id;
 													showAddTextContentModal = true;
 												} else {
 													document.getElementById('files-input').click();
