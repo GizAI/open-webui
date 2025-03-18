@@ -92,12 +92,16 @@
 				.filter((item) => {
 					if (selectedTag === '') {
 						return item.model?.info?.base_model_id == null;
+					} else if (selectedTag === 'others') {
+						return item.model?.info?.base_model_id != null && (!item.model?.info?.meta?.tags || item.model?.info?.meta?.tags.length === 0);
 					}
 					return item.model?.info?.meta?.tags?.map((tag) => tag.name).includes(selectedTag);
 				})
 		: items.filter((item) => {
 				if (selectedTag === '') {
 					return item.model?.info?.base_model_id == null;
+				} else if (selectedTag === 'others') {
+					return item.model?.info?.base_model_id != null && (!item.model?.info?.meta?.tags || item.model?.info?.meta?.tags.length === 0);
 				}
 				return item.model?.info?.meta?.tags?.map((tag) => tag.name).includes(selectedTag);
 			});
@@ -354,6 +358,16 @@
 									{tag}
 								</button>
 							{/each}
+							<button
+								class="min-w-fit outline-none p-1.5 {selectedTag === 'others'
+									? ''
+									: 'text-gray-300 dark:text-gray-600 hover:text-gray-700 dark:hover:text-white'} transition capitalize"
+								on:click={() => {
+									selectedTag = 'others';
+								}}
+							>
+								{'기타'}
+							</button>
 						</div>
 					</div>
 				{/if}
