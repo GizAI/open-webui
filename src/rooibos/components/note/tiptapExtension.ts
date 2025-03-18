@@ -64,8 +64,7 @@ export function getExtensions(options: TiptapExtensionOptions): Extension[] {
 			HTMLAttributes: {
 				class: 'custom-link',
 				target: '_blank',
-				rel: 'noopener noreferrer',
-				contenteditable: 'false'
+				rel: 'noopener noreferrer'
 			}
 		}) as unknown as Extension,
 		TaskList.configure({
