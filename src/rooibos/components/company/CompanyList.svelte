@@ -93,7 +93,7 @@
 	};
 
 	$: filteredCompanies = companyList.filter((company) => {
-		let pass = true;
+		let pass: boolean = true;
 		if (filters.keyword) {
 			const keyword = filters.keyword.toLowerCase();
 			pass =
@@ -150,6 +150,14 @@
 				return (a.employee_count ?? 0) - (b.employee_count ?? 0);
 			case 'employeeCountDescending':
 				return (b.employee_count ?? 0) - (a.employee_count ?? 0);
+			case 'totalAssetsAscending':
+				return (a.recent_total_assets ?? 0) - (b.recent_total_assets ?? 0);
+			case 'totalAssetsDescending':
+				return (b.recent_total_assets ?? 0) - (a.recent_total_assets ?? 0);
+			case 'totalEquityAscending':
+				return (a.recent_total_equity ?? 0) - (b.recent_total_equity ?? 0);
+			case 'totalEquityDescending':
+				return (b.recent_total_equity ?? 0) - (a.recent_total_equity ?? 0);
 			default:
 				return 0;
 		}
@@ -188,6 +196,10 @@
 			<option value="establishmentDateDescending">설립연도 (최신 순)</option>
 			<option value="employeeCountAscending">직원 수 (적은 순)</option>
 			<option value="employeeCountDescending">직원 수 (많은 순)</option>
+			<option value="totalAssetsAscending">총자산 (적은 순)</option>
+			<option value="totalAssetsDescending">총자산 (많은 순)</option>
+			<option value="totalEquityAscending">총자본 (적은 순)</option>
+			<option value="totalEquityDescending">총자본 (많은 순)</option>
 		</select>
 		<input
 			type="text"
@@ -253,9 +265,9 @@
 										class="ml-2 text-gray-900 dark:text-gray-200"
 									>
 										{#if fullscreenStates[result.master_id]}
-											<ChevronUp size={20} strokeWidth="2.5" />
+											<ChevronUp strokeWidth="2.5" className="w-5 h-5" />
 										{:else}
-											<ChevronDown size={20} strokeWidth="2.5" />
+											<ChevronDown strokeWidth="2.5" className="w-5 h-5" />
 										{/if}
 									</button>
 								</div>

@@ -610,7 +610,9 @@ async def get_corp_financialData(id: str):
                 sfd.sga,
                 sfd.other_income,
                 sfd.other_expenses,
-                sfd.pre_tax_income
+                sfd.pre_tax_income,
+                rmc.recent_total_assets,
+                rmc.recent_total_equity
             FROM rb_master_company rmc
             JOIN smtp_financial_company sfc 
                 ON rmc.company_name = sfc.company_name
@@ -644,7 +646,9 @@ async def get_corp_financialData(id: str):
                 sfd.sga,
                 sfd.other_income,
                 sfd.other_expenses,
-                sfd.pre_tax_income
+                sfd.pre_tax_income,
+                rmc.recent_total_assets,
+                rmc.recent_total_equity
             ORDER BY sfd.year DESC
         """
 
