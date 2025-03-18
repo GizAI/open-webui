@@ -175,7 +175,8 @@ async def getFolderCompanyList(folderId: str, request: Request):
                     f.company_id,
                     rmc.master_id,
                     rmc.company_name,
-                    rmc.address
+                    rmc.address,
+                    rmc.business_registration_number
                 FROM corp_bookmark f
                 INNER JOIN rb_master_company rmc
                     ON f.company_id::text = rmc.master_id::text
