@@ -19,12 +19,10 @@
 
 	const dispatch = createEventDispatcher();
 
-	// HocuspocusProvider 타입 확장
 	interface ExtendedHocuspocusProvider extends HocuspocusProvider {
 		websocket?: WebSocket;
 	}
 
-	// ProseMirror Node 타입 확장
 	interface ExtendedNode extends Node {
 		parent?: any;
 		type?: {
@@ -789,6 +787,11 @@
 			],
 			content: typeof content === 'string' ? content : '',
 			autofocus: true,
+			editorProps: {
+				attributes: {
+					class: 'ProseMirrorNote',
+				},
+			},
 			onSelectionUpdate({ editor }) {
 				setTimeout(() => {
 					updateEditorState();
@@ -803,7 +806,36 @@
 
 	onMount(async () => {
 	try {
-		
+		// ProseMirror 스타일을 ProseMirrorNote에 복제하는 함수
+		function cloneProseMirrorStyles() {
+			let clonedCSS = '';
+			const styleSheets = document.styleSheets;
+			
+			for (let i = 0; i < styleSheets.length; i++) {
+				try {
+				const sheet = styleSheets[i];
+				const rules = sheet.cssRules || sheet.rules;
+				if (!rules) continue;
+				
+				for (let j = 0; j < rules.length; j++) {
+					const rule = rules[j];
+					if (rule.type === CSSRule.STYLE_RULE && rule.selectorText.includes('.ProseMirror')) {
+					const newSelector = rule.selectorText.replace(/\.ProseMirror/g, '.ProseMirrorNote');
+					clonedCSS += `${newSelector} { ${rule.style.cssText} }\n`;
+					}
+				}
+				} catch (e) {
+				console.log("스타일 복제 중 오류 무시:", e instanceof Error ? e.message : String(e));
+				}
+			}
+			
+			if (clonedCSS) {
+				const styleElement = document.createElement('style');
+				styleElement.textContent = clonedCSS;
+				document.head.appendChild(styleElement);
+			}
+		}
+
 
 		provider = setupCollaboration();
 
@@ -826,6 +858,9 @@
 		}
 
 		editor = initEditor(storedUpdate, provider);
+
+		// 에디터가 생성된 후에 스타일 복제 실행
+		setTimeout(cloneProseMirrorStyles, 100);
 
 		if (typeof storedUpdate === 'string') {
 			const yXmlFragment = provider.document.getXmlFragment('prosemirror');
@@ -1090,7 +1125,7 @@
 		z-index: 100;
 	}
 
-	:global(.ProseMirror) {
+	:global(.ProseMirrorNote) {
 		background-color: inherit;
 		color: inherit;
 		width: 100%;
@@ -1105,7 +1140,7 @@
 		user-select: text;
 	}
 
-	:global(.dark) :global(.ProseMirror) {
+	:global(.dark) :global(.ProseMirrorNote) {
 		color: #e5e7eb;
 	}
 	
