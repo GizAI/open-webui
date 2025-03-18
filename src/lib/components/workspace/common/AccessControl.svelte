@@ -15,6 +15,8 @@
 	export let accessRoles = ['read'];
 	export let accessControl = null;
 
+	export let publicAccess = true;
+
 	let selectedGroupId = '';
 	let groups = [];
 
@@ -114,7 +116,9 @@
 					}}
 				>
 					<option class=" text-gray-700" value="private" selected>Private</option>
-					<option class=" text-gray-700" value="public" selected>Public</option>
+					{#if publicAccess}
+						<option class=" text-gray-700" value="public" selected>Public</option>
+					{/if}
 				</select>
 
 				<div class=" text-xs text-gray-400 font-medium">
