@@ -19,6 +19,7 @@
 	import { WEBUI_API_BASE_URL } from '$lib/constants';
 	import { get } from 'svelte/store';
 	import { page } from '$app/stores';
+	import { deleteCompanyBookmark } from '$rooibos/components/apis/company';
 
 	// 다국어 텍스트
 	let collectionText = 'Collection';
@@ -34,25 +35,12 @@
 	let bookmarks: any = [];
 
 	const deleteHandler = async (item: any) => {
-		try {
-			const response = await fetch(`${WEBUI_API_BASE_URL}/rooibos/mycompanies/${item.id}/delete`, {
-				method: 'DELETE',
-				headers: {
-					'Content-Type': 'application/json'
-				}
-			});
-
-			const data = await response.json();
-
-			if (response.ok) {
-				bookmarks = bookmarks.filter((bookmark: any) => bookmark.id !== item.id);
-			} else {
-				console.error('Delete failed:', data);
-				alert(`Failed to delete bookmark: ${data.error || 'Unknown error'}`);
-			}
-		} catch (error) {
-			console.error('Error in deleteHandler:', error);
-			alert('An unexpected error occurred while deleting the bookmark.');
+		const result = await deleteCompanyBookmark(item.id);
+		
+		if (result.success) {
+			bookmarks = bookmarks.filter((bookmark: any) => bookmark.id !== item.id);
+		} else {
+			alert(`북마크 삭제 실패: ${result.error}`);
 		}
 	};
 

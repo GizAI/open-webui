@@ -181,6 +181,7 @@ async def getFolderCompanyList(folderId: str, request: Request):
                 INNER JOIN rb_master_company rmc
                     ON f.company_id::text = rmc.master_id::text
                 WHERE f.user_id = :userId AND f.folder_id = :folderId
+                AND (f.is_deleted IS NULL OR f.is_deleted = FALSE)
                 ORDER BY f.updated_at DESC
             """
             params = {"userId": userId, "folderId": folderId}

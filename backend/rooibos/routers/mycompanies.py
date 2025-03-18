@@ -52,6 +52,7 @@ async def get_mycompanies(user_id: str):
             INNER JOIN rb_master_company rmc
                 ON f.company_id::text = rmc.master_id::text
             WHERE f.user_id = $1
+            AND (f.is_deleted IS NULL OR f.is_deleted = FALSE)
             ORDER BY f.updated_at DESC
         """
         favorites = get_executable_query(sql_query, params)
@@ -179,7 +180,8 @@ async def get_mycompany_by_id(id: str, request: Request):
             ON fi.id::text = ANY(ARRAY(
                 SELECT jsonb_array_elements_text(f.data::jsonb->'file_ids')
             ))
-        WHERE f.id = :id           
+        WHERE f.id = :id
+        AND (f.is_deleted IS NULL OR f.is_deleted = FALSE)           
         GROUP BY
             f.id, f.created_at, f.updated_at, f.company_id, f.user_id,
             rmc.master_id,
@@ -322,6 +324,42 @@ async def delete_mycompany(id: str):
         return {
             "success": False,
             "error": "Delete failed",
+            "message": str(e)
+        }
+    
+@router.put("/{id}/softdelete")
+async def soft_delete_mycompany(id: str):
+    try:
+        sql_query = """
+        UPDATE corp_bookmark
+        SET is_deleted = TRUE, updated_at = now()
+        WHERE id = :id
+        RETURNING id
+        """
+        
+        with get_db() as db:
+            log.info(f"Executing query: {sql_query} with parameter id={id}")
+            result = db.execute(text(sql_query), {"id": id})
+            deleted_id = result.fetchone()
+            
+            if not deleted_id:
+                return {
+                    "success": False,
+                    "error": "Bookmark not found",
+                    "message": f"Bookmark with id {id} not found."
+                }
+                
+            db.commit()
+
+        return {
+            "success": True,
+            "message": f"Bookmark with id {id} has been successfully soft-deleted."
+        }
+    except Exception as e:
+        log.error("Soft Delete API error: " + str(e))
+        return {
+            "success": False,
+            "error": "Soft delete failed",
             "message": str(e)
         }
     

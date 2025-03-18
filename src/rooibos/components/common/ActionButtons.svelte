@@ -7,6 +7,7 @@
 	import { get } from 'svelte/store';
 	import DeleteConfirmDialog from '$lib/components/common/ConfirmDialog.svelte';
 	import FolderSelect from '$rooibos/components/folder/FolderSelect.svelte';
+	import { deleteCompanyBookmark } from '$rooibos/components/apis/company';
 
 	export let companyInfo: any = {};
 	export let financialData: any = {};
@@ -38,20 +39,12 @@
 
 	const confirmDelete = async () => {
 		try {
-			const response = await fetch(
-				`${WEBUI_API_BASE_URL}/rooibos/mycompanies/${companyInfo.bookmark_id}/delete`,
-				{
-					method: 'DELETE',
-					headers: {
-						'Content-Type': 'application/json'
-					}
-				}
-			);
-			const data = await response.json();
-			if (response.ok) {
+			const result = await deleteCompanyBookmark(companyInfo.bookmark_id);
+			
+			if (result.success) {
 				companyInfo.bookmark_user_id = null;
 			} else {
-				console.error('Delete failed:', data);
+				console.error('Delete failed:', result.error);
 			}
 		} catch (error) {
 			console.error('Error in confirmDelete:', error);
@@ -68,7 +61,7 @@
 		}
 	};
 
-	const handleFolderSelect = async (event) => {
+	const handleFolderSelect = async (event: { detail: any }) => {
 		const selectedFolder = event.detail;
 		if (selectedFolder && selectedFolder.id) {
 			await addCompany(companyInfo, selectedFolder.id);
