@@ -23,16 +23,29 @@ async def getNoteFolder(request: Request):
     folderType = search_params.get("folderType")
     try:
         with get_db() as db:
+            # 포스트그레SQL에서 GROUP BY 문제를 해결하기 위해 서브쿼리를 사용
             query = """
-                SELECT *
-                FROM rb_folder
-                WHERE user_id = :userId
+                SELECT folder.*,
+                    COALESCE(bookmark_counts.active_count, 0) as active_bookmark_count,
+                    COALESCE(bookmark_counts.deleted_count, 0) as deleted_bookmark_count
+                FROM rb_folder folder
+                LEFT JOIN (
+                    SELECT folder_id, 
+                        COUNT(*) FILTER (WHERE is_deleted = FALSE OR is_deleted IS NULL) as active_count,
+                        COUNT(*) FILTER (WHERE is_deleted = TRUE) as deleted_count
+                    FROM corp_bookmark
+                    WHERE user_id = :userId
+                    GROUP BY folder_id
+                ) bookmark_counts ON folder.id = bookmark_counts.folder_id
+                WHERE folder.user_id = :userId
             """
             params = {"userId": userId}
             if folderType:
-                query += " AND type = :folderType"
+                query += " AND folder.type = :folderType"
                 params["folderType"] = folderType
-            query += " ORDER BY created_at DESC"
+            
+            query += " ORDER BY folder.created_at DESC"
+            
             result = db.execute(text(query), params)
             folders = [dict(row._mapping) for row in result.fetchall()]
 
