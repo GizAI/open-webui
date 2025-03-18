@@ -18,7 +18,6 @@
 	let name = 'Untitled';
 	let content = '';
 	let noteEditor: any;
-	let autoSaveInterval: any;
 	
 	let previousContent = '';
 	let previousTitle = '';
@@ -92,43 +91,8 @@
 		previousTitle = '';
 	}
 
-	function setupAutoSaveInterval() {
-		if (autoSaveInterval) {
-			clearInterval(autoSaveInterval);
-		}
-		
-		autoSaveInterval = setInterval(() => {
-			if (show && noteEditor && hasContentChanged()) {
-				updateContent();
-				updateTitle();
-				dispatch('autosave', { name, content });
-			}
-		}, 30000);
-	}
-
-	onMount(() => {
-		setupAutoSaveInterval();
-	});
-
-	$: if (show) {
-		// if(selectedFile.id === 'temp-id') {
-		// 	dispatch('uploadRequest', {
-		// 		name: '새노트',
-		// 		content: '<p></p>',
-		// 		callback: (uploadedFile: any) => {
-		// 			if (uploadedFile) {
-		// 				selectedFile = uploadedFile;
-		// 			}
-		// 		}
-		// 	});
-		
-		// }
-		setupAutoSaveInterval();
-	}
-
 	onDestroy(() => {
 		debouncedAutoSave.cancel();
-		if (autoSaveInterval) clearInterval(autoSaveInterval);
 	});
 </script>
 
