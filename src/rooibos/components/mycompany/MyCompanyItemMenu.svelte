@@ -11,7 +11,6 @@
 	import { goto } from '$app/navigation';
 	import { WEBUI_API_BASE_URL } from '$lib/constants';
 	import { user } from '$lib/stores';
-	import { openCompanyChat } from '$rooibos/components/apis/company';
 
 	const dispatch = createEventDispatcher();
 	const i18n: any = getContext('i18n');
