@@ -69,7 +69,7 @@
 	export let initialContent: any = '';
 	export let selectedFile: any;
 
-	let pageTitle = initialTitle || '새 노트';
+	let pageTitle = initialTitle || '새노트';
 
 	function getFileId(): string {
 		if (!selectedFile) return "";
