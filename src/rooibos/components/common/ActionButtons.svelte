@@ -92,12 +92,34 @@
 		showFolderSelect = false;
 	};
 
-	const openAIChat = async (company: any) => {
-		selectedCompanyInfo.set({
-			...company,
-			financialData: financialData,
-			files: company.data_files?.file_ids ?? company.files?.file_ids
+	const openAIChat = async (company: any) => {		
+		const response = await fetch(`${WEBUI_API_BASE_URL}/rooibos/mycompanies/${company.bookmark_id}?business_registration_number=${company.business_registration_number}&user_id=${currentUser?.id}`, {
+			method: 'GET',
+			headers: {
+				Accept: 'application/json',
+				'Content-Type': 'application/json',
+				Authorization: `Bearer ${localStorage.token}`
+			}
 		});
+		
+		const data = await response.json();
+		
+		if (data.success !== false && data.bookmark && data.bookmark[0]) {
+			const updatedCompany = data.bookmark[0];
+			
+			selectedCompanyInfo.set({
+				...updatedCompany,
+				financialData: financialData,
+				files: updatedCompany.files
+			});
+		} else {
+			selectedCompanyInfo.set({
+				...company,
+				financialData: financialData,
+				files: company.files
+			});
+		}	
+		
 		await goto('/');
 	};
 
