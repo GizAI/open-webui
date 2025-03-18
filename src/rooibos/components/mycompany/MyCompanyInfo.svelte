@@ -628,7 +628,7 @@
 	}
 
 	function moveToExistingChat(chat: any) {
-		goto(`/chat/${chat.id}`);
+		goto(`/c/${chat.id}`);
 	}
 
 	async function handleAccessControlChange(newAccessControl) {
