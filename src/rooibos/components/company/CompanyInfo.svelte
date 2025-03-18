@@ -131,7 +131,7 @@
 				</h1>
 
 				<div class="flex items-center space-x-1 text-gray-900 dark:text-white-200">
-					<ActionButtons {companyInfo} {financialData} />
+					<ActionButtons {companyInfo} {financialData} type="companyinfo" />
 					{#if !$mobile}
 						<button
 							class="hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full"
