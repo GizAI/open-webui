@@ -178,6 +178,13 @@ async def getFolderNoteList(folderId: str, request: Request):
 async def getFolderCompanyList(folderId: str, request: Request):    
     search_params = request.query_params
     userId = search_params.get("userId")
+    deleted_param = search_params.get("deleted", "false")
+        
+    # 대소문자 구분 없이 파라미터 처리
+    deleted = deleted_param.lower() in ["true", "1", "yes", "y"]
+    
+    log.info(f"getFolderCompanyList - final deleted value: {deleted}")
+    
     try:
         with get_db() as db:
             query = """
@@ -193,14 +200,23 @@ async def getFolderCompanyList(folderId: str, request: Request):
                 FROM corp_bookmark f
                 INNER JOIN rb_master_company rmc
                     ON f.company_id::text = rmc.master_id::text
-                WHERE f.user_id = :userId AND f.folder_id = :folderId
-                AND (f.is_deleted IS NULL OR f.is_deleted = FALSE)
-                ORDER BY f.updated_at DESC
+                WHERE f.user_id = :userId 
             """
+            
+            if deleted:
+                query += " AND f.is_deleted = TRUE"
+                log.info("Getting deleted bookmarks only")
+            else:
+                query += " AND f.folder_id = :folderId AND (f.is_deleted IS NULL OR f.is_deleted = FALSE)"
+                log.info("Getting active bookmarks only")
+                
+            query += " ORDER BY f.updated_at DESC"
+            
             params = {"userId": userId, "folderId": folderId}
             result = db.execute(text(query), params)
             companyList = [dict(row._mapping) for row in result.fetchall()]    
 
+        log.info(f"getFolderCompanyList - returning {len(companyList)} results")
         return {
             "success": True,
             "data": companyList,
@@ -211,6 +227,46 @@ async def getFolderCompanyList(folderId: str, request: Request):
         return {
             "success": False,
             "error": "Search failed",
+            "message": str(e)
+        }
+
+@router.get("/trash/companies")
+async def getTrashCompanyList(request: Request):    
+    search_params = request.query_params
+    userId = search_params.get("userId")
+    try:
+        with get_db() as db:
+            query = """
+                SELECT DISTINCT
+                    f.id,
+                    f.created_at,
+                    f.updated_at,
+                    f.company_id,
+                    rmc.master_id,
+                    rmc.company_name,
+                    rmc.address,
+                    rmc.business_registration_number
+                FROM corp_bookmark f
+                INNER JOIN rb_master_company rmc
+                    ON f.company_id::text = rmc.master_id::text
+                WHERE f.user_id = :userId
+                AND f.is_deleted = TRUE
+                ORDER BY f.updated_at DESC
+            """
+            params = {"userId": userId}
+            result = db.execute(text(query), params)
+            companyList = [dict(row._mapping) for row in result.fetchall()]    
+
+        return {
+            "success": True,
+            "data": companyList,
+            "total": len(companyList),
+        }
+    except Exception as e:
+        log.error("Trash API error: " + str(e))
+        return {
+            "success": False,
+            "error": "Failed to fetch trash",
             "message": str(e)
         }
 

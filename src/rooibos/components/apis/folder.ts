@@ -312,3 +312,25 @@ export const deleteFolderById = async (token: string, id: string) => {
 
 	return res;
 };
+
+export const getTrashCompanies = async (token: string, userId: string) => {
+	try {
+		const url = `${WEBUI_API_BASE_URL}/rooibos/folders/trash/companies?userId=${userId}`;
+		const response = await fetch(url, {
+			method: "GET",
+			headers: {
+				"Content-Type": "application/json",
+				authorization: `Bearer ${token}`,
+			},
+		});
+
+		const data = await response.json();
+		if (!data.success) {
+			throw new Error(data.message || "Failed to get trash companies");
+		}
+		return data.data;
+	} catch (error) {
+		console.error("Error getting trash companies:", error);
+		throw error;
+	}
+};

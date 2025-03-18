@@ -49,8 +49,12 @@
 		loaded = false;
 		const folderId = $page.params.id;
 		const currentUser = get(user);
+		
+		const urlParams = new URLSearchParams(window.location.search);
+		const isDeleted = urlParams.get('deleted') || 'false';
+		
 		const response = await fetch(
-			`${WEBUI_API_BASE_URL}/rooibos/folders/${folderId}/companies?userId=${currentUser?.id}`,
+			`${WEBUI_API_BASE_URL}/rooibos/folders/${folderId}/companies?userId=${currentUser?.id}&deleted=${isDeleted}`,
 			{
 				method: 'GET',
 				headers: {

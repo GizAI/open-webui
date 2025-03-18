@@ -48,7 +48,12 @@
 		if (folder.type === 'note') {
 			goto(`/rooibos/folder/${folder.id}/notes`);
 		} else {
-			goto(`/rooibos/folder/${folder.id}/companies`);
+			const isTrash = 
+				folder.id.startsWith('trash-folder-') || 
+				folder.name === '휴지통' || 
+				folder.isTrash === true;				
+			
+			goto(`/rooibos/folder/${folder.id}/companies?deleted=${isTrash ? 'true' : 'false'}`);
 		}
 	}
 
