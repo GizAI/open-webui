@@ -11,9 +11,10 @@
 	import { goto } from '$app/navigation';
 	import { WEBUI_API_BASE_URL } from '$lib/constants';
 	import { user } from '$lib/stores';
+	import { openCompanyChat } from '$rooibos/components/apis/company';
 
 	const dispatch = createEventDispatcher();
-	const i18n = getContext('i18n');
+	const i18n: any = getContext('i18n');
 
 	export let bookmark: any = null;
 	export let onClose: Function = () => {};
@@ -21,7 +22,7 @@
 	let show = false;
 	let showFolderSelect = false;
 
-	async function moveBookmarkToFolder(selectedFolder) {
+	async function moveBookmarkToFolder(selectedFolder: any) {
 		const payload = {
 			bookmarkId: bookmark.id,
 			targetFolderId: selectedFolder.id
@@ -76,11 +77,16 @@
 			align="end"
 			transition={flyAndScale}
 		>
-			<DropdownMenu.Item
+			<!-- <DropdownMenu.Item
 				class="flex gap-2 items-center px-3 py-2 text-sm font-medium cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 rounded-md"
-				on:click={() => {
-					selectedCompanyInfo.set(bookmark);
-					goto('/');
+				on:click={async () => {
+					await openCompanyChat(
+						bookmark.id, 
+						bookmark.business_registration_number,
+						$user?.id,
+						bookmark,
+						{}
+					);
 				}}
 			>
 				<svg
@@ -98,7 +104,7 @@
 					/>
 				</svg>
 				<div class="flex items-center">새채팅</div>
-			</DropdownMenu.Item>
+			</DropdownMenu.Item> -->
 
 			<DropdownMenu.Item
 				class="flex gap-2 items-center px-3 py-2 text-sm font-medium cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 rounded-md"

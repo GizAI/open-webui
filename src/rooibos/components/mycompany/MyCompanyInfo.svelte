@@ -809,7 +809,7 @@
 						</button>
 					</div>
 				{/if}
-				<ActionButtons companyInfo={bookmark} />
+				<ActionButtons companyInfo={bookmark} financialData={financialData} />
 			</div>
 		</div>
 	</div>
