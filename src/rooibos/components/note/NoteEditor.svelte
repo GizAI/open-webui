@@ -9,7 +9,6 @@
 	import { CollaborationCursor } from '@tiptap/extension-collaboration-cursor';
 	import * as Y from 'yjs';
 	import { getExtensions } from './tiptapExtension';
-	import TopBar from './TopBar.svelte';
 	import BubbleMenu from './BubbleMenu.svelte';
 	import CollaboratorsList from './CollaboratorsList.svelte';
 	import { showLineMenu } from './LineMenu.svelte';
@@ -68,8 +67,6 @@
 	export let initialTitle: string = '';
 	export let initialContent: any = '';
 	export let selectedFile: any;
-
-	let pageTitle = initialTitle || '새노트';
 
 	function getFileId(): string {
 		if (!selectedFile) return "";
@@ -503,23 +500,7 @@
 	}
 
 	function handleTitleChange(e: CustomEvent<string>): void {
-		pageTitle = e.detail;
-		manualTitleEdited = true;
-		
-		if (selectedFile) {
-			if (selectedFile.name) {
-				selectedFile.name = pageTitle;
-			}
-			if (selectedFile.filename) {
-				const extension = selectedFile.filename.substring(selectedFile.filename.lastIndexOf('.'));
-				selectedFile.filename = pageTitle + (pageTitle.endsWith(extension) ? '' : extension);
-			}
-			if (selectedFile.meta && selectedFile.meta.name) {
-				selectedFile.meta.name = pageTitle;
-			}
-		}
-		
-		dispatch('titleChange', pageTitle);
+		dispatch('titleChange', e.detail);
 	}
 
 	function openSidebar(): void {
@@ -972,20 +953,11 @@
 	}
 
 	export function getTitle() {
-		return pageTitle;
+		return initialTitle;
 	}
 
 	
 </script>
-
-<TopBar 
-	{pageTitle} 
-	on:titleChange={handleTitleChange} 
-	onNewChat={openSidebar} 
-	fileId={getFileId()} 
-	token={localStorage.getItem('token') || ""}
-	originalFilename={getOriginalFilename()}
-/>
 
 <CollaboratorsList users={activeUsers} />
 

@@ -9,6 +9,7 @@
 	import Modal from '$lib/components/common/Modal.svelte';
 	import XMark from '$lib/components/icons/XMark.svelte';
 	import NoteEditor from '$rooibos/components/note/NoteEditor.svelte';
+	import TopBar from '$rooibos/components/note/TopBar.svelte';
 	
 	export let show = false;
 	export let initialTitle: string = '';
@@ -18,6 +19,7 @@
 	let name = 'Untitled';
 	let content = '';
 	let noteEditor: any;
+	let pageTitle = initialTitle || '새노트';
 	
 	let previousContent = '';
 	let previousTitle = '';
@@ -66,10 +68,43 @@
 		debouncedAutoSave();
 	}
 	
+	function getFileId(): string {
+		if (!selectedFile) return "";
+		return selectedFile.id || "";
+	}
+
+	function getOriginalFilename(): string {
+		if (!selectedFile) return "";
+		return selectedFile.filename || selectedFile.name || "";
+	}
+
+	function handleTitleChange(e: CustomEvent<string>): void {
+		pageTitle = e.detail;
+		
+		if (selectedFile) {
+			if (selectedFile.name) {
+				selectedFile.name = pageTitle;
+			}
+			if (selectedFile.filename) {
+				const extension = selectedFile.filename.substring(selectedFile.filename.lastIndexOf('.'));
+				selectedFile.filename = pageTitle + (pageTitle.endsWith(extension) ? '' : extension);
+			}
+			if (selectedFile.meta && selectedFile.meta.name) {
+				selectedFile.meta.name = pageTitle;
+			}
+		}
+		
+		handleEditorChange();
+	}
+
+	function openSidebar() {
+		// 필요한 경우 사이드바 열기 로직 구현
+	}
 
 	$: if (show && noteEditor) {
 		name = initialTitle || 'Untitled';
 		content = initialContent || '';
+		pageTitle = initialTitle || '새노트';
 		previousContent = content;
 		previousTitle = name;
 	}
@@ -99,12 +134,22 @@
 <Modal 
 	size="full" 
 	containerClassName="" 
-	className="h-full bg-white dark:bg-gray-900" 
+	className="h-full bg-white dark:bg-gray-900 overflow-hidden" 
 	bind:show
 >
-	<div class="absolute top-0 right-0 pt-2 pr-5 pl-5 pb-5 z-10">
+	<div class="absolute top-0 left-0 right-0 flex justify-between items-center w-full pr-5 pl-5 py-2 z-20 bg-white dark:bg-gray-900">
+		<div class="flex-1">
+			<TopBar 
+				pageTitle={pageTitle} 
+				on:titleChange={handleTitleChange} 
+				onNewChat={openSidebar} 
+				fileId={getFileId()} 
+				token={localStorage.getItem('token') || ""}
+				originalFilename={getOriginalFilename()}
+			/>
+		</div>
 		<button
-			class="self-center dark:text-white"
+			class="self-center dark:text-white ml-2"
 			type="button"
 			on:click={async () => {
 				await handleSubmit();
@@ -114,9 +159,9 @@
 		</button>
 	</div>
 	
-	<div class="flex flex-col w-full h-full dark:text-gray-200">
-		<div class="flex-1 w-full h-full flex justify-center overflow-auto">
-			<div class="w-full h-full flex flex-col">
+	<div class="flex flex-col w-full h-full dark:text-gray-200 pt-12 overflow-auto">
+		<div class="flex-1 w-full flex justify-center">
+			<div class="w-full flex flex-col">
 				{#if show}
 					<NoteEditor 
 						bind:this={noteEditor}
@@ -124,9 +169,9 @@
 							handleEditorChange();
 						}}
 						on:titleChange={(e) => {
-							handleEditorChange();
+							handleTitleChange(e);
 						}}
-						initialTitle={initialTitle}
+						initialTitle={pageTitle}
 						initialContent={initialContent}
 						selectedFile={selectedFile}
 					/>
@@ -135,3 +180,17 @@
 		</div>
 	</div>
 </Modal>
+
+<style>
+/* TopBar 버튼이 클릭 가능하도록 스타일 추가 */
+:global(.top-bar) {
+	position: relative;
+	z-index: 30;
+}
+
+:global(.page-title), :global(.page-title-input) {
+	position: relative;
+	z-index: 40;
+	pointer-events: auto;
+}
+</style>
