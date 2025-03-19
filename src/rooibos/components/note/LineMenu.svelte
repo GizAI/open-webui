@@ -343,6 +343,10 @@
     transform: translateY(0%);
   }
 
+  :global(.codeBlock-line-icon) {
+    transform: translateY(+150%);
+  }
+
   :global(.dark) :global(.line-icon) {
     color: #e5e7eb;
   }

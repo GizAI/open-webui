@@ -691,6 +691,10 @@
 										lineIcon.classList.add('heading3-line-icon');
 									}
 									
+									if (node.type.name === 'codeBlock') {
+										lineIcon.classList.add('codeBlock-line-icon');
+									}
+									
 									lineIcon.addEventListener('click', (e) => {
 										e.preventDefault();
 										e.stopPropagation();
