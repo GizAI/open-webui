@@ -5,6 +5,7 @@ from sqlalchemy import text
 from open_webui.env import SRC_LOG_LEVELS
 from open_webui.models.users import UserModel, Users
 from open_webui.utils.access_control import has_access
+from open_webui.models.groups import Groups
 
 import json
 import logging
@@ -266,10 +267,28 @@ async def get_mycompany_by_id(id: str, request: Request):
                     "message": f"Bookmark with id '{id}' 를 찾을 수 없습니다."
                 }
             
-            # 권한 체크 추가
-            if user_id and bookmark_data[0].bookmark_user_id != user_id:
-                # 북마크 소유자가 아닌 경우 access_control 확인
-                if not has_access(user_id, "read", bookmark_data[0].access_control):
+            bookmark_user_id = bookmark_data[0].bookmark_user_id
+            access_control = bookmark_data[0].access_control
+            
+            if user_id and user_id != bookmark_user_id:
+                
+                if access_control is None:
+                    return {
+                        "success": False,
+                        "error": "권한 없음",
+                        "message": f"Bookmark with id '{id}' 에 대한 접근 권한이 없습니다."
+                    }
+                
+                user_groups = Groups.get_groups_by_member_id(user_id)
+                user_group_ids = [group.id for group in user_groups]
+                
+                write_permission = access_control.get("write", {})
+                permitted_group_ids = write_permission.get("group_ids", [])
+                permitted_user_ids = write_permission.get("user_ids", [])
+                
+                if not (user_id in permitted_user_ids or any(
+                    group_id in permitted_group_ids for group_id in user_group_ids
+                )):
                     return {
                         "success": False,
                         "error": "권한 없음",
