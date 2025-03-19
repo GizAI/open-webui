@@ -19,38 +19,47 @@
 	import { WEBUI_API_BASE_URL } from '$lib/constants';
 	import { get } from 'svelte/store';
 	import { page } from '$app/stores';
-	import { deleteCompanyBookmark, permanentDeleteCompanyBookmark } from '$rooibos/components/apis/company';
+	import { deleteCompanyBookmark, permanentDeleteCompanyBookmark, restoreCompanyBookmark } from '$rooibos/components/apis/company';
 
-	// 다국어 텍스트
 	let collectionText = 'Collection';
 	$: if ($i18n) {
 		collectionText = $i18n.t('Collection');
 	}
 
 	let loaded = false;
-
 	let selectedItem: any = null;
 	let showDeleteConfirm = false;
-	let isTrashView = false; // Track if we're viewing trash items
+	let isTrashView = false;
 	let deleteConfirmTitle = "나의기업에서 삭제하시겠습니까?";
+	
+	interface Bookmark {
+		id: string;
+		company_name: string;
+		address: string;
+		[key: string]: any;
+	}
 
-	let bookmarks: any = [];
+	let bookmarks: Bookmark[] = [];
 
-	const deleteHandler = async (item: any) => {
+	const deleteHandler = async (item: Bookmark) => {
 		let result;
 		
 		if (isTrashView) {
-			// 휴지통에서 삭제하는 경우 영구 삭제
 			result = await permanentDeleteCompanyBookmark(item.id);
 		} else {
-			// 일반 삭제 (소프트 삭제)
 			result = await deleteCompanyBookmark(item.id);
 		}
 		
 		if (result.success) {
+			bookmarks = bookmarks.filter((bookmark:any) => bookmark.id !== item.id);
+		} 
+	};
+
+	const restoreHandler = async (item: Bookmark) => {
+		const result = await restoreCompanyBookmark(item.id);
+		
+		if (result.success) {
 			bookmarks = bookmarks.filter((bookmark: any) => bookmark.id !== item.id);
-		} else {
-			alert(`북마크 삭제 실패: ${result.error}`);
 		}
 	};
 
@@ -131,10 +140,13 @@
 						<div class=" flex self-center -mr-1 translate-y-1">
 							<CorpBookmarks
 								{bookmark}
-								isTrashView={isTrashView}
+								{isTrashView}
 								on:delete={() => {
 									selectedItem = bookmark;
 									showDeleteConfirm = true;
+								}}
+								on:restore={() => {
+									restoreHandler(bookmark);
 								}}
 								on:moved={() => {
 									bookmarks = bookmarks.filter((b) => b.id !== bookmark.id);

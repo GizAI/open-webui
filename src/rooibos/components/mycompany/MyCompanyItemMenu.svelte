@@ -106,7 +106,30 @@
 				<div class="flex items-center">새채팅</div>
 			</DropdownMenu.Item> -->
 
-			{#if !isTrashView}
+			{#if isTrashView}
+				<DropdownMenu.Item
+					class="flex gap-2 items-center px-3 py-2 text-sm font-medium cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 rounded-md"
+					on:click={() => {
+						dispatch('restore');
+					}}
+				>
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						class="h-5 w-5 text-gray-500"
+						fill="none"
+						viewBox="0 0 24 24"
+						stroke="currentColor"
+					>
+						<path
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							stroke-width="2"
+							d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"
+						/>
+					</svg>
+					<div class="flex items-center">복원</div>
+				</DropdownMenu.Item>
+			{:else}
 				<DropdownMenu.Item
 					class="flex gap-2 items-center px-3 py-2 text-sm font-medium cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 rounded-md"
 					on:click={() => {
@@ -134,7 +157,7 @@
 			>
 				<GarbageBin strokeWidth="2" />
 				<div class="flex items-center">
-					{isTrashView ? $i18n.t('삭제') : $i18n.t('Delete')}
+					{isTrashView ? $i18n.t('영구 삭제') : $i18n.t('Delete')}
 				</div>
 			</DropdownMenu.Item>
 

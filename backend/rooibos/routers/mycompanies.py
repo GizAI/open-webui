@@ -362,6 +362,42 @@ async def soft_delete_mycompany(id: str):
             "error": "Soft delete failed",
             "message": str(e)
         }
+
+@router.put("/{id}/restore")
+async def restore_mycompany(id: str):
+    try:
+        sql_query = """
+        UPDATE corp_bookmark
+        SET is_deleted = FALSE, updated_at = now()
+        WHERE id = :id
+        RETURNING id
+        """
+        
+        with get_db() as db:
+            log.info(f"Executing query: {sql_query} with parameter id={id}")
+            result = db.execute(text(sql_query), {"id": id})
+            restored_id = result.fetchone()
+            
+            if not restored_id:
+                return {
+                    "success": False,
+                    "error": "Bookmark not found",
+                    "message": f"Bookmark with id {id} not found."
+                }
+                
+            db.commit()
+
+        return {
+            "success": True,
+            "message": f"Bookmark with id {id} has been successfully restored."
+        }
+    except Exception as e:
+        log.error("Restore API error: " + str(e))
+        return {
+            "success": False,
+            "error": "Restore failed",
+            "message": str(e)
+        }
     
 @router.post("/add")
 async def add_mycompany(request: Request):
