@@ -43,7 +43,21 @@
 <div
 	class="bubble-menu bg-white dark:bg-[#111827] text-gray-900 dark:text-gray-200 border border-transparent dark:border-gray-600"
 	bind:this={menuElement}
-	style="visibility: hidden; position: absolute; display: inline-flex; align-items: stretch; overflow: hidden; font-size: 14px; line-height: 1.2; border-radius: 8px; box-shadow: rgba(0, 0, 0, 0.1) 0px 14px 28px -6px, rgba(0, 0, 0, 0.06) 0px 2px 4px -1px, rgba(84, 72, 49, 0.08) 0px 0px 0px 1px; pointer-events: auto; padding: 4px; flex-wrap: nowrap; white-space: nowrap;"
+	style="
+		visibility: hidden; 
+		position: absolute; 
+		display: inline-flex; 
+		align-items: center; 
+		overflow-x: auto; 
+		font-size: 14px; 
+		line-height: 1.2; 
+		border-radius: 8px; 
+		box-shadow: rgba(0, 0, 0, 0.1) 0px 14px 28px -6px, rgba(0, 0, 0, 0.06) 0px 2px 4px -1px, rgba(84, 72, 49, 0.08) 0px 0px 0px 1px; 
+		pointer-events: auto; 
+		padding: 4px; 
+		flex-wrap: nowrap; 
+		white-space: nowrap;
+	"
 >
 	<!-- 굵게 -->
 	<button
@@ -468,9 +482,8 @@
 
 <style>
 	.bubble-menu {
-		overflow-x: auto;
-		max-width: 90vw;
 		scrollbar-width: thin;
+		-webkit-overflow-scrolling: touch;
 	}
 	.bubble-menu::-webkit-scrollbar {
 		height: 4px;
@@ -549,6 +562,8 @@
 		padding: 4px;
 		z-index: 9999 !important;
 		pointer-events: auto;
+		max-width: calc(100vw - 40px);
+		overflow-x: auto;
 	}
 	
 	:global(.dark) .floating-dropdown {

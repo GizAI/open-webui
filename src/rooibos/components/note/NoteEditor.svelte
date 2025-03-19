@@ -122,14 +122,22 @@
 	function adjustBubbleMenuPosition(): void {
 		if (!bubbleMenuElement) return;
 
-		const rect = bubbleMenuElement.getBoundingClientRect();
+		// 화면 경계와의 여백
+		const margin = 20;
 		const viewportWidth = window.innerWidth;
-
-		if (rect.right > viewportWidth) {
-			const overflow = rect.right - viewportWidth;
-			bubbleMenuElement.style.transform = `translateX(-${overflow + 10}px)`;
-		} else {
-			bubbleMenuElement.style.transform = '';
+		
+		// 스타일 초기화
+		bubbleMenuElement.style.transform = '';
+		
+		// 버블 메뉴의 너비 제한
+		const maxWidth = viewportWidth - (margin * 2);
+		bubbleMenuElement.style.maxWidth = `${maxWidth}px`;
+		
+		// 위치 확인 후 경계를 벗어나면 위치 조정
+		const rect = bubbleMenuElement.getBoundingClientRect();
+		if (rect.right > viewportWidth - margin) {
+			const offset = rect.right - (viewportWidth - margin);
+			bubbleMenuElement.style.transform = `translateX(-${offset}px)`;
 		}
 	}
 
@@ -170,14 +178,19 @@
 		};
 	}
 
-	 function forceBubbleMenuDisplay(): void {
+	function forceBubbleMenuDisplay(): void {
 		if (!bubbleMenuElement || !editor || isLineMenuOpen) return;
 		if (!(editor.state.selection instanceof TextSelection) || editor.state.selection.empty) return;
 		
+		// 버블 메뉴 표시 설정
 		bubbleMenuElement.style.visibility = 'visible';
 		bubbleMenuElement.style.display = 'flex';
-		adjustBubbleMenuPosition();
-		updateEditorState();
+		
+		// 위치 조정을 위해 약간 지연
+		setTimeout(() => {
+			adjustBubbleMenuPosition();
+			updateEditorState();
+		}, 10);
 	}
 
 	async function translateSelectedText(): Promise<void> {
@@ -236,6 +249,13 @@
 			y: buttonRect.bottom + 10
 		};
 
+		// 화면 우측 경계 확인 및 조정
+		const viewportWidth = window.innerWidth;
+		const colorPickerWidth = 240; // 대략적인 컬러 피커 너비
+		if (buttonRect.left + colorPickerWidth > viewportWidth - 20) {
+			colorPickerPosition.x = Math.max(20, viewportWidth - colorPickerWidth - 20);
+		}
+
 		showColorPicker = !showColorPicker;
 		showHighlightPicker = false;
 		showAlignmentOptions = false;
@@ -267,6 +287,13 @@
 			x: buttonRect.left,
 			y: buttonRect.bottom + 10
 		};
+
+		// 화면 우측 경계 확인 및 조정
+		const viewportWidth = window.innerWidth;
+		const dropdownWidth = 40; // 대략적인 정렬 드롭다운 너비
+		if (buttonRect.left + dropdownWidth > viewportWidth - 20) {
+			alignmentDropdownPosition.x = Math.max(20, viewportWidth - dropdownWidth - 20);
+		}
 
 		showAlignmentOptions = !showAlignmentOptions;
 		showColorPicker = false;
@@ -415,6 +442,13 @@
 			x: bubbleRect.left,
 			y: bubbleRect.bottom + 10
 		};
+
+		// 화면 우측 경계 확인 및 조정
+		const viewportWidth = window.innerWidth;
+		const linkInputWidth = 300; // 대략적인 링크 입력 너비
+		if (bubbleRect.left + linkInputWidth > viewportWidth - 20) {
+			linkInputPosition.x = Math.max(20, viewportWidth - linkInputWidth - 20);
+		}
 
 		const previousUrl = editor.getAttributes('link').href || '';
 		linkInputValue = previousUrl;
@@ -859,6 +893,11 @@
 
 	document.addEventListener('click', closeAllDropdowns);
 	window.addEventListener('resize', adjustBubbleMenuPosition);
+	window.addEventListener('mousemove', () => {
+		if (bubbleMenuElement && bubbleMenuElement.style.visibility === 'visible') {
+			adjustBubbleMenuPosition();
+		}
+	});
 	
 	document.addEventListener('click', closeLineMenu);
 	
@@ -935,6 +974,11 @@
 		document.removeEventListener('click', closeAllDropdowns);
 		document.removeEventListener('click', closeLineMenu);
 		window.removeEventListener('resize', adjustBubbleMenuPosition);
+		window.removeEventListener('mousemove', () => {
+			if (bubbleMenuElement && bubbleMenuElement.style.visibility === 'visible') {
+				adjustBubbleMenuPosition();
+			}
+		});
 		
 		if (editorElement && editorElement.cleanupListeners) {
 			editorElement.cleanupListeners();
