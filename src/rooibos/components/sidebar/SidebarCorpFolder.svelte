@@ -70,7 +70,6 @@
 			}
 		}
 
-		// 휴지통 폴더 추가
 		const trashId = 'trash-folder-' + ($user?.id || '');
 		rooibosFolders[trashId] = {
 			id: trashId,
@@ -79,7 +78,6 @@
 			created_at: Date.now(),
 			updated_at: Date.now(),
 			type: 'corp',
-			// 삭제된 북마크가 있는 폴더 표시를 위한 특별 플래그
 			isTrash: true
 		};
 	};
@@ -148,10 +146,6 @@
 			.filter((folder) => folder.type === 'corp')
 			.reduce((acc, folder) => {
 				acc[folder.id] = folder;
-				// 디버깅 로그 추가
-				if (folder.isTrash || folder.name === '휴지통' || folder.id.startsWith('trash-folder-')) {
-					console.log('Trash folder detected in sidebar:', folder);
-				}
 				return acc;
 			}, {})}
 		parentId={null}
