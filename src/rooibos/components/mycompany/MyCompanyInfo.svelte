@@ -843,7 +843,6 @@
 			bind:show={showAccessControlModal}
 			bind:accessControl={bookmark.access_control}
 			onChange={(newAccessControl) => {
-				console.log('AccessControl onChange 호출됨. 새 액세스 컨트롤:', newAccessControl);
 				handleAccessControlChange(newAccessControl);
 			}}
 			accessRoles={['read', 'write']}

@@ -107,7 +107,10 @@
 		}
 	}
 
-	$: onChange(accessControl);
+	// 액세스 컨트롤이 변경될 때 실행할 함수
+	function handleAccessControlChange() {
+		onChange(accessControl);
+	}
 
 	async function findUserByEmail(email: string): Promise<UserInfo | null> {
 		try {
@@ -169,6 +172,9 @@
 			users = [...users, user];
 			
 			userEmail = '';
+			
+			// 사용자를 추가한 후 onChange 호출
+			handleAccessControlChange();
 		}
 	}
 
@@ -178,6 +184,9 @@
 			accessControl.write.user_ids = accessControl.write.user_ids.filter(id => id !== userToRemove.id);
 			
 			users = users.filter(user => user.id !== userToRemove.id);
+			
+			// 사용자를 제거한 후 onChange 호출
+			handleAccessControlChange();
 		}
 	}
 
@@ -192,7 +201,7 @@
 		<div class="flex flex-row gap-2 w-full items-center">
 			<input
 				type="email"
-				placeholder="이메일"
+				placeholder="이메일 주소를 추가하여 공유"
 				bind:value={userEmail}
 				class="outline-hidden bg-transparent text-sm rounded-lg block flex-1 px-3 py-2 border border-gray-200 dark:border-gray-700"
 				on:keydown={(e) => {
@@ -213,17 +222,9 @@
 				{$i18n.t('추가')}
 			</button>
 		</div>
-		<div class="text-xs text-gray-400 mt-1">
-			{$i18n.t('이메일 주소를 입력하여 접근 권한을 부여하세요')}
-		</div>
 	</div>
 
 	<div>
-		<div class="flex justify-between mb-1.5">
-			<div class="text-sm font-semibold">
-				{$i18n.t('접근 권한이 있는 사용자')}
-			</div>
-		</div>
 
 		<hr class="border-gray-100 dark:border-gray-700/10 mt-1.5 mb-2.5 w-full" />
 

@@ -27,7 +27,7 @@
 	<div>
 		<div class="flex justify-between dark:text-gray-100 px-5 pt-3 pb-1">
 			<div class="text-lg font-medium self-center font-primary">
-				{$i18n.t('사용자 공유 설정')}
+				{$i18n.t('사용자 공유')}
 			</div>
 			<button
 				class="self-center"
