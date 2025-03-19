@@ -887,3 +887,61 @@ async def moveBookmark(request: Request):
                 "message": str(e)
             }
         )
+
+@router.get("/user/find-by-email/{email}")
+async def find_user_by_email(email: str, request: Request):
+    try:
+        # Users 모델을 사용하여 이메일로 사용자 조회
+        user = Users.get_user_by_email(email.lower())
+        
+        if user:
+            return {
+                "success": True,
+                "data": {
+                    "id": user.id,
+                    "email": user.email,
+                    "name": user.name
+                }
+            }
+        else:
+            return {
+                "success": False,
+                "error": "User not found",
+                "message": f"이메일 '{email}'에 해당하는 사용자를 찾을 수 없습니다."
+            }
+    except Exception as e:
+        log.error("Find user by email error: " + str(e))
+        return {
+            "success": False,
+            "error": "Find user failed",
+            "message": str(e)
+        }
+
+@router.get("/user/find-by-id/{user_id}")
+async def find_user_by_id(user_id: str, request: Request):
+    try:
+        # Users 모델을 사용하여 ID로 사용자 조회
+        user = Users.get_user_by_id(user_id)
+        
+        if user:
+            return {
+                "success": True,
+                "data": {
+                    "id": user.id,
+                    "email": user.email,
+                    "name": user.name
+                }
+            }
+        else:
+            return {
+                "success": False,
+                "error": "User not found",
+                "message": f"ID '{user_id}'에 해당하는 사용자를 찾을 수 없습니다."
+            }
+    except Exception as e:
+        log.error("Find user by ID error: " + str(e))
+        return {
+            "success": False,
+            "error": "Find user failed",
+            "message": str(e)
+        }
