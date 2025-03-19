@@ -1479,7 +1479,15 @@
 
 		if ($selectedCompanyInfo?.files && $selectedCompanyInfo?.files.length > 0) {
 			$selectedCompanyInfo?.files.forEach((file) => {
-				files.push({type:'file' , id: file})
+				if (file && typeof file === 'object') {
+					const fileObj = {type:'file',status: 'processed' , ...file}
+					if(!fileObj.name) {
+						fileObj.name = fileObj.filename
+					}
+					files.push(fileObj)
+				} else {
+					console.warn('파일이 객체가 아닙니다:', file);
+				}
 			});
 		}
 
