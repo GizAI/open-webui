@@ -553,7 +553,7 @@
 									/>
 								</div>
 							</div>
-
+{#if $user.role === 'admin'}
 							<div class="flex w-full justify-between">
 								<div class=" self-center text-xs font-semibold">
 									{$i18n.t('Advanced Params')}
@@ -573,6 +573,7 @@
 									{/if}
 								</button>
 							</div>
+{/if}
 
 							{#if showAdvanced}
 								<div class="my-2">
@@ -690,7 +691,7 @@
 					<div class="my-2">
 						<Knowledge bind:selectedKnowledge={knowledge} collections={$knowledgeCollections} />
 					</div>
-
+{#if $user.role === 'admin'}
 					<div class="my-2">
 						<ToolsSelector bind:selectedToolIds={toolIds} tools={$tools} />
 					</div>
@@ -708,6 +709,7 @@
 							actions={$functions.filter((func) => func.type === 'action')}
 						/>
 					</div>
+{/if}
 
 					<div class="my-2">
 						<Capabilities bind:capabilities />
