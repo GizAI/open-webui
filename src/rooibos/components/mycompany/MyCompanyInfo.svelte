@@ -31,7 +31,7 @@
 	import { get } from 'svelte/store';
 	import LockClosed from '$lib/components/icons/LockClosed.svelte';
 	import Modal from '$lib/components/common/Modal.svelte';
-	import AccessControl from '$lib/components/workspace/common/AccessControl.svelte';
+	import RooibosAccessControlModal from '../accesscontrol/RooibosAccessControlModal.svelte';
 
 	type Bookmark = {
 		id: string;
@@ -56,6 +56,7 @@
 		latitude: string;
 		longitude: string;
 		bookmark_id?: string | null;
+		bookmark_user_id?: string;
 		fax_number?: string;
 		email?: string;
 		company_type?: string;
@@ -87,23 +88,14 @@
 		birth_year?: string;
 		foundation_year?: string;
 		is_family_shareholder?: string;
-		is_non_family_shareholder?: string;
-		financial_statement_year?: string;
-		venture_confirmation_type?: string;
-		svcl_region?: string;
-		venture_valid_from?: string;
-		venture_valid_until?: string;
-		confirming_authority?: string;
-		new_reconfirmation_code?: string;
-		postal_code?: string;
 		access_control?: {
 			read?: {
-				group_ids?: string[];
-				user_ids?: string[];
+				group_ids: string[];
+				user_ids: string[];
 			};
 			write?: {
-				group_ids?: string[];
-				user_ids?: string[];
+				group_ids: string[];
+				user_ids: string[];
 			};
 		} | null;
 	};
@@ -657,10 +649,40 @@
 				if (newAccessControl === null) {
 					updatedBookmark.access_control = null;
 				} else {
-					if (updatedAccessControl && updatedAccessControl.read) {
-						updatedAccessControl.read.user_ids = [];
-					}
+					// Keep the user_ids that were set in the UI
 					updatedBookmark.access_control = updatedAccessControl;
+					
+					// If for some reason the server response doesn't include the user_ids,
+					// use the ones from the UI input
+					if (updatedBookmark.access_control && 
+						newAccessControl && 
+						newAccessControl.read && 
+						newAccessControl.read.user_ids) {
+						
+						if (!updatedBookmark.access_control.read) {
+							updatedBookmark.access_control.read = {
+								group_ids: [],
+								user_ids: []
+							};
+						}
+						
+						updatedBookmark.access_control.read.user_ids = newAccessControl.read.user_ids;
+					}
+					
+					if (updatedBookmark.access_control && 
+						newAccessControl && 
+						newAccessControl.write && 
+						newAccessControl.write.user_ids) {
+						
+						if (!updatedBookmark.access_control.write) {
+							updatedBookmark.access_control.write = {
+								group_ids: [],
+								user_ids: []
+							};
+						}
+						
+						updatedBookmark.access_control.write.user_ids = newAccessControl.write.user_ids;
+					}
 				}
 				
 				bookmark = updatedBookmark;
@@ -804,7 +826,7 @@
 							<LockClosed strokeWidth="2.5" className="size-3.5" />
 
 							<div class="text-sm font-medium flex-shrink-0">
-								{$i18n.t('Access')}
+								{$i18n.t('공유')}
 							</div>
 						</button>
 					</div>
@@ -817,44 +839,15 @@
 
 <div class="flex flex-col w-full translate-y-1" id="collection-container">
 	{#if bookmark}
-		<Modal size="sm" bind:show={showAccessControlModal}>
-			<div>
-				<div class="flex justify-between dark:text-gray-100 px-5 pt-3 pb-1">
-					<div class="text-lg font-medium self-center font-primary">
-						{$i18n.t('Access Control')}
-					</div>
-					<button
-						class="self-center"
-						on:click={() => {
-							console.log('모달 닫기 버튼 클릭. 현재 액세스 컨트롤:', bookmark.access_control);
-							showAccessControlModal = false;
-						}}
-					>
-						<svg
-							xmlns="http://www.w3.org/2000/svg"
-							viewBox="0 0 20 20"
-							fill="currentColor"
-							class="w-5 h-5"
-						>
-							<path
-								d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z"
-							/>
-						</svg>
-					</button>
-				</div>
-
-				<div class="w-full px-5 pb-4 dark:text-white">
-					<AccessControl 
-						bind:accessControl={bookmark.access_control} 
-						onChange={(newAccessControl) => {
-							console.log('AccessControl onChange 호출됨. 새 액세스 컨트롤:', newAccessControl);
-							handleAccessControlChange(newAccessControl);
-						}}
-						accessRoles={['read', 'write']}
-					/>
-				</div>
-			</div>
-		</Modal>
+		<RooibosAccessControlModal 
+			bind:show={showAccessControlModal}
+			bind:accessControl={bookmark.access_control}
+			onChange={(newAccessControl) => {
+				console.log('AccessControl onChange 호출됨. 새 액세스 컨트롤:', newAccessControl);
+				handleAccessControlChange(newAccessControl);
+			}}
+			accessRoles={['read', 'write']}
+		/>
 		<div
 			class="company-info-wrapper active {isFullscreen
 				? 'fullscreen'
