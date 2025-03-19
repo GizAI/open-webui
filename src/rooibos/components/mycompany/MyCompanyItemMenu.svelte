@@ -17,6 +17,7 @@
 
 	export let bookmark: any = null;
 	export let onClose: Function = () => {};
+	export let isTrashView: boolean = false;
 
 	let show = false;
 	let showFolderSelect = false;
@@ -105,23 +106,25 @@
 				<div class="flex items-center">새채팅</div>
 			</DropdownMenu.Item> -->
 
-			<DropdownMenu.Item
-				class="flex gap-2 items-center px-3 py-2 text-sm font-medium cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 rounded-md"
-				on:click={() => {
-					showFolderSelect = true;
-				}}
-			>
-				<svg
-					xmlns="http://www.w3.org/2000/svg"
-					class="h-5 w-5 text-gray-500"
-					fill="none"
-					viewBox="0 0 24 24"
-					stroke="currentColor"
+			{#if !isTrashView}
+				<DropdownMenu.Item
+					class="flex gap-2 items-center px-3 py-2 text-sm font-medium cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 rounded-md"
+					on:click={() => {
+						showFolderSelect = true;
+					}}
 				>
-					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7h4l2-2h8l2 2h4v13H3V7z" />
-				</svg>
-				<div class="flex items-center">이동</div>
-			</DropdownMenu.Item>
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						class="h-5 w-5 text-gray-500"
+						fill="none"
+						viewBox="0 0 24 24"
+						stroke="currentColor"
+					>
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7h4l2-2h8l2 2h4v13H3V7z" />
+					</svg>
+					<div class="flex items-center">이동</div>
+				</DropdownMenu.Item>
+			{/if}
 
 			<DropdownMenu.Item
 				class="flex gap-2 items-center px-3 py-2 text-sm font-medium cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 rounded-md"
@@ -130,7 +133,9 @@
 				}}
 			>
 				<GarbageBin strokeWidth="2" />
-				<div class="flex items-center">{$i18n.t('Delete')}</div>
+				<div class="flex items-center">
+					{isTrashView ? $i18n.t('삭제') : $i18n.t('Delete')}
+				</div>
 			</DropdownMenu.Item>
 
 		</DropdownMenu.Content>

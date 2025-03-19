@@ -110,7 +110,6 @@
 			await deleteFolderById(localStorage.token, deletingFolderId);
 			delete folders[deletingFolderId];
 			dispatch('delete', { folderId: deletingFolderId });
-			toast.success($i18n.t('폴더가 삭제되었습니다.'));
 		} catch (error) {
 			toast.error(`${error}`);
 		} finally {

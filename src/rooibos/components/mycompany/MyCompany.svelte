@@ -19,7 +19,7 @@
 	import { WEBUI_API_BASE_URL } from '$lib/constants';
 	import { get } from 'svelte/store';
 	import { page } from '$app/stores';
-	import { deleteCompanyBookmark } from '$rooibos/components/apis/company';
+	import { deleteCompanyBookmark, permanentDeleteCompanyBookmark } from '$rooibos/components/apis/company';
 
 	// 다국어 텍스트
 	let collectionText = 'Collection';
@@ -31,11 +31,21 @@
 
 	let selectedItem: any = null;
 	let showDeleteConfirm = false;
+	let isTrashView = false; // Track if we're viewing trash items
+	let deleteConfirmTitle = "나의기업에서 삭제하시겠습니까?";
 
 	let bookmarks: any = [];
 
 	const deleteHandler = async (item: any) => {
-		const result = await deleteCompanyBookmark(item.id);
+		let result;
+		
+		if (isTrashView) {
+			// 휴지통에서 삭제하는 경우 영구 삭제
+			result = await permanentDeleteCompanyBookmark(item.id);
+		} else {
+			// 일반 삭제 (소프트 삭제)
+			result = await deleteCompanyBookmark(item.id);
+		}
 		
 		if (result.success) {
 			bookmarks = bookmarks.filter((bookmark: any) => bookmark.id !== item.id);
@@ -52,6 +62,11 @@
 		
 		const urlParams = new URLSearchParams(window.location.search);
 		const isDeleted = urlParams.get('deleted') || 'false';
+		isTrashView = isDeleted === 'true';
+		
+		// 삭제 확인 메시지 설정
+		deleteConfirmTitle = isTrashView ? 
+			"휴지통에서 완전히 삭제하시겠습니까?" : "나의기업에서 삭제하시겠습니까?";
 		
 		const response = await fetch(
 			`${WEBUI_API_BASE_URL}/rooibos/folders/${folderId}/companies?userId=${currentUser?.id}&deleted=${isDeleted}`,
@@ -83,7 +98,7 @@
 {#if loaded}
 	<DeleteConfirmDialog
 		bind:show={showDeleteConfirm}
-		title="나의기업에서 삭제하시겠습니까?"
+		title={deleteConfirmTitle}
 		on:confirm={() => {
 			deleteHandler(selectedItem);
 		}}
@@ -116,6 +131,7 @@
 						<div class=" flex self-center -mr-1 translate-y-1">
 							<CorpBookmarks
 								{bookmark}
+								isTrashView={isTrashView}
 								on:delete={() => {
 									selectedItem = bookmark;
 									showDeleteConfirm = true;
