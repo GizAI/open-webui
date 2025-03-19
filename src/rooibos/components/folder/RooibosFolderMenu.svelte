@@ -53,7 +53,7 @@
 				folder.name === '휴지통' || 
 				folder.isTrash === true;				
 			
-			goto(`/rooibos/folder/${folder.id}/companies?deleted=${isTrash ? 'true' : 'false'}`);
+			goto(`/rooibos/folder/${folder.id}/companies${isTrash ? '?deleted=true' : ''}`);
 		}
 	}
 

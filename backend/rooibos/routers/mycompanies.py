@@ -88,6 +88,7 @@ async def get_mycompany_by_id(id: str, request: Request):
             f.created_at,
             f.updated_at,
             f.company_id, f.user_id as bookmark_user_id,
+            f.folder_id,
             f.data::jsonb as data_files,
             f.access_control::jsonb,
             jsonb_agg(DISTINCT

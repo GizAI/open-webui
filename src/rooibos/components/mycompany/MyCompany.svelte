@@ -131,6 +131,7 @@
 			<button
 				class=" flex space-x-4 cursor-pointer text-left w-full px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-850 transition rounded-xl"
 				on:click={() => {
+					if(isTrashView) return;
 					goto(`/rooibos/mycompanies/${bookmark.id}`);
 				}}
 			>
