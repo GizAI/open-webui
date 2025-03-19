@@ -7,6 +7,7 @@
 	import XMark from '$lib/components/icons/XMark.svelte';
 	import Badge from '$lib/components/common/Badge.svelte';
 	import { WEBUI_API_BASE_URL } from '$lib/constants';
+	import { findUserById, findUserByEmail as apiFindUserByEmail } from '../apis/company';
 
 	type AccessControlConfig = {
 		read?: {
@@ -72,23 +73,13 @@
 			
 			for (const userId of accessControl.read.user_ids) {
 				try {
-					const response = await fetch(`${WEBUI_API_BASE_URL}/rooibos/mycompanies/user/find-by-id/${userId}`, {
-						method: 'GET',
-						headers: {
-							'Authorization': `Bearer ${localStorage.token}`
-						}
-					});
+					const result = await findUserById(userId);
 					
-					if (response.ok) {
-						const result = await response.json();
-						if (result.success && result.data) {
-							updatedUsers.push({
-								id: userId,
-								email: result.data.email || result.data.name || userId
-							});
-						} else {
-							updatedUsers.push({ id: userId, email: userId });
-						}
+					if (result.success && result.data) {
+						updatedUsers.push({
+							id: userId,
+							email: result.data.email || result.data.name || userId
+						});
 					} else {
 						updatedUsers.push({ id: userId, email: userId });
 					}
@@ -115,22 +106,15 @@
 	async function findUserByEmail(email: string): Promise<UserInfo | null> {
 		try {
 			isLoading = true;
-			const response = await fetch(`${WEBUI_API_BASE_URL}/rooibos/mycompanies/user/find-by-email/${encodeURIComponent(email)}`, {
-				method: 'GET',
-				headers: { 
-					'Authorization': `Bearer ${localStorage.token}`
-				}
-			});
 			
-			const result = await response.json();
-			
+			const result = await apiFindUserByEmail(email);
 			if (result.success && result.data) {
 				return { 
 					id: result.data.id, 
 					email: result.data.email 
 				};
 			} else {
-				toast.error(result.message || '해당 이메일의 사용자를 찾을 수 없습니다');
+				toast.error(result.error || '해당 이메일의 사용자를 찾을 수 없습니다');
 				return null;
 			}
 		} catch (error) {
