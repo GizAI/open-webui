@@ -1,5 +1,4 @@
 <script context="module">
-  // Function to check node type
   function isNodeType(editor, node, type, attrs = {}) {
     if (!editor || !node) return false;
     
@@ -21,7 +20,6 @@
     return false;
   }
 
-  // Menu item styling function
   function styleMenuItem(btn, icon) {
     btn.style.display = 'flex';
     btn.style.alignItems = 'center';
@@ -36,7 +34,6 @@
     btn.style.fontSize = '14px';
     btn.style.color = '#333';
     
-    // 다크모드일 때만 색상 변경
     const isDarkMode = document.documentElement.classList.contains('dark');
     if (isDarkMode) {
       btn.style.color = '#e5e7eb';
@@ -61,7 +58,6 @@
     };
   }
 
-  // Menu item active styling function
   function styleActiveMenuItem(btn, isActive) {
     const isDarkMode = document.documentElement.classList.contains('dark');
     
@@ -69,7 +65,6 @@
       btn.style.background = isDarkMode ? '#4B5563' : '#f0f0f0';
       btn.style.fontWeight = 'bold';
       
-      // Add check icon
       const checkIcon = document.createElement('span');
       checkIcon.innerHTML = '✓';
       checkIcon.style.marginLeft = 'auto';
@@ -78,7 +73,6 @@
     }
   }
 
-  // Add divider function
   function addDivider(menu) {
     const divider = document.createElement('div');
     divider.style.height = '1px';
@@ -88,15 +82,10 @@
     menu.appendChild(divider);
   }
 
-  // 현재 열려있는 메뉴 추적을 위한 전역 변수
   let currentOpenMenu = null;
   let currentClickOutsideHandler = null;
 
-  // Show line menu function
   export function showLineMenu(x, y, editor, node, pos, openSidebarCallback) {
-    console.log('showLineMenu 호출됨', { x, y, editor, node, pos });
-    
-    // 이미 열려있는 메뉴가 있으면 닫기
     if (currentOpenMenu) {
       currentOpenMenu.remove();
       if (currentClickOutsideHandler) {
@@ -110,7 +99,7 @@
     const menu = document.createElement('div');
     menu.id = 'line-menu-popup';
     menu.style.position = 'absolute';
-    menu.style.left = (x + 30) + 'px'; // 라인 아이콘으로부터 오른쪽으로 30px 이동
+    menu.style.left = (x + 30) + 'px';
     menu.style.top = y + 'px';
     menu.style.transform = 'translateY(10px)';
     menu.style.padding = '8px';
@@ -121,7 +110,6 @@
     menu.style.borderRadius = '6px';
     menu.style.boxShadow = '0 2px 10px rgba(0,0,0,0.1)';
     
-    // 다크모드일 때만 스타일 변경
     if (isDarkMode) {
       menu.style.border = '1px solid #4B5563';
       menu.style.background = '#111827';
@@ -137,14 +125,12 @@
     menu.style.fontSize = '14px';
     
     
-    // Paragraph
     const paragraphBtn = document.createElement('button');
     paragraphBtn.textContent = '본문';
     styleMenuItem(paragraphBtn, '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><text x="8" y="17" font-size="16" font-weight="bold" fill="currentColor">P</text></svg>');
     styleActiveMenuItem(paragraphBtn, isNodeType(editor, node, 'paragraph'));
     paragraphBtn.onclick = () => {
       try {
-        console.log('본문 버튼 클릭됨');
         editor.chain().focus().setNode('paragraph').run();
       } catch (error) {
         console.error('본문 변환 중 오류:', error);
@@ -153,7 +139,6 @@
     };
     menu.appendChild(paragraphBtn);
     
-    // Heading 1
     const heading1Btn = document.createElement('button');
     heading1Btn.textContent = '제목1';
     styleMenuItem(heading1Btn, '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M6 4v16M18 4v16M6 12h12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>');
@@ -172,13 +157,12 @@
     };
     menu.appendChild(heading1Btn);
     
-    // Heading 2
     const heading2Btn = document.createElement('button');
     heading2Btn.textContent = '제목2';
     styleMenuItem(heading2Btn, '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M6 4v16M18 4v16M6 12h12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>');
     styleActiveMenuItem(heading2Btn, isNodeType(editor, node, 'heading', { level: 2 }));
     heading2Btn.onclick = () => {
-      try {        console.log('제목2 버튼 클릭됨');
+      try {
         if (editor.isActive('heading', { level: 2 })) {
           editor.chain().focus().setNode('paragraph').run();
         } else {
@@ -191,7 +175,6 @@
     };
     menu.appendChild(heading2Btn);
     
-    // Heading 3
     const heading3Btn = document.createElement('button');
     heading3Btn.textContent = '제목3';
     styleMenuItem(heading3Btn, '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M6 4v16M18 4v16M6 12h12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>');
@@ -212,14 +195,12 @@
     
     addDivider(menu);
     
-    // Bullet list
     const bulletBtn = document.createElement('button');
     bulletBtn.textContent = '글머리 기호';
     styleMenuItem(bulletBtn, '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>');
     styleActiveMenuItem(bulletBtn, isNodeType(editor, node, 'bulletList'));
     bulletBtn.onclick = () => {
       try {
-        console.log('글머리 기호 버튼 클릭됨');
         editor.chain().focus().toggleBulletList().run();
       } catch (error) {
         console.error('글머리 기호 변환 중 오류:', error);
@@ -228,14 +209,12 @@
     };
     menu.appendChild(bulletBtn);
     
-    // Ordered list
     const orderedBtn = document.createElement('button');
     orderedBtn.textContent = '번호 매기기';
     styleMenuItem(orderedBtn, '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M10 6h11M10 12h11M10 18h11M4 6h1v4M4 10h2M4 18h3M4 14h2v4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>');
     styleActiveMenuItem(orderedBtn, isNodeType(editor, node, 'orderedList'));
     orderedBtn.onclick = () => {
       try {
-        console.log('번호 매기기 버튼 클릭됨');
         editor.chain().focus().toggleOrderedList().run();
       } catch (error) {
         console.error('번호 매기기 변환 중 오류:', error);
@@ -244,13 +223,11 @@
     };
     menu.appendChild(orderedBtn);
     
-    // Tasks list
     const tasksBtn = document.createElement('button');
     tasksBtn.textContent = '할 일 목록';
     styleMenuItem(tasksBtn, '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M9 12l2 2 4-4M8 6h13M8 18h13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><rect x="3" y="6" width="4" height="4" rx="1" stroke="currentColor" stroke-width="2"/><rect x="3" y="16" width="4" height="4" rx="1" stroke="currentColor" stroke-width="2"/></svg>');
     tasksBtn.onclick = () => {
       try {
-        console.log('할 일 목록 버튼 클릭됨');
         editor.chain().focus().toggleTaskList().run();
       } catch (error) {
         console.error('할 일 목록 변환 중 오류:', error);
@@ -259,17 +236,14 @@
     };
     menu.appendChild(tasksBtn);
     
-    // 구분선 추가
     addDivider(menu);
     
-    // 코드블록 버튼 추가
     const codeBlockBtn = document.createElement('button');
     codeBlockBtn.textContent = '코드블록';
     styleMenuItem(codeBlockBtn, '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M8 3H7C5.89543 3 5 3.89543 5 5V19C5 20.1046 5.89543 21 7 21H17C18.1046 21 19 20.1046 19 19V5C19 3.89543 18.1046 3 17 3H16M8 3V5H16V3M8 3H16M10 12L8 14L10 16M14 12L16 14L14 16" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>');
     styleActiveMenuItem(codeBlockBtn, isNodeType(editor, node, 'codeBlock'));
     codeBlockBtn.onclick = () => {
       try {
-        console.log('코드블록 버튼 클릭됨');
         editor.chain().focus().toggleCodeBlock().run();
       } catch (error) {
         console.error('코드블록 변환 중 오류:', error);
@@ -278,17 +252,14 @@
     };
     menu.appendChild(codeBlockBtn);
     
-    // 구분선 추가
     addDivider(menu);
     
-    // 인용구 버튼 추가
     const blockquoteBtn = document.createElement('button');
     blockquoteBtn.textContent = '인용구';
     styleMenuItem(blockquoteBtn, '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M10 11H6V7H10V11ZM14 17H10V13H14V17ZM18 11H14V7H18V11Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>');
     styleActiveMenuItem(blockquoteBtn, isNodeType(editor, node, 'blockquote'));
     blockquoteBtn.onclick = () => {
       try {
-        console.log('인용구 버튼 클릭됨');
         editor.chain().focus().toggleBlockquote().run();
       } catch (error) {
         console.error('인용구 변환 중 오류:', error);
@@ -299,20 +270,16 @@
     
     document.body.appendChild(menu);
     
-    // 메뉴가 화면 밖으로 나가는지 확인하고 위치 조정
     setTimeout(() => {
       const menuRect = menu.getBoundingClientRect();
       const viewportHeight = window.innerHeight;
       const viewportWidth = window.innerWidth;
       
-      // 화면 하단을 벗어나는 경우
       if (menuRect.bottom > viewportHeight) {
-        // 메뉴를 위쪽으로 표시 (버튼 위에 표시)
         menu.style.top = (y - menuRect.height - 10) + 'px';
         menu.style.transform = 'translateY(0)';
       }
       
-      // 화면 오른쪽을 벗어나는 경우
       if (menuRect.right > viewportWidth) {
         menu.style.left = (viewportWidth - menuRect.width - 10) + 'px';
       }
