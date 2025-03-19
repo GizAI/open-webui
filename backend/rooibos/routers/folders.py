@@ -142,37 +142,6 @@ async def update_folder_name(request: Request):
             }
         )
 
-@router.get("/{folderId}/notes")
-async def getFolderNoteList(folderId: str, request: Request):    
-    search_params = request.query_params
-    userId = search_params.get("userId")
-    try:
-        with get_db() as db:
-            query = """
-                SELECT *
-                FROM rb_note
-                WHERE user_id = :userId and folder_id = :folderId
-                ORDER BY updated_at ASC
-            """
-            params = {"userId": userId, "folderId": folderId}
-            result = db.execute(text(query), params)
-            notes = [dict(row._mapping) for row in result.fetchall()]
-
-        return {
-            "success": True,
-            "notes": notes,
-            "total": len(notes)
-        }
-    except Exception as e:
-        log.error("Failed to fetch notes for folder: %s", e)
-        raise HTTPException(
-            status_code=500,
-            detail={
-                "success": False,
-                "error": "Failed to fetch notes for folder",
-                "message": str(e)
-            }
-        )
 
 @router.get("/{folderId}/companies")
 async def getFolderCompanyList(folderId: str, request: Request):    

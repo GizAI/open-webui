@@ -5,15 +5,11 @@
 	import Tooltip from '$lib/components/common/Tooltip.svelte';
 	import { flyAndScale } from '$lib/utils/transitions';
 	import { goto } from '$app/navigation';
-	import { v4 as uuidv4 } from 'uuid';
 	import { toast } from 'svelte-sonner';
 	import { renameNoteFolder, deleteFolderById } from '$rooibos/components/apis/folder';
-	import { createNote } from '$rooibos/components/apis/note';
-	import { user } from '$lib/stores';
 	import Pencil from '$lib/components/icons/Pencil.svelte';
 	import FolderForm from './FolderForm.svelte';
-	import { NotebookIcon, FolderIcon, Trash2Icon } from 'lucide-svelte';
-	import Cog6 from '$lib/components/icons/Cog6.svelte';
+	import { FolderIcon, Trash2Icon } from 'lucide-svelte';
 	import ConfirmDialog from '$lib/components/common/ConfirmDialog.svelte';
 
 	// i18n 스토어 설정
@@ -35,33 +31,18 @@
 
 	let editingFolderId: string | null = null;
 	let editedName = '';
-
-	// 관리 폴더 관련 상태
 	let showManagementForm = false;
 	let managementFolderId: string | null = null;
-
-	// 삭제 확인 대화상자 관련 상태
 	let showDeleteConfirm = false;
 	let deletingFolderId: string | null = null;
 
 	function handleFolderClick(folder: any) {
-		if (folder.type === 'note') {
-			goto(`/rooibos/folder/${folder.id}/notes`);
-		} else {
-			const isTrash = 
-				folder.id.startsWith('trash-folder-') || 
-				folder.name === '휴지통' || 
-				folder.isTrash === true;				
-			
-			goto(`/rooibos/folder/${folder.id}/companies${isTrash ? '?deleted=true' : ''}`);
-		}
-	}
-
-	async function handleAddPage(e: Event, folderId: string) {
-		e.stopPropagation();
-		const newId = uuidv4();
-		await createNote(localStorage.token, newId, $user?.id, folderId);
-		goto(`/rooibos/note/${newId}`);
+		const isTrash = 
+			folder.id.startsWith('trash-folder-') || 
+			folder.name === '휴지통' || 
+			folder.isTrash === true;				
+		
+		goto(`/rooibos/folder/${folder.id}/companies${isTrash ? '?deleted=true' : ''}`);
 	}
 
 	function startEditing(e: Event, folderId: string) {
@@ -196,16 +177,7 @@
 								>
 									<Cog6 strokeWidth="2" />
 									<div class="flex items-center">{$i18n.t('폴더관리')}</div>
-								</DropdownMenu.Item> -->
-								{#if folders[folderId].type === 'note'}
-									<DropdownMenu.Item
-										class="flex gap-2 items-center px-3 py-1.5 text-sm cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 rounded-md"
-										on:click={(e) => handleAddPage(e, folderId)}
-									>
-										<NotebookIcon strokeWidth="2" />
-										<div class="flex items-center">{$i18n.t('새노트')}</div>
-									</DropdownMenu.Item>
-								{/if}
+								</DropdownMenu.Item> -->								
 							</DropdownMenu.Content>
 						</div>
 					</Dropdown>
