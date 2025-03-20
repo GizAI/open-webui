@@ -9,6 +9,8 @@
 	import { fade, slide } from 'svelte/transition';
 	import Tooltip from '$lib/components/common/Tooltip.svelte';
 	import { userSignOut } from '$lib/apis/auths';
+	import ReferralManagement from '$lib/components/admin/Users/ReferralManagement.svelte';
+	import { getUsers } from '$lib/apis/users';
 
 	const i18n = getContext('i18n');
 
@@ -16,7 +18,22 @@
 	export let role = '';
 	export let className = 'max-w-[240px]';
 
+	let showReferralManagement = false;
+	let referralUsers = [];
+
 	const dispatch = createEventDispatcher();
+
+	onMount(async () => {
+		// Load referral users if needed
+		if ($user?.referral_code) {
+			try {
+				const allUsers = await getUsers(localStorage.token);
+				referralUsers = allUsers.filter(u => u.referrer_code === $user.referral_code);
+			} catch (error) {
+				console.error('Failed to load referral users:', error);
+			}
+		}
+	});
 </script>
 
 <DropdownMenu.Root
@@ -151,6 +168,34 @@
 				</a>
 			{/if}
 
+			{#if $user?.is_manager}
+				<button
+					class="flex rounded-md py-2 px-3 w-full hover:bg-gray-50 dark:hover:bg-gray-800 transition"
+					on:click={() => {
+						showReferralManagement = true;
+						show = false;
+					}}
+				>
+					<div class="self-center mr-3">
+						<svg
+							xmlns="http://www.w3.org/2000/svg"
+							fill="none"
+							viewBox="0 0 24 24"
+							stroke-width="1.5"
+							stroke="currentColor"
+							class="w-5 h-5"
+						>
+							<path
+								stroke-linecap="round"
+								stroke-linejoin="round"
+								d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z"
+							/>
+						</svg>
+					</div>
+					<div class="self-center truncate">{$i18n.t('Referral Management')}</div>
+				</button>
+			{/if}
+
 			<hr class=" border-gray-100 dark:border-gray-850 my-1 p-0" />
 
 			<button
@@ -223,3 +268,5 @@
 		</DropdownMenu.Content>
 	</slot>
 </DropdownMenu.Root>
+
+<ReferralManagement bind:show={showReferralManagement} bind:referralUsers={referralUsers} />
