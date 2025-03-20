@@ -13,27 +13,18 @@
 	import ChevronDown from '$lib/components/icons/ChevronDown.svelte';
 	import ConfirmDialog from '$lib/components/common/ConfirmDialog.svelte';
 
-	interface User {
-		id: string;
-		name: string;
-		email: string;
-		role: string;
-		last_active_time?: string;
-		created_at: string;
-		[key: string]: any;
-	}
 
 	const i18n = getContext('i18n');
 
 	export let show = false;
-	export let referralUsers: User[] = [];
+	export let referralUsers: any[] = [];
 
 	let isLoading = false;
 
 	let showDeleteConfirmDialog = false;
-	let selectedUser: User | null = null;
+	let selectedUser: any | null = null;
 
-	let sortKey: keyof User = 'created_at';
+	let sortKey: keyof any = 'created_at';
 	let sortOrder: 'asc' | 'desc' = 'asc';
 
 	// 추천된 사용자 목록 로드
@@ -56,7 +47,7 @@
 		loadReferredUsers();
 	}
 
-	function setSortKey(key: keyof User): void {
+	function setSortKey(key: keyof any): void {
 		if (sortKey === key) {
 			sortOrder = sortOrder === 'asc' ? 'desc' : 'asc';
 		} else {
@@ -167,10 +158,10 @@
 									{/if}
 								</div>
 							</th>
-							<th class="px-3 py-2 cursor-pointer" on:click={() => setSortKey('last_active_time')}>
+							<th class="px-3 py-2 cursor-pointer" on:click={() => setSortKey('last_active_at')}>
 								<div class="flex items-center">
 									{$i18n.t('Last Active')}
-									{#if sortKey === 'last_active_time'}
+									{#if sortKey === 'last_active_at'}
 										<span class="ml-1">
 											{#if sortOrder === 'asc'}
 												<ChevronUp className="w-4 h-4" />
@@ -201,31 +192,28 @@
 					<tbody>
 						{#each sortedUsers as user (user.id)}
 							<tr class="bg-white dark:bg-gray-900 dark:border-gray-850 text-xs">
-								<td class="px-3 py-2">
+								<td class="px-3 py-2 min-w-[7rem] w-28">
 									<button
-										class="px-2 py-1 rounded text-xs font-medium"
-										class:bg-blue-100={user.role === 'pending'}
-										class:text-blue-800={user.role === 'pending'}
-										class:bg-gray-100={user.role === 'user'}
-										class:text-gray-800={user.role === 'user'}
+										class="translate-y-0.5"
 										on:click={() => {
 											const newRole = user.role === 'user' ? 'pending' : 'user';
 											updateRoleHandler(user.id, newRole);
 										}}
 									>
-										{user.role}
+										<Badge
+											type={user.role === 'admin' ? 'info' : user.role === 'user' ? 'success' : 'muted'}
+											content={$i18n.t(user.role)}
+										/>
 									</button>
 								</td>
 								<td class="px-3 py-2">{user.name}</td>
 								<td class="px-3 py-2">{user.email}</td>
-								<td class="px-3 py-2">
-									{#if user.last_active_time}
-										{dayjs(user.last_active_time).fromNow()}
-									{:else}
-										-
-									{/if}
+								<td class=" px-3 py-1">
+									{dayjs(user.last_active_at * 1000).fromNow()}
 								</td>
-								<td class="px-3 py-2">{dayjs(user.created_at).format('L LT')}</td>
+								<td class=" px-3 py-1">
+									{dayjs(user.created_at * 1000).format('LL')}
+								</td>
 								<td class="px-3 py-2">
 									<button
 										class="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300"
@@ -266,8 +254,8 @@
 
 <ConfirmDialog
 	show={showDeleteConfirmDialog}
-	title={$i18n.t('Delete User')}
-	message={$i18n.t('Are you sure you want to delete this user?')}
+	title="사용자삭제"
+	message="사용자를 삭제하시겠습니까?"
 	onConfirm={() => {
 		if (selectedUser) {
 			deleteUserHandler(selectedUser.id);
@@ -275,7 +263,7 @@
 		showDeleteConfirmDialog = false;
 		selectedUser = null;
 	}}
-	onCancel={() => {
+	on:cancel={() => {
 		showDeleteConfirmDialog = false;
 		selectedUser = null;
 	}}
