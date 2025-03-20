@@ -285,8 +285,7 @@
 
 					<button
 						class="ml-1.5 px-3 py-1 dark:hover:bg-gray-850 transition rounded-lg"
-						on:click={() => {
-							debugger;
+						on:click={() => {							
 							copyToClipboard(`${window.location.origin}/auth?referrer_code=${$user.referral_code ?? ''}`);
 							referrerLinkCopied = true;
 							setTimeout(() => {
