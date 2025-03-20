@@ -219,19 +219,19 @@
 			{#if users.length > 0}
 				{#each users as user}
 					<div class="flex items-center gap-3 justify-between text-xs w-full transition">
-						<div class="flex items-center gap-1.5 w-full font-medium">
-							<div>
+						<div class="flex items-center gap-1.5 flex-1 min-w-0 font-medium">
+							<div class="flex-shrink-0">
 								<svg xmlns="http://www.w3.org/2000/svg" class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
 									<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
 									<circle cx="12" cy="7" r="4" />
 								</svg>
 							</div>
-							<div>
+							<div class="truncate">
 								{user.name} ({user.email})
 							</div>
 						</div>
 
-						<div class="w-full flex justify-end items-center gap-0.5">
+						<div class="flex-shrink-0 flex justify-end items-center gap-0.5">
 							<Badge type={'success'} content={$i18n.t('읽기/쓰기')} />
 							
 							<button
