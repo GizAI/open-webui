@@ -311,8 +311,7 @@
 												bind:value={referrer_code}
 												type="text"
 												class="my-0.5 w-full text-sm outline-hidden bg-transparent"
-												placeholder={$i18n.t('Enter Referral Code')}
-												required
+												placeholder={$i18n.t('초대코드')}
 											/>
 										</div>
 									{/if}
