@@ -10,7 +10,6 @@
 	import Tooltip from '$lib/components/common/Tooltip.svelte';
 	import { userSignOut } from '$lib/apis/auths';
 	import ReferralManagement from '$lib/components/admin/Users/ReferralManagement.svelte';
-	import { getReferredUsers } from '$lib/apis/users';
 
 	const i18n = getContext('i18n');
 
@@ -19,20 +18,8 @@
 	export let className = 'max-w-[240px]';
 
 	let showReferralManagement = false;
-	let referralUsers = [];
 
 	const dispatch = createEventDispatcher();
-
-	onMount(async () => {
-		// Load referral users if needed
-		if ($user?.referral_code) {
-			try {
-				referralUsers = await getReferredUsers(localStorage.token);
-			} catch (error) {
-				console.error('Failed to load referral users:', error);
-			}
-		}
-	});
 </script>
 
 <DropdownMenu.Root
@@ -268,4 +255,4 @@
 	</slot>
 </DropdownMenu.Root>
 
-<ReferralManagement bind:show={showReferralManagement} bind:referralUsers={referralUsers} />
+<ReferralManagement bind:show={showReferralManagement} />
