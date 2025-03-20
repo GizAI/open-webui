@@ -118,14 +118,14 @@
 >
 	{#if companyInfo}
 		<div
-			class="header-container sticky z-10 shrink-0 px-4 pt-2 pb-1 border-b border-gray-200 bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-gray-200"
+			class="header-container sticky z-10 shrink-0 px-4 pt-3 pb-2 border-b border-gray-200 bg-white text-gray-900 dark:bg-gray-950 dark:text-gray-200"
 			style="top: {$mobile && isFullscreen ? 'env(safe-area-inset-top)' : '0'};"
 		>
 			<div class="flex items-center justify-between w-full mb-1">
 				<h1
 					class="{$mobile
 						? 'sm:text-xl'
-						: 'text-xl'} font-semibold mb-1 truncate text-gray-900 dark:text-gray-200"
+						: 'text-xl'} font-semibold mb-1 mt-1 truncate text-gray-900 dark:text-gray-200"
 				>
 					{companyInfo.company_name}
 				</h1>
@@ -178,7 +178,7 @@
 		</div>
 
 		<!-- 기업 상세 내용 -->
-		<div class="flex-1 px-4 pb-4 bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-white-200">
+		<div class="flex-1 px-4 pb-4 bg-white text-gray-900 dark:bg-gray-950 dark:text-white-200">
 			<CompanyDetail company={companyInfo} bind:financialData />
 		</div>
 	{:else}
@@ -189,15 +189,17 @@
 <style>
 	.company-info-wrapper {
 		position: fixed;
-		top: 70px;
+		top: 80px;
 		right: 0;
 		width: 30%;
-		height: calc(100vh - 60px);
-		z-index: 60;
+		height: calc(100vh - 80px);
+		z-index: 49;
 		box-shadow: -2px 0 5px rgba(0, 0, 0, 0.1);
 		overflow-y: auto;
 		transition: all 0.3s ease;
 		transform: translateX(100%);
+		background-color: white;
+		border-left: 1px solid #e5e7eb;
 	}
 
 	.company-info-wrapper.active {
