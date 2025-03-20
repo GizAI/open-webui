@@ -13,18 +13,12 @@
 
 	import DeleteConfirmDialog from '$lib/components/common/ConfirmDialog.svelte';
 	import CorpBookmarks from '$rooibos/components/mycompany/MyCompanyItemMenu.svelte';
-	import Badge from '$lib/components/common/Badge.svelte';
 	import Spinner from '$lib/components/common/Spinner.svelte';
 	import MenuLines from '$lib/components/icons/MenuLines.svelte';
 	import { WEBUI_API_BASE_URL } from '$lib/constants';
 	import { get } from 'svelte/store';
 	import { page } from '$app/stores';
 	import { deleteCompanyBookmark, permanentDeleteCompanyBookmark, restoreCompanyBookmark } from '$rooibos/components/apis/company';
-
-	let collectionText = 'Collection';
-	$: if ($i18n) {
-		collectionText = $i18n.t('Collection');
-	}
 
 	let loaded = false;
 	let selectedItem: any = null;
@@ -129,40 +123,34 @@
 	<div class="mb-5 grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-2">
 		{#each bookmarks as bookmark}
 			<button
-				class=" flex space-x-4 cursor-pointer text-left w-full px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-850 transition rounded-xl"
+				class="flex space-x-4 cursor-pointer text-left w-full px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-850 transition rounded-xl"
 				on:click={() => {
 					if(isTrashView) return;
 					goto(`/rooibos/mycompanies/${bookmark.id}`);
 				}}
 			>
-				<div class=" w-full">
-					<div class="flex items-center justify-between -mt-1">
-						<Badge type="success" content={collectionText} />
-						<div class=" flex self-center -mr-1 translate-y-1">
-							<CorpBookmarks
-								{bookmark}
-								{isTrashView}
-								on:delete={() => {
-									selectedItem = bookmark;
-									showDeleteConfirm = true;
-								}}
-								on:restore={() => {
-									restoreHandler(bookmark);
-								}}
-								on:moved={() => {
-									bookmarks = bookmarks.filter((b) => b.id !== bookmark.id);
-								}}
-							/>
-
-						</div>
-					</div>
-
-					<div class=" self-center flex-1 px-1 mb-1">
-						<div class=" font-semibold line-clamp-1 h-fit">{bookmark.company_name}</div>
-
-						<div class=" text-xs overflow-hidden text-ellipsis line-clamp-1">
+				<div class="w-full flex items-start justify-between">
+					<div class="self-start flex-1 px-1 mb-1">
+						<div class="font-semibold line-clamp-1 h-fit">{bookmark.company_name}</div>
+						<div class="text-xs overflow-hidden text-ellipsis line-clamp-1">
 							{bookmark.address}
 						</div>
+					</div>
+					<div class="self-start ml-2">
+						<CorpBookmarks
+							{bookmark}
+							{isTrashView}
+							on:delete={() => {
+								selectedItem = bookmark;
+								showDeleteConfirm = true;
+							}}
+							on:restore={() => {
+								restoreHandler(bookmark);
+							}}
+							on:moved={() => {
+								bookmarks = bookmarks.filter((b) => b.id !== bookmark.id);
+							}}
+						/>
 					</div>
 				</div>
 			</button>

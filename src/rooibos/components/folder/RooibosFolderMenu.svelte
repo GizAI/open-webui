@@ -147,45 +147,47 @@
 				{/if}
 
 				<div class="invisible group-hover:visible flex items-center">
-					<Dropdown>
-						<Tooltip content={$i18n.t('More')}>
-							<button class="flex items-center justify-center h-6 w-6">
-								<span class="inline-block transform translate-y-[-2px]">...</span>
-							</button>
-						</Tooltip>
-						<div slot="content">
-							<DropdownMenu.Content
-								class="w-full max-w-[160px] rounded-lg px-1 py-1.5 z-50 bg-white dark:bg-gray-850 dark:text-white shadow-lg"
-								sideOffset={-2}
-								side="bottom"
-								align="start"
-								transition={flyAndScale}
-							>
-								<DropdownMenu.Item
-									class="flex gap-2 items-center px-3 py-1.5 text-sm cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 rounded-md"
-									on:click={(e) => startEditing(e, folderId)}
+					{#if !folders[folderId].isTrash}
+						<Dropdown>
+							<Tooltip content={$i18n.t('More')}>
+								<button class="flex items-center justify-center h-6 w-6">
+									<span class="inline-block transform translate-y-[-2px]">...</span>
+								</button>
+							</Tooltip>
+							<div slot="content">
+								<DropdownMenu.Content
+									class="w-full max-w-[160px] rounded-lg px-1 py-1.5 z-50 bg-white dark:bg-gray-850 dark:text-white shadow-lg"
+									sideOffset={-2}
+									side="bottom"
+									align="start"
+									transition={flyAndScale}
 								>
-									<Pencil strokeWidth="2" />
-									<div class="flex items-center">{$i18n.t('이름변경')}</div>
-								</DropdownMenu.Item>
-								<DropdownMenu.Item
-									class="flex gap-2 items-center px-3 py-1.5 text-sm cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 rounded-md"
-									on:click={(e) => showDeleteConfirmDialog(e, folderId)}
-								>
-									<Trash2Icon strokeWidth="2" />
-									<div class="flex items-center">{$i18n.t('폴더삭제')}</div>
-								</DropdownMenu.Item>
-								<!-- 관리 메뉴 항목 추가 -->
-								<!-- <DropdownMenu.Item
-									class="flex gap-2 items-center px-3 py-1.5 text-sm cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 rounded-md"
-									on:click={(e) => { e.stopPropagation(); openManagement(folderId); }}
-								>
-									<Cog6 strokeWidth="2" />
-									<div class="flex items-center">{$i18n.t('폴더관리')}</div>
-								</DropdownMenu.Item> -->								
-							</DropdownMenu.Content>
-						</div>
-					</Dropdown>
+									<DropdownMenu.Item
+										class="flex gap-2 items-center px-3 py-1.5 text-sm cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 rounded-md"
+										on:click={(e) => startEditing(e, folderId)}
+									>
+										<Pencil strokeWidth="2" />
+										<div class="flex items-center">{$i18n.t('이름변경')}</div>
+									</DropdownMenu.Item>
+									<DropdownMenu.Item
+										class="flex gap-2 items-center px-3 py-1.5 text-sm cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 rounded-md"
+										on:click={(e) => showDeleteConfirmDialog(e, folderId)}
+									>
+										<Trash2Icon strokeWidth="2" />
+										<div class="flex items-center">{$i18n.t('폴더삭제')}</div>
+									</DropdownMenu.Item>
+									<!-- 관리 메뉴 항목 추가 -->
+									<!-- <DropdownMenu.Item
+										class="flex gap-2 items-center px-3 py-1.5 text-sm cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 rounded-md"
+										on:click={(e) => { e.stopPropagation(); openManagement(folderId); }}
+									>
+										<Cog6 strokeWidth="2" />
+										<div class="flex items-center">{$i18n.t('폴더관리')}</div>
+									</DropdownMenu.Item> -->								
+								</DropdownMenu.Content>
+							</div>
+						</Dropdown>
+					{/if}
 				</div>
 			</div>
 
