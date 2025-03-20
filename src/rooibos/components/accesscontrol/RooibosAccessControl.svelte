@@ -23,6 +23,7 @@
 	type UserInfo = {
 		id: string;
 		email: string;
+		name?: string;
 	};
 
 	export let onChange: Function = () => {};
@@ -78,7 +79,8 @@
 					if (result.success && result.data) {
 						updatedUsers.push({
 							id: userId,
-							email: result.data.email || result.data.name || userId
+							email: result.data.email || userId,
+							name: result.data.name || result.data.email || userId
 						});
 					} else {
 						updatedUsers.push({ id: userId, email: userId });
@@ -111,7 +113,8 @@
 			if (result.success && result.data) {
 				return { 
 					id: result.data.id, 
-					email: result.data.email 
+					email: result.data.email,
+					name: result.data.name || result.data.email
 				};
 			} else {
 				toast.error(result.error || '해당 이메일의 사용자를 찾을 수 없습니다');
@@ -219,12 +222,12 @@
 						<div class="flex items-center gap-1.5 w-full font-medium">
 							<div>
 								<svg xmlns="http://www.w3.org/2000/svg" class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-									<rect width="20" height="16" x="2" y="4" rx="2" />
-									<path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
+									<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+									<circle cx="12" cy="7" r="4" />
 								</svg>
 							</div>
 							<div>
-								{user.email}
+								{user.name} ({user.email})
 							</div>
 						</div>
 
