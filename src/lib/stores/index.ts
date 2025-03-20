@@ -230,4 +230,5 @@ type SessionUser = {
 	name: string;
 	role: string;
 	profile_image_url: string;
+	referral_code?: string;
 };
