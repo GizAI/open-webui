@@ -9,7 +9,7 @@
 	import { fade, slide } from 'svelte/transition';
 	import Tooltip from '$lib/components/common/Tooltip.svelte';
 	import { userSignOut } from '$lib/apis/auths';
-	import ReferralManagement from '$lib/components/admin/Users/ReferralManagement.svelte';
+	import ReferralManagement from '$rooibos/components/user/ReferralManagement.svelte';
 
 	const i18n = getContext('i18n');
 
@@ -178,7 +178,7 @@
 							/>
 						</svg>
 					</div>
-					<div class="self-center truncate">{$i18n.t('Referral Management')}</div>
+					<div class="self-center truncate">추천인 관리</div>
 				</button>
 			{/if}
 
