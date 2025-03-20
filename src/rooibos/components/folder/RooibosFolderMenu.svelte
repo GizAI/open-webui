@@ -137,8 +137,8 @@
 				{:else}
 					<button on:click={() => handleFolderClick(folders[folderId])} class="cursor-pointer flex items-center gap-1.5 text-left bg-transparent border-0 p-0 text-xs">
 						{#if folders[folderId].isTrash}
-							<Trash2Icon size={16} strokeWidth={1.5} class="text-gray-500" />
-							<span class="text-gray-500">{folders[folderId].name}</span>
+							<Trash2Icon size={16} strokeWidth={1.5} />
+							{folders[folderId].name}
 						{:else}
 							<FolderIcon size={16} strokeWidth={1.5} />
 							{folders[folderId].name}
