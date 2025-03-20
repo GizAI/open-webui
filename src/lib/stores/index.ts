@@ -231,4 +231,5 @@ type SessionUser = {
 	role: string;
 	profile_image_url: string;
 	referral_code?: string;
+	is_manager?: boolean;
 };

@@ -113,6 +113,7 @@ async def get_session_user(
         "profile_image_url": user.profile_image_url,
         "permissions": user_permissions,
         "referral_code": user.referral_code,
+        "is_manager": user.is_manager,
     }
 
 
@@ -310,6 +311,7 @@ async def ldap_auth(request: Request, response: Response, form_data: LdapForm):
                     "profile_image_url": user.profile_image_url,
                     "permissions": user_permissions,
                     "referral_code": user.referral_code,
+                    "is_manager": user.is_manager,
                 }
             else:
                 raise HTTPException(400, detail=ERROR_MESSAGES.INVALID_CRED)
@@ -411,6 +413,7 @@ async def signin(request: Request, response: Response, form_data: SigninForm):
             "profile_image_url": user.profile_image_url,
             "permissions": user_permissions,
             "referral_code": user.referral_code,
+            "is_manager": user.is_manager,
         }
     else:
         raise HTTPException(400, detail=ERROR_MESSAGES.INVALID_CRED)
@@ -525,6 +528,7 @@ async def signup(request: Request, response: Response, form_data: SignupForm):
                 "profile_image_url": user.profile_image_url,
                 "permissions": user_permissions,
                 "referral_code": user.referral_code,
+                "is_manager": user.is_manager,
             }
         else:
             raise HTTPException(500, detail=ERROR_MESSAGES.CREATE_USER_ERROR)

@@ -21,7 +21,8 @@
 		profile_image_url: '',
 		name: '',
 		email: '',
-		password: ''
+		password: '',
+		is_manager: false
 	};
 
 	const submitHandler = async () => {
@@ -136,6 +137,20 @@
 									bind:value={_user.password}
 									autocomplete="new-password"
 								/>
+							</div>
+						</div>
+
+						<div class="flex items-center w-full mt-2">
+							<div class="flex items-center">
+								<input
+									type="checkbox"
+									id="is_manager"
+									bind:checked={_user.is_manager}
+									class="h-4 w-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
+								/>
+								<label for="is_manager" class="ml-2 text-sm text-gray-700 dark:text-gray-300">
+									{$i18n.t('Manager')}
+								</label>
 							</div>
 						</div>
 					</div>

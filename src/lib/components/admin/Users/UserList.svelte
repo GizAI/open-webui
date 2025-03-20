@@ -12,7 +12,7 @@
 
 	import { toast } from 'svelte-sonner';
 
-	import { updateUserRole, getUsers, deleteUserById } from '$lib/apis/users';
+	import { updateUserRole, getUsers, deleteUserById, updateUserById } from '$lib/apis/users';
 
 	import Pagination from '$lib/components/common/Pagination.svelte';
 	import ChatBubbles from '$lib/components/icons/ChatBubbles.svelte';
@@ -354,6 +354,30 @@
 					</div>
 				</th>
 
+				<th
+					scope="col"
+					class="px-3 py-1.5 cursor-pointer select-none"
+					on:click={() => setSortKey('is_manager')}
+				>
+					<div class="flex gap-1.5 items-center">
+						{$i18n.t('Manager')}
+
+						{#if sortKey === 'is_manager'}
+							<span class="font-normal"
+								>{#if sortOrder === 'asc'}
+									<ChevronUp className="size-2" />
+								{:else}
+									<ChevronDown className="size-2" />
+								{/if}
+							</span>
+						{:else}
+							<span class="invisible">
+								<ChevronUp className="size-2" />
+							</span>
+						{/if}
+					</div>
+				</th>
+
 				<th scope="col" class="px-3 py-2 text-right" />
 			</tr>
 		</thead>
@@ -405,6 +429,34 @@
 					</td>
 
 					<td class=" px-3 py-1"> {user.oauth_sub ?? ''} </td>
+
+					<td class="px-3 py-1">
+						<div class="flex items-center">
+							<button
+								class="relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none"
+								class:bg-emerald-600={user.is_manager}
+								class:bg-gray-200={!user.is_manager}
+								on:click={() => {
+									const updatedUser = { ...user, is_manager: !user.is_manager };
+									updateUserById(localStorage.token, user.id, updatedUser)
+										.then(() => {
+											getUsers(localStorage.token).then((res) => {
+												users = res;
+											});
+										})
+										.catch((error) => {
+											toast.error(`${error}`);
+										});
+								}}
+							>
+								<span
+									class="inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-200 ease-in-out"
+									class:translate-x-4={user.is_manager}
+									class:translate-x-0={!user.is_manager}
+								/>
+							</button>
+						</div>
+					</td>
 
 					<td class="px-3 py-1 text-right">
 						<div class="flex justify-end w-full">

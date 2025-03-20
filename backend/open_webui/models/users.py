@@ -11,7 +11,7 @@ from open_webui.models.groups import Groups
 
 
 from pydantic import BaseModel, ConfigDict
-from sqlalchemy import BigInteger, Column, String, Text
+from sqlalchemy import BigInteger, Column, String, Text, Boolean
 
 ####################
 # User DB Schema
@@ -38,6 +38,7 @@ class User(Base):
     oauth_sub = Column(Text, unique=True)
     referral_code = Column(String, nullable=True, unique=True)
     referrer_code = Column(String, nullable=True)
+    is_manager = Column(Boolean, default=False)
 
 
 class UserSettings(BaseModel):
@@ -64,6 +65,7 @@ class UserModel(BaseModel):
     oauth_sub: Optional[str] = None
     referral_code: Optional[str] = None
     referrer_code: Optional[str] = None
+    is_manager: Optional[bool] = False
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -98,6 +100,7 @@ class UserUpdateForm(BaseModel):
     email: str
     profile_image_url: str
     password: Optional[str] = None
+    is_manager: Optional[bool] = False
 
 
 class UsersTable:
