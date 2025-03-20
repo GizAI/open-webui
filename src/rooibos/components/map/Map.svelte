@@ -615,7 +615,7 @@
 {/if}
 
 {#if showCompanyInfo && companyInfo && !($showSidebar && $mobile)}
-	<div class:sidebar-visible={$showSidebar}>
+	<div class="company-info-container" class:sidebar-visible={$showSidebar}>
 		<CompanyInfo {companyInfo} onClose={closeCompanyInfo} {isFullscreen} />
 	</div>
 {/if}
@@ -669,7 +669,7 @@
 		transition: transform 0.3s ease-in-out;
 		box-sizing: border-box;
 		background-color: white;
-		border-bottom: 1px solid #e5e7eb;
+		border-bottom: 2px solid #e5e7eb;
 	}
 
 	.search-bar-wrapper.sidebar-visible {
@@ -699,6 +699,21 @@
 	.company-list-wrapper.sidebar-visible {
 		margin-left: 256px;
 		width: calc(100% - 256px);
+	}
+
+	.company-info-container {
+		position: fixed;
+		top: 0;
+		right: 0;
+		width: 30%;
+		height: 100%;
+		z-index: 49;
+		transition: margin-left 0.3s ease-in-out;
+		padding-top: 80px; /* 검색 바 높이 + 더 큰 여유 공간 */
+	}
+
+	.company-info-container.sidebar-visible {
+		width: calc(30% - 0px);
 	}
 
 	#map {
