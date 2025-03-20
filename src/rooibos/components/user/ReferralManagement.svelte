@@ -3,21 +3,27 @@
 	import dayjs from 'dayjs';
 	import relativeTime from 'dayjs/plugin/relativeTime';
 	import localizedFormat from 'dayjs/plugin/localizedFormat';
+	
 	dayjs.extend(relativeTime);
 	dayjs.extend(localizedFormat);
 
+	import { WEBUI_NAME, config, user, showSidebar } from '$lib/stores';
 	import { toast } from 'svelte-sonner';
 	import { updateUserRole, deleteUserById, getReferredUsers } from '$lib/apis/users';
 	import Badge from '$lib/components/common/Badge.svelte';
 	import ChevronUp from '$lib/components/icons/ChevronUp.svelte';
 	import ChevronDown from '$lib/components/icons/ChevronDown.svelte';
 	import ConfirmDialog from '$lib/components/common/ConfirmDialog.svelte';
-
+	import Tooltip from '$lib/components/common/Tooltip.svelte';
+	import ChatBubbles from '$lib/components/icons/ChatBubbles.svelte';
+	import UserChatsModal from '$lib/components/admin/Users/UserList/UserChatsModal.svelte';
 
 	const i18n = getContext('i18n');
 
 	export let show = false;
 	export let referralUsers: any[] = [];
+
+	let showUserChatsModal = false;
 
 	let isLoading = false;
 
@@ -215,27 +221,21 @@
 									{dayjs(user.created_at * 1000).format('LL')}
 								</td>
 								<td class="px-3 py-2">
-									<button
-										class="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300"
-										on:click={() => {
-											selectedUser = user;
-											showDeleteConfirmDialog = true;
-										}}
-									>
-										<svg
-											class="w-4 h-4"
-											fill="none"
-											stroke="currentColor"
-											viewBox="0 0 24 24"
-										>
-											<path
-												stroke-linecap="round"
-												stroke-linejoin="round"
-												stroke-width="2"
-												d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-											/>
-										</svg>
-									</button>
+									<div class="flex justify-end w-full">
+										{#if $config.features.enable_admin_chat_access && user.role !== 'admin'}
+											<Tooltip content={$i18n.t('Chats')}>
+												<button
+													class="self-center w-fit text-sm px-2 py-2 hover:bg-black/5 dark:hover:bg-white/5 rounded-xl"
+													on:click={async () => {
+														showUserChatsModal = !showUserChatsModal;
+														selectedUser = user;
+													}}
+												>
+													<ChatBubbles />
+												</button>
+											</Tooltip>
+										{/if}
+									</div>
 								</td>
 							</tr>
 						{:else}
@@ -251,7 +251,7 @@
 		</div>
 	</div>
 {/if}
-
+<UserChatsModal bind:show={showUserChatsModal} user={selectedUser} />
 <ConfirmDialog
 	show={showDeleteConfirmDialog}
 	title="사용자삭제"
