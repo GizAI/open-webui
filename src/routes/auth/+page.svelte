@@ -25,6 +25,7 @@
 	let name = '';
 	let email = '';
 	let password = '';
+	let referrer_code = '';
 
 	let ldapUsername = '';
 
@@ -61,7 +62,7 @@
 	};
 
 	const signUpHandler = async () => {
-		const sessionUser = await userSignUp(name, email, password, generateInitialsImage(name)).catch(
+		const sessionUser = await userSignUp(name, email, password, generateInitialsImage(name), referrer_code).catch(
 			(error) => {
 				toast.error(`${error}`);
 				return null;
@@ -143,6 +144,12 @@
 			await goto('/');
 		}
 		await checkOauthCallback();
+
+		// Get referrer_code from URL if present
+		const urlReferrerCode = querystringValue('referrer_code');
+		if (urlReferrerCode) {
+			referrer_code = urlReferrerCode;
+		}
 
 		loaded = true;
 		setLogoImage();
@@ -296,6 +303,19 @@
 											required
 										/>
 									</div>
+
+									{#if mode === 'signup'}
+										<div class="mt-2">
+											<div class=" text-sm font-medium text-left mb-1">{$i18n.t('Referral Code')}</div>
+											<input
+												bind:value={referrer_code}
+												type="text"
+												class="my-0.5 w-full text-sm outline-hidden bg-transparent"
+												placeholder={$i18n.t('Enter Referral Code')}
+												required
+											/>
+										</div>
+									{/if}
 								</div>
 							{/if}
 							<div class="mt-5">

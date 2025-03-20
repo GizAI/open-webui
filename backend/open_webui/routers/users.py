@@ -325,3 +325,23 @@ async def delete_user_by_id(user_id: str, user=Depends(get_admin_user)):
         status_code=status.HTTP_403_FORBIDDEN,
         detail=ERROR_MESSAGES.ACTION_PROHIBITED,
     )
+
+
+@router.get("/user/referral", response_model=dict)
+async def get_user_referral(user=Depends(get_verified_user)):
+    if user:
+        user_data = Users.get_user_by_id(user.id)
+        if user_data:
+            return {
+                "referral_code": user_data.referral_code,
+            }
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=ERROR_MESSAGES.USER_NOT_FOUND,
+            )
+    else:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=ERROR_MESSAGES.USER_NOT_FOUND,
+        )

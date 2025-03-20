@@ -88,6 +88,7 @@ class SignupForm(BaseModel):
     email: str
     password: str
     profile_image_url: Optional[str] = "/user.png"
+    referrer_code: Optional[str] = None
 
 
 class AddUserForm(SignupForm):
@@ -102,30 +103,22 @@ class AuthsTable:
         name: str,
         profile_image_url: str = "/user.png",
         role: str = "pending",
-        oauth_sub: Optional[str] = None,
+        referrer_code: Optional[str] = None,
     ) -> Optional[UserModel]:
+        id = str(uuid.uuid4())
+        auth = Auth(id=id, email=email, password=password)
+
         with get_db() as db:
-            log.info("insert_new_auth")
-
-            id = str(uuid.uuid4())
-
-            auth = AuthModel(
-                **{"id": id, "email": email, "password": password, "active": True}
-            )
-            result = Auth(**auth.model_dump())
-            db.add(result)
-
-            user = Users.insert_new_user(
-                id, name, email, profile_image_url, role, oauth_sub
-            )
-
+            # Create Auth record
+            db.add(auth)
             db.commit()
-            db.refresh(result)
+            db.refresh(auth)
 
-            if result and user:
-                return user
-            else:
-                return None
+            # Create User record
+            user = Users.insert_new_user(
+                id, name, email, profile_image_url, role, None, referrer_code
+            )
+            return user
 
     def authenticate_user(self, email: str, password: str) -> Optional[UserModel]:
         log.info(f"authenticate_user: {email}")

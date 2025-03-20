@@ -1,5 +1,7 @@
 import time
 from typing import Optional
+import random
+import string
 
 from open_webui.internal.db import Base, JSONField, get_db
 
@@ -34,6 +36,8 @@ class User(Base):
     info = Column(JSONField, nullable=True)
 
     oauth_sub = Column(Text, unique=True)
+    referral_code = Column(String, nullable=True, unique=True)
+    referrer_code = Column(String, nullable=True)
 
 
 class UserSettings(BaseModel):
@@ -58,6 +62,8 @@ class UserModel(BaseModel):
     info: Optional[dict] = None
 
     oauth_sub: Optional[str] = None
+    referral_code: Optional[str] = None
+    referrer_code: Optional[str] = None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -103,8 +109,19 @@ class UsersTable:
         profile_image_url: str = "/user.png",
         role: str = "pending",
         oauth_sub: Optional[str] = None,
+        referrer_code: Optional[str] = None,
     ) -> Optional[UserModel]:
         with get_db() as db:
+            # Generate a random 6-character referral code with uppercase letters and numbers
+            def generate_referral_code():
+                chars = string.ascii_uppercase + string.digits
+                return ''.join(random.choice(chars) for _ in range(6))
+            
+            referral_code = generate_referral_code()
+            # Ensure uniqueness of referral code
+            while db.query(User).filter_by(referral_code=referral_code).first():
+                referral_code = generate_referral_code()
+                
             user = UserModel(
                 **{
                     "id": id,
@@ -116,6 +133,8 @@ class UsersTable:
                     "created_at": int(time.time()),
                     "updated_at": int(time.time()),
                     "oauth_sub": oauth_sub,
+                    "referral_code": referral_code,
+                    "referrer_code": referrer_code,
                 }
             )
             result = User(**user.model_dump())
@@ -329,6 +348,14 @@ class UsersTable:
         with get_db() as db:
             users = db.query(User).filter(User.id.in_(user_ids)).all()
             return [user.id for user in users]
+
+    def get_user_by_referral_code(self, referral_code: str) -> Optional[UserModel]:
+        try:
+            with get_db() as db:
+                user = db.query(User).filter_by(referral_code=referral_code).first()
+                return UserModel.model_validate(user) if user else None
+        except Exception:
+            return None
 
 
 Users = UsersTable()

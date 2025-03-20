@@ -444,6 +444,10 @@ async def signup(request: Request, response: Response, form_data: SignupForm):
     if Users.get_user_by_email(form_data.email.lower()):
         raise HTTPException(400, detail=ERROR_MESSAGES.EMAIL_TAKEN)
 
+    # Check if referrer_code exists in any user
+    if form_data.referrer_code and not Users.get_user_by_referral_code(form_data.referrer_code):
+        raise HTTPException(400, detail="Invalid referral code")
+
     try:
         role = (
             "admin" if user_count == 0 else request.app.state.config.DEFAULT_USER_ROLE
@@ -460,6 +464,7 @@ async def signup(request: Request, response: Response, form_data: SignupForm):
             form_data.name,
             form_data.profile_image_url,
             role,
+            form_data.referrer_code,
         )
 
         if user:
