@@ -10,7 +10,7 @@
 	import Tooltip from '$lib/components/common/Tooltip.svelte';
 	import { userSignOut } from '$lib/apis/auths';
 	import ReferralManagement from '$lib/components/admin/Users/ReferralManagement.svelte';
-	import { getUsers } from '$lib/apis/users';
+	import { getReferredUsers } from '$lib/apis/users';
 
 	const i18n = getContext('i18n');
 
@@ -27,8 +27,7 @@
 		// Load referral users if needed
 		if ($user?.referral_code) {
 			try {
-				const allUsers = await getUsers(localStorage.token);
-				referralUsers = allUsers.filter(u => u.referrer_code === $user.referral_code);
+				referralUsers = await getReferredUsers(localStorage.token);
 			} catch (error) {
 				console.error('Failed to load referral users:', error);
 			}

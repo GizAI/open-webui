@@ -9,9 +9,10 @@ from open_webui.models.users import (
     Users,
     UserSettings,
     UserUpdateForm,
+    User,
 )
 
-
+from open_webui.internal.db import get_db
 from open_webui.socket.main import get_active_status_by_user_id
 from open_webui.constants import ERROR_MESSAGES
 from open_webui.env import SRC_LOG_LEVELS
@@ -36,6 +37,18 @@ async def get_users(
     user=Depends(get_admin_user),
 ):
     return Users.get_users(skip, limit)
+
+
+############################
+# Get Referred Users
+############################
+
+
+@router.get("/referred", response_model=list[UserModel])
+async def get_referred_users(user=Depends(get_verified_user)):
+    with get_db() as db:
+        referred_users = db.query(User).filter_by(referrer_code=user.referral_code).all()
+        return [UserModel.model_validate(u) for u in referred_users] if referred_users else []
 
 
 ############################
