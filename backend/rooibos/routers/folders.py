@@ -416,4 +416,45 @@ async def delete_folder(id: str, request: Request):
             }
         )
 
+@router.get("/{id}")
+async def get_folder_by_id(id: str, request: Request):
+    try:
+        with get_db() as db:
+            query = """
+                SELECT *
+                FROM rb_folder
+                WHERE id = :id
+            """
+            params = {"id": id}
+            result = db.execute(text(query), params)
+            folder = dict(result.fetchone()._mapping)
+            
+            if not folder:
+                raise HTTPException(
+                    status_code=404,
+                    detail={
+                        "success": False,
+                        "error": "Folder not found",
+                        "message": "The requested folder was not found"
+                    }
+                )
+                
+            
+        return {
+            "success": True,
+            "data": folder
+        }
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        log.error("Failed to fetch folder by ID: %s", e)
+        raise HTTPException(
+            status_code=500,
+            detail={
+                "success": False,
+                "error": "Failed to fetch folder",
+                "message": str(e)
+            }
+        )
+
 

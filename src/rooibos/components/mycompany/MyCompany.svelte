@@ -19,12 +19,14 @@
 	import { get } from 'svelte/store';
 	import { page } from '$app/stores';
 	import { deleteCompanyBookmark, permanentDeleteCompanyBookmark, restoreCompanyBookmark } from '$rooibos/components/apis/company';
+	import { getFolderById } from '$rooibos/components/apis/folder';
 
 	let loaded = false;
 	let selectedItem: any = null;
 	let showDeleteConfirm = false;
 	let isTrashView = false;
 	let deleteConfirmTitle = "나의기업에서 삭제하시겠습니까?";
+	let folderName = ""; // Variable to store folder name
 	
 	interface Bookmark {
 		id: string;
@@ -67,9 +69,17 @@
 		const isDeleted = urlParams.get('deleted') || 'false';
 		isTrashView = isDeleted === 'true';
 		
-		// 삭제 확인 메시지 설정
 		deleteConfirmTitle = isTrashView ? 
 			"휴지통에서 완전히 삭제하시겠습니까?" : "나의기업에서 삭제하시겠습니까?";
+		
+		try {
+			const folderInfo = await getFolderById(localStorage.token, folderId);
+			if (folderInfo && folderInfo.name) {
+				folderName = folderInfo.name;
+			}
+		} catch (error) {
+			console.error("Failed to fetch folder info:", error);
+		}
 		
 		const response = await fetch(
 			`${WEBUI_API_BASE_URL}/rooibos/folders/${folderId}/companies?userId=${currentUser?.id}&deleted=${isDeleted}`,
@@ -117,6 +127,10 @@
 			>
 				<MenuLines />
 			</button>
+		{/if}
+		<!-- Display folder name here -->
+		{#if folderName}
+			<h2 class="text-xl font-bold">{folderName}</h2>
 		{/if}
 	</div>
 

@@ -122,7 +122,8 @@ export const getFolderById = async (token: string, id: string) => {
 	})
 		.then(async (res) => {
 			if (!res.ok) throw await res.json();
-			return res.json();
+			const result = await res.json();
+			return result.data;
 		})
 		.then((json) => {
 			return json;
