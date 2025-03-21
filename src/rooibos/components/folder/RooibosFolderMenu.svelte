@@ -27,6 +27,10 @@
 			if (folders[a].isTrash) return 1;
 			if (folders[b].isTrash) return -1;
 			
+			// 공유 기업 폴더는 휴지통 전에 오도록 처리
+			if (folders[a].isShared) return 1;
+			if (folders[b].isShared) return -1;
+			
 			// 일반 폴더는 이름 기준으로 정렬
 			return folders[a].name.localeCompare(folders[b].name, undefined, {
 				numeric: true,
@@ -47,7 +51,18 @@
 			folder.name === '휴지통' || 
 			folder.isTrash === true;				
 		
-		goto(`/rooibos/folder/${folder.id}/companies${isTrash ? '?deleted=true' : ''}`);
+		const isShared = 
+			folder.id.startsWith('shared-folder-') || 
+			folder.name === '공유 기업' || 
+			folder.isShared === true;
+		
+		if (isTrash) {
+			goto(`/rooibos/folder/${folder.id}/companies?deleted=true`);
+		} else if (isShared) {
+			goto(`/rooibos/folder/${folder.id}/companies?shared=true`);
+		} else {
+			goto(`/rooibos/folder/${folder.id}/companies`);
+		}
 	}
 
 	function startEditing(e: Event, folderId: string) {
@@ -143,6 +158,9 @@
 					<button on:click={() => handleFolderClick(folders[folderId])} class="cursor-pointer flex items-center gap-1.5 text-left bg-transparent border-0 p-0 text-xs">
 						{#if folders[folderId].isTrash}
 							<Trash2Icon size={16} strokeWidth={1.5} />
+							{folders[folderId].name}
+						{:else if folders[folderId].isShared}
+							<FolderIcon size={16} strokeWidth={1.5} />
 							{folders[folderId].name}
 						{:else}
 							<FolderIcon size={16} strokeWidth={1.5} />

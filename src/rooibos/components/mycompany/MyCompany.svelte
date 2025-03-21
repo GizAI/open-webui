@@ -67,6 +67,7 @@
 		
 		const urlParams = new URLSearchParams(window.location.search);
 		const isDeleted = urlParams.get('deleted') || 'false';
+		const isShared = urlParams.get('shared') || 'false';
 		isTrashView = isDeleted === 'true';
 		
 		deleteConfirmTitle = isTrashView ? 
@@ -82,7 +83,7 @@
 		}
 		
 		const response = await fetch(
-			`${WEBUI_API_BASE_URL}/rooibos/folders/${folderId}/companies?userId=${currentUser?.id}&deleted=${isDeleted}`,
+			`${WEBUI_API_BASE_URL}/rooibos/folders/${folderId}/companies?userId=${currentUser?.id}&deleted=${isDeleted}&shared=${isShared}`,
 			{
 				method: 'GET',
 				headers: {
