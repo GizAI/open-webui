@@ -175,7 +175,7 @@ async def getFolderCompanyList(folderId: str, request: Request):
                 FROM corp_bookmark f
                 INNER JOIN rb_master_company rmc
                     ON f.company_id::text = rmc.master_id::text
-                WHERE f.user_id = :userId 
+                WHERE 1=1
             """
             
             # 폴더 ID 확인 로그 추가
@@ -188,23 +188,14 @@ async def getFolderCompanyList(folderId: str, request: Request):
                 shared = True
                 
             if deleted:
-                query += " AND f.is_deleted = TRUE"
+                query += "AND f.user_id = :userId AND f.is_deleted = TRUE"
                 log.info("Getting deleted bookmarks only")
             elif shared:
-                query += """ AND EXISTS (
-                    SELECT 1 
-                    FROM jsonb_array_elements_text(
-                        CASE 
-                            WHEN f.access_control->'write'->'user_ids' IS NOT NULL 
-                            THEN (f.access_control->'write'->'user_ids')::jsonb
-                            ELSE '[]'::jsonb 
-                        END
-                    ) AS user_id
-                    WHERE user_id = :userId
-                )"""
-                log.info("Getting shared bookmarks with write access")
+                query += """ AND f.user_id != :userId
+                AND (f.access_control::jsonb -> 'write' -> 'user_ids') ? :userId"""
+                log.info("Getting shared bookmarks with write access (excluding user's own bookmarks)")
             else:
-                query += " AND f.folder_id = :folderId AND (f.is_deleted IS NULL OR f.is_deleted = FALSE)"
+                query += " AND f.user_id = :userId AND f.folder_id = :folderId AND (f.is_deleted IS NULL OR f.is_deleted = FALSE)"
                 log.info("Getting active bookmarks only")
                 
             query += " ORDER BY f.updated_at DESC"
@@ -289,17 +280,8 @@ async def getSharedCompanyList(request: Request):
                 FROM corp_bookmark f
                 INNER JOIN rb_master_company rmc
                     ON f.company_id::text = rmc.master_id::text
-                WHERE EXISTS (
-                    SELECT 1 
-                    FROM jsonb_array_elements_text(
-                        CASE 
-                            WHEN f.access_control->'write'->'user_ids' IS NOT NULL 
-                            THEN (f.access_control->'write'->'user_ids')::jsonb 
-                            ELSE '[]'::jsonb 
-                        END
-                    ) AS user_id
-                    WHERE user_id = :userId
-                )
+                WHERE f.user_id != :userId
+                AND (f.access_control::jsonb -> 'write' -> 'user_ids') ? :userId
                 ORDER BY f.updated_at DESC
             """
             params = {"userId": userId}
