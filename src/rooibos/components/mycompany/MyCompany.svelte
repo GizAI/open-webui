@@ -106,13 +106,21 @@
 		deleteConfirmTitle = isTrashView ? 
 			"휴지통에서 완전히 삭제하시겠습니까?" : "나의기업에서 삭제하시겠습니까?";
 		
-		try {
-			const folderInfo = await getFolderById(localStorage.token, folderId);
-			if (folderInfo && folderInfo.name) {
-				folderName = folderInfo.name;
+		// 특별 폴더의 경우 고정된 이름 설정
+		if (isTrashView || folderId.startsWith('trash-folder-')) {
+			folderName = "휴지통";
+		} else if (isSharedView || folderId.startsWith('shared-folder-')) {
+			folderName = "공유 기업";
+		} else {
+			// 일반 폴더인 경우만 폴더 정보 가져오기
+			try {
+				const folderInfo = await getFolderById(localStorage.token, folderId);
+				if (folderInfo && folderInfo.name) {
+					folderName = folderInfo.name;
+				}
+			} catch (error) {
+				console.error("Failed to fetch folder info:", error);
 			}
-		} catch (error) {
-			console.error("Failed to fetch folder info:", error);
 		}
 		
 		const response = await fetch(

@@ -9,7 +9,7 @@
 	import { renameNoteFolder, deleteFolderById } from '$rooibos/components/apis/folder';
 	import Pencil from '$lib/components/icons/Pencil.svelte';
 	import FolderForm from './FolderForm.svelte';
-	import { FolderIcon, Trash2Icon } from 'lucide-svelte';
+	import { FolderIcon, Trash2Icon, Share2Icon } from 'lucide-svelte';
 	import ConfirmDialog from '$lib/components/common/ConfirmDialog.svelte';
 
 	// i18n 스토어 설정
@@ -160,7 +160,7 @@
 							<Trash2Icon size={16} strokeWidth={1.5} />
 							{folders[folderId].name}
 						{:else if folders[folderId].isShared}
-							<FolderIcon size={16} strokeWidth={1.5} />
+							<Share2Icon size={16} strokeWidth={1.5} />
 							{folders[folderId].name}
 						{:else}
 							<FolderIcon size={16} strokeWidth={1.5} />
