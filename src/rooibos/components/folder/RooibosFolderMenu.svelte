@@ -22,12 +22,17 @@
 	let folderList = [];
 	$: folderList = Object.keys(folders)
 		.filter((key) => folders[key].parent_id === parentId)
-		.sort((a, b) =>
-			folders[a].name.localeCompare(folders[b].name, undefined, {
+		.sort((a, b) => {
+			// 휴지통 폴더는 항상 마지막에 오도록 처리
+			if (folders[a].isTrash) return 1;
+			if (folders[b].isTrash) return -1;
+			
+			// 일반 폴더는 이름 기준으로 정렬
+			return folders[a].name.localeCompare(folders[b].name, undefined, {
 				numeric: true,
 				sensitivity: 'base'
-			})
-		);
+			});
+		});
 
 	let editingFolderId: string | null = null;
 	let editedName = '';
