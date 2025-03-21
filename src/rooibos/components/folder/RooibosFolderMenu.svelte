@@ -170,7 +170,7 @@
 				{/if}
 
 				<div class="invisible group-hover:visible flex items-center">
-					{#if !folders[folderId].isTrash}
+					{#if !folders[folderId].isTrash && !folders[folderId].isShared}
 						<Dropdown>
 							<Tooltip content={$i18n.t('More')}>
 								<button class="flex items-center justify-center h-6 w-6">
