@@ -17,6 +17,7 @@
 		type: string;
 		childrenIds?: string[];
 		isTrash?: boolean;
+		isShared?: boolean;
 	}
 
 	interface RooibosFolders {
@@ -79,6 +80,17 @@
 			updated_at: Date.now(),
 			type: 'corp',
 			isTrash: true
+		};
+
+		const sharedId = 'shared-folder-' + ($user?.id || '');
+		rooibosFolders[sharedId] = {
+			id: sharedId,
+			name: '공유 기업',
+			parent_id: null,
+			created_at: Date.now(),
+			updated_at: Date.now(),
+			type: 'corp',
+			isShared: true
 		};
 	};
 

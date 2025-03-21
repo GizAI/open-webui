@@ -9,7 +9,7 @@
 	import { renameNoteFolder, deleteFolderById } from '$rooibos/components/apis/folder';
 	import Pencil from '$lib/components/icons/Pencil.svelte';
 	import FolderForm from './FolderForm.svelte';
-	import { FolderIcon, Trash2Icon } from 'lucide-svelte';
+	import { FolderIcon, Trash2Icon, Share2Icon } from 'lucide-svelte';
 	import ConfirmDialog from '$lib/components/common/ConfirmDialog.svelte';
 
 	// i18n 스토어 설정
@@ -26,6 +26,10 @@
 			// 휴지통 폴더는 항상 마지막에 오도록 처리
 			if (folders[a].isTrash) return 1;
 			if (folders[b].isTrash) return -1;
+			
+			// 공유 기업 폴더는 휴지통 전에 오도록 처리
+			if (folders[a].isShared) return 1;
+			if (folders[b].isShared) return -1;
 			
 			// 일반 폴더는 이름 기준으로 정렬
 			return folders[a].name.localeCompare(folders[b].name, undefined, {
@@ -47,7 +51,18 @@
 			folder.name === '휴지통' || 
 			folder.isTrash === true;				
 		
-		goto(`/rooibos/folder/${folder.id}/companies${isTrash ? '?deleted=true' : ''}`);
+		const isShared = 
+			folder.id.startsWith('shared-folder-') || 
+			folder.name === '공유 기업' || 
+			folder.isShared === true;
+		
+		if (isTrash) {
+			goto(`/rooibos/folder/${folder.id}/companies?deleted=true`);
+		} else if (isShared) {
+			goto(`/rooibos/folder/${folder.id}/companies?shared=true`);
+		} else {
+			goto(`/rooibos/folder/${folder.id}/companies`);
+		}
 	}
 
 	function startEditing(e: Event, folderId: string) {
@@ -144,6 +159,9 @@
 						{#if folders[folderId].isTrash}
 							<Trash2Icon size={16} strokeWidth={1.5} />
 							{folders[folderId].name}
+						{:else if folders[folderId].isShared}
+							<Share2Icon size={16} strokeWidth={1.5} />
+							{folders[folderId].name}
 						{:else}
 							<FolderIcon size={16} strokeWidth={1.5} />
 							{folders[folderId].name}
@@ -152,7 +170,7 @@
 				{/if}
 
 				<div class="invisible group-hover:visible flex items-center">
-					{#if !folders[folderId].isTrash}
+					{#if !folders[folderId].isTrash && !folders[folderId].isShared}
 						<Dropdown>
 							<Tooltip content={$i18n.t('More')}>
 								<button class="flex items-center justify-center h-6 w-6">

@@ -148,11 +148,17 @@ async def getFolderCompanyList(folderId: str, request: Request):
     search_params = request.query_params
     userId = search_params.get("userId")
     deleted_param = search_params.get("deleted", "false")
+    shared_param = search_params.get("shared", "false")
+    
+    # 모든 쿼리 파라미터 로그 출력
+    log.info(f"All query parameters: {dict(request.query_params)}")
+    log.info(f"Raw shared parameter value: '{shared_param}'")
         
     # 대소문자 구분 없이 파라미터 처리
     deleted = deleted_param.lower() in ["true", "1", "yes", "y"]
+    shared = shared_param.lower() in ["true", "1", "yes", "y"]
     
-    log.info(f"getFolderCompanyList - final deleted value: {deleted}")
+    log.info(f"getFolderCompanyList - final deleted value: {deleted}, shared value: {shared}")
     
     try:
         with get_db() as db:
@@ -162,6 +168,7 @@ async def getFolderCompanyList(folderId: str, request: Request):
                     f.created_at,
                     f.updated_at,
                     f.company_id,
+                    f.user_id,
                     rmc.master_id,
                     rmc.company_name,
                     rmc.address,
@@ -169,19 +176,35 @@ async def getFolderCompanyList(folderId: str, request: Request):
                 FROM corp_bookmark f
                 INNER JOIN rb_master_company rmc
                     ON f.company_id::text = rmc.master_id::text
-                WHERE f.user_id = :userId 
+                WHERE 1=1
             """
             
+            # 폴더 ID 확인 로그 추가
+            log.info(f"Folder ID: {folderId}")
+            
+            # 폴더 ID에서 공유 폴더 특별 처리
+            isSharedFolder = folderId.startswith("shared-folder-")
+            if isSharedFolder:
+                log.info("This is a shared folder ID")
+                shared = True
+                
             if deleted:
-                query += " AND f.is_deleted = TRUE"
+                query += "AND f.user_id = :userId AND f.is_deleted = TRUE"
                 log.info("Getting deleted bookmarks only")
+            elif shared:
+                query += """ AND f.user_id != :userId
+                AND (f.access_control::jsonb -> 'write' -> 'user_ids') ? :userId"""
+                log.info("Getting shared bookmarks with write access (excluding user's own bookmarks)")
             else:
-                query += " AND f.folder_id = :folderId AND (f.is_deleted IS NULL OR f.is_deleted = FALSE)"
+                query += " AND f.user_id = :userId AND f.folder_id = :folderId AND (f.is_deleted IS NULL OR f.is_deleted = FALSE)"
                 log.info("Getting active bookmarks only")
                 
             query += " ORDER BY f.updated_at DESC"
             
             params = {"userId": userId, "folderId": folderId}
+            log.info(f"Executing SQL query: {query}")
+            log.info(f"Parameters: {params}")
+            
             result = db.execute(text(query), params)
             companyList = [dict(row._mapping) for row in result.fetchall()]    
 
@@ -236,6 +259,47 @@ async def getTrashCompanyList(request: Request):
         return {
             "success": False,
             "error": "Failed to fetch trash",
+            "message": str(e)
+        }
+
+@router.get("/shared/companies")
+async def getSharedCompanyList(request: Request):    
+    search_params = request.query_params
+    userId = search_params.get("userId")
+    try:
+        with get_db() as db:
+            query = """
+                SELECT DISTINCT
+                    f.id,
+                    f.created_at,
+                    f.updated_at,
+                    f.company_id,
+                    f.user_id,
+                    rmc.master_id,
+                    rmc.company_name,
+                    rmc.address,
+                    rmc.business_registration_number
+                FROM corp_bookmark f
+                INNER JOIN rb_master_company rmc
+                    ON f.company_id::text = rmc.master_id::text
+                WHERE f.user_id != :userId
+                AND (f.access_control::jsonb -> 'write' -> 'user_ids') ? :userId
+                ORDER BY f.updated_at DESC
+            """
+            params = {"userId": userId}
+            result = db.execute(text(query), params)
+            companyList = [dict(row._mapping) for row in result.fetchall()]    
+
+        return {
+            "success": True,
+            "data": companyList,
+            "total": len(companyList),
+        }
+    except Exception as e:
+        log.error("Shared Companies API error: " + str(e))
+        return {
+            "success": False,
+            "error": "Failed to fetch shared companies",
             "message": str(e)
         }
 
