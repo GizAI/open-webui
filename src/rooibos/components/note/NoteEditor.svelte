@@ -652,7 +652,7 @@
 										return true;
 									}
 									
-									if (node.type.name === 'taskList') {
+									if (node.type.name === 'taskList' || node.type.name === 'blockquote') {
 										return true;
 									}
 									
