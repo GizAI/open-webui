@@ -30,6 +30,21 @@
 				return null;
 			});
 			folders = await response || [];
+			
+			// 폴더 정렬: 휴지통 폴더는 항상 마지막에, 나머지는 이름순으로 정렬
+			folders.sort((a, b) => {
+				const isTrashA = a.isTrash || a.id.startsWith('trash-folder-') || a.name === '휴지통';
+				const isTrashB = b.isTrash || b.id.startsWith('trash-folder-') || b.name === '휴지통';
+				
+				if (isTrashA) return 1;  // 휴지통 폴더는 뒤로
+				if (isTrashB) return -1; // 다른 폴더는 앞으로
+				
+				// 일반 폴더는 이름 기준으로 정렬
+				return a.name.localeCompare(b.name, undefined, {
+					numeric: true,
+					sensitivity: 'base'
+				});
+			});
 		} catch (error) {
 			console.error("폴더 로드 실패:", error);
 			folders = [];
