@@ -199,7 +199,7 @@ async def reindex_knowledge_files(
             for index, file in enumerate(files, 1):
                 try:
 
-                    VECTOR_DB_CLIENT.delete(
+                    VECTOR_DB_CLIENT.delete_collection(
                         collection_name=knowledge_base.id
                     )
 
