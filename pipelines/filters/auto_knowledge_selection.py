@@ -364,13 +364,6 @@ Return the result in the following JSON format:
                     message=f"Matching knowledge bases found: {', '.join(selected_kb_names)}",
                     done=True,
                 )
-            else:
-                await self.emit_status(
-                    __event_emitter__,
-                    level="status",
-                    message="No matching knowledge base found.",
-                    done=True,
-                )
 
         except Exception as e:
             print(e)
@@ -392,8 +385,6 @@ Return the result in the following JSON format:
                 "Additionally, please respond in the language used by the user in their input. "
             ),
         }
-        print("body start: =================================")
-        print(body)
-        print("body end: =================================")
+        
         body.setdefault("messages", []).insert(0, context_message)
         return body
