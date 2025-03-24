@@ -2,6 +2,7 @@ from typing import List, Optional
 from pydantic import BaseModel
 from fastapi import APIRouter, Depends, HTTPException, status, Request
 import logging
+import os
 
 from open_webui.models.knowledge import (
     Knowledges,
@@ -168,6 +169,7 @@ async def create_new_knowledge(
 @router.post("/reindex", response_model=Optional[KnowledgeResponse])
 async def reindex_knowledge_files(
     request: Request,
+    excluded_ids: List[str] = [],
     user=Depends(get_verified_user)
 ):
     if user.role != "admin":
@@ -181,8 +183,11 @@ async def reindex_knowledge_files(
         "failed": []
     }
     
-    #knowledge_bases = Knowledges.get_knowledge_bases()
-    knowledge_bases = [Knowledges.get_knowledge_by_id(id="d810fe50-4c43-4ddb-8765-135394050a9c")]
+    knowledge_bases = Knowledges.get_knowledge_bases()
+    
+    # 제외할 knowledge_id 필터링
+    if excluded_ids:
+        knowledge_bases = [kb for kb in knowledge_bases if kb.id not in excluded_ids]
     
     log.info(f"Starting reindexing for {len(knowledge_bases)} knowledge bases")
     
@@ -190,19 +195,20 @@ async def reindex_knowledge_files(
         try:
             log.info(f"Processing knowledge base: {knowledge_base.id} (name: {knowledge_base.name})")
             
-
-
             files = Files.get_files_by_ids(knowledge_base.data.get("file_ids", []))
             count = len(files)
             log.info(f"Found {count} files to reindex for knowledge base: {knowledge_base.id}")
 
+            VECTOR_DB_CLIENT.delete_collection(
+                collection_name=knowledge_base.id
+            )
+            
+            # 성공 로그 파일 경로 설정
+            success_log_path = f"logs/reindex_success_{knowledge_base.id}.txt"
+            kb_success_ids = []
+
             for index, file in enumerate(files, 1):
                 try:
-
-                    VECTOR_DB_CLIENT.delete_collection(
-                        collection_name=knowledge_base.id
-                    )
-
                     log.info(f"Processing file {index}/{count}: {file.filename} (ID: {file.id}) for collection: {knowledge_base.id}")
                     process_file(
                         request,
@@ -211,6 +217,7 @@ async def reindex_knowledge_files(
                     )
                     log.info(f"Successfully processed file: {file.filename} (ID: {file.id})")
                     results["success"].append(file.id)
+                    kb_success_ids.append(file.id)
                 except Exception as e:
                     log.error(f"Error processing file {file.filename} (ID: {file.id}): {str(e)}")
                     results["failed"].append({
@@ -218,6 +225,16 @@ async def reindex_knowledge_files(
                         "filename": file.filename,
                         "error": str(e)
                     })
+            
+            # 성공한 파일 ID를 파일에 기록
+            try:
+                os.makedirs(os.path.dirname(success_log_path), exist_ok=True)
+                with open(success_log_path, "w") as f:
+                    for file_id in kb_success_ids:
+                        f.write(f"{file_id}\n")
+                log.info(f"Successfully wrote {len(kb_success_ids)} file IDs to {success_log_path}")
+            except Exception as e:
+                log.error(f"Error writing success log file for knowledge base {knowledge_base.id}: {str(e)}")
                     
         except Exception as e:
             log.error(f"Error processing knowledge base {knowledge_base.id} (name: {knowledge_base.name}): {str(e)}")
