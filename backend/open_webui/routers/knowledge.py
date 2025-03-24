@@ -160,6 +160,70 @@ async def create_new_knowledge(
             detail=ERROR_MESSAGES.FILE_EXISTS,
         )
 
+############################
+# ReindexKnowledgeFiles
+############################
+
+
+@router.post("/reindex", response_model=Optional[KnowledgeResponse])
+async def reindex_knowledge_files(
+    request: Request,
+    user=Depends(get_verified_user)
+):
+    if user.role != "admin":
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=ERROR_MESSAGES.UNAUTHORIZED,
+        )
+    
+    results = {
+        "success": [],
+        "failed": []
+    }
+    
+    #knowledge_bases = Knowledges.get_knowledge_bases()
+    knowledge_bases = [Knowledges.get_knowledge_by_id(id="d810fe50-4c43-4ddb-8765-135394050a9c")]
+    
+    log.info(f"Starting reindexing for {len(knowledge_bases)} knowledge bases")
+    
+    for knowledge_base in knowledge_bases:
+        try:
+            log.info(f"Processing knowledge base: {knowledge_base.id} (name: {knowledge_base.name})")
+            
+            files = Files.get_files_by_ids(knowledge_base.data.get("file_ids", []))
+            count = len(files)
+            log.info(f"Found {count} files to reindex for knowledge base: {knowledge_base.id}")
+
+            for index, file in enumerate(files, 1):
+                try:
+                    log.info(f"Processing file {index}/{count}: {file.filename} (ID: {file.id}) for collection: {knowledge_base.id}")
+                    process_file(
+                        request,
+                        ProcessFileForm(file_id=file.id, collection_name=knowledge_base.id),
+                        user=user,
+                    )
+                    log.info(f"Successfully processed file: {file.filename} (ID: {file.id})")
+                    results["success"].append(file.id)
+                except Exception as e:
+                    log.error(f"Error processing file {file.filename} (ID: {file.id}): {str(e)}")
+                    results["failed"].append({
+                        "file_id": file.id,
+                        "filename": file.filename,
+                        "error": str(e)
+                    })
+                    
+        except Exception as e:
+            log.error(f"Error processing knowledge base {knowledge_base.id} (name: {knowledge_base.name}): {str(e)}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Error processing knowledge base {knowledge_base.id}: {str(e)}"
+            )
+    
+    log.info(f"Reindexing completed. Success: {len(results['success'])}, Failed: {len(results['failed'])}")
+    return {
+        "message": "Reindexing completed",
+        "results": results
+    }
 
 ############################
 # GetKnowledgeById
@@ -666,3 +730,6 @@ def add_files_to_knowledge_batch(
     return KnowledgeFilesResponse(
         **knowledge.model_dump(), files=Files.get_files_by_ids(existing_file_ids)
     )
+
+
+

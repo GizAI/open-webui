@@ -19,7 +19,7 @@
 	} from '$lib/apis/retrieval';
 
 	import { knowledge, models } from '$lib/stores';
-	import { getKnowledgeBases } from '$lib/apis/knowledge';
+	import { getKnowledgeBases, reindexKnowledgeFiles } from '$lib/apis/knowledge';
 	import { uploadDir, deleteAllFiles, deleteFileById } from '$lib/apis/files';
 
 	import ResetUploadDirConfirmDialog from '$lib/components/common/ConfirmDialog.svelte';
@@ -37,6 +37,7 @@
 
 	let showResetConfirm = false;
 	let showResetUploadDirConfirm = false;
+	let showReindexConfirm = false;
 
 	let embeddingEngine = '';
 	let embeddingModel = '';
@@ -307,6 +308,22 @@
 
 		if (res) {
 			toast.success($i18n.t('Success'));
+		}
+	}}
+/>
+
+<ResetVectorDBConfirmDialog
+	bind:show={showReindexConfirm}
+	on:confirm={async () => {
+		try {
+			const token = localStorage.getItem('token');
+			const res = await reindexKnowledgeFiles(token);
+
+			if (res) {
+				toast.success($i18n.t('Reindexing started. This may take some time.'));
+			}
+		} catch (error) {
+			toast.error($i18n.t('Failed to start reindexing: {{error}}', { error }));
 		}
 	}}
 />
@@ -882,6 +899,22 @@
 							}}
 						>
 							{$i18n.t('Reset')}
+						</button>
+					</div>
+				</div>
+
+				<div class="  mb-2.5 flex w-full justify-between">
+					<div class=" self-center text-xs font-medium">
+						{$i18n.t('Reindex Knowledge Base Vectors')}
+					</div>
+					<div class="flex items-center relative">
+						<button
+							class="text-xs"
+							on:click={() => {
+								showReindexConfirm = true;
+							}}
+						>
+							{$i18n.t('Reindex')}
 						</button>
 					</div>
 				</div>
