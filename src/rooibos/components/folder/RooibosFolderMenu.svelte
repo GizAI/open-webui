@@ -101,7 +101,7 @@
 		const folder = folders[deletingFolderId];
 		if ((folder.active_bookmark_count && folder.active_bookmark_count > 0) || 
 		    (folder.deleted_bookmark_count && folder.deleted_bookmark_count > 0)) {
-			toast.error($i18n.t('폴더에 북마크가 있어 삭제할 수 없습니다. 먼저 북마크를 삭제해주세요.'));
+			toast.error($i18n.t('폴더에 저장된 기업이 있어 삭제할 수 없습니다. 먼저 폴더 내 기업 북마크를 제거해주세요.'));
 			showDeleteConfirm = false;
 			deletingFolderId = null;
 			return;

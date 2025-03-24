@@ -897,12 +897,12 @@ async def moveBookmark(request: Request):
             "bookmark": updated_bookmark
         }
     except Exception as e:
-        log.error("북마크 이동 실패: %s", e)
+        log.error("나의기업 이동 실패: %s", e)
         raise HTTPException(
             status_code=500,
             detail={
                 "success": False,
-                "error": "북마크 이동 실패",
+                "error": "나의기업 이동 실패",
                 "message": str(e)
             }
         )

@@ -227,7 +227,7 @@
 
 <DeleteConfirmDialog
 	bind:show={showDeleteConfirm}
-	title="북마크를 삭제하시겠습니까?"
+	title="나의기업에서 삭제하시겠습니까?"
 	on:confirm={confirmDelete}
 />
 
