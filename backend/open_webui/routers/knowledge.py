@@ -200,9 +200,9 @@ async def reindex_knowledge_files(
                 try:
 
                     VECTOR_DB_CLIENT.delete(
-                        collection_name=knowledge_base.id, filter={"file_id": file.id}
+                        collection_name=knowledge_base.id
                     )
-                    
+
                     log.info(f"Processing file {index}/{count}: {file.filename} (ID: {file.id}) for collection: {knowledge_base.id}")
                     process_file(
                         request,
