@@ -317,6 +317,16 @@
 	onMount(async () => {
 		loaded = true;
 
+		// URL 쿼리 파라미터 확인
+		const urlParams = new URLSearchParams(window.location.search);
+		if (urlParams.get('showCategory') === 'true') {
+			showCategoryModal = true;
+			// 페이지 이동 후 URL에서 쿼리 파라미터 제거 (히스토리 상태는 유지)
+			const url = new URL(window.location.href);
+			url.searchParams.delete('showCategory');
+			window.history.replaceState({}, '', url);
+		}
+
 		window.setTimeout(() => {
 			const chatInput = document.getElementById('chat-input');
 			chatInput?.focus();

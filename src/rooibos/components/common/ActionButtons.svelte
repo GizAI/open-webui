@@ -8,6 +8,7 @@
 	import DeleteConfirmDialog from '$lib/components/common/ConfirmDialog.svelte';
 	import FolderSelect from '$rooibos/components/folder/FolderSelect.svelte';
 	import { deleteCompanyBookmark } from '$rooibos/components/apis/company';
+	import ChatCategories from '$rooibos/components/chat/ChatCategories.svelte';
 
 	export let companyInfo: any = {};
 	export let financialData: any = {};
@@ -18,6 +19,7 @@
 
 	let showDeleteConfirm = false;
 	let showFolderSelect = false;
+	let showCategoryModal = false;
 
 	const addCompany = async (company: any, folderId: string = '') => {
 		const response = await fetch(`${WEBUI_API_BASE_URL}/rooibos/mycompanies/add`, {
@@ -134,7 +136,13 @@
 			});
 			console.log('Set selectedCompanyInfo with company data (not companyinfo type):', get(selectedCompanyInfo));
 		}
-			
+		
+		// URL 쿼리 파라미터를 추가하여 메인 페이지로 이동
+		await goto('/?showCategory=true');
+	};
+
+	// 카테고리 선택 후 채팅 페이지로 이동하는 핸들러
+	const handleModelSelect = async (event: { detail: any }) => {
 		await goto('/');
 	};
 
@@ -243,3 +251,8 @@
 		on:close={handleFolderSelect}
 	/>
 {/if}
+
+<ChatCategories 
+	bind:show={showCategoryModal} 
+	on:select={handleModelSelect}
+/>
