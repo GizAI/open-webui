@@ -9,6 +9,7 @@ from open_webui.models.groups import Groups
 
 import json
 import logging
+import uuid
 
 log = logging.getLogger(__name__)
 log.setLevel(SRC_LOG_LEVELS["COMFYUI"])
@@ -297,8 +298,13 @@ async def get_mycompany_by_id(id: str, request: Request):
             
             # Chat List 조회
             conditions = []
-            conditions.append("user_id = " + format_parameter(user_id))
+            
+            bookmark_owner_id = bookmark_data[0].bookmark_user_id            
+            
+            # 항상 북마크 소유자의 채팅을 가져옴
+            conditions.append("user_id = " + format_parameter(bookmark_owner_id))
             conditions.append("c.business_registration_number = " + format_parameter(bookmark_data[0].business_registration_number))
+            
             chat_query = "SELECT * FROM chat c WHERE " + " AND ".join(conditions)
             chat_query = get_executable_query(chat_query, [])
             
@@ -962,5 +968,47 @@ async def find_user_by_id(user_id: str, request: Request):
         return {
             "success": False,
             "error": "Find user failed",
+            "message": str(e)
+        }
+
+@router.post("/{chat_id}/share")
+async def update_share_id_for_chat(chat_id: str, request: Request):
+    """
+    채팅 공유 ID를 생성하거나 기존 공유 ID를 반환합니다.
+    """
+    try:
+        log.info(f"Creating or retrieving share ID for chat: {chat_id}")        
+        
+        # 3. 공유 ID 생성
+        update_share_query = """
+        UPDATE chat
+        SET share_id = :share_id
+        WHERE id = :chat_id
+        RETURNING share_id
+        """
+        
+        with get_db() as db:           
+            
+            # 새 공유 ID 생성
+            share_id = str(uuid.uuid4())
+            result = db.execute(
+                text(update_share_query),
+                {"share_id": share_id, "chat_id": chat_id}
+            )
+            created_share_id = result.fetchone()[0]
+            db.commit()
+            
+            log.info(f"Created new share ID for chat {chat_id}: {created_share_id}")
+            
+            return {
+                "success": True,
+                "share_id": created_share_id
+            }
+            
+    except Exception as e:
+        log.error(f"Error creating share ID: {str(e)}")
+        return {
+            "success": False,
+            "error": "Share ID creation failed",
             "message": str(e)
         }

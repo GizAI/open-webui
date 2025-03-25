@@ -575,7 +575,8 @@
 				bookmark?.business_registration_number !== undefined
 					? bookmark?.business_registration_number.toString()
 					: '',
-			user_id: currentUser?.id ?? ''
+			user_id: currentUser?.id ?? '',
+			is_shared: isShared.toString()
 		});
 
 		const response = await fetch(
@@ -629,8 +630,65 @@
 		isFullscreen = false;
 	}
 
-	function moveToExistingChat(chat: any) {
-		goto(`/c/${chat.id}`);
+	// 채팅 공유 ID 생성 함수
+	async function createShareId(chatId: string) {
+		try {
+			const response = await fetch(`${WEBUI_API_BASE_URL}/rooibos/mycompanies/${chatId}/share`, {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+					Authorization: `Bearer ${localStorage.token}`
+				}
+			});
+			
+			if (!response.ok) {
+				throw new Error('Failed to create share ID');
+			}
+			
+			const data = await response.json();
+			return data.share_id;
+		} catch (error) {
+			console.error('Error creating share ID:', error);
+			toast.error('채팅 공유 ID 생성에 실패했습니다.');
+			return null;
+		}
+	}
+
+	async function moveToExistingChat(chat: any) {
+		try {
+			// 채팅 ID가 없는 경우 처리
+			if (!chat || !chat.id) {
+				console.error('Invalid chat data');
+				return;
+			}
+			
+			// 현재 사용자가 북마크 소유자인지 확인
+			const isOwner = currentUser && bookmark && currentUser.id === bookmark.bookmark_user_id;
+			
+			// 소유자인 경우 기본 채팅 URL로 이동
+			if (isOwner) {
+				goto(`/c/${chat.id}`);
+				return;
+			}
+			
+			// 소유자가 아닌 경우(공유 받은 사용자) 공유 URL로 이동
+			let shareId = chat.share_id;
+			
+			// 공유 ID가 없다면 생성 시도
+			if (!shareId) {
+				shareId = await createShareId(chat.id);
+				if (!shareId) {
+					// 공유 ID 생성 실패 시 기본 채팅 URL로 이동
+					goto(`/c/${chat.id}`);
+					return;
+				}
+			}
+			
+			// 공유 URL로 이동
+			goto(`${window.location.origin}/s/${shareId}`);
+		} catch (error) {
+			console.error('Error in moveToExistingChat:', error);
+		}
 	}
 
 	async function handleAccessControlChange(newAccessControl) {
