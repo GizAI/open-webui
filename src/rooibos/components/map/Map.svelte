@@ -707,7 +707,7 @@
 		right: 0;
 		width: 30%;
 		height: 100%;
-		z-index: 49;
+		z-index: 51;
 		transition: margin-left 0.3s ease-in-out;
 		padding-top: 80px; /* 검색 바 높이 + 더 큰 여유 공간 */
 	}
