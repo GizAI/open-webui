@@ -12,6 +12,7 @@
 	export let companyInfo: any = {};
 	export let financialData: any = {};
 	export let type: string = 'mycompany';
+	export let isShared: boolean = false;
 
 	const currentUser = get(user);
 
@@ -146,34 +147,36 @@
 </script>
 
 <div class="flex items-center space-x-1">
-	<button
-		class="flex flex-col items-center hover:bg-gray-100 dark:hover:bg-gray-300 rounded-lg"
-		on:click={() => saveCompany(companyInfo)}
-	>
-		<svg
-			xmlns="http://www.w3.org/2000/svg"
-			class="h-5 w-5 transition-colors duration-200"
-			fill="none"
-			viewBox="0 0 24 24"
-			stroke="currentColor"
-			class:text-yellow-500={companyInfo.bookmark_user_id == currentUser?.id}
-			class:text-gray-500={companyInfo.bookmark_user_id != currentUser?.id}
+	{#if !isShared}
+		<button
+			class="flex flex-col items-center hover:bg-gray-100 dark:hover:bg-gray-300 rounded-lg"
+			on:click={() => saveCompany(companyInfo)}
 		>
-			<path
-				stroke-linecap="round"
-				stroke-linejoin="round"
-				stroke-width="2"
-				d="M5 5v14l7-7 7 7V5z"
-			/>
-		</svg>
-		<span
-			class="text-xs mt-1 whitespace-nowrap transition-colors duration-200"
-			class:text-yellow-500={companyInfo.bookmark_user_id == currentUser?.id}
-			class:text-gray-500={companyInfo.bookmark_user_id != currentUser?.id}
-		>
-			저장
-		</span>
-	</button>
+			<svg
+				xmlns="http://www.w3.org/2000/svg"
+				class="h-5 w-5 transition-colors duration-200"
+				fill="none"
+				viewBox="0 0 24 24"
+				stroke="currentColor"
+				class:text-yellow-500={companyInfo.bookmark_user_id == currentUser?.id}
+				class:text-gray-500={companyInfo.bookmark_user_id != currentUser?.id}
+			>
+				<path
+					stroke-linecap="round"
+					stroke-linejoin="round"
+					stroke-width="2"
+					d="M5 5v14l7-7 7 7V5z"
+				/>
+			</svg>
+			<span
+				class="text-xs mt-1 whitespace-nowrap transition-colors duration-200"
+				class:text-yellow-500={companyInfo.bookmark_user_id == currentUser?.id}
+				class:text-gray-500={companyInfo.bookmark_user_id != currentUser?.id}
+			>
+				저장
+			</span>
+		</button>
+	{/if}
 
 	<!-- 새채팅 버튼 -->
 	<button

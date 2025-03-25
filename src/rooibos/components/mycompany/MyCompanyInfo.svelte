@@ -151,6 +151,7 @@
 	let mediaQuery: any;
 	let dragged = false;
 	let id: any = null;
+	let isShared = false;
 	const currentUser = get(user);
 
 	let previousModalState = false;
@@ -534,6 +535,9 @@
 	};
 
 	onMount(async () => {
+		const urlParams = new URLSearchParams(window.location.search);
+		isShared = urlParams.get('shared') === 'true';
+
 		mediaQuery = window.matchMedia('(min-width: 1024px)');
 
 		mediaQuery.addEventListener('change', handleMediaQuery);
@@ -603,6 +607,12 @@
 		dropZone?.addEventListener('dragover', onDragOver);
 		dropZone?.addEventListener('drop', onDrop);
 		dropZone?.addEventListener('dragleave', onDragLeave);
+
+		// 북마크 정보가 로드된 후 isShared 상태를 업데이트하는 리액티브 선언
+		$: if (bookmark && currentUser) {
+			// 북마크 소유자가 현재 사용자와 다른 경우 공유된 기업으로 처리
+			isShared = isShared || (bookmark.bookmark_user_id !== currentUser.id);
+		}
 	});
 
 	onDestroy(() => {
@@ -831,7 +841,7 @@
 						</button>
 					</div>
 				{/if}
-				<ActionButtons companyInfo={bookmark} financialData={financialData} />
+				<ActionButtons companyInfo={bookmark} financialData={financialData} {isShared} />
 			</div>
 		</div>
 	</div>
