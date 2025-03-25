@@ -173,7 +173,7 @@
 				class:text-yellow-500={companyInfo.bookmark_user_id == currentUser?.id}
 				class:text-gray-500={companyInfo.bookmark_user_id != currentUser?.id}
 			>
-				저장
+				{companyInfo.bookmark_user_id == currentUser?.id ? '삭제' : '저장'}
 			</span>
 		</button>
 	{/if}
