@@ -1012,3 +1012,41 @@ async def update_share_id_for_chat(chat_id: str, request: Request):
             "error": "Share ID creation failed",
             "message": str(e)
         }
+
+@router.get("/s/{share_id}")
+async def get_chat_by_share_id(share_id: str, request: Request):
+    """
+    공유 ID를 사용하여 채팅을 조회합니다.
+    """
+    try:
+        sql_query = """
+        SELECT * FROM chat
+        WHERE share_id = :share_id
+        """
+        
+        with get_db() as db:
+            log.info(f"Executing query: {sql_query} with parameter share_id={share_id}")
+            result = db.execute(text(sql_query), {"share_id": share_id})
+            chat_data = result.fetchone()
+            
+            if not chat_data:
+                return {
+                    "success": False,
+                    "error": "채팅을 찾을 수 없음",
+                    "message": f"Share ID '{share_id}'에 해당하는 채팅을 찾을 수 없습니다."
+                }
+            
+            chat = dict(chat_data._mapping)
+            
+        return {
+            "success": True,
+            "data": chat
+        }
+    except Exception as e:
+        log.error("Get chat by share ID error: " + str(e))
+        return {
+            "success": False,
+            "error": "조회 실패",
+            "message": str(e)
+        }
+

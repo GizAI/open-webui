@@ -4,7 +4,7 @@
 	import { toast } from 'svelte-sonner';
 	import { v4 as uuidv4 } from 'uuid';
 
-	import { onMount, getContext, onDestroy } from 'svelte';
+	import { onMount, getContext, onDestroy, tick } from 'svelte';
 	const i18n = getContext('i18n');
 
 	import { page } from '$app/stores';
@@ -32,6 +32,9 @@
 	import LockClosed from '$lib/components/icons/LockClosed.svelte';
 	import Modal from '$lib/components/common/Modal.svelte';
 	import RooibosAccessControlModal from '../accesscontrol/RooibosAccessControlModal.svelte';
+	import Messages from '$lib/components/chat/Messages.svelte';
+	import { convertMessagesToHistory, createMessagesList } from '$lib/utils';
+	import { getUserById } from '$lib/apis/users';
 
 	type Bookmark = {
 		id: string;
@@ -156,6 +159,18 @@
 
 	let previousModalState = false;
 	let previousAccessControlModalState = false;
+	
+	let showChatModal = false;
+	let sharedChat: any = null;
+	let sharedChatHistory = {
+		messages: {},
+		currentId: null
+	};
+	let sharedChatMessages: any[] = [];
+	let sharedChatTitle = '';
+	let sharedChatAutoScroll = true;
+	let sharedChatUser: any = null;
+	let sharedChatSelectedModels = [''];
 	
 	function handleModalStateChange(currentModalState: boolean) {
 		if (previousModalState && !currentModalState) {
@@ -656,40 +671,92 @@
 
 	async function moveToExistingChat(chat: any) {
 		try {
-			// 채팅 ID가 없는 경우 처리
 			if (!chat || !chat.id) {
 				console.error('Invalid chat data');
 				return;
 			}
 			
-			// 현재 사용자가 북마크 소유자인지 확인
 			const isOwner = currentUser && bookmark && currentUser.id === bookmark.bookmark_user_id;
 			
-			// 소유자인 경우 기본 채팅 URL로 이동
 			if (isOwner) {
 				goto(`/c/${chat.id}`);
 				return;
 			}
 			
-			// 소유자가 아닌 경우(공유 받은 사용자) 공유 URL로 이동
 			let shareId = chat.share_id;
 			
-			// 공유 ID가 없다면 생성 시도
 			if (!shareId) {
 				shareId = await createShareId(chat.id);
 				if (!shareId) {
-					// 공유 ID 생성 실패 시 기본 채팅 URL로 이동
 					goto(`/c/${chat.id}`);
 					return;
 				}
 			}
 			
-			// 공유 URL로 이동
-			goto(`${window.location.origin}/s/${shareId}`);
+			// 공유된 채팅 데이터 가져오기
+			const response = await fetch(
+				`${WEBUI_API_BASE_URL}/rooibos/mycompanies/s/${shareId}`,
+				{
+					method: 'GET',
+					headers: {
+						Accept: 'application/json',
+						'Content-Type': 'application/json',
+						authorization: `Bearer ${localStorage.token}`
+					}
+				}
+			);
+
+			const data = await response.json();
+			
+			if (data.success) {
+				sharedChat = data.data;
+				
+				sharedChatUser = await getUserById(localStorage.token, sharedChat.user_id).catch((error) => {
+					console.error(error);
+					return null;
+				});
+
+				const chatContent = sharedChat.chat;
+
+				if (chatContent) {
+					sharedChatSelectedModels =
+						(chatContent?.models ?? undefined) !== undefined
+							? chatContent.models
+							: [chatContent.models ?? ''];
+					
+					sharedChatHistory =
+						(chatContent?.history ?? undefined) !== undefined
+							? chatContent.history
+							: convertMessagesToHistory(chatContent.messages);
+					
+					sharedChatTitle = chatContent.title;
+					sharedChatAutoScroll = true;
+					
+					await tick();
+					
+					if (sharedChatMessages.length > 0) {
+						sharedChatHistory.messages[sharedChatMessages.at(-1).id].done = true;
+					}
+					
+					await tick();
+					
+					// 모달 표시
+					showChatModal = true;
+				}
+			} else {
+				console.error("채팅을 로드하는 데 실패했습니다:", data.message);
+				toast.error("채팅을 로드하는 데 실패했습니다");
+			}
 		} catch (error) {
 			console.error('Error in moveToExistingChat:', error);
+			toast.error("채팅을 로드하는 데 실패했습니다");
 		}
 	}
+
+	// 메시지 목록 업데이트를 위한 반응형 선언
+	$: sharedChatMessages = sharedChatHistory && sharedChatHistory.currentId 
+			? createMessagesList(sharedChatHistory, sharedChatHistory.currentId) 
+			: [];
 
 	async function handleAccessControlChange(newAccessControl) {
 		if (!bookmark || !bookmark.bookmark_id) return;
@@ -1063,3 +1130,55 @@
 		<Spinner />
 	{/if}
 </div>
+
+<Modal size="xl" bind:show={showChatModal}>
+	<div class="flex flex-col h-[80vh] dark:bg-gray-900 text-gray-700 dark:text-gray-100">
+		<div class="flex justify-between items-center px-5 py-3 border-b border-gray-200 dark:border-gray-700">
+			<div class="text-xl font-semibold line-clamp-1">
+				{sharedChatTitle}
+			</div>
+			<button
+				class="self-center"
+				on:click={() => {
+					showChatModal = false;
+				}}
+			>
+				<svg
+					xmlns="http://www.w3.org/2000/svg"
+					viewBox="0 0 20 20"
+					fill="currentColor"
+					class="w-5 h-5"
+				>
+					<path
+						d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z"
+					/>
+				</svg>
+			</button>
+		</div>
+		<div class="flex-1 overflow-auto">
+			{#if sharedChat}
+				<Messages
+					className="h-full flex pt-4 pb-8"
+					user={sharedChatUser}
+					chatId={sharedChat.id}
+					readOnly={true}
+					selectedModels={sharedChatSelectedModels}
+					processing=""
+					bind:history={sharedChatHistory}
+					bind:messages={sharedChatMessages}
+					bind:autoScroll={sharedChatAutoScroll}
+					bottomPadding={false}
+					sendPrompt={() => {}}
+					continueResponse={() => {}}
+					regenerateResponse={() => {}}
+				/>
+			{:else}
+				<div class="h-full flex w-full">
+					<div class="m-auto text-center">
+						<div class="text-gray-500 mb-4">채팅 내용을 불러오는 중입니다...</div>
+					</div>
+				</div>
+			{/if}
+		</div>
+	</div>
+</Modal>
