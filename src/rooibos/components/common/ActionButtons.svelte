@@ -42,8 +42,7 @@
 
 	const confirmDelete = async () => {
 		try {
-			await deleteCompanyBookmark(companyInfo.bookmark_id);
-			goto(`/rooibos/folder/${companyInfo.folder_id}/companies`);							
+			await deleteCompanyBookmark(companyInfo.bookmark_id);					
 		} catch (error) {
 			console.error('Error in confirmDelete:', error);
 		} finally {
