@@ -5,6 +5,7 @@
 	import { pickAndDownloadFile } from '$lib/utils/onedrive-file-picker';
 
 	import ChatCategories from '$rooibos/components/chat/ChatCategories.svelte';
+	import FolderSelect from '$rooibos/components/folder/FolderSelect.svelte';
 
 	import { onMount, tick, getContext, createEventDispatcher, onDestroy } from 'svelte';
 	const dispatch = createEventDispatcher();
@@ -50,6 +51,7 @@
 	import { KokoroWorker } from '$lib/workers/KokoroWorker';
 	import { selectedCompanyInfo } from '$rooibos/stores';
 	import CompanyHistoryModal from '$rooibos/components/company/CompanyHistoryModal.svelte';
+	import { goto } from '$app/navigation';
 
 	const i18n = getContext('i18n');
 
@@ -88,6 +90,8 @@
 
 	let loaded = false;
 	let showCategoryModal = false;
+	let showBookmarkIcon = false;
+	let showFolderSelect = false;
 	let recording = false;
 	let showCompanyHistoryModal = false;
 
@@ -321,6 +325,7 @@
 		const urlParams = new URLSearchParams(window.location.search);
 		if (urlParams.get('showCategory') === 'true') {
 			showCategoryModal = true;
+			showBookmarkIcon = true;
 			// 페이지 이동 후 URL에서 쿼리 파라미터 제거 (히스토리 상태는 유지)
 			const url = new URL(window.location.href);
 			url.searchParams.delete('showCategory');
@@ -355,6 +360,60 @@
 			dropzoneElement?.removeEventListener('dragleave', onDragLeave);
 		}
 	});
+
+	// 회사 북마크 추가 함수
+	const addCompany = async (company: any, folderId: string = '') => {
+		const response = await fetch(`${WEBUI_API_BASE_URL}/rooibos/mycompanies/add`, {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json',
+				Authorization: `Bearer ${localStorage.token}`
+			},
+			body: JSON.stringify({
+				userId: $_user?.id,
+				companyId: company.master_id,
+				business_registration_number: company.business_registration_number,
+				folderId: folderId
+			})
+		});
+		const data = await response.json();
+		$selectedCompanyInfo.bookmark_id = data.id;
+		$selectedCompanyInfo.bookmark_user_id = $_user?.id;
+	};
+
+	// 폴더 선택 후 처리 함수
+	const handleFolderSelect = async (event: { detail: any }) => {
+		const selectedFolder = event.detail;
+		if (selectedFolder && selectedFolder.id) {
+			await addCompany($selectedCompanyInfo, selectedFolder.id);
+		} else {
+			await addCompany($selectedCompanyInfo);
+		}
+		showFolderSelect = false;
+	};
+
+	// 폴더 선택 창 닫기
+	const closeFolderSelect = () => {
+		showFolderSelect = false;
+	};
+
+	// 북마크 삭제 함수
+	const deleteCompanyBookmark = async (bookmarkId: string) => {
+		try {
+			const response = await fetch(`${WEBUI_API_BASE_URL}/rooibos/mycompanies/${bookmarkId}`, {
+				method: 'DELETE',
+				headers: {
+					'Content-Type': 'application/json',
+					Authorization: `Bearer ${localStorage.token}`
+				}
+			});
+			const data = await response.json();
+			$selectedCompanyInfo.bookmark_id = null;
+			$selectedCompanyInfo.bookmark_user_id = null;
+		} catch (error) {
+			console.error('Error deleting bookmark:', error);
+		}
+	};
 </script>
 
 <FilesOverlay show={dragged} />
@@ -460,7 +519,50 @@
 												<span class="relative inline-flex rounded-full size-2 bg-yellow-500" />
 											</span>
 										</div>
-										<div class=" translate-y-[0.5px]">{$selectedCompanyInfo.company_name}</div>
+										<div class="flex items-center translate-y-[0.5px]">
+											{$selectedCompanyInfo.company_name}
+											{#if showBookmarkIcon}
+												{#if $selectedCompanyInfo.bookmark_id}
+													<svg
+														xmlns="http://www.w3.org/2000/svg"
+														class="h-4 w-4 ml-1.5 text-yellow-500 cursor-pointer"
+														fill="currentColor"
+														viewBox="0 0 24 24"
+														stroke="currentColor"
+														on:click={() => {
+															if ($selectedCompanyInfo.bookmark_id) {
+																goto(`/rooibos/mycompanies/${$selectedCompanyInfo.bookmark_id}`);
+															}
+														}}
+													>
+														<path
+															stroke-linecap="round"
+															stroke-linejoin="round"
+															stroke-width="2"
+															d="M5 5v14l7-7 7 7V5z"
+														/>
+													</svg>
+												{:else}
+													<svg
+														xmlns="http://www.w3.org/2000/svg"
+														class="h-4 w-4 ml-1.5 text-gray-500 cursor-pointer"
+														fill="none"
+														viewBox="0 0 24 24"
+														stroke="currentColor"
+														on:click={() => {
+															showFolderSelect = true;
+														}}
+													>
+														<path
+															stroke-linecap="round"
+															stroke-linejoin="round"
+															stroke-width="2"
+															d="M5 5v14l7-7 7 7V5z"
+														/>
+													</svg>
+												{/if}
+											{/if}
+										</div>
 									</div>
 									<div>
 										<button
@@ -1517,5 +1619,15 @@
 			showCompanyHistoryModal = false;
 		}}
 	/>
+
+	{#if showFolderSelect}
+		<FolderSelect 
+			isOpen={showFolderSelect} 
+			onClose={closeFolderSelect}
+			folderType="corp"
+			bookmarkId=""
+			on:close={handleFolderSelect}
+		/>
+	{/if}
 {/if}
 
