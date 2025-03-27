@@ -42,7 +42,10 @@
 
 	const confirmDelete = async () => {
 		try {
-			await deleteCompanyBookmark(companyInfo.bookmark_id);					
+			await deleteCompanyBookmark(companyInfo.bookmark_id);
+			// 삭제 후 상태 업데이트
+			companyInfo.bookmark_id = null;
+			companyInfo.bookmark_user_id = null;
 		} catch (error) {
 			console.error('Error in confirmDelete:', error);
 		} finally {

@@ -437,35 +437,83 @@ async def add_mycompany(request: Request):
         if not user_id or not company_id:
             raise HTTPException(status_code=400, detail="Invalid input. 'userId' and 'companyId' are required.")
 
-        if folder_id:
-            sql_query = """
+        with get_db() as db:
+            # 중복 체크 - 이미 저장된 항목이 있는지 확인 (삭제 여부 상관없이)
+            check_query = """
+            SELECT id, is_deleted FROM corp_bookmark 
+            WHERE user_id = :user_id AND company_id = :company_id 
+            """
+            log.info(f"Checking duplicate bookmark: {check_query} with parameters: user_id={user_id}, company_id={company_id}")
+            result = db.execute(
+                text(check_query),
+                {
+                    "user_id": user_id,
+                    "company_id": company_id
+                }
+            )
+            existing_bookmark = result.fetchone()
+            
+            if existing_bookmark:
+                bookmark_id = existing_bookmark[0]
+                is_deleted = existing_bookmark[1]
+                
+                # 삭제된 북마크가 있다면 is_deleted를 NULL로 업데이트
+                if is_deleted:
+                    update_query = """
+                    UPDATE corp_bookmark
+                    SET is_deleted = FALSE, updated_at = now()
+                    WHERE id = :id
+                    """
+                    log.info(f"Restoring deleted bookmark: {update_query} with parameters: id={bookmark_id}")
+                    db.execute(
+                        text(update_query),
+                        {"id": bookmark_id}
+                    )
+                    db.commit()
+                    
+                    return {
+                        "success": True,
+                        "message": "Deleted bookmark has been restored.",
+                        "id": bookmark_id
+                    }
+                
+                # 삭제되지 않은 북마크가 있다면 그대로 반환
+                log.info(f"Bookmark already exists with id: {bookmark_id}")
+                return {
+                    "success": True,
+                    "message": "Bookmark already exists.",
+                    "id": bookmark_id
+                }
+            
+            # 새 북마크 추가
+            insert_query = """
             INSERT INTO corp_bookmark (user_id, company_id, business_registration_number, folder_id, created_at, updated_at)
             VALUES (:user_id, :company_id, :business_registration_number, :folder_id, now(), now())
             RETURNING id
             """
             log.info(
-                f"Executing query: {sql_query} with parameters: user_id={user_id}, company_id={company_id}, business_registration_number={business_registration_number}, folder_id={folder_id}"
+                f"Executing query: {insert_query} with parameters: user_id={user_id}, company_id={company_id}, business_registration_number={business_registration_number}, folder_id={folder_id}"
             )
-            with get_db() as db:
-                result = db.execute(
-                    text(sql_query),
-                    {
-                        "user_id": user_id,
-                        "company_id": company_id,
-                        "business_registration_number": business_registration_number,
-                        "folder_id": folder_id,
-                    },
-                )
-                row = result.fetchone()
-                if row is None:
-                    raise HTTPException(status_code=500, detail="Insertion failed, no ID returned.")
-                bookmark_id = row[0]
-                db.commit()
+            
+            result = db.execute(
+                text(insert_query),
+                {
+                    "user_id": user_id,
+                    "company_id": company_id,
+                    "business_registration_number": business_registration_number,
+                    "folder_id": folder_id,
+                }
+            )
+            row = result.fetchone()
+            if row is None:
+                raise HTTPException(status_code=500, detail="Insertion failed, no ID returned.")
+            bookmark_id = row[0]
+            db.commit()
 
         return {
             "success": True,
             "message": "Bookmark successfully added.",
-            "id": bookmark_id  # 삽입된 id를 반환합니다.
+            "id": bookmark_id
         }
     except Exception as e:
         log.error("Add Bookmark API error: " + str(e))
