@@ -208,7 +208,7 @@
 <Modal size="xl" bind:show>
 	<div class="text-gray-700 dark:text-gray-100">
 		<div class="flex justify-between dark:text-gray-300 px-5 pt-4 pb-1">
-			<div class="text-lg font-medium self-center">모델 태그</div>
+			<div class="text-lg font-medium self-center">지식 전문 봇</div>
 			<button
 				class="self-center"
 				on:click={() => {
@@ -230,10 +230,7 @@
 
 		{#if categories.length > 0}
 			<div class="m-auto w-full px-8 lg:px-20 py-6 categories-container">
-				<!-- 헤더 -->
 				<div class="mb-4">
-					<p class="text-gray-600 dark:text-gray-400 text-sm">원하는 태그와 모델을 선택하세요.</p>
-					<!-- 검색 입력창 추가 -->
 					<div class="mt-2">
 						<input
 							type="text"
@@ -243,10 +240,7 @@
 						/>
 					</div>
 				</div>
-
-				<!-- flex 컨테이너 -->
 				<div class="flex flex-col md:flex-row gap-4 items-start md:min-h-[500px]">
-					<!-- 태그 목록 (1단계) - 검색 중이 아닐 때만 표시 -->
 					{#if !searchQuery}
 						<div class="md:w-1/3 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden md:max-h-[500px] md:overflow-y-auto">
 							{#each categories as category, index}
