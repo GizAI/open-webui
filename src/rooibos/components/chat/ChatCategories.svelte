@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { createEventDispatcher, onMount } from 'svelte';
-	import { fade } from 'svelte/transition';
 	import Modal from '$lib/components/common/Modal.svelte';
 	import { models , user } from '$lib/stores';	
 	
@@ -206,7 +205,7 @@
 </script>
 
 <Modal size="xl" bind:show>
-	<div class="text-gray-700 dark:text-gray-100">
+	<div class="text-gray-700 dark:text-gray-100 {isMobile ? 'h-screen' : ''}">
 		<div class="flex justify-between dark:text-gray-300 px-5 pt-4 pb-1">
 			<div class="text-lg font-medium self-center">지식 전문 봇</div>
 			<button
@@ -229,7 +228,7 @@
 		</div>
 
 		{#if categories.length > 0}
-			<div class="m-auto w-full px-8 lg:px-20 py-6 categories-container">
+			<div class="m-auto w-full px-8 lg:px-20 py-6 categories-container {isMobile ? 'h-[calc(100vh-4rem)]' : ''}">
 				<div class="mb-4">
 					<div class="mt-2">
 						<input
@@ -242,23 +241,38 @@
 				</div>
 				<div class="flex flex-col md:flex-row gap-4 items-start md:min-h-[500px]">
 					{#if !searchQuery}
-						<div class="md:w-1/3 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden md:max-h-[500px] md:overflow-y-auto">
-							{#each categories as category, index}
-								<button
-									type="button"
-									class="w-full text-left p-4 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 transition {activeCategoryIndex === index ? 'bg-gray-100 dark:bg-gray-800' : ''}"
-									on:mouseenter={() => { if (!isMobile) activeCategoryIndex = index; }}
-									on:click={() => activeCategoryIndex = index}
+						{#if isMobile}
+							<div class="w-full">
+								<select
+									class="w-full px-4 py-2 mb-4 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100"
+									bind:value={activeCategoryIndex}
 								>
-									<div class="font-semibold text-gray-800 dark:text-gray-100">{category.title}</div>
-									<div class="text-xs text-gray-500 dark:text-gray-400">{category.items.length}개 모델</div>
-								</button>
-							{/each}
-						</div>
+									{#each categories as category, index}
+										<option value={index}>
+											{category.title} ({category.items.length}개)
+										</option>
+									{/each}
+								</select>
+							</div>
+						{:else}
+							<div class="md:w-1/3 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden md:max-h-[500px] md:overflow-y-auto">
+								{#each categories as category, index}
+									<button
+										type="button"
+										class="w-full text-left p-4 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 transition {activeCategoryIndex === index ? 'bg-gray-100 dark:bg-gray-800' : ''}"
+										on:mouseenter={() => { if (!isMobile) activeCategoryIndex = index; }}
+										on:click={() => activeCategoryIndex = index}
+									>
+										<div class="font-semibold text-gray-800 dark:text-gray-100">{category.title}</div>
+										<div class="text-xs text-gray-500 dark:text-gray-400">{category.items.length}개 모델</div>
+									</button>
+								{/each}
+							</div>
+						{/if}
 					{/if}
 
 					<!-- 모델 목록 (2단계) -->
-					<div class="{searchQuery ? 'w-full' : 'md:w-2/3'} md:max-h-[500px] md:overflow-y-auto">
+					<div class="{searchQuery ? 'w-full' : 'md:w-2/3'} {isMobile ? 'h-[calc(100vh-12rem)]' : 'md:max-h-[500px]'} md:overflow-y-auto">
 						{#if filteredItems.length === 0}
 							<div class="text-center p-4 text-gray-500 dark:text-gray-400">
 								검색 결과가 없습니다.
@@ -307,7 +321,3 @@
 		{/if}
 	</div>
 </Modal>
-
-<style>
-	/* 필요에 따라 추가적인 커스텀 스타일 작성 */
-</style>
