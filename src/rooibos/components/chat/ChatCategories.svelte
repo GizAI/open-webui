@@ -2,7 +2,7 @@
 	import { createEventDispatcher, onMount } from 'svelte';
 	import { fade } from 'svelte/transition';
 	import Modal from '$lib/components/common/Modal.svelte';
-	import { models } from '$lib/stores';	
+	import { models , user } from '$lib/stores';	
 	
 	import Fuse from 'fuse.js';
 
@@ -30,12 +30,6 @@
 		items: SubItem[];
 	};
 
-	// 태그 타입 정의 추가
-	type Tag = {
-		name: string;
-		[key: string]: any;
-	};
-
 	// 카테고리 데이터를 저장할 변수
 	let categories: Category[] = [];
 	
@@ -47,10 +41,16 @@
 		// base_model_id가 있는 모델만 필터링
 		const validModels = $models.filter(model => model?.info?.base_model_id);
 		
-		// 모든 모델에서 태그 추출
-		tags = validModels
+		// 접근 제어가 있는 모델과 없는 모델 분리
+		const publicModels = validModels.filter(model => (model?.info as any)?.access_control === null);
+		const privateModels = validModels.filter(model => {
+			const info = model?.info as any;
+			return info?.access_control !== null && info?.user_id === ($user?.id ?? null);
+		});
+
+		// 공개 모델에서 태그 추출
+		tags = publicModels
 			.flatMap(model => {
-				// any 타입으로 처리하여 타입 체크 우회
 				const meta = model?.info?.meta as any;
 				return meta?.tags ?? [];
 			})
@@ -63,20 +63,34 @@
 		// 태그가 없는 모델을 위한 "기타" 카테고리 추가
 		tags.push("기타");
 		
-		// 각 태그별로 카테고리 생성
-		categories = tags.map(tag => {
-			// 해당 태그를 가진 모델 필터링
+		// 카테고리 배열 초기화
+		categories = [];
+
+		// 개인 모델이 있다면 "나의 모델" 카테고리 추가
+		if (privateModels.length > 0) {
+			categories.push({
+				title: "나의 모델",
+				items: privateModels.map(model => ({
+					title: model.name,
+					description: model.info?.meta?.description || "",
+					model_id: model.id,
+					model: model
+				}))
+			});
+		}
+
+		// 공개 모델에 대한 카테고리 생성
+		const publicCategories = tags.map(tag => {
 			const tagModels = tag === "기타" 
-				? validModels.filter(model => {
+				? publicModels.filter(model => {
 					const meta = model?.info?.meta as any;
 					return !meta?.tags || meta.tags.length === 0;
 				})
-				: validModels.filter(model => {
+				: publicModels.filter(model => {
 					const meta = model?.info?.meta as any;
 					return meta?.tags?.some((modelTag: any) => modelTag.name === tag);
 				});
 			
-			// 모델을 SubItem 형식으로 변환
 			const items = tagModels.map(model => ({
 				title: model.name,
 				description: model.info?.meta?.description || "",
@@ -88,7 +102,10 @@
 				title: tag,
 				items
 			};
-		}).filter(category => category.items.length > 0); // 빈 카테고리 제거
+		}).filter(category => category.items.length > 0);
+
+		// 공개 카테고리를 기존 카테고리 배열에 추가
+		categories = [...categories, ...publicCategories];
 		
 		// 카테고리가 생성된 후 높이 업데이트
 		setTimeout(updateHeight, 0);
