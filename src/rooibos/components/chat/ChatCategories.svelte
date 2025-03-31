@@ -34,7 +34,18 @@
 	
 	// 태그 목록
 	let tags: string[] = [];
-	
+
+	// 관리자가 정의한 태그 순서
+	const TAG_ORDER = [
+		"개척화법",
+		"법인컨설팅",
+		"정부지원사업",
+		"세금공제감면",
+		"법인절세",
+		"가업승계절세",
+		"보고서"
+	];
+
 	// models 스토어에서 태그 정보를 추출하여 카테고리 생성
 	function generateCategoriesFromTags() {
 		// base_model_id가 있는 모델만 필터링
@@ -57,10 +68,27 @@
 			.filter(Boolean);
 		
 		// 중복 제거 및 정렬
-		tags = Array.from(new Set(tags)).sort((a, b) => a.localeCompare(b));
+		tags = Array.from(new Set(tags)).sort((a, b) => {
+			// "기타" 카테고리는 항상 마지막
+			if (a === "기타") return 1;
+			if (b === "기타") return -1;
+			
+			// TAG_ORDER에 정의된 순서 사용
+			const indexA = TAG_ORDER.indexOf(a);
+			const indexB = TAG_ORDER.indexOf(b);
+			
+			// TAG_ORDER에 없는 태그는 맨 뒤로 (기타 카테고리 앞)
+			if (indexA === -1 && indexB === -1) return a.localeCompare(b);
+			if (indexA === -1) return 1;
+			if (indexB === -1) return -1;
+			
+			return indexA - indexB;
+		});
 		
 		// 태그가 없는 모델을 위한 "기타" 카테고리 추가
-		tags.push("기타");
+		if (!tags.includes("기타")) {
+			tags.push("기타");
+		}
 		
 		// 카테고리 배열 초기화
 		categories = [];
@@ -183,11 +211,6 @@
 		return model?.info?.meta?.tags || [];
 	}
 
-	// 모델이 태그를 가지고 있는지 확인하는 헬퍼 함수
-	function hasModelTags(model: any) {
-		const tags = getModelTags(model);
-		return tags && tags.length > 0;
-	}
 
 	// 현재 선택된 대분류 인덱스 (기본값 0)
 	let activeCategoryIndex: number = 0;
@@ -296,15 +319,6 @@
 												/>
 												<div class="font-medium text-gray-800 dark:text-gray-100">{item.title}</div>
 											</div>
-											{#if hasModelTags(item.model) && !searchQuery}
-												<div class="flex flex-wrap gap-1 mt-1">
-													{#each getModelTags(item.model) as tag}
-														<span class="text-xs font-bold px-1 rounded-sm uppercase bg-gray-500/20 text-gray-700 dark:text-gray-200">
-															{tag.name}
-														</span>
-													{/each}
-												</div>
-											{/if}
 											<div class="mt-1 text-xs text-gray-500 dark:text-gray-400">{item.description}</div>
 										</div>
 									</button>
