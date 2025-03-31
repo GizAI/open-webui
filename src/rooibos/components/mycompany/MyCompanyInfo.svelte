@@ -157,6 +157,37 @@
 	let isShared = false;
 	const currentUser = get(user);
 
+	// 사용자 정보를 캐시하기 위한 맵
+	let userCache = new Map();
+	
+	// 사용자 정보를 가져오는 함수
+	async function getUserInfo(userId: string) {
+		if (userCache.has(userId)) {
+			return userCache.get(userId);
+		}
+		
+		try {
+			const response = await fetch(`${WEBUI_API_BASE_URL}/users/${userId}`, {
+				method: 'GET',
+				headers: {
+					'Content-Type': 'application/json',
+					'Authorization': `Bearer ${localStorage.token}`
+				}
+			});
+			
+			if (!response.ok) {
+				throw new Error('사용자 정보를 가져오는데 실패했습니다.');
+			}
+			
+			const data = await response.json();
+			userCache.set(userId, data);
+			return data;
+		} catch (error) {
+			console.error('사용자 정보 조회 오류:', error);
+			return { name: '알 수 없는 사용자' };
+		}
+	}
+
 	let previousModalState = false;
 	let previousAccessControlModalState = false;
 	
@@ -943,8 +974,15 @@
 						</div>
 					</button>
 				{/if}
-				<h1 class="{$mobile ? 'text-base sm:text-xl' : 'text-xl'} font-semibold mb-1 truncate">
+				<h1 class="{$mobile ? 'text-base sm:text-xl' : 'text-xl'} font-semibold mb-1 truncate flex items-center">
 					{bookmark.company_name}
+					{#if isShared && bookmark.bookmark_user_id && bookmark.bookmark_user_id !== currentUser?.id}
+						{#await getUserInfo(bookmark.bookmark_user_id) then userInfo}
+							<span class="ml-2 text-xs text-gray-500 bg-gray-50 dark:bg-gray-700 px-2 py-0.5 rounded-full whitespace-nowrap">
+								공유자: {userInfo.name || '알 수 없는 사용자'}
+							</span>
+						{/await}
+					{/if}
 				</h1>
 			</div>
 
