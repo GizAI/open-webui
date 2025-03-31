@@ -3,6 +3,7 @@
 	import { v4 as uuidv4 } from 'uuid';
 	import { getContext } from 'svelte';
 	import { user, showSidebar, mobile } from '$lib/stores';
+	import { folderUpdateTrigger, triggerFolderUpdate } from '$rooibos/stores';
 	import { createNewRooibosFolder, getRooibosFolders } from '$rooibos/components/apis/folder';
 	import RooibosFolder from '$rooibos/components/folder/RooibosFolder.svelte';
 	import RooibosFolderMenu from '$rooibos/components/folder/RooibosFolderMenu.svelte';
@@ -133,6 +134,8 @@
 		);
 
 		if (res) {
+			// 폴더가 생성되면 전역 트리거 업데이트
+			triggerFolderUpdate();
 			await initRooibosFolders();
 		}
 	};
@@ -148,6 +151,12 @@
 		}
 	};
 
+	// 폴더 업데이트 감지 구독
+	folderUpdateTrigger.subscribe(async () => {
+		await initRooibosFolders();
+	});
+
+	// 초기 폴더 로드
 	initRooibosFolders();
 </script>
 

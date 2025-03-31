@@ -77,12 +77,16 @@
 		}
 
 		try {
-			await createNewRooibosFolder(
+			const result = await createNewRooibosFolder(
 				localStorage.token,
 				newFolderName,
 				$user?.id,
 				folderType
 			);
+			
+			// 폴더 생성 이벤트 발생
+			dispatch('folderCreated', { folder: result });
+			
 			newFolderName = '';
 			showCreateFolderInput = false;
 			await loadFolders();

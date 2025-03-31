@@ -3,7 +3,7 @@
 	import { goto } from '$app/navigation';
 	import { WEBUI_API_BASE_URL } from '$lib/constants';
 	import { user } from '$lib/stores';
-	import { selectedCompanyInfo } from '$rooibos/stores';
+	import { selectedCompanyInfo, triggerFolderUpdate } from '$rooibos/stores';
 	import { get } from 'svelte/store';
 	import DeleteConfirmDialog from '$lib/components/common/ConfirmDialog.svelte';
 	import FolderSelect from '$rooibos/components/folder/FolderSelect.svelte';
@@ -73,6 +73,12 @@
 
 	const closeFolderSelect = () => {
 		showFolderSelect = false;
+	};
+	
+	// 폴더 생성 이벤트 핸들러
+	const handleFolderCreated = () => {
+		// 폴더가 생성되면 전역 트리거 업데이트
+		triggerFolderUpdate();
 	};
 
 	const openAIChat = async (company: any) => {	
@@ -245,12 +251,13 @@
 />
 
 {#if showFolderSelect}
-	<FolderSelect 
-		isOpen={showFolderSelect} 
-		onClose={closeFolderSelect}
+	<FolderSelect
+		isOpen={showFolderSelect}
 		folderType="corp"
-		bookmarkId=""
+		bookmarkId={companyInfo.bookmark_id || ""}
+		onClose={closeFolderSelect}
 		on:close={handleFolderSelect}
+		on:folderCreated={handleFolderCreated}
 	/>
 {/if}
 

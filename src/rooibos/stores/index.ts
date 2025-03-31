@@ -1,5 +1,13 @@
 import { type Writable, writable } from 'svelte/store';
 
+// 폴더 업데이트 관련 스토어
+export const folderUpdateTrigger = writable<number>(0);
+
+// 폴더 업데이트 트리거 함수
+export function triggerFolderUpdate() {
+	folderUpdateTrigger.update(n => n + 1);
+}
+
 interface CompanyStore extends Writable<CompanySettings> {
 	getLastSelected: () => CompanySettings;
 	getHistory: () => CompanySettings[];
