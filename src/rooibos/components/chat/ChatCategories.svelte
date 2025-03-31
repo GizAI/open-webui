@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { createEventDispatcher, onMount } from 'svelte';
 	import Modal from '$lib/components/common/Modal.svelte';
-	import { models , user } from '$lib/stores';	
+	import { models , user, config } from '$lib/stores';	
 	
 	import Fuse from 'fuse.js';
 
@@ -225,29 +225,50 @@
 		dispatch('select', item.model);
 		show = false;
 	}
+
+	// 기본 모델 선택 핸들러 추가
+	function selectDefaultModel() {
+		const defaultModel = $config?.default_models.split(',')[0];
+		let model = $models.find((m) => m.id === defaultModel);
+		if(!model){
+			model = $models.find((m) => m.info?.base_model_id == null);
+		}
+		if(model) {
+			dispatch('select', model);
+			show = false;
+		}
+	}
 </script>
 
 <Modal size="xl" bind:show>
 	<div class="text-gray-700 dark:text-gray-100 {isMobile ? 'h-screen' : ''}">
 		<div class="flex justify-between dark:text-gray-300 px-5 pt-4 pb-1">
 			<div class="text-lg font-medium self-center">지식 전문 봇</div>
-			<button
-				class="self-center"
-				on:click={() => {
-					show = false;
-				}}
-			>
-				<svg
-					xmlns="http://www.w3.org/2000/svg"
-					viewBox="0 0 20 20"
-					fill="currentColor"
-					class="w-5 h-5"
+			<div class="flex items-center gap-2">
+				<button
+					class="px-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 text-sm transition-colors"
+					on:click={selectDefaultModel}
 				>
-					<path
-						d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z"
-					/>
-				</svg>
-			</button>
+					선택 취소
+				</button>
+				<button
+					class="self-center"
+					on:click={() => {
+						show = false;
+					}}
+				>
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						viewBox="0 0 20 20"
+						fill="currentColor"
+						class="w-5 h-5"
+					>
+						<path
+							d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z"
+						/>
+					</svg>
+				</button>
+			</div>
 		</div>
 
 		{#if categories.length > 0}
