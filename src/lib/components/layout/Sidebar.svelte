@@ -628,6 +628,7 @@
 		</div>
 		{#if !search}
 			<SidebarCorpFolder open={false}/>
+			<SidebarKnowledge />
 		{/if}
 		<div
 			class="relative flex flex-col flex-1 overflow-y-auto overflow-x-hidden {$temporaryChatEnabled
