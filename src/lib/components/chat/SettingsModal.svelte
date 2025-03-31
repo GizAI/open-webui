@@ -31,6 +31,28 @@
 
 	const searchData: SettingsTab[] = [
 		{
+			id: 'account',
+			title: 'Account',
+			keywords: [
+				'account',
+				'profile',
+				'security',
+				'privacy',
+				'settings',
+				'login',
+				'useraccount',
+				'userdata',
+				'api',
+				'apikey',
+				'userprofile',
+				'profiledetails',
+				'accountsettings',
+				'accountpreferences',
+				'securitysettings',
+				'privacysettings'
+			]
+		},
+		{
 			id: 'general',
 			title: 'General',
 			keywords: [
@@ -208,28 +230,6 @@
 			]
 		},
 		{
-			id: 'account',
-			title: 'Account',
-			keywords: [
-				'account',
-				'profile',
-				'security',
-				'privacy',
-				'settings',
-				'login',
-				'useraccount',
-				'userdata',
-				'api',
-				'apikey',
-				'userprofile',
-				'profiledetails',
-				'accountsettings',
-				'accountpreferences',
-				'securitysettings',
-				'privacysettings'
-			]
-		},
-		{
 			id: 'admin',
 			title: 'Admin',
 			keywords: [
@@ -328,7 +328,7 @@
 		);
 	};
 
-	let selectedTab = 'general';
+	let selectedTab = 'account';
 
 	// Function to handle sideways scrolling
 	const scrollHandler = (event) => {
@@ -404,7 +404,33 @@
 
 				{#if visibleTabs.length > 0}
 					{#each visibleTabs as tabId (tabId)}
-						{#if tabId === 'general'}
+						{#if tabId === 'account'}
+							<button
+								class="px-0.5 py-1 min-w-fit rounded-lg flex-1 md:flex-none flex text-left transition {selectedTab ===
+								'account'
+									? ''
+									: ' text-gray-300 dark:text-gray-600 hover:text-gray-700 dark:hover:text-white'}"
+								on:click={() => {
+									selectedTab = 'account';
+								}}
+							>
+								<div class=" self-center mr-2">
+									<svg
+										xmlns="http://www.w3.org/2000/svg"
+										viewBox="0 0 16 16"
+										fill="currentColor"
+										class="w-4 h-4"
+									>
+										<path
+											fill-rule="evenodd"
+											d="M15 8A7 7 0 1 1 1 8a7 7 0 0 1 14 0Zm-5-2a2 2 0 1 1-4 0 2 2 0 0 1 4 0ZM8 9c-1.825 0-3.422.977-4.295 2.437A5.49 5.49 0 0 0 8 13.5a5.49 5.49 0 0 0 4.294-2.063A4.997 4.997 0 0 0 8 9Z"
+											clip-rule="evenodd"
+										/>
+									</svg>
+								</div>
+								<div class=" self-center">{$i18n.t('Account')}</div>
+							</button>
+						{:else if tabId === 'general'}
 							<button
 								class="px-0.5 py-1 min-w-fit rounded-lg flex-1 md:flex-none flex text-left transition {selectedTab ===
 								'general'
@@ -550,58 +576,6 @@
 								</div>
 								<div class=" self-center">{$i18n.t('Chats')}</div>
 							</button>
-						{:else if tabId === 'account'}
-							<button
-								class="px-0.5 py-1 min-w-fit rounded-lg flex-1 md:flex-none flex text-left transition {selectedTab ===
-								'account'
-									? ''
-									: ' text-gray-300 dark:text-gray-600 hover:text-gray-700 dark:hover:text-white'}"
-								on:click={() => {
-									selectedTab = 'account';
-								}}
-							>
-								<div class=" self-center mr-2">
-									<svg
-										xmlns="http://www.w3.org/2000/svg"
-										viewBox="0 0 16 16"
-										fill="currentColor"
-										class="w-4 h-4"
-									>
-										<path
-											fill-rule="evenodd"
-											d="M15 8A7 7 0 1 1 1 8a7 7 0 0 1 14 0Zm-5-2a2 2 0 1 1-4 0 2 2 0 0 1 4 0ZM8 9c-1.825 0-3.422.977-4.295 2.437A5.49 5.49 0 0 0 8 13.5a5.49 5.49 0 0 0 4.294-2.063A4.997 4.997 0 0 0 8 9Z"
-											clip-rule="evenodd"
-										/>
-									</svg>
-								</div>
-								<div class=" self-center">{$i18n.t('Account')}</div>
-							</button>
-						{:else if tabId === 'about'}
-							<button
-								class="px-0.5 py-1 min-w-fit rounded-lg flex-1 md:flex-none flex text-left transition {selectedTab ===
-								'about'
-									? ''
-									: ' text-gray-300 dark:text-gray-600 hover:text-gray-700 dark:hover:text-white'}"
-								on:click={() => {
-									selectedTab = 'about';
-								}}
-							>
-								<div class=" self-center mr-2">
-									<svg
-										xmlns="http://www.w3.org/2000/svg"
-										viewBox="0 0 20 20"
-										fill="currentColor"
-										class="w-4 h-4"
-									>
-										<path
-											fill-rule="evenodd"
-											d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a.75.75 0 000 1.5h.253a.25.25 0 01.244.304l-.459 2.066A1.75 1.75 0 0010.747 15H11a.75.75 0 000-1.5h-.253a.25.25 0 01-.244-.304l.459-2.066A1.75 1.75 0 009.253 9H9z"
-											clip-rule="evenodd"
-										/>
-									</svg>
-								</div>
-								<div class=" self-center">{$i18n.t('About')}</div>
-							</button>
 						{:else if tabId === 'admin'}
 							{#if $user.role === 'admin'}
 								<button
@@ -685,8 +659,6 @@
 							toast.success($i18n.t('Settings saved successfully!'));
 						}}
 					/>
-				{:else if selectedTab === 'about'}
-					<About />
 				{/if}
 			</div>
 		</div>
