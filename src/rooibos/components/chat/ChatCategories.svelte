@@ -261,8 +261,8 @@
 </script>
 
 <Modal size="xl" bind:show>
-	<div class="text-gray-700 dark:text-gray-100 {isMobile ? 'h-screen' : ''}">
-		<div class="flex justify-between dark:text-gray-300 px-5 pt-4 pb-1">
+	<div class="text-gray-700 dark:text-gray-100 {isMobile ? 'h-screen flex flex-col' : ''}">
+		<div class="flex justify-between dark:text-gray-300 px-5 pt-4 pb-1 {isMobile ? 'flex-shrink-0' : ''}">
 			<div class="text-lg font-medium self-center">지식 전문 봇</div>
 			<div class="flex items-center gap-2">
 				<button
@@ -292,8 +292,8 @@
 		</div>
 
 		{#if categories.length > 0}
-			<div class="m-auto w-full {isMobile ? 'px-4 py-4 h-[calc(100vh-4rem)] overflow-hidden' : 'px-8 lg:px-20 py-6'} categories-container">
-				<div class="mb-4">
+			<div class="m-auto w-full {isMobile ? 'px-4 py-4 flex-1 overflow-hidden flex flex-col' : 'px-8 lg:px-20 py-6'} categories-container">
+				<div class="mb-4 {isMobile ? 'flex-shrink-0' : ''}">
 					<div class="mt-2">
 						<input
 							type="text"
@@ -303,10 +303,10 @@
 						/>
 					</div>
 				</div>
-				<div class="flex flex-col md:flex-row gap-4 items-start md:min-h-[500px] {isMobile ? 'h-[calc(100%-4rem)]' : ''}">
+				<div class="flex flex-col md:flex-row gap-4 items-start md:min-h-[500px] {isMobile ? 'flex-1 overflow-hidden' : ''}">
 					{#if !searchQuery}
 						{#if isMobile}
-							<div class="w-full relative mb-4">
+							<div class="w-full relative mb-4 flex-shrink-0">
 								<!-- 커스텀 드롭다운 -->
 								<button 
 									class="w-full flex justify-between items-center px-4 py-2.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -358,17 +358,17 @@
 								검색 결과가 없습니다.
 							</div>
 						{:else}
-							<div class="{isMobile ? 'flex flex-col w-full' : 'grid grid-cols-1 sm:grid-cols-2 gap-3 p-1'}">
+							<div class="{isMobile ? 'flex flex-col w-full pb-2' : 'grid grid-cols-1 sm:grid-cols-2 gap-3 p-1'}">
 								{#each filteredItems as item (item.title)}
 									<button
-										class="w-full text-left p-3 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition {isMobile ? 'mb-3' : ''}"
+										class="w-full text-left p-3 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition {isMobile ? 'mb-2' : ''}"
 										on:click={() => selectSubItem(item)}
 									>
-										<div class="flex flex-col">
+										<div class="flex flex-col w-full">
 											{#if searchQuery}
 												<div class="text-xs text-gray-500 dark:text-gray-400 mb-0.5">{item.categoryTitle}</div>
 											{/if}
-											<div class="flex items-center">
+											<div class="flex items-center w-full">
 												<img 
 													src={item.model?.info?.meta?.profile_image_url ?? '/static/favicon.png'} 
 													alt="Model" 
@@ -376,7 +376,7 @@
 												/>
 												<div class="font-medium text-gray-800 dark:text-gray-100 text-sm truncate">{item.title}</div>
 											</div>
-											<div class="mt-0.5 text-xs text-gray-500 dark:text-gray-400 line-clamp-2">{item.description}</div>
+											<div class="mt-0.5 text-xs text-gray-500 dark:text-gray-400 line-clamp-2 w-full">{item.description}</div>
 										</div>
 									</button>
 								{/each}
