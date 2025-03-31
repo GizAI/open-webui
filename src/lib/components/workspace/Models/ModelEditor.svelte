@@ -77,7 +77,7 @@
 	let capabilities = {
 		vision: true,
 		usage: undefined,
-		citations: true
+		citations: undefined
 	};
 
 	let knowledge = [];
