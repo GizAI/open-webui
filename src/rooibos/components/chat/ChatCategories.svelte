@@ -199,10 +199,15 @@
 				};
 			});
 		} else {
-			filteredItems = categories[activeCategoryIndex]?.items.map(item => ({
-				...item,
-				categoryTitle: categories[activeCategoryIndex].title
-			})) || [];
+			if (activeCategoryIndex !== null && categories[activeCategoryIndex]) {
+				const category = categories[activeCategoryIndex];
+				filteredItems = category.items.map(item => ({
+					...item,
+					categoryTitle: category.title
+				}));
+			} else {
+				filteredItems = [];
+			}
 		}
 	}
 
@@ -212,18 +217,27 @@
 	}
 
 
-	// 현재 선택된 대분류 인덱스 (기본값 0)
-	let activeCategoryIndex: number = 0;
+	// 현재 선택된 대분류 인덱스 (기본값 null)
+	let activeCategoryIndex: number | null = null;
 
 	// 모바일 여부: 창 너비가 768px 미만이면 모바일로 간주
 	let isMobile = false;
 	let containerHeight = 0;
 	let parentHeight = 0;
+	
+	// 모바일용 드롭다운 상태
+	let isDropdownOpen = false;
 
 	// 하위 아이템 클릭 시 상위에 이벤트 전달
 	function selectSubItem(item: SubItem) {
 		dispatch('select', item.model);
 		show = false;
+	}
+	
+	// 카테고리 선택
+	function selectCategory(index: number) {
+		activeCategoryIndex = index;
+		isDropdownOpen = false;
 	}
 
 	// 기본 모델 선택 핸들러 추가
@@ -237,6 +251,12 @@
 			dispatch('select', model);
 			show = false;
 		}
+	}
+
+	// 모달이 열릴 때 카테고리 선택 초기화
+	$: if (show) {
+		activeCategoryIndex = null;
+		isDropdownOpen = false;
 	}
 </script>
 
@@ -272,7 +292,7 @@
 		</div>
 
 		{#if categories.length > 0}
-			<div class="m-auto w-full px-8 lg:px-20 py-6 categories-container {isMobile ? 'h-[calc(100vh-4rem)]' : ''}">
+			<div class="m-auto w-full {isMobile ? 'px-4 py-4 h-[calc(100vh-4rem)] overflow-hidden' : 'px-8 lg:px-20 py-6'} categories-container">
 				<div class="mb-4">
 					<div class="mt-2">
 						<input
@@ -283,20 +303,36 @@
 						/>
 					</div>
 				</div>
-				<div class="flex flex-col md:flex-row gap-4 items-start md:min-h-[500px]">
+				<div class="flex flex-col md:flex-row gap-4 items-start md:min-h-[500px] {isMobile ? 'h-[calc(100%-4rem)]' : ''}">
 					{#if !searchQuery}
 						{#if isMobile}
-							<div class="w-full">
-								<select
-									class="w-full px-4 py-2 mb-4 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100"
-									bind:value={activeCategoryIndex}
+							<div class="w-full relative mb-4">
+								<!-- 커스텀 드롭다운 -->
+								<button 
+									class="w-full flex justify-between items-center px-4 py-2.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+									on:click={() => isDropdownOpen = !isDropdownOpen}
 								>
-									{#each categories as category, index}
-										<option value={index}>
-											{category.title} ({category.items.length}개)
-										</option>
-									{/each}
-								</select>
+									<span>{activeCategoryIndex !== null ? categories[activeCategoryIndex].title : '분류를 선택하세요'}</span>
+									<svg class="w-4 h-4 fill-current text-gray-500 dark:text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+										<path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"/>
+									</svg>
+								</button>
+								
+								{#if isDropdownOpen}
+									<div class="absolute z-10 mt-1 w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg overflow-hidden">
+										<div class="max-h-60 overflow-y-auto">
+											{#each categories as category, index}
+												<button 
+													class="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 {activeCategoryIndex === index ? 'bg-gray-100 dark:bg-gray-700' : ''}"
+													on:click={() => selectCategory(index)}
+												>
+													<div class="font-medium text-gray-800 dark:text-gray-100">{category.title}</div>
+													<div class="text-xs text-gray-500 dark:text-gray-400">{category.items.length}개 모델</div>
+												</button>
+											{/each}
+										</div>
+									</div>
+								{/if}
 							</div>
 						{:else}
 							<div class="md:w-1/3 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden md:max-h-[500px] md:overflow-y-auto">
@@ -316,31 +352,31 @@
 					{/if}
 
 					<!-- 모델 목록 (2단계) -->
-					<div class="{searchQuery ? 'w-full' : 'md:w-2/3'} {isMobile ? 'h-[calc(100vh-12rem)]' : 'md:max-h-[500px]'} md:overflow-y-auto">
+					<div class="{searchQuery ? 'w-full' : 'md:w-2/3'} {isMobile ? 'flex-1 overflow-y-auto w-full' : 'md:max-h-[500px]'} md:overflow-y-auto">
 						{#if filteredItems.length === 0}
 							<div class="text-center p-4 text-gray-500 dark:text-gray-400">
 								검색 결과가 없습니다.
 							</div>
 						{:else}
-							<div class="grid grid-cols-1 sm:grid-cols-2 gap-4 p-1">
+							<div class="{isMobile ? 'flex flex-col w-full' : 'grid grid-cols-1 sm:grid-cols-2 gap-3 p-1'}">
 								{#each filteredItems as item (item.title)}
 									<button
-										class="w-full text-left p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition"
+										class="w-full text-left p-3 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition {isMobile ? 'mb-3' : ''}"
 										on:click={() => selectSubItem(item)}
 									>
 										<div class="flex flex-col">
 											{#if searchQuery}
-												<div class="text-xs text-gray-500 dark:text-gray-400 mb-1">{item.categoryTitle}</div>
+												<div class="text-xs text-gray-500 dark:text-gray-400 mb-0.5">{item.categoryTitle}</div>
 											{/if}
 											<div class="flex items-center">
 												<img 
 													src={item.model?.info?.meta?.profile_image_url ?? '/static/favicon.png'} 
 													alt="Model" 
-													class="rounded-full w-5 h-5 mr-2"
+													class="rounded-full w-4 h-4 mr-2 flex-shrink-0"
 												/>
-												<div class="font-medium text-gray-800 dark:text-gray-100">{item.title}</div>
+												<div class="font-medium text-gray-800 dark:text-gray-100 text-sm truncate">{item.title}</div>
 											</div>
-											<div class="mt-1 text-xs text-gray-500 dark:text-gray-400">{item.description}</div>
+											<div class="mt-0.5 text-xs text-gray-500 dark:text-gray-400 line-clamp-2">{item.description}</div>
 										</div>
 									</button>
 								{/each}
