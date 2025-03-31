@@ -7,7 +7,7 @@
 	import Tooltip from '$lib/components/common/Tooltip.svelte';
 	import EllipsisHorizontal from '$lib/components/icons/EllipsisHorizontal.svelte';
 	import FolderSelect from '$rooibos/components/folder/FolderSelect.svelte';
-	import { selectedCompanyInfo } from '$rooibos/stores/index.js';
+	import { selectedCompanyInfo, triggerFolderUpdate } from '$rooibos/stores/index.js';
 	import { goto } from '$app/navigation';
 	import { WEBUI_API_BASE_URL } from '$lib/constants';
 	import { user } from '$lib/stores';
@@ -42,6 +42,12 @@
 		} catch (error) {
 			console.error('Error moving bookmark:', error);
 		}
+	}
+	
+	// 폴더 생성 이벤트 핸들러
+	function handleFolderCreated() {
+		// 폴더가 생성되면 전역 트리거 업데이트
+		triggerFolderUpdate();
 	}
 </script>
 
@@ -178,5 +184,6 @@
 				moveBookmarkToFolder(e.detail);
 			}
 		}}
+		on:folderCreated={handleFolderCreated}
 	/>
 {/if}

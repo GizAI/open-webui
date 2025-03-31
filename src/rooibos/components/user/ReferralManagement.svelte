@@ -99,13 +99,14 @@
 {#if show}
 	<div class="fixed inset-0 bg-black/50 z-40" on:click={() => (show = false)} />
 	<div
-		class="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-full max-w-4xl bg-white dark:bg-gray-900 rounded-lg shadow-lg p-6"
+		class="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-full max-h-[90vh] overflow-y-auto max-w-4xl bg-white dark:bg-gray-900 rounded-lg shadow-lg p-3 md:p-6"
 	>
-		<div class="flex justify-between items-center mb-6">
-			<h2 class="text-xl font-semibold dark:text-white">{$i18n.t('Referral Management')}</h2>
+		<div class="flex justify-between items-center mb-4 md:mb-6 sticky top-0 bg-white dark:bg-gray-900 py-2 z-10">
+			<h2 class="text-lg md:text-xl font-semibold dark:text-white">{$i18n.t('Referral Management')}</h2>
 			<button
 				class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
 				on:click={() => (show = false)}
+				aria-label="Close"
 			>
 				<svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
 					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -113,140 +114,124 @@
 			</button>
 		</div>
 
-		<div class="overflow-x-auto">
+		<div class="overflow-x-auto -mx-3 px-3">
 			{#if isLoading}
 				<div class="flex justify-center p-4">
 					<div class="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 dark:border-white"></div>
 				</div>
 			{:else}
-				<table class="w-full text-sm text-left text-gray-500 dark:text-gray-400">
-					<thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-850 dark:text-gray-400">
-						<tr>
-							<th class="px-3 py-2 cursor-pointer" on:click={() => setSortKey('role')}>
-								<div class="flex items-center">
-									{$i18n.t('Role')}
-									{#if sortKey === 'role'}
-										<span class="ml-1">
-											{#if sortOrder === 'asc'}
-												<ChevronUp className="w-4 h-4" />
-											{:else}
-												<ChevronDown className="w-4 h-4" />
-											{/if}
-										</span>
-									{/if}
-								</div>
-							</th>
-							<th class="px-3 py-2 cursor-pointer" on:click={() => setSortKey('name')}>
-								<div class="flex items-center">
-									{$i18n.t('Name')}
-									{#if sortKey === 'name'}
-										<span class="ml-1">
-											{#if sortOrder === 'asc'}
-												<ChevronUp className="w-4 h-4" />
-											{:else}
-												<ChevronDown className="w-4 h-4" />
-											{/if}
-										</span>
-									{/if}
-								</div>
-							</th>
-							<th class="px-3 py-2 cursor-pointer" on:click={() => setSortKey('email')}>
-								<div class="flex items-center">
-									{$i18n.t('Email')}
-									{#if sortKey === 'email'}
-										<span class="ml-1">
-											{#if sortOrder === 'asc'}
-												<ChevronUp className="w-4 h-4" />
-											{:else}
-												<ChevronDown className="w-4 h-4" />
-											{/if}
-										</span>
-									{/if}
-								</div>
-							</th>
-							<th class="px-3 py-2 cursor-pointer" on:click={() => setSortKey('last_active_at')}>
-								<div class="flex items-center">
-									{$i18n.t('Last Active')}
-									{#if sortKey === 'last_active_at'}
-										<span class="ml-1">
-											{#if sortOrder === 'asc'}
-												<ChevronUp className="w-4 h-4" />
-											{:else}
-												<ChevronDown className="w-4 h-4" />
-											{/if}
-										</span>
-									{/if}
-								</div>
-							</th>
-							<th class="px-3 py-2 cursor-pointer" on:click={() => setSortKey('created_at')}>
-								<div class="flex items-center">
-									{$i18n.t('Created')}
-									{#if sortKey === 'created_at'}
-										<span class="ml-1">
-											{#if sortOrder === 'asc'}
-												<ChevronUp className="w-4 h-4" />
-											{:else}
-												<ChevronDown className="w-4 h-4" />
-											{/if}
-										</span>
-									{/if}
-								</div>
-							</th>
-							<th class="px-3 py-2">{$i18n.t('Actions')}</th>
-						</tr>
-					</thead>
-					<tbody>
-						{#each sortedUsers as user (user.id)}
-							<tr class="bg-white dark:bg-gray-900 dark:border-gray-850 text-xs">
-								<td class="px-3 py-2 min-w-[7rem] w-28">
-									<button
-										class="translate-y-0.5"
-										on:click={() => {
-											const newRole = user.role === 'user' ? 'pending' : 'user';
-											updateRoleHandler(user.id, newRole);
-										}}
-									>
-										<Badge
-											type={user.role === 'admin' ? 'info' : user.role === 'user' ? 'success' : 'muted'}
-											content={$i18n.t(user.role)}
-										/>
-									</button>
-								</td>
-								<td class="px-3 py-2">{user.name}</td>
-								<td class="px-3 py-2">{user.email}</td>
-								<td class=" px-3 py-1">
-									{dayjs(user.last_active_at * 1000).fromNow()}
-								</td>
-								<td class=" px-3 py-1">
-									{dayjs(user.created_at * 1000).format('LL')}
-								</td>
-								<td class="px-3 py-2">
-									<div class="flex justify-end w-full">
-										{#if $config.features.enable_admin_chat_access && user.role !== 'admin'}
-											<Tooltip content={$i18n.t('Chats')}>
-												<button
-													class="self-center w-fit text-sm px-2 py-2 hover:bg-black/5 dark:hover:bg-white/5 rounded-xl"
-													on:click={async () => {
-														showUserChatsModal = !showUserChatsModal;
-														selectedUser = user;
-													}}
-												>
-													<ChatBubbles />
-												</button>
-											</Tooltip>
+				<div class="relative overflow-x-auto rounded-lg shadow-sm">
+					<table class="w-full text-sm text-left text-gray-500 dark:text-gray-400 min-w-full">
+						<thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-850 dark:text-gray-400 sticky top-0">
+							<tr>
+								<th class="px-2 md:px-3 py-2 cursor-pointer whitespace-nowrap hidden md:table-cell" on:click={() => setSortKey('role')}>
+									<div class="flex items-center">
+										{$i18n.t('Role')}
+										{#if sortKey === 'role'}
+											<span class="ml-1">
+												{#if sortOrder === 'asc'}
+													<ChevronUp className="w-4 h-4" />
+												{:else}
+													<ChevronDown className="w-4 h-4" />
+												{/if}
+											</span>
 										{/if}
 									</div>
-								</td>
+								</th>
+								<th class="px-2 md:px-3 py-2 cursor-pointer whitespace-nowrap" on:click={() => setSortKey('name')}>
+									<div class="flex items-center">
+										{$i18n.t('Name')}
+										{#if sortKey === 'name'}
+											<span class="ml-1">
+												{#if sortOrder === 'asc'}
+													<ChevronUp className="w-4 h-4" />
+												{:else}
+													<ChevronDown className="w-4 h-4" />
+												{/if}
+											</span>
+										{/if}
+									</div>
+								</th>
+								<th class="px-2 md:px-3 py-2 cursor-pointer whitespace-nowrap" on:click={() => setSortKey('email')}>
+									<div class="flex items-center">
+										{$i18n.t('Email')}
+										{#if sortKey === 'email'}
+											<span class="ml-1">
+												{#if sortOrder === 'asc'}
+													<ChevronUp className="w-4 h-4" />
+												{:else}
+													<ChevronDown className="w-4 h-4" />
+												{/if}
+											</span>
+										{/if}
+									</div>
+								</th>
+								<th class="px-2 md:px-3 py-2 cursor-pointer whitespace-nowrap hidden md:table-cell" on:click={() => setSortKey('last_active_at')}>
+									<div class="flex items-center">
+										{$i18n.t('Last Active')}
+										{#if sortKey === 'last_active_at'}
+											<span class="ml-1">
+												{#if sortOrder === 'asc'}
+													<ChevronUp className="w-4 h-4" />
+												{:else}
+													<ChevronDown className="w-4 h-4" />
+												{/if}
+											</span>
+										{/if}
+									</div>
+								</th>
+								<th class="px-2 md:px-3 py-2 cursor-pointer whitespace-nowrap" on:click={() => setSortKey('created_at')}>
+									<div class="flex items-center">
+										{$i18n.t('Created')}
+										{#if sortKey === 'created_at'}
+											<span class="ml-1">
+												{#if sortOrder === 'asc'}
+													<ChevronUp className="w-4 h-4" />
+												{:else}
+													<ChevronDown className="w-4 h-4" />
+												{/if}
+											</span>
+										{/if}
+									</div>
+								</th>
 							</tr>
-						{:else}
-							<tr class="bg-white dark:bg-gray-900">
-								<td colspan="6" class="px-3 py-4 text-center text-gray-500 dark:text-gray-400">
-									추천인 데이터가 없습니다.
-								</td>
-							</tr>
-						{/each}
-					</tbody>
-				</table>
+						</thead>
+						<tbody>
+							{#each sortedUsers as user (user.id)}
+								<tr class="bg-white dark:bg-gray-900 dark:border-gray-850 text-xs hover:bg-gray-50 dark:hover:bg-gray-850">
+									<td class="px-2 md:px-3 py-2 min-w-[5rem] md:min-w-[7rem] md:w-28 hidden md:table-cell">
+										<button
+											class="translate-y-0.5"
+											on:click={() => {
+												const newRole = user.role === 'user' ? 'pending' : 'user';
+												updateRoleHandler(user.id, newRole);
+											}}
+										>
+											<Badge
+												type={user.role === 'admin' ? 'info' : user.role === 'user' ? 'success' : 'muted'}
+												content={$i18n.t(user.role)}
+											/>
+										</button>
+									</td>
+									<td class="px-2 md:px-3 py-2 truncate max-w-[100px] md:max-w-none">{user.name}</td>
+									<td class="px-2 md:px-3 py-2 truncate max-w-[150px]">{user.email}</td>
+									<td class="px-2 md:px-3 py-1 whitespace-nowrap text-xs hidden md:table-cell">
+										{dayjs(user.last_active_at * 1000).fromNow()}
+									</td>
+									<td class="px-2 md:px-3 py-1 whitespace-nowrap text-xs">
+										{dayjs(user.created_at * 1000).format('LL')}
+									</td>
+								</tr>
+							{:else}
+								<tr class="bg-white dark:bg-gray-900">
+									<td colspan="6" class="px-3 py-4 text-center text-gray-500 dark:text-gray-400">
+										추천인 데이터가 없습니다.
+									</td>
+								</tr>
+							{/each}
+						</tbody>
+					</table>
+				</div>
 			{/if}
 		</div>
 	</div>

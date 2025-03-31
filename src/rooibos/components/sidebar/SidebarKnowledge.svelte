@@ -51,23 +51,32 @@
 			showSidebar.set(false);
 		}
 	};
+	
+	const goToKnowledgePage = () => {
+		chatId.set('');
+		goto('/workspace/knowledge');
+		if ($mobile) {
+			showSidebar.set(false);
+		}
+	};
 </script>
 
-
-<Folder
-	className="px-2 mt-0.5"
-	name={$i18n.t('Knowledge')}
-	onAdd={handleAddClick}
-	onAddLabel={$i18n.t('Create a knowledge base')}
->
-	{#each knowledgeBases as base}
-		<button
-			class="w-full flex items-center space-x-3 px-2 py-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-900 transition text-sm text-left"
-			on:click={() => handleKnowledgeClick(base.id)}
-		>
-			<div class="flex-1 truncate text-gray-700 dark:text-gray-300">
-				{base.name}
-			</div>
-		</button>
-	{/each}
-</Folder>
+<div on:click={goToKnowledgePage} class="cursor-pointer">
+	<Folder
+		className="px-2 mt-0.5"
+		name={$i18n.t('Knowledge')}
+		onAdd={handleAddClick}
+		onAddLabel={$i18n.t('Create a knowledge base')}
+	>
+		{#each knowledgeBases as base}
+			<button
+				class="w-full flex items-center space-x-3 px-2 py-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-900 transition text-sm text-left"
+				on:click|stopPropagation={() => handleKnowledgeClick(base.id)}
+			>
+				<div class="flex-1 truncate text-gray-700 dark:text-gray-300">
+					{base.name}
+				</div>
+			</button>
+		{/each}
+	</Folder>
+</div>
