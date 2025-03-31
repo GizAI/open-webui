@@ -275,7 +275,7 @@
 		</div>
 		<div class="flex flex-col gap-2">
 			<div class="justify-between w-full">
-				<div class="flex mt-2">
+				<div class="flex flex-col sm:flex-row mt-2">
 					<input
 						class="flex-1 rounded-lg py-2 px-4 text-sm dark:text-gray-300 dark:bg-gray-850 outline-hidden"
 						type="text"
@@ -284,7 +284,7 @@
 					/>
 
 					<button
-						class="ml-1.5 px-3 py-1 dark:hover:bg-gray-850 transition rounded-lg"
+						class="mt-2 sm:mt-0 sm:ml-1.5 px-3 py-1.5 text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300 transition rounded-lg flex items-center justify-center border border-blue-200 dark:border-blue-800"
 						on:click={() => {							
 							copyToClipboard(`${window.location.origin}/auth?referrer_code=${$user.referral_code ?? ''}`);
 							referrerLinkCopied = true;
@@ -294,12 +294,12 @@
 						}}
 					>
 						{#if referrerLinkCopied}
-							<div class="flex items-center gap-1.5">
+							<div class="flex items-center gap-1">
 								<svg
 									xmlns="http://www.w3.org/2000/svg"
 									viewBox="0 0 20 20"
 									fill="currentColor"
-									class="w-4 h-4"
+									class="w-3.5 h-3.5"
 								>
 									<path
 										fill-rule="evenodd"
@@ -307,15 +307,15 @@
 										clip-rule="evenodd"
 									/>
 								</svg>
-								<span>{$i18n.t('Copied!')}</span>
+								<span class="text-xs">{$i18n.t('Copied!')}</span>
 							</div>
 						{:else}
-							<div class="flex items-center gap-1.5">
+							<div class="flex items-center gap-1">
 								<svg
 									xmlns="http://www.w3.org/2000/svg"
 									viewBox="0 0 16 16"
 									fill="currentColor"
-									class="w-4 h-4"
+									class="w-3.5 h-3.5"
 								>
 									<path
 										fill-rule="evenodd"
@@ -328,7 +328,7 @@
 										clip-rule="evenodd"
 									/>
 								</svg>
-								<span>{$i18n.t('Copy Link')}</span>
+								<span class="text-xs">{$i18n.t('Copy Link')}</span>
 							</div>
 						{/if}
 					</button>
