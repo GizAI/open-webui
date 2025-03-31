@@ -2,7 +2,7 @@
 	import { toast } from 'svelte-sonner';
 	import { v4 as uuidv4 } from 'uuid';
 	import { getContext } from 'svelte';
-	import { user } from '$lib/stores';
+	import { user, showSidebar, mobile } from '$lib/stores';
 	import { createNewRooibosFolder, getRooibosFolders } from '$rooibos/components/apis/folder';
 	import RooibosFolder from '$rooibos/components/folder/RooibosFolder.svelte';
 	import RooibosFolderMenu from '$rooibos/components/folder/RooibosFolderMenu.svelte';
@@ -140,7 +140,13 @@
 	const handleFolderDelete = async (event) => {
 		await initRooibosFolders();
 	};
-
+	
+	// 폴더 클릭 시 모바일에서 사이드바 접기
+	const handleFolderClick = () => {
+		if ($mobile) {
+			showSidebar.set(false);
+		}
+	};
 
 	initRooibosFolders();
 </script>
@@ -162,5 +168,6 @@
 			}, {})}
 		parentId={null}
 		on:delete={handleFolderDelete}
+		on:folderClick={handleFolderClick}
 	/>
 </RooibosFolder> 

@@ -56,6 +56,9 @@
 			folder.name === '공유 기업' || 
 			folder.isShared === true;
 		
+		// 폴더 클릭 이벤트 전달
+		dispatch('folderClick', { folder });
+		
 		if (isTrash) {
 			goto(`/rooibos/folder/${folder.id}/companies?deleted=true`);
 		} else if (isShared) {
@@ -216,7 +219,7 @@
 
 			<!-- 재귀 렌더링: 자식 폴더가 있으면 -->
 			{#if folders[folderId].childrenIds && folders[folderId].childrenIds.length > 0}
-				<svelte:self {folders} parentId={folderId} />
+				<svelte:self {folders} parentId={folderId} on:folderClick />
 			{/if}
 		</li>
 	{/each}
