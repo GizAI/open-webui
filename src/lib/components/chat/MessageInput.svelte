@@ -49,6 +49,8 @@
 	import Photo from '../icons/Photo.svelte';
 	import CommandLine from '../icons/CommandLine.svelte';
 	import { KokoroWorker } from '$lib/workers/KokoroWorker';
+	import ToolServersModal from './ToolServersModal.svelte';
+
 	import { selectedCompanyInfo } from '$rooibos/stores';
 	import CompanyHistoryModal from '$rooibos/components/company/CompanyHistoryModal.svelte';
 	import { goto } from '$app/navigation';
@@ -325,12 +327,10 @@
 	onMount(async () => {
 		loaded = true;
 
-		// URL Äõ¸® ÆÄ¶ó¹ÌÅÍ È®ÀÎ
 		const urlParams = new URLSearchParams(window.location.search);
 		if (urlParams.get('showCategory') === 'true') {
 			showCategoryModal = true;
 			showBookmarkIcon = true;
-			// ÆäÀÌÁö ÀÌµ¿ ÈÄ URL¿¡¼­ Äõ¸® ÆÄ¶ó¹ÌÅÍ Á¦°Å (È÷½ºÅä¸® »óÅÂ´Â À¯Áö)
 			const url = new URL(window.location.href);
 			url.searchParams.delete('showCategory');
 			window.history.replaceState({}, '', url);
@@ -365,7 +365,6 @@
 		}
 	});
 
-	// È¸»ç ºÏ¸¶Å© Ãß°¡ ÇÔ¼ö
 	const addCompany = async (company: any, folderId: string = '') => {
 		const response = await fetch(`${WEBUI_API_BASE_URL}/rooibos/mycompanies/add`, {
 			method: 'POST',
@@ -385,7 +384,6 @@
 		$selectedCompanyInfo.bookmark_user_id = $_user?.id;
 	};
 
-	// Æú´õ ¼±ÅÃ ÈÄ Ã³¸® ÇÔ¼ö
 	const handleFolderSelect = async (event: { detail: any }) => {
 		const selectedFolder = event.detail;
 		if (selectedFolder && selectedFolder.id) {
@@ -396,12 +394,10 @@
 		showFolderSelect = false;
 	};
 
-	// Æú´õ ¼±ÅÃ Ã¢ ´İ±â
 	const closeFolderSelect = () => {
 		showFolderSelect = false;
 	};
 
-	// ºÏ¸¶Å© »èÁ¦ ÇÔ¼ö
 	const deleteCompanyBookmark = async (bookmarkId: string) => {
 		try {
 			const response = await fetch(`${WEBUI_API_BASE_URL}/rooibos/mycompanies/${bookmarkId}`, {
@@ -1270,7 +1266,7 @@
 
 										<div class="flex gap-0.5 items-center overflow-x-auto scrollbar-none flex-1">
 											
-											<Tooltip content={'Áö½ÄÀü¹®º¿'} placement="top">
+											<Tooltip content={'ì§€ì‹ì „ë¬¸ë´‡'} placement="top">
 												<button
 													on:click|preventDefault={() => {
 														showCategoryModal = true;
@@ -1282,12 +1278,12 @@
 												>
 													<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-bot "><path d="M12 8V4H8"></path><rect width="16" height="12" x="4" y="8" rx="2"></rect><path d="M2 14h2"></path><path d="M20 14h2"></path><path d="M15 13v2"></path><path d="M9 13v2"></path></svg>
 													<span class="hidden @sm:block whitespace-nowrap overflow-hidden text-ellipsis translate-y-[0.5px] mr-0.5">
-														{'Áö½ÄÀü¹®º¿'}
+														{'ì§€ì‹ì „ë¬¸ë´‡'}
 													</span>
 												</button>
 											</Tooltip>
 
-											<Tooltip content={'±â¾÷ ¼±ÅÃ'} placement="top">
+											<Tooltip content={'ê¸°ì—… ì„ íƒ'} placement="top">
 												<button
 													on:click|preventDefault={() => {
 														if ($selectedCompanyInfo?.company_name) {
@@ -1303,7 +1299,7 @@
 												>
 													<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-building-2"><path d="M6 22V4c0-.27 0-.55.07-.82a1.477 1.477 0 0 1 1.1-1.11C7.46 2 7.73 2 8 2h8c.27 0 .55 0 .82.07a1.477 1.477 0 0 1 1.11 1.1c.07.28.07.56.07.83v18H6Z"/><path d="M2 14v6c0 1.1.9 2 2 2h2V12H4c-1.1 0-2 .9-2 2Z"/><path d="M20 12h-2v10h2c1.1 0 2-.9 2-2v-6c0-1.1-.9-2-2-2Z"/><path d="M12 16v3"/><path d="M10 13v3"/><path d="M14 13v3"/><path d="M12 10v3"/><path d="M10 7v3"/><path d="M14 7v3"/></svg>
 													<span class="hidden @sm:block whitespace-nowrap overflow-hidden text-ellipsis translate-y-[0.5px] mr-0.5">
-														{'±â¾÷ ¼±ÅÃ'}
+														{'ê¸°ì—… ì„ íƒ'}
 													</span>
 												</button>
 											</Tooltip>
