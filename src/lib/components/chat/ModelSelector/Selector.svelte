@@ -92,7 +92,9 @@
 				})
 				.filter((item) => {
 					if (selectedTag === '') {
-						return true;
+						return item.model?.info?.base_model_id == null;
+					} else if (selectedTag === 'others') {
+						return item.model?.info?.base_model_id != null && (!item.model?.info?.meta?.tags || item.model?.info?.meta?.tags.length === 0);
 					}
 					return (item.model?.tags ?? []).map((tag) => tag.name).includes(selectedTag);
 				})
@@ -110,7 +112,9 @@
 		: items
 				.filter((item) => {
 					if (selectedTag === '') {
-						return true;
+						return item.model?.info?.base_model_id == null;
+					} else if (selectedTag === 'others') {
+						return item.model?.info?.base_model_id != null && (!item.model?.info?.meta?.tags || item.model?.info?.meta?.tags.length === 0);
 					}
 					return (item.model?.tags ?? []).map((tag) => tag.name).includes(selectedTag);
 				})
@@ -398,7 +402,19 @@
 									selectedTag = '';
 								}}
 							>
-								{$i18n.t('All')}
+								{$i18n.t('Default Model')}
+							</button>
+
+							<button
+								class="min-w-fit outline-none p-1.5 {selectedTag === 'others'
+									? ''
+									: 'text-gray-300 dark:text-gray-600 hover:text-gray-700 dark:hover:text-white'} transition capitalize"
+								on:click={() => {
+									selectedConnectionType = '';
+									selectedTag = 'others';
+								}}
+							>
+								{'기타'}
 							</button>
 
 							{#if items.find((item) => item.model?.owned_by === 'ollama') && items.find((item) => item.model?.owned_by === 'openai')}

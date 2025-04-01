@@ -115,8 +115,7 @@
 				<AccessControl
 					bind:accessControl
 					accessRoles={['read', 'write']}
-					allowPublic={$user?.permissions?.sharing?.public_knowledge || $user?.role === 'admin'
-					publicAccess={$user.role === 'admin'}}
+					allowPublic={$user?.permissions?.sharing?.public_knowledge || $user?.role === 'admin'}
 				/>
 			</div>
 		</div>
