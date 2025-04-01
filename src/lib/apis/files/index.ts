@@ -155,7 +155,7 @@ export const updateFileDataContentById = async (token: string, id: string, conte
 export const updateFileFilenameById = async (token: string, id: string, filename: string) => {
 	let error = null;
 
-	const res = await fetch(`${WEBUI_API_BASE_URL}/files/${id}/filename/update`, {
+	const res = await fetch(`${WEBUI_API_BASE_URL}/rooibos/rooibosfiles/${id}/filename/update`, {
 		method: 'POST',
 		headers: {
 			Accept: 'application/json',
