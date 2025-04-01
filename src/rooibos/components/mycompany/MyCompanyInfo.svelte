@@ -146,10 +146,12 @@
 	let chatList: any = null;
 	let inputFiles: any = null;
 	let filteredItems: any = [];
+	let memoItems: any = [];
 	let selectedFile: any = null;
 	let selectedFileId: any = null;
 	let tempFileForNoteEditor: any = { id: 'temp-id' };
 	let fuse: any = null;
+	let memoFuse: any = null;
 	let debounceTimeout: any = null;
 	let mediaQuery: any;
 	let dragged = false;
@@ -203,6 +205,15 @@
 	let sharedChatUser: any = null;
 	let sharedChatSelectedModels = [''];
 	
+	// 섹션 표시 여부 상태
+	let showMemosSection = true;
+	let showFilesSection = true;
+	let showChatsSection = true;
+	
+	// 검색 상태
+	let memoQuery = '';
+	let fileQuery = '';
+
 	function handleModalStateChange(currentModalState: boolean) {
 		if (previousModalState && !currentModalState) {
 			selectedFileId = null;
@@ -219,17 +230,41 @@
 	$: handleAccessControlModalStateChange(showAccessControlModal);
 
 	$: if (bookmark && bookmark.files) {
-		fuse = new Fuse(bookmark.files, {
+		// txt 파일과 기타 파일을 분리
+		memoItems = bookmark.files.filter(file => 
+			file.meta && file.meta.name && file.meta.name.toLowerCase().endsWith('.txt')
+		);
+		filteredItems = bookmark.files.filter(file => 
+			!file.meta || !file.meta.name || !file.meta.name.toLowerCase().endsWith('.txt')
+		);
+		
+		fuse = new Fuse(filteredItems, {
+			keys: ['meta.name', 'meta.description']
+		});
+		
+		memoFuse = new Fuse(memoItems, {
 			keys: ['meta.name', 'meta.description']
 		});
 	}
 
 	$: if (fuse) {
-		filteredItems = query
-			? fuse.search(query).map((e: any) => {
+		filteredItems = fileQuery
+			? fuse.search(fileQuery).map((e: any) => {
 					return e.item;
 				})
-			: (bookmark?.files ?? []);
+			: (bookmark?.files.filter(file => 
+				!file.meta || !file.meta.name || !file.meta.name.toLowerCase().endsWith('.txt')
+			) ?? []);
+	}
+	
+	$: if (memoFuse) {
+		memoItems = memoQuery
+			? memoFuse.search(memoQuery).map((e: any) => {
+					return e.item;
+				})
+			: (bookmark?.files.filter(file => 
+				file.meta && file.meta.name && file.meta.name.toLowerCase().endsWith('.txt')
+			) ?? []);
 	}
 
 	$: if (selectedFileId) {
@@ -256,6 +291,60 @@
 		return file;
 	};
 
+	// 메모 생성 및 업로드 함수
+	const createAndUploadMemo = async (name, content) => {
+		selectedFileId = null;
+		selectedFile = null;
+		const file = createFileFromText(name, content || '<p></p>');
+		const tempItemId = uuidv4();
+
+		// 임시 메모 항목 생성
+		const tempMemoItem = {
+			type: 'file',
+			file: '',
+			id: tempItemId,
+			url: '',
+			meta: { name: `${name}.txt` },
+			size: file.size,
+			status: 'uploading',
+			error: '',
+			itemId: tempItemId
+		};
+
+		// 임시 항목을 메모 리스트에 추가
+		memoItems = [...memoItems, tempMemoItem];
+
+		const uploadedFile = await uploadFileHandler(file);
+		
+		if (uploadedFile) {
+			// 업로드 완료 후 메모 리스트에 있는 임시 항목 업데이트
+			memoItems = memoItems.map(item => {
+				if (item.itemId === tempItemId) {
+					return {
+						...item,
+						id: uploadedFile.id,
+						status: 'completed'
+					};
+				}
+				return item;
+			});
+			
+			// 첨부파일 목록에서 txt 파일 제거
+			filteredItems = filteredItems.filter(item => 
+				!item.meta || !item.meta.name || !item.meta.name.toLowerCase().endsWith('.txt')
+			);
+			
+			// Fuse 인스턴스 업데이트
+			fuse = new Fuse(filteredItems, {
+				keys: ['meta.name', 'meta.description']
+			});
+			
+			memoFuse = new Fuse(memoItems, {
+				keys: ['meta.name', 'meta.description']
+			});
+		}
+	};
+
 	const uploadFileHandler = async (file) => {
 		if (!file) {
 			return;
@@ -267,14 +356,18 @@
 			file: '',
 			id: null,
 			url: '',
-			name: file.name,
+			meta: { name: file.name },
 			size: file.size,
 			status: 'uploading',
 			error: '',
 			itemId: tempItemId
 		};
 
-		bookmark.files = [...(bookmark.files ?? []), fileItem];
+		// txt 파일이 아닌 경우에만 첨부파일 리스트에 추가
+		const isTxtFile = file.name.toLowerCase().endsWith('.txt');
+		if (!isTxtFile) {
+			bookmark.files = [...(bookmark.files ?? []), fileItem];
+		}
 
 		if (['audio/mpeg', 'audio/wav', 'audio/ogg', 'audio/x-m4a'].includes(file['type'])) {
 			const res = await transcribeAudio(localStorage.token, file).catch((error) => {
@@ -500,6 +593,29 @@
 	};
 
 	const deleteFileHandler = async (fileId: string) => {
+		// 즉시 UI 업데이트
+		filteredItems = filteredItems.filter((item) => item.id !== fileId);
+		memoItems = memoItems.filter((item) => item.id !== fileId);
+		
+		// 메인 파일 목록에서도 제거
+		if (bookmark && bookmark.files) {
+			bookmark.files = bookmark.files.filter(file => file.id !== fileId);
+		}
+		
+		// Fuse 인스턴스 업데이트
+		if (filteredItems.length > 0) {
+			fuse = new Fuse(filteredItems, {
+				keys: ['meta.name', 'meta.description']
+			});
+		}
+		
+		if (memoItems.length > 0) {
+			memoFuse = new Fuse(memoItems, {
+				keys: ['meta.name', 'meta.description']
+			});
+		}
+		
+		// API 호출
 		const res = await fetch(`${WEBUI_API_BASE_URL}/rooibos/mycompanies/${id}/file/remove`, {
 			method: 'POST',
 			headers: {
@@ -512,8 +628,64 @@
 		});
 
 		if (res.ok) {
-			filteredItems = filteredItems.filter((item) => item.id !== fileId);
 			toast.success($i18n.t('File removed successfully.'));
+		} else {
+			// 실패 시 UI 복원 (롤백)
+			await fetchAndUpdateFiles();
+			toast.error($i18n.t('Failed to remove file.'));
+		}
+	};
+
+	// 파일 목록 새로고침 함수
+	const fetchAndUpdateFiles = async () => {
+		if (!bookmark || !bookmark.bookmark_id) return;
+		
+		try {
+			const queryParams = new URLSearchParams({
+				business_registration_number:
+					bookmark?.business_registration_number !== undefined
+						? bookmark?.business_registration_number.toString()
+						: '',
+				user_id: currentUser?.id ?? '',
+				is_shared: isShared.toString()
+			});
+			
+			const response = await fetch(
+				`${WEBUI_API_BASE_URL}/rooibos/mycompanies/${id}?${queryParams.toString()}`,
+				{
+					method: 'GET',
+					headers: {
+						Accept: 'application/json',
+						'Content-Type': 'application/json',
+						authorization: `Bearer ${localStorage.token}`
+					}
+				}
+			);
+			
+			const data = await response.json();
+			
+			if (data.success !== false) {
+				bookmark.files = data.bookmark[0].files || [];
+				
+				// txt 파일과 기타 파일을 분리
+				memoItems = bookmark.files.filter(file => 
+					file.meta && file.meta.name && file.meta.name.toLowerCase().endsWith('.txt')
+				);
+				filteredItems = bookmark.files.filter(file => 
+					!file.meta || !file.meta.name || !file.meta.name.toLowerCase().endsWith('.txt')
+				);
+				
+				// Fuse 인스턴스 업데이트
+				fuse = new Fuse(filteredItems, {
+					keys: ['meta.name', 'meta.description']
+				});
+				
+				memoFuse = new Fuse(memoItems, {
+					keys: ['meta.name', 'meta.description']
+				});
+			}
+		} catch (error) {
+			console.error('파일 목록 새로고침 중 오류:', error);
 		}
 	};
 
@@ -659,6 +831,13 @@
 		$: if (bookmark && currentUser) {
 			// 북마크 소유자가 현재 사용자와 다른 경우 공유된 기업으로 처리
 			isShared = isShared || (bookmark.bookmark_user_id !== currentUser.id);
+		}
+
+		// 모바일에서는 기본적으로 모든 섹션 접기
+		if (!largeScreen) {
+			showMemosSection = false;
+			showFilesSection = false;
+			showChatsSection = false;
 		}
 	});
 
@@ -979,7 +1158,7 @@
 					{#if isShared && bookmark.bookmark_user_id && bookmark.bookmark_user_id !== currentUser?.id}
 						{#await getUserInfo(bookmark.bookmark_user_id) then userInfo}
 							<span class="ml-2 text-xs text-gray-500 bg-gray-50 dark:bg-gray-700 px-2 py-0.5 rounded-full whitespace-nowrap">
-								공유자: {userInfo.name || '알 수 없는 사용자'}
+								공유자: {userInfo.name}
 							</span>
 						{/await}
 					{/if}
@@ -1027,7 +1206,7 @@
 			class:mobile={$mobile}
 		>
 			<!-- attach file -->
-			<div class="flex flex-row pb-2.5 gap-3">
+			<div class="{!largeScreen ? 'flex-col' : 'flex-row'} flex pb-2.5 gap-3">
 				{#if largeScreen}
 					<div class="flex-1 flex justify-start w-full h-full max-h-full">
 						{#if selectedFile}
@@ -1054,15 +1233,30 @@
 					</div>
 				{/if}
 
-				<div
-					class="{largeScreen ? 'flex-shrink-0 w-72 max-w-72' : 'flex-1'}
-					flex py-2 rounded-2xl border border-gray-50 h-full dark:border-gray-850"
-				>
-					<div class=" flex flex-col w-full space-x-2 rounded-lg h-full">
+				<!-- 메모 섹션 -->
+				<div class="{largeScreen ? 'flex-shrink-0 w-72 max-w-72' : 'w-full'} flex flex-col py-2 rounded-2xl border border-gray-50 h-full dark:border-gray-850">
+					<div class="px-3 py-1 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center cursor-pointer"
+						on:click={() => showMemosSection = !showMemosSection}
+					>
+						<h2 class="text-sm font-medium">메모</h2>
+						<button class="text-gray-500">
+							{#if showMemosSection}
+								<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+									<path fill-rule="evenodd" d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z" clip-rule="evenodd" />
+								</svg>
+							{:else}
+								<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+									<path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+								</svg>
+							{/if}
+						</button>
+					</div>
+					
+					{#if showMemosSection}
 						<div class="w-full h-full flex flex-col">
-							<div class=" px-3">
+							<div class="px-3">
 								<div class="flex mb-0.5">
-									<div class=" self-center ml-1 mr-3">
+									<div class="self-center ml-1 mr-3">
 										<svg
 											xmlns="http://www.w3.org/2000/svg"
 											viewBox="0 0 20 20"
@@ -1077,9 +1271,105 @@
 										</svg>
 									</div>
 									<input
-										class=" w-full text-sm pr-4 py-1 rounded-r-xl outline-none bg-transparent"
-										bind:value={query}
-										placeholder={$i18n.t('첨부 파일')}
+										class="w-full text-sm pr-4 py-1 rounded-r-xl outline-none bg-transparent"
+										bind:value={memoQuery}
+										placeholder="메모 검색"
+										on:focus={() => {
+											selectedFileId = null;
+										}}
+									/>
+									
+									<div>
+										<button
+											class="ml-1 px-2 py-1 text-sm rounded hover:bg-gray-100 dark:hover:bg-gray-800"
+											on:click={() => {
+												createAndUploadMemo('새 메모', '<p></p>');
+											}}
+										>
+											<svg 
+												xmlns="http://www.w3.org/2000/svg" 
+												viewBox="0 0 24 24" 
+												fill="none" 
+												stroke="currentColor" 
+												stroke-width="2" 
+												stroke-linecap="round" 
+												stroke-linejoin="round" 
+												class="size-5"
+											>
+												<path d="M12 5v14m-7-7h14" />
+											</svg>
+										</button>
+									</div>
+								</div>
+							</div>
+
+							{#if memoItems.length > 0}
+								<div class="flex overflow-y-auto h-full w-full scrollbar-hidden text-xs">
+									<Files
+										small
+										files={memoItems}
+										{selectedFileId}
+										on:click={(e) => {
+											selectedFileId = selectedFileId === e.detail ? null : e.detail;
+										}}
+										on:delete={(e) => {
+											selectedFileId = null;
+											deleteFileHandler(e.detail);
+										}}
+									/>
+								</div>
+							{:else}
+								<div class="my-3 flex flex-col justify-center text-center text-gray-500 text-xs">
+									<div>
+										메모가 없습니다
+									</div>
+								</div>
+							{/if}
+						</div>
+					{/if}
+				</div>
+
+				<!-- 첨부파일 섹션 -->
+				<div class="{largeScreen ? 'flex-shrink-0 w-72 max-w-72' : 'w-full'} flex flex-col py-2 rounded-2xl border border-gray-50 h-full dark:border-gray-850">
+					<div class="px-3 py-1 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center cursor-pointer"
+						on:click={() => showFilesSection = !showFilesSection}
+					>
+						<h2 class="text-sm font-medium">첨부파일</h2>
+						<button class="text-gray-500">
+							{#if showFilesSection}
+								<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+									<path fill-rule="evenodd" d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z" clip-rule="evenodd" />
+								</svg>
+							{:else}
+								<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+									<path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+								</svg>
+							{/if}
+						</button>
+					</div>
+					
+					{#if showFilesSection}
+						<div class="w-full h-full flex flex-col">
+							<div class="px-3">
+								<div class="flex mb-0.5">
+									<div class="self-center ml-1 mr-3">
+										<svg
+											xmlns="http://www.w3.org/2000/svg"
+											viewBox="0 0 20 20"
+											fill="currentColor"
+											class="w-4 h-4"
+										>
+											<path
+												fill-rule="evenodd"
+												d="M9 3.5a5.5 5.5 0 100 11 5.5 5.5 0 000-11zM2 9a7 7 0 1112.452 4.391l3.328 3.329a.75.75 0 11-1.06 1.06l-3.329-3.328A7 7 0 012 9z"
+												clip-rule="evenodd"
+											/>
+										</svg>
+									</div>
+									<input
+										class="w-full text-sm pr-4 py-1 rounded-r-xl outline-none bg-transparent"
+										bind:value={fileQuery}
+										placeholder="파일 검색"
 										on:focus={() => {
 											selectedFileId = null;
 										}}
@@ -1091,11 +1381,7 @@
 												if (e.detail.type === 'directory') {
 													uploadDirectoryHandler();
 												} else if (e.detail.type === 'text') {
-													selectedFileId = null;
-													selectedFile = null;
-													const file = await createFileFromText('새노트', '<p></p>');
-													const uploadedFile = await uploadFileHandler(file);
-													selectedFileId = uploadedFile.id;
+													createAndUploadMemo('새노트', '<p></p>');
 													showAddTextContentModal = true;
 												} else {
 													document.getElementById('files-input').click();
@@ -1110,7 +1396,7 @@
 							</div>
 
 							{#if filteredItems.length > 0}
-								<div class=" flex overflow-y-auto h-full w-full scrollbar-hidden text-xs">
+								<div class="flex overflow-y-auto h-full w-full scrollbar-hidden text-xs">
 									<Files
 										small
 										files={filteredItems}
@@ -1127,35 +1413,46 @@
 							{:else}
 								<div class="my-3 flex flex-col justify-center text-center text-gray-500 text-xs">
 									<div>
-										{$i18n.t('No content found')}
+										첨부파일이 없습니다
 									</div>
 								</div>
 							{/if}
 						</div>
-					</div>
+					{/if}
 				</div>
 
-				<!-- 채팅 리스트 추가 -->
-				{#if chatList.length > 0}
-					<div
-						class="{largeScreen
-							? 'flex-shrink-0 w-60 max-w-60 border-l border-gray-200 dark:border-gray-700'
-							: 'w-1/2'} flex flex-col"
-					>
-						<div class="px-2 py-1 border-b border-gray-200 dark:border-gray-700">
-							<h2 class="text-xs">채팅</h2>
+				<!-- 채팅 리스트 섹션 -->
+				{#if chatList && chatList.length > 0}
+					<div class="{largeScreen ? 'flex-shrink-0 w-60 max-w-60' : 'w-full'} flex flex-col border border-gray-50 dark:border-gray-850 rounded-2xl">
+						<div class="px-3 py-1 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center cursor-pointer"
+							on:click={() => showChatsSection = !showChatsSection}
+						>
+							<h2 class="text-sm font-medium">채팅</h2>
+							<button class="text-gray-500">
+								{#if showChatsSection}
+									<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+										<path fill-rule="evenodd" d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z" clip-rule="evenodd" />
+									</svg>
+								{:else}
+									<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+										<path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+									</svg>
+								{/if}
+							</button>
 						</div>
-						<div class="flex-1 overflow-y-auto p-1 max-h-[100px]">
-							{#each chatList as chat}
-								<button
-									type="button"
-									on:click={() => moveToExistingChat(chat)}
-									class="mb-1 w-full text-left rounded bg-gray-50 dark:bg-gray-800 p-1 cursor-pointer text-xs"
-								>
-									{chat.title}
-								</button>
-							{/each}
-						</div>
+						{#if showChatsSection}
+							<div class="flex-1 overflow-y-auto p-2 max-h-[150px]">
+								{#each chatList as chat}
+									<button
+										type="button"
+										on:click={() => moveToExistingChat(chat)}
+										class="mb-1 w-full text-left rounded bg-gray-50 dark:bg-gray-800 p-1 cursor-pointer text-xs"
+									>
+										{chat.title}
+									</button>
+								{/each}
+							</div>
+						{/if}
 					</div>
 				{/if}
 			</div>
