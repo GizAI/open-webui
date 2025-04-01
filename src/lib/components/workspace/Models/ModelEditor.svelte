@@ -534,7 +534,6 @@
 								bind:accessControl
 								accessRoles={['read', 'write']}
 								allowPublic={$user?.permissions?.sharing?.public_models || $user?.role === 'admin'}
-								publicAccess={$user.role === 'admin'} 
 							/>
 						</div>
 					</div>
