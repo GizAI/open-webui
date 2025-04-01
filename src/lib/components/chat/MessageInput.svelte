@@ -74,6 +74,8 @@
 	export let prompt = '';
 	export let files = [];
 
+	export let toolServers = [];
+
 	export let selectedToolIds = [];
 
 	export let imageGenerationEnabled = false;
@@ -87,6 +89,8 @@
 		imageGenerationEnabled,
 		webSearchEnabled
 	});
+
+	let showToolServers = false;
 
 	let loaded = false;
 	let showCategoryModal = false;
@@ -321,12 +325,12 @@
 	onMount(async () => {
 		loaded = true;
 
-		// URL ÏøºÎ¶¨ ÌååÎùºÎØ∏ÌÑ∞ ÌôïÏù∏
+		// URL ƒı∏Æ ∆ƒ∂ÛπÃ≈Õ »Æ¿Œ
 		const urlParams = new URLSearchParams(window.location.search);
 		if (urlParams.get('showCategory') === 'true') {
 			showCategoryModal = true;
 			showBookmarkIcon = true;
-			// ÌéòÏù¥ÏßÄ Ïù¥Îèô ÌõÑ URLÏóêÏÑú ÏøºÎ¶¨ ÌååÎùºÎØ∏ÌÑ∞ Ï†úÍ±∞ (ÌûàÏä§ÌÜ†Î¶¨ ÏÉÅÌÉúÎäî Ïú†ÏßÄ)
+			// ∆‰¿Ã¡ˆ ¿Ãµø »ƒ URLø°º≠ ƒı∏Æ ∆ƒ∂ÛπÃ≈Õ ¡¶∞≈ (»˜Ω∫≈‰∏Æ ªÛ≈¬¥¬ ¿Ø¡ˆ)
 			const url = new URL(window.location.href);
 			url.searchParams.delete('showCategory');
 			window.history.replaceState({}, '', url);
@@ -361,7 +365,7 @@
 		}
 	});
 
-	// ÌöåÏÇ¨ Î∂ÅÎßàÌÅ¨ Ï∂îÍ∞Ä Ìï®Ïàò
+	// »∏ªÁ ∫œ∏∂≈© √ﬂ∞° «‘ºˆ
 	const addCompany = async (company: any, folderId: string = '') => {
 		const response = await fetch(`${WEBUI_API_BASE_URL}/rooibos/mycompanies/add`, {
 			method: 'POST',
@@ -381,7 +385,7 @@
 		$selectedCompanyInfo.bookmark_user_id = $_user?.id;
 	};
 
-	// Ìè¥Îçî ÏÑ†ÌÉù ÌõÑ Ï≤òÎ¶¨ Ìï®Ïàò
+	// ∆˙¥ı º±≈√ »ƒ √≥∏Æ «‘ºˆ
 	const handleFolderSelect = async (event: { detail: any }) => {
 		const selectedFolder = event.detail;
 		if (selectedFolder && selectedFolder.id) {
@@ -392,12 +396,12 @@
 		showFolderSelect = false;
 	};
 
-	// Ìè¥Îçî ÏÑ†ÌÉù Ï∞Ω Îã´Í∏∞
+	// ∆˙¥ı º±≈√ √¢ ¥›±‚
 	const closeFolderSelect = () => {
 		showFolderSelect = false;
 	};
 
-	// Î∂ÅÎßàÌÅ¨ ÏÇ≠Ï†ú Ìï®Ïàò
+	// ∫œ∏∂≈© ªË¡¶ «‘ºˆ
 	const deleteCompanyBookmark = async (bookmarkId: string) => {
 		try {
 			const response = await fetch(`${WEBUI_API_BASE_URL}/rooibos/mycompanies/${bookmarkId}`, {
@@ -417,6 +421,8 @@
 </script>
 
 <FilesOverlay show={dragged} />
+
+<ToolServersModal bind:show={showToolServers} />
 
 {#if loaded}
 	<div class="w-full font-primary">
@@ -492,22 +498,6 @@
 								</div>
 							{/if}
 
-							{#if webSearchEnabled || ($config?.features?.enable_web_search && ($settings?.webSearch ?? false)) === 'always'}
-								<div class="flex items-center justify-between w-full">
-									<div class="flex items-center gap-2.5 text-sm dark:text-gray-500">
-										<div class="pl-1">
-											<span class="relative flex size-2">
-												<span
-													class="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"
-												/>
-												<span class="relative inline-flex rounded-full size-2 bg-blue-500" />
-											</span>
-										</div>
-										<div class=" translate-y-[0.5px]">{$i18n.t('Search the internet')}</div>
-									</div>
-								</div>
-							{/if}
-
 							{#if $selectedCompanyInfo.company_name}
 								<div class="flex items-center justify-between w-full">
 									<div class="flex items-center gap-2.5 text-sm dark:text-gray-500">
@@ -576,39 +566,6 @@
 									</div>
 								</div>
 							{/if}
-
-							{#if imageGenerationEnabled}
-								<div class="flex items-center justify-between w-full">
-									<div class="flex items-center gap-2.5 text-sm dark:text-gray-500">
-										<div class="pl-1">
-											<span class="relative flex size-2">
-												<span
-													class="animate-ping absolute inline-flex h-full w-full rounded-full bg-teal-400 opacity-75"
-												/>
-												<span class="relative inline-flex rounded-full size-2 bg-teal-500" />
-											</span>
-										</div>
-										<div class=" translate-y-[0.5px]">{$i18n.t('Generate an image')}</div>
-									</div>
-								</div>
-							{/if}
-
-							{#if codeInterpreterEnabled}
-								<div class="flex items-center justify-between w-full">
-									<div class="flex items-center gap-2.5 text-sm dark:text-gray-500">
-										<div class="pl-1">
-											<span class="relative flex size-2">
-												<span
-													class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"
-												/>
-												<span class="relative inline-flex rounded-full size-2 bg-green-500" />
-											</span>
-										</div>
-										<div class=" translate-y-[0.5px]">{$i18n.t('Execute code for analysis')}</div>
-									</div>
-								</div>
-							{/if}
-
 							{#if atSelectedModel !== undefined}
 								<div class="flex items-center justify-between w-full">
 									<div class="pl-[1px] flex items-center gap-2 text-sm dark:text-gray-500">
@@ -720,7 +677,7 @@
 							}}
 						>
 							<div
-								class="flex-1 flex flex-col relative w-full rounded-3xl px-1 bg-gray-600/5 dark:bg-gray-400/5 dark:text-gray-100"
+								class="flex-1 flex flex-col relative w-full shadow-lg rounded-3xl border border-gray-100 dark:border-gray-850 hover:border-gray-200 focus-within:border-gray-200 hover:dark:border-gray-800 focus-within:dark:border-gray-800 transition px-1 bg-white/90 dark:bg-gray-400/5 dark:text-gray-100"
 								dir={$settings?.chatDirection ?? 'LTR'}
 							>
 								{#if files.length > 0}
@@ -831,7 +788,8 @@
 														))}
 												placeholder={placeholder ? placeholder : $i18n.t('Send a Message')}
 												largeTextAsFile={$settings?.largeTextAsFile ?? false}
-												autocomplete={$config?.features.enable_autocomplete_generation}
+												autocomplete={$config?.features?.enable_autocomplete_generation &&
+													($settings?.promptAutocomplete ?? false)}
 												generateAutoCompletion={async (text) => {
 													if (selectedModelIds.length === 0 || !selectedModelIds.at(0)) {
 														toast.error($i18n.t('Please select a model first.'));
@@ -1039,7 +997,6 @@
 											on:keydown={async (e) => {
 												const isCtrlPressed = e.ctrlKey || e.metaKey; // metaKey is for Cmd key on Mac
 
-												console.log('keydown', e);
 												const commandsContainerElement =
 													document.getElementById('commands-container');
 
@@ -1141,7 +1098,6 @@
 															return;
 														}
 
-														console.log('keypress', e);
 														// Prevent Enter key from creating a new line
 														const isCtrlPressed = e.ctrlKey || e.metaKey;
 														const enterPressed =
@@ -1314,7 +1270,7 @@
 
 										<div class="flex gap-0.5 items-center overflow-x-auto scrollbar-none flex-1">
 											
-											<Tooltip content={'ÏßÄÏãùÏ†ÑÎ¨∏Î¥á'} placement="top">
+											<Tooltip content={'¡ˆΩƒ¿¸πÆ∫ø'} placement="top">
 												<button
 													on:click|preventDefault={() => {
 														showCategoryModal = true;
@@ -1326,12 +1282,12 @@
 												>
 													<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-bot "><path d="M12 8V4H8"></path><rect width="16" height="12" x="4" y="8" rx="2"></rect><path d="M2 14h2"></path><path d="M20 14h2"></path><path d="M15 13v2"></path><path d="M9 13v2"></path></svg>
 													<span class="hidden @sm:block whitespace-nowrap overflow-hidden text-ellipsis translate-y-[0.5px] mr-0.5">
-														{'ÏßÄÏãùÏ†ÑÎ¨∏Î¥á'}
+														{'¡ˆΩƒ¿¸πÆ∫ø'}
 													</span>
 												</button>
 											</Tooltip>
 
-											<Tooltip content={'Í∏∞ÏóÖ ÏÑ†ÌÉù'} placement="top">
+											<Tooltip content={'±‚æ˜ º±≈√'} placement="top">
 												<button
 													on:click|preventDefault={() => {
 														if ($selectedCompanyInfo?.company_name) {
@@ -1347,7 +1303,7 @@
 												>
 													<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-building-2"><path d="M6 22V4c0-.27 0-.55.07-.82a1.477 1.477 0 0 1 1.1-1.11C7.46 2 7.73 2 8 2h8c.27 0 .55 0 .82.07a1.477 1.477 0 0 1 1.11 1.1c.07.28.07.56.07.83v18H6Z"/><path d="M2 14v6c0 1.1.9 2 2 2h2V12H4c-1.1 0-2 .9-2 2Z"/><path d="M20 12h-2v10h2c1.1 0 2-.9 2-2v-6c0-1.1-.9-2-2-2Z"/><path d="M12 16v3"/><path d="M10 13v3"/><path d="M14 13v3"/><path d="M12 10v3"/><path d="M10 7v3"/><path d="M14 7v3"/></svg>
 													<span class="hidden @sm:block whitespace-nowrap overflow-hidden text-ellipsis translate-y-[0.5px] mr-0.5">
-														{'Í∏∞ÏóÖ ÏÑ†ÌÉù'}
+														{'±‚æ˜ º±≈√'}
 													</span>
 												</button>
 											</Tooltip>
@@ -1359,14 +1315,14 @@
 														<button
 															on:click|preventDefault={() => (webSearchEnabled = !webSearchEnabled)}
 															type="button"
-															class="px-1.5 @sm:px-2.5 py-1.5 flex gap-1.5 items-center text-sm rounded-full font-medium transition-colors duration-300 focus:outline-hidden max-w-full overflow-hidden {webSearchEnabled ||
+															class="px-1.5 @xl:px-2.5 py-1.5 flex gap-1.5 items-center text-sm rounded-full font-medium transition-colors duration-300 focus:outline-hidden max-w-full overflow-hidden {webSearchEnabled ||
 															($settings?.webSearch ?? false) === 'always'
 																? 'bg-blue-100 dark:bg-blue-500/20 text-blue-500 dark:text-blue-400'
 																: 'bg-transparent text-gray-600 dark:text-gray-300 border-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800'}"
 														>
 															<GlobeAlt className="size-5" strokeWidth="1.75" />
 															<span
-																class="hidden @sm:block whitespace-nowrap overflow-hidden text-ellipsis translate-y-[0.5px] mr-0.5"
+																class="hidden @xl:block whitespace-nowrap overflow-hidden text-ellipsis translate-y-[0.5px] mr-0.5"
 																>{$i18n.t('Web Search')}</span
 															>
 														</button>
@@ -1379,13 +1335,13 @@
 															on:click|preventDefault={() =>
 																(imageGenerationEnabled = !imageGenerationEnabled)}
 															type="button"
-															class="px-1.5 @sm:px-2.5 py-1.5 flex gap-1.5 items-center text-sm rounded-full font-medium transition-colors duration-300 focus:outline-hidden max-w-full overflow-hidden {imageGenerationEnabled
+															class="px-1.5 @xl:px-2.5 py-1.5 flex gap-1.5 items-center text-sm rounded-full font-medium transition-colors duration-300 focus:outline-hidden max-w-full overflow-hidden {imageGenerationEnabled
 																? 'bg-gray-100 dark:bg-gray-500/20 text-gray-600 dark:text-gray-400'
 																: 'bg-transparent text-gray-600 dark:text-gray-300 border-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 '}"
 														>
 															<Photo className="size-5" strokeWidth="1.75" />
 															<span
-																class="hidden @sm:block whitespace-nowrap overflow-hidden text-ellipsis translate-y-[0.5px] mr-0.5"
+																class="hidden @xl:block whitespace-nowrap overflow-hidden text-ellipsis translate-y-[0.5px] mr-0.5"
 																>{$i18n.t('Image')}</span
 															>
 														</button>
@@ -1398,13 +1354,13 @@
 															on:click|preventDefault={() =>
 																(codeInterpreterEnabled = !codeInterpreterEnabled)}
 															type="button"
-															class="px-1.5 @sm:px-2.5 py-1.5 flex gap-1.5 items-center text-sm rounded-full font-medium transition-colors duration-300 focus:outline-hidden max-w-full overflow-hidden {codeInterpreterEnabled
+															class="px-1.5 @xl:px-2.5 py-1.5 flex gap-1.5 items-center text-sm rounded-full font-medium transition-colors duration-300 focus:outline-hidden max-w-full overflow-hidden {codeInterpreterEnabled
 																? 'bg-gray-100 dark:bg-gray-500/20 text-gray-600 dark:text-gray-400'
 																: 'bg-transparent text-gray-600 dark:text-gray-300 border-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 '}"
 														>
 															<CommandLine className="size-5" strokeWidth="1.75" />
 															<span
-																class="hidden @sm:block whitespace-nowrap overflow-hidden text-ellipsis translate-y-[0.5px] mr-0.5"
+																class="hidden @xl:block whitespace-nowrap overflow-hidden text-ellipsis translate-y-[0.5px] mr-0.5"
 																>{$i18n.t('Code Interpreter')}</span
 															>
 														</button>
@@ -1415,6 +1371,47 @@
 									</div>
 
 									<div class="self-end flex space-x-1 mr-1 shrink-0">
+										{#if toolServers.length > 0}
+											<Tooltip
+												content={$i18n.t('{{COUNT}} Available Tool Servers', {
+													COUNT: toolServers.length
+												})}
+											>
+												<button
+													class="translate-y-[1.5px] flex gap-1 items-center text-gray-600 dark:text-gray-300 hover:text-gray-700 dark:hover:text-gray-200 rounded-lg px-1.5 py-0.5 mr-0.5 self-center border border-gray-100 dark:border-gray-800 transition"
+													aria-label="Available Tool Servers"
+													type="button"
+													on:click={() => {
+														showToolServers = !showToolServers;
+													}}
+												>
+													<svg
+														xmlns="http://www.w3.org/2000/svg"
+														fill="none"
+														viewBox="0 0 24 24"
+														stroke-width="1.5"
+														stroke="currentColor"
+														class="size-3"
+													>
+														<path
+															stroke-linecap="round"
+															stroke-linejoin="round"
+															d="M21.75 6.75a4.5 4.5 0 0 1-4.884 4.484c-1.076-.091-2.264.071-2.95.904l-7.152 8.684a2.548 2.548 0 1 1-3.586-3.586l8.684-7.152c.833-.686.995-1.874.904-2.95a4.5 4.5 0 0 1 6.336-4.486l-3.276 3.276a3.004 3.004 0 0 0 2.25 2.25l3.276-3.276c.256.565.398 1.192.398 1.852Z"
+														/>
+														<path
+															stroke-linecap="round"
+															stroke-linejoin="round"
+															d="M4.867 19.125h.008v.008h-.008v-.008Z"
+														/>
+													</svg>
+
+													<span class="text-xs">
+														{toolServers.length}
+													</span>
+												</button>
+											</Tooltip>
+										{/if}
+
 										{#if !history?.currentId || history.messages[history.currentId]?.done == true}
 											<Tooltip content={$i18n.t('Record voice')}>
 												<button
