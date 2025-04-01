@@ -334,6 +334,34 @@
 							</div>
 						{/if}
 					</button>
+
+					<button
+						class="mt-2 sm:mt-0 sm:ml-1.5 px-3 py-1.5 text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300 transition rounded-lg flex items-center justify-center border border-blue-200 dark:border-blue-800"
+						on:click={() => {
+							if (navigator.share) {
+								navigator.share({
+									title: $i18n.t('Join with my referral link'),
+									url: `${window.location.origin}/auth?referrer_code=${$user.referral_code ?? ''}`
+								}).catch((error) => console.log('Error sharing:', error));
+							} else {
+								toast.info($i18n.t('Web Share API is not supported in your browser'));
+							}
+						}}
+					>
+						<div class="flex items-center gap-1">
+							<svg 
+								xmlns="http://www.w3.org/2000/svg" 
+								viewBox="0 0 20 20" 
+								fill="currentColor" 
+								class="w-3.5 h-3.5"
+							>
+								<path 
+									d="M13 4.5a2.5 2.5 0 1 1 .602 1.628l-6.5 3.25a2.5 2.5 0 0 1 0 1.244l6.5 3.25a2.5 2.5 0 1 1-.651.646l-6.5-3.25a2.5 2.5 0 1 1 0-2.536l6.5-3.25A2.5 2.5 0 0 1 13 4.5Z" 
+								/>
+							</svg>
+							<span class="text-xs">{$i18n.t('Share')}</span>
+						</div>
+					</button>
 				</div>
 				<div class="text-xs text-gray-500 mt-1.5">
 					{$i18n.t('Share this link to invite others to join.')}

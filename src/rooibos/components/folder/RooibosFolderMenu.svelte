@@ -104,7 +104,8 @@
 		const folder = folders[deletingFolderId];
 		if ((folder.active_bookmark_count && folder.active_bookmark_count > 0) || 
 		    (folder.deleted_bookmark_count && folder.deleted_bookmark_count > 0)) {
-			toast.error($i18n.t('폴더에 저장된 기업이 있어 삭제할 수 없습니다. 먼저 폴더 내 기업 북마크를 제거해주세요.'));
+			// 삭제 대화상자에서 보여주고 사용자가 취소하도록 함
+			// 실제 삭제 로직은 실행하지 않음
 			showDeleteConfirm = false;
 			deletingFolderId = null;
 			return;
@@ -241,10 +242,21 @@
 		title={$i18n.t('폴더 삭제')}
 		on:confirm={deleteFolder}
 	>
-		<div class="text-sm text-gray-700 dark:text-gray-300 flex-1 line-clamp-3">
-			{$i18n.t('이 작업은 "{{NAME}}" 폴더와 모든 내용을 삭제합니다.', {
-				NAME: folders[deletingFolderId].name
-			})}
+		<div class="text-sm text-gray-700 dark:text-gray-300 flex-1">
+			{#if folders[deletingFolderId].active_bookmark_count > 0 || folders[deletingFolderId].deleted_bookmark_count > 0}
+				<div class="mb-2">{$i18n.t('이 폴더에는 다음과 같은 기업이 포함되어 있습니다:')}</div>
+				{#if folders[deletingFolderId].active_bookmark_count > 0}
+					<div class="ml-2 mb-1">· {$i18n.t('활성화된 기업')}: {folders[deletingFolderId].active_bookmark_count}개</div>
+				{/if}
+				{#if folders[deletingFolderId].deleted_bookmark_count > 0}
+					<div class="ml-2 mb-1">· {$i18n.t('휴지통의 기업')}: {folders[deletingFolderId].deleted_bookmark_count}개</div>
+				{/if}
+				<div class="mt-2 text-red-500">{$i18n.t('폴더를 삭제하기 전에 나의 기업에서 제거해주세요.')}</div>
+			{:else}
+				<div>{$i18n.t('이 작업은 "{{NAME}}" 폴더를 삭제합니다.', {
+					NAME: folders[deletingFolderId].name
+				})}</div>
+			{/if}
 		</div>
 	</ConfirmDialog>
 {/if}
