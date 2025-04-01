@@ -35,6 +35,7 @@
 	import Messages from '$lib/components/chat/Messages.svelte';
 	import { convertMessagesToHistory, createMessagesList } from '$lib/utils';
 	import { getUserById } from '$lib/apis/users';
+	import { formatDate } from '$rooibos/components/common/helper';
 
 	type Bookmark = {
 		id: string;
@@ -1305,18 +1306,37 @@
 
 							{#if memoItems.length > 0}
 								<div class="flex overflow-y-auto h-full w-full scrollbar-hidden text-xs">
-									<Files
-										small
-										files={memoItems}
-										{selectedFileId}
-										on:click={(e) => {
-											selectedFileId = selectedFileId === e.detail ? null : e.detail;
-										}}
-										on:delete={(e) => {
-											selectedFileId = null;
-											deleteFileHandler(e.detail);
-										}}
-									/>
+									<!-- 메모 목록 커스텀 표시 -->
+									<div class="w-full">
+										{#each memoItems as memo}
+											<div 
+												class="mt-1 px-2 py-2 rounded-lg {selectedFileId === memo.id ? 'bg-gray-50 dark:bg-gray-850' : 'bg-transparent'} hover:bg-gray-50 dark:hover:bg-gray-850 transition flex justify-between cursor-pointer"
+												on:click={() => {
+													selectedFileId = selectedFileId === memo.id ? null : memo.id;
+												}}
+											>
+												<div class="flex items-center gap-2 overflow-hidden">
+													<div class="font-medium text-sm truncate">
+														{memo?.meta?.name ? memo.meta.name.replace('.txt', '') : '무제'}
+													</div>
+													<div class="text-xs text-gray-500 whitespace-nowrap">
+														{memo.created_at ? formatDate(memo.created_at) : formatDate(new Date().toISOString())}
+													</div>
+												</div>
+												<button 
+													class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 self-center"
+													on:click|stopPropagation={() => {
+														selectedFileId = null;
+														deleteFileHandler(memo.id);
+													}}
+												>
+													<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+														<path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+													</svg>
+												</button>
+											</div>
+										{/each}
+									</div>
 								</div>
 							{:else}
 								<div class="my-3 flex flex-col justify-center text-center text-gray-500 text-xs">
