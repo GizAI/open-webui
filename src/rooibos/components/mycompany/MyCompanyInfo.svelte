@@ -365,11 +365,8 @@
 			itemId: tempItemId
 		};
 
-		// txt 파일이 아닌 경우에만 첨부파일 리스트에 추가
-		const isTxtFile = file.name.toLowerCase().endsWith('.txt');
-		if (!isTxtFile) {
-			bookmark.files = [...(bookmark.files ?? []), fileItem];
-		}
+		// 모든 파일 타입을 bookmark.files에 추가
+		bookmark.files = [...(bookmark.files ?? []), fileItem];
 
 		if (['audio/mpeg', 'audio/wav', 'audio/ogg', 'audio/x-m4a'].includes(file['type'])) {
 			const res = await transcribeAudio(localStorage.token, file).catch((error) => {
@@ -397,6 +394,27 @@
 						}
 						return f;
 					});
+					
+					// 파일 업로드 후 즉시 UI 업데이트
+					if (file.name.toLowerCase().endsWith('.txt')) {
+						memoItems = bookmark.files.filter(f => 
+							f.meta && f.meta.name && f.meta.name.toLowerCase().endsWith('.txt')
+						);
+						
+						// Fuse 인스턴스 업데이트
+						memoFuse = new Fuse(memoItems, {
+							keys: ['meta.name', 'meta.description']
+						});
+					} else {
+						filteredItems = bookmark.files.filter(f => 
+							!f.meta || !f.meta.name || !f.meta.name.toLowerCase().endsWith('.txt')
+						);
+						
+						// Fuse 인스턴스 업데이트
+						fuse = new Fuse(filteredItems, {
+							keys: ['meta.name', 'meta.description']
+						});
+					}
 				}
 				return uploadedFile;
 			} else {
