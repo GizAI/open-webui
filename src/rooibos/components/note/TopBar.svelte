@@ -59,16 +59,29 @@
       inputValue = placeholder;
       pageTitle = originalFilename || placeholder;
     } else {
-      displayTitle = inputValue;
+      // 입력값에서 확장자 제거 (깨끗한 이름만 가져오기)
+      let cleanedInput = inputValue;
+      while(cleanedInput.toLowerCase().endsWith('.txt')) {
+        cleanedInput = cleanedInput.substring(0, cleanedInput.length - 4);
+      }
       
-      // 원본 파일명에서 확장자 추출
-      const extension = getFileExtension(originalFilename || "");
+      // 화면에 표시되는 타이틀은 확장자 없는 깔끔한 이름
+      displayTitle = cleanedInput;
       
-      // 새 파일명에 확장자 추가 (내부적으로만 사용)
-      if (extension) {
-        pageTitle = inputValue + extension;
+      // 실제 파일명에는 확장자 추가
+      const isTxtFile = originalFilename.toLowerCase().endsWith('.txt');
+      
+      // txt 파일인 경우 항상 .txt 확장자 한 번만 추가
+      if (isTxtFile) {
+        pageTitle = cleanedInput + '.txt';
       } else {
-        pageTitle = inputValue;
+        // 다른 파일 타입의 경우 원래 확장자 유지
+        const extension = getFileExtension(originalFilename || "");
+        if (extension) {
+          pageTitle = cleanedInput + extension;
+        } else {
+          pageTitle = cleanedInput;
+        }
       }
     }
     editing = false;
@@ -76,12 +89,15 @@
     // 파일 ID가 있을 때만 파일명 업데이트 API 호출
     if (isValidFileId(fileId) && pageTitle !== placeholder && pageTitle !== originalFilename) {
       try {
+        // 확장자가 포함된 전체 파일명으로 API 호출
+        console.log('파일명 업데이트:', pageTitle);
         await updateFileFilenameById(token, fileId, pageTitle);
       } catch (error) {
         console.error('Failed to update file name:', error);
       }
     }
     
+    // 타이틀 변경 이벤트 발생 (확장자 포함된 전체 이름 전달)
     dispatch('titleChange', pageTitle);
   }
 

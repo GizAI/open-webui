@@ -10,7 +10,7 @@
 	import { page } from '$app/stores';
 	import { showSidebar, knowledge as _knowledge, user, mobile } from '$lib/stores';
 
-	import { updateFileDataContentById, uploadFile } from '$lib/apis/files';
+	import { updateFileDataContentById, uploadFile, updateFileFilenameById } from '$lib/apis/files';
 
 	import { transcribeAudio } from '$lib/apis/audio';
 	import { blobToFile } from '$lib/utils';
@@ -280,14 +280,23 @@
 			}
 		} else {
 			selectedFile = null;
+			selectedFileId = null;
 		}
 	} else {
 		selectedFile = null;
 	}
 
 	const createFileFromText = (name: string, content: string) => {
+		// 이름에서 모든 .txt 확장자 제거
+		let cleanedName = name;
+		while(cleanedName.toLowerCase().endsWith('.txt')) {
+			cleanedName = cleanedName.substring(0, cleanedName.length - 4);
+		}
+		
+		// 확장자 한 번만 추가
+		const fileName = cleanedName + '.txt';
 		const blob = new Blob([content], { type: 'text/plain' });
-		const file = blobToFile(blob, `${name}.txt`);
+		const file = blobToFile(blob, fileName);
 
 		console.log(file);
 		return file;
@@ -297,16 +306,24 @@
 	const createAndUploadMemo = async (name, content) => {
 		selectedFileId = null;
 		selectedFile = null;
-		const file = createFileFromText(name, content || '<p></p>');
+		
+		// 이름에서 모든 .txt 확장자 제거
+		let cleanedName = name;
+		while(cleanedName.toLowerCase().endsWith('.txt')) {
+			cleanedName = cleanedName.substring(0, cleanedName.length - 4);
+		}
+		
+		// 확장자를 한 번만 추가하여 파일 생성
+		const file = createFileFromText(cleanedName, content || '<p></p>');
 		const tempItemId = uuidv4();
 
-		// 임시 메모 항목 생성
+		// 임시 메모 항목 생성 (확장자 한 번만 추가)
 		const tempMemoItem = {
 			type: 'file',
 			file: '',
 			id: tempItemId,
 			url: '',
-			meta: { name: `${name}.txt` },
+			meta: { name: `${cleanedName}.txt` },
 			size: file.size,
 			status: 'uploading',
 			error: '',
@@ -319,22 +336,28 @@
 		const uploadedFile = await uploadFileHandler(file);
 		
 		if (uploadedFile) {
-			// 업로드 완료 후 메모 리스트에 있는 임시 항목 업데이트
-			memoItems = memoItems.map(item => {
-				if (item.itemId === tempItemId) {
-					return {
-						...item,
-						id: uploadedFile.id,
-						status: 'completed'
-					};
-				}
-				return item;
-			});
-			
-			// 첨부파일 목록에서 txt 파일 제거
-			filteredItems = filteredItems.filter(item => 
-				!item.meta || !item.meta.name || !item.meta.name.toLowerCase().endsWith('.txt')
-			);
+			// 북마크 파일 목록에서 최신 상태 가져오기
+			if (bookmark && bookmark.files) {
+				// txt 파일과 기타 파일을 다시 분리해서 할당
+				memoItems = bookmark.files.filter(file => 
+					file.meta && file.meta.name && file.meta.name.toLowerCase().endsWith('.txt')
+				).map(item => {
+					// 임시 항목을 업로드된 파일로 대체
+					if (item.itemId === tempItemId) {
+						return {
+							...item,
+							id: uploadedFile.id,
+							status: 'completed'
+						};
+					}
+					return item;
+				});
+				
+				// 첨부파일 목록도 다시 필터링 (txt가 아닌 파일만)
+				filteredItems = bookmark.files.filter(file => 
+					!file.meta || !file.meta.name || !file.meta.name.toLowerCase().endsWith('.txt')
+				);
+			}
 			
 			// Fuse 인스턴스 업데이트
 			fuse = new Fuse(filteredItems, {
@@ -344,6 +367,12 @@
 			memoFuse = new Fuse(memoItems, {
 				keys: ['meta.name', 'meta.description']
 			});
+			
+			// 업로드된 파일 열기
+			setTimeout(() => {
+				selectedFileId = uploadedFile.id;
+				showAddTextContentModal = true;
+			}, 100);
 		}
 	};
 
@@ -395,26 +424,26 @@
 						return f;
 					});
 					
-					// 파일 업로드 후 즉시 UI 업데이트
-					if (file.name.toLowerCase().endsWith('.txt')) {
-						memoItems = bookmark.files.filter(f => 
-							f.meta && f.meta.name && f.meta.name.toLowerCase().endsWith('.txt')
-						);
-						
-						// Fuse 인스턴스 업데이트
-						memoFuse = new Fuse(memoItems, {
-							keys: ['meta.name', 'meta.description']
-						});
-					} else {
-						filteredItems = bookmark.files.filter(f => 
-							!f.meta || !f.meta.name || !f.meta.name.toLowerCase().endsWith('.txt')
-						);
-						
-						// Fuse 인스턴스 업데이트
-						fuse = new Fuse(filteredItems, {
-							keys: ['meta.name', 'meta.description']
-						});
-					}
+					// 파일 업로드 후 각 배열 재구성
+					const isTxtFile = file.name.toLowerCase().endsWith('.txt');
+					
+					// txt 파일과 기타 파일을 분리
+					memoItems = bookmark.files.filter(file => 
+						file.meta && file.meta.name && file.meta.name.toLowerCase().endsWith('.txt')
+					);
+					
+					filteredItems = bookmark.files.filter(file => 
+						!file.meta || !file.meta.name || !file.meta.name.toLowerCase().endsWith('.txt')
+					);
+					
+					// Fuse 인스턴스 업데이트
+					fuse = new Fuse(filteredItems, {
+						keys: ['meta.name', 'meta.description']
+					});
+					
+					memoFuse = new Fuse(memoItems, {
+						keys: ['meta.name', 'meta.description']
+					});
 				}
 				return uploadedFile;
 			} else {
@@ -501,7 +530,7 @@
 	};
 
 	const handleFirefoxUpload = async () => {
-		return new Promise((resolve, reject) => {
+		return new Promise<void>((resolve, reject) => {
 			const input = document.createElement('input');
 			input.type = 'file';
 			input.webkitdirectory = true;
@@ -586,6 +615,11 @@
 	};
 
 	const addFileHandler = async (fileId: string) => {
+		if (!bookmark || !bookmark.bookmark_id) {
+			console.error('북마크 정보가 없습니다.');
+			return;
+		}
+		
 		const res = await fetch(`${WEBUI_API_BASE_URL}/rooibos/mycompanies/${bookmark.bookmark_id}/file/add`, {
 			method: 'POST',
 			headers: {
@@ -712,10 +746,20 @@
 	const updateFileContentHandler = async () => {
 		const fileId = selectedFile.id;
 		const content = selectedFile.data.content;
+		const filename = selectedFile.meta?.name;
 
-		const res = await updateFileDataContentById(localStorage.token, fileId, content).catch((e) => {
+		try {
+			// 컨텐츠 업데이트
+			const contentRes = await updateFileDataContentById(localStorage.token, fileId, content);
+			
+			// 파일명 업데이트 (확장자 포함)
+			if (filename) {
+				console.log('파일명 업데이트:', filename);
+				const filenameRes = await updateFileFilenameById(localStorage.token, fileId, filename);
+			}
+		} catch (e) {
 			toast.error(e);
-		});
+		}
 	};
 
 	const changeDebounceHandler = () => {
@@ -1097,34 +1141,70 @@
 
 <NoteEditorModal
 	bind:show={showAddTextContentModal}
-	initialTitle={selectedFile ? selectedFile?.meta?.name || '' : ''}
+	initialTitle={selectedFile ? selectedFile?.meta?.name?.replace(/\.txt$/i, '') || '' : ''}
 	initialContent={selectedFile ? selectedFile?.data?.content || '' : ''}
 	selectedFile={selectedFile || tempFileForNoteEditor}
 	on:autosave={(e) => {
 		if (selectedFile) {
 			selectedFile.data.content = e.detail.content;
+			
+			// 이름 변경이 있을 경우 (name이 변경됨)
+			if (e.detail.name && e.detail.name !== selectedFile?.meta?.name?.replace(/\.txt$/i, '')) {
+				// 이름에서 모든 .txt 확장자 제거하고 깨끗한 베이스 이름 얻기
+				let cleanedName = e.detail.name;
+				while(cleanedName.toLowerCase().endsWith('.txt')) {
+					cleanedName = cleanedName.substring(0, cleanedName.length - 4);
+				}
+				
+				// .txt 확장자 한 번만 추가
+				selectedFile.meta.name = cleanedName + '.txt';
+			}
+			
 			updateFileContentHandler();
 		}
 	}}
 	on:submit={(e) => {		
 		if (selectedFile) {
 			selectedFile.data.content = e.detail.content;
+			
+			// 이름에서 모든 .txt 확장자 제거하고 깨끗한 베이스 이름 얻기
+			let cleanedName = e.detail.name;
+			while(cleanedName.toLowerCase().endsWith('.txt')) {
+				cleanedName = cleanedName.substring(0, cleanedName.length - 4);
+			}
+			
+			// .txt 확장자 한 번만 추가
+			selectedFile.meta.name = cleanedName + '.txt';
+			
 			updateFileContentHandler();
 		} else {
-			const file = createFileFromText(e.detail.name, e.detail.content);
+			// 확장자가 없는 이름으로 파일 생성
+			let cleanedName = e.detail.name;
+			while(cleanedName.toLowerCase().endsWith('.txt')) {
+				cleanedName = cleanedName.substring(0, cleanedName.length - 4);
+			}
+			
+			const file = createFileFromText(cleanedName, e.detail.content);
 			uploadFileHandler(file);
 		}
 		showAddTextContentModal = false;
 		selectedFileId = null;
+		selectedFile = null;
 	}}
 	on:uploadRequest={async (e) => {
-		const file = createFileFromText(e.detail.name, e.detail.content);
+		// 확장자가 없는 이름으로 파일 생성
+		let cleanedName = e.detail.name;
+		while(cleanedName.toLowerCase().endsWith('.txt')) {
+			cleanedName = cleanedName.substring(0, cleanedName.length - 4);
+		}
+		
+		const file = createFileFromText(cleanedName, e.detail.content);
 		if (file) {
-		  const uploadedFile = await uploadFileHandler(file);
-		  if (uploadedFile && e.detail.callback) {
-			e.detail.callback(uploadedFile);
-		  }
-		  selectedFile = uploadedFile;
+			const uploadedFile = await uploadFileHandler(file);
+			if (uploadedFile && e.detail.callback) {
+				e.detail.callback(uploadedFile);
+			}
+			selectedFile = uploadedFile;
 		}
 		showAddTextContentModal = true;
 	}}
@@ -1303,7 +1383,11 @@
 										<button
 											class="ml-1 px-2 py-1 text-sm rounded hover:bg-gray-100 dark:hover:bg-gray-800"
 											on:click={() => {
-												createAndUploadMemo('새 메모', '<p></p>');
+												selectedFileId = null;
+												selectedFile = null;
+												setTimeout(() => {
+													createAndUploadMemo('새 메모', '<p></p>');
+												}, 50);
 											}}
 										>
 											<svg 
@@ -1331,7 +1415,15 @@
 											<div 
 												class="mt-1 px-2 py-2 rounded-lg {selectedFileId === memo.id ? 'bg-gray-50 dark:bg-gray-850' : 'bg-transparent'} hover:bg-gray-50 dark:hover:bg-gray-850 transition flex justify-between cursor-pointer"
 												on:click={() => {
-													selectedFileId = selectedFileId === memo.id ? null : memo.id;
+													if (selectedFileId === memo.id) {
+														selectedFileId = null;
+													} else {
+														selectedFile = null; // 먼저 파일 참조 초기화
+														selectedFileId = memo.id;
+														setTimeout(() => {
+															showAddTextContentModal = true;
+														}, 50);
+													}
 												}}
 											>
 												<div class="flex items-center gap-2 overflow-hidden">
@@ -1420,8 +1512,11 @@
 												if (e.detail.type === 'directory') {
 													uploadDirectoryHandler();
 												} else if (e.detail.type === 'text') {
-													createAndUploadMemo('새노트', '<p></p>');
-													showAddTextContentModal = true;
+													selectedFileId = null;
+													selectedFile = null;
+													setTimeout(() => {
+														createAndUploadMemo('새노트', '<p></p>');
+													}, 50);
 												} else {
 													document.getElementById('files-input').click();
 												}
@@ -1442,7 +1537,15 @@
 											<div 
 												class="mt-1 px-2 py-2 rounded-lg {selectedFileId === file.id ? 'bg-gray-50 dark:bg-gray-850' : 'bg-transparent'} hover:bg-gray-50 dark:hover:bg-gray-850 transition flex justify-between cursor-pointer"
 												on:click={() => {
-													selectedFileId = selectedFileId === file.id ? null : file.id;
+													if (selectedFileId === file.id) {
+														selectedFileId = null;
+													} else {
+														selectedFile = null; // 먼저 파일 참조 초기화
+														selectedFileId = file.id;
+														setTimeout(() => {
+															showAddTextContentModal = true;
+														}, 50);
+													}
 												}}
 											>
 												<div class="flex-1 overflow-hidden">
@@ -1544,7 +1647,7 @@
 					class="w-5 h-5"
 				>
 					<path
-						d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z"
+						d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.414-1.414L10 8.586l3.72-3.72a.75.75 0 10-1.414-1.414L10 10z"
 					/>
 				</svg>
 			</button>

@@ -79,22 +79,46 @@
 	}
 
 	function handleTitleChange(e: CustomEvent<string>): void {
-		pageTitle = e.detail;
+		let newTitle = e.detail;
+		
+		// 이름을 직접 업데이트하여 파일명에 반영
+		let cleanedTitle = newTitle;
+		while(cleanedTitle.toLowerCase().endsWith('.txt')) {
+			cleanedTitle = cleanedTitle.substring(0, cleanedTitle.length - 4);
+		}
+		
+		// 내부 이름 변수 업데이트
+		name = cleanedTitle;
+		pageTitle = cleanedTitle;
 		
 		if (selectedFile) {
+			// 확장자 관리 로직
 			if (selectedFile.name) {
-				selectedFile.name = pageTitle;
+				// .txt 확장자 한 번만 추가
+				selectedFile.name = cleanedTitle + '.txt';
 			}
+			
 			if (selectedFile.filename) {
 				const extension = selectedFile.filename.substring(selectedFile.filename.lastIndexOf('.'));
-				selectedFile.filename = pageTitle + (pageTitle.endsWith(extension) ? '' : extension);
+				if (extension.toLowerCase() === '.txt') {
+					selectedFile.filename = cleanedTitle + '.txt';
+				} else {
+					selectedFile.filename = cleanedTitle + extension;
+				}
 			}
+			
 			if (selectedFile.meta && selectedFile.meta.name) {
-				selectedFile.meta.name = pageTitle;
+				// 메타데이터 이름에도 .txt 확장자 한 번만 추가
+				selectedFile.meta.name = cleanedTitle + '.txt';
 			}
 		}
 		
-		handleEditorChange();
+		// 자동 저장 트리거
+		updateContent();
+		updateTitle();
+		
+		// 바로 autosave 이벤트 발생시켜 변경사항을 즉시 저장
+		dispatch('autosave', { name: cleanedTitle, content });
 	}
 
 	function openSidebar() {
