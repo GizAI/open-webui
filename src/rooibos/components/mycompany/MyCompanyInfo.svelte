@@ -1507,18 +1507,25 @@
 									/>
 
 									<div>
-										<AddContentMenu
-											on:upload={async(e) => {
-												if (e.detail.type === 'directory') {
-													uploadDirectoryHandler();												
-												} else {
-													document.getElementById('files-input').click();
-												}
+										<button
+											class="ml-1 px-2 py-1 text-sm rounded hover:bg-gray-100 dark:hover:bg-gray-800"
+											on:click={() => {
+												document.getElementById('files-input').click();
 											}}
-											on:sync={(e) => {
-												showSyncConfirmModal = true;
-											}}
-										/>
+										>
+											<svg 
+												xmlns="http://www.w3.org/2000/svg" 
+												viewBox="0 0 24 24" 
+												fill="none" 
+												stroke="currentColor" 
+												stroke-width="2" 
+												stroke-linecap="round" 
+												stroke-linejoin="round" 
+												class="size-5"
+											>
+												<path d="M12 5v14m-7-7h14" />
+											</svg>
+										</button>
 									</div>
 								</div>
 							</div>
