@@ -275,6 +275,20 @@
 			zoom = map.getZoom();
 			console.log('zoom:', zoom);
 		});
+
+		// 지도 오류 감지
+		naver.maps.Event.addListener(map, 'error', () => {
+			handleMapError('지도 로딩 중 오류가 발생했습니다.');
+		});
+	}
+
+	function handleMapError(errorMessage: string) {
+		console.error('Map error:', errorMessage);
+		error = errorMessage;
+		// 지도 오류 시 목록 보기로 자동 전환
+		resultViewMode = 'list';
+		// 오류가 발생해도 검색 결과는 보여줌
+		companyList = searchResults;
 	}
 
 	function loadNaverMapScript(): Promise<void> {
@@ -284,6 +298,10 @@
 			naverScript.async = true;
 			naverScript.onload = () => resolve();
 			naverScript.onerror = (err) => reject(err);
+			// 스크립트가 로드된 후 오류가 생길 경우를 처리
+			naverScript.addEventListener('error', () => {
+				handleMapError('네이버 지도 스크립트 로딩 중 오류가 발생했습니다.');
+			});
 			document.body.appendChild(naverScript);
 		});
 	}
@@ -387,21 +405,31 @@
 				return;
 			}
 
-			if (!mapInstance) return;
+			// 지도 오류 상태에서도 계속 검색 결과는 업데이트
+			if (resultViewMode === 'list') {
+				companyList = searchResults;
+			}
+
+			if (!mapInstance || error) return;
 
 			clearMarkers();
 
 			const firstPoint = createLatLng(location?.lat, location?.lng);
-			mapInstance.map.setCenter(firstPoint);
-			mapInstance.map.setZoom(zoom);
+			try {
+				mapInstance.map.setCenter(firstPoint);
+				mapInstance.map.setZoom(zoom);
 
-			searchResults.forEach((result) => {
-				if (mapInstance) {
-					const marker = createCompanyMarker(result, 300, false);
-					markerClustering.addMarker(marker);
-					mapInstance.companyMarkers.push(marker);
-				}
-			});
+				searchResults.forEach((result) => {
+					if (mapInstance) {
+						const marker = createCompanyMarker(result, 300, false);
+						markerClustering.addMarker(marker);
+						mapInstance.companyMarkers.push(marker);
+					}
+				});
+			} catch (err) {
+				console.error('Map update error:', err);
+				handleMapError('지도 업데이트 중 오류가 발생했습니다.');
+			}
 		} catch (error) {
 			console.error('검색 중 오류가 발생했습니다:', error);
 		}
@@ -425,28 +453,43 @@
 
 		if (!mapContainer) {
 			console.error('Map container not found');
+			handleMapError('지도 컨테이너를 찾을 수 없습니다.');
 			return;
 		}
-		const mapOptions = {
-			center: createLatLng(position.lat, position.lng),
-			zoom: zoom
-			// styles: darkStyle,
-			// mapTypeControl: true,
-			// scaleControl: false,
-			// logoControl: false,
-			// mapDataControl: false
-		};
+		
+		try {
+			const mapOptions = {
+				center: createLatLng(position.lat, position.lng),
+				zoom: zoom
+				// styles: darkStyle,
+				// mapTypeControl: true,
+				// scaleControl: false,
+				// logoControl: false,
+				// mapDataControl: false
+			};
 
-		const map = new naver.maps.Map(mapContainer, mapOptions);
-		const marker = new naver.maps.Marker({
-			position: createLatLng(position.lat, position.lng),
-			map: map
-		});
+			const map = new naver.maps.Map(mapContainer, mapOptions);
+			const marker = new naver.maps.Marker({
+				position: createLatLng(position.lat, position.lng),
+				map: map
+			});
 
-		mapInstance = { map, marker, infoWindow: null, companyMarkers: [] };
-		loading = false;
+			mapInstance = { map, marker, infoWindow: null, companyMarkers: [] };
+			loading = false;
 
-		registerMapEvents(map);
+			registerMapEvents(map);
+
+			// 정기적으로 지도 상태 확인
+			const mapCheckInterval = setInterval(() => {
+				if (!map || !mapContainer || !document.body.contains(mapContainer)) {
+					clearInterval(mapCheckInterval);
+					handleMapError('지도가 더 이상 표시되지 않습니다.');
+				}
+			}, 5000);
+		} catch (err) {
+			console.error('Map initialization error:', err);
+			handleMapError('지도 초기화 중 오류가 발생했습니다.');
+		}
 	};
 
 	const moveToCurrentLocation = () => {
@@ -529,7 +572,7 @@
 				const module = await import('./MarkerClustering');
 				const MarkerClustering = module.default;
 				markerClustering = new MarkerClustering({
-					map: mapInstance.map,
+					map: mapInstance?.map,
 					gridSize: 60,
 					maxZoom: zoom + 1,
 					disableClickZoom: false
@@ -540,13 +583,18 @@
 				const errorMessage = (err as Error).message;
 				error = errorMessage;
 				loading = false;
+				// 지도 로딩 오류 시 목록 보기로 자동 전환
+				resultViewMode = 'list';
+				companyList = searchResults;
+				// 오류 발생 시에도 자동으로 검색 실행
+				handleSearch('', selectedFilters);
 			}
 		};
 
 		initialize();
 
-		window.addEventListener('clusterClick', (e: CustomEvent) => {
-			companyList = e.detail.markers.map((marker) => marker.company_info);
+		window.addEventListener('clusterClick', (e: any) => {
+			companyList = e.detail.markers.map((marker: any) => marker.company_info);
 			resultViewMode = 'list';
 			showCompanyInfo = false;
 		});
@@ -620,7 +668,7 @@
 	</div>
 {/if}
 
-{#if loading}
+{#if loading && !error}
 	<div class="absolute inset-0 flex items-center justify-center bg-white/80 z-10">
 		<p>지도를 불러오는 중...</p>
 	</div>
@@ -631,12 +679,14 @@
 		<p class="text-red-500">
 			{error === 'User denied Geolocation'
 				? '위치 접근을 허용해주세요.'
-				: '위치를 가져오는데 실패했습니다.'}
+				: '위치를 가져오는데 실패했습니다. 목록 보기로 전환되었습니다.'}
 		</p>
 	</div>
 {/if}
 
-<div id="map" class="w-full h-full relative" />
+{#if resultViewMode === 'map' && !error}
+	<div id="map" class="w-full h-full relative" />
+{/if}
 
 <button
 	on:click={moveToCurrentLocation}
