@@ -6,7 +6,7 @@
 	import { flyAndScale } from '$lib/utils/transitions';
 	import { goto } from '$app/navigation';
 	import { toast } from 'svelte-sonner';
-	import { renameNoteFolder, deleteFolderById } from '$rooibos/components/apis/folder';
+	import { renameNoteFolder, deleteFolderById, getFolderById } from '$rooibos/components/apis/folder';
 	import Pencil from '$lib/components/icons/Pencil.svelte';
 	import FolderForm from './FolderForm.svelte';
 	import { FolderIcon, Trash2Icon, Share2Icon } from 'lucide-svelte';
@@ -94,6 +94,22 @@
 		e.stopPropagation();
 		deletingFolderId = folderId;
 		showDeleteConfirm = true;
+		
+		// 삭제 확인 전에 폴더 정보를 서버에서 다시 가져와서 최신 상태 확인
+		refreshFolderInfo(folderId);
+	}
+
+	// 폴더 정보 새로고침 함수
+	async function refreshFolderInfo(folderId: string) {
+		try {
+			const updatedFolder = await getFolderById(localStorage.token, folderId);
+			if (updatedFolder) {
+				// 서버에서 가져온 최신 정보로 폴더 정보 업데이트
+				folders[folderId] = { ...folders[folderId], ...updatedFolder };
+			}
+		} catch (error) {
+			toast.error(`폴더 정보 가져오기 실패: ${error}`);
+		}
 	}
 
 	// 폴더 삭제 함수

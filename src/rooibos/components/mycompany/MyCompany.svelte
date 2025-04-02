@@ -20,6 +20,7 @@
 	import { page } from '$app/stores';
 	import { deleteCompanyBookmark, permanentDeleteCompanyBookmark, restoreCompanyBookmark } from '$rooibos/components/apis/company';
 	import { getFolderById } from '$rooibos/components/apis/folder';
+	import { triggerFolderUpdate } from '$rooibos/stores';
 
 	let loaded = false;
 	let selectedItem: any = null;
@@ -42,7 +43,7 @@
 	let userCache = new Map();
 	
 	// 사용자 정보를 가져오는 함수
-	async function getUserInfo(userId) {
+	async function getUserInfo(userId: string) {
 		if (userCache.has(userId)) {
 			return userCache.get(userId);
 		}
@@ -80,6 +81,8 @@
 		
 		if (result.success) {
 			bookmarks = bookmarks.filter((bookmark:any) => bookmark.id !== item.id);
+			// 기업 삭제 후 폴더 정보 갱신을 위해 전역 트리거 업데이트
+			triggerFolderUpdate();
 		} 
 	};
 
@@ -88,6 +91,8 @@
 		
 		if (result.success) {
 			bookmarks = bookmarks.filter((bookmark: any) => bookmark.id !== item.id);
+			// 기업 복원 후 폴더 정보 갱신을 위해 전역 트리거 업데이트
+			triggerFolderUpdate();
 		}
 	};
 
