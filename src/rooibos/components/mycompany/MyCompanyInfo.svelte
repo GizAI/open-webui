@@ -1510,13 +1510,7 @@
 										<AddContentMenu
 											on:upload={async(e) => {
 												if (e.detail.type === 'directory') {
-													uploadDirectoryHandler();
-												} else if (e.detail.type === 'text') {
-													selectedFileId = null;
-													selectedFile = null;
-													setTimeout(() => {
-														createAndUploadMemo('새노트', '<p></p>');
-													}, 50);
+													uploadDirectoryHandler();												
 												} else {
 													document.getElementById('files-input').click();
 												}
