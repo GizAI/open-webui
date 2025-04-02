@@ -192,7 +192,13 @@
 			>
 				<div class="w-full flex items-start justify-between">
 					<div class="self-start flex-1 px-1 mb-1">
-						<div class="font-semibold line-clamp-1 h-fit">{bookmark.company_name}</div>
+						<div class="font-semibold line-clamp-1 h-fit">
+							{#if isTrashView}
+								{bookmark.folder_name} / {bookmark.company_name}
+							{:else}
+								{bookmark.company_name}
+							{/if}
+						</div>
 						<div class="text-xs overflow-hidden text-ellipsis line-clamp-1">
 							{bookmark.address}
 						</div>
