@@ -46,6 +46,8 @@
 			// 삭제 후 상태 업데이트
 			companyInfo.bookmark_id = null;
 			companyInfo.bookmark_user_id = null;
+			// 폴더 정보 갱신을 위해 트리거 업데이트
+			triggerFolderUpdate();
 		} catch (error) {
 			console.error('Error in confirmDelete:', error);
 		} finally {
@@ -68,6 +70,8 @@
 		} else {
 			await addCompany(companyInfo);
 		}
+		// 북마크 추가 후 폴더 정보 갱신을 위해 트리거 업데이트
+		triggerFolderUpdate();
 		showFolderSelect = false;
 	};
 
