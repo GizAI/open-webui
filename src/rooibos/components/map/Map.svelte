@@ -419,10 +419,21 @@
 	};
 
 	const handleReset = () => {
-		selectedFilters = {
-			radius: '200'
-		};
-		handleSearch('', selectedFilters);
+		try {
+			selectedFilters = {};
+			// 반경 필터 기본값 설정
+			filterChange('radius', '200', '200');
+			// 검색 실행
+			handleSearch('', selectedFilters);
+		} catch (error) {
+			console.error('초기화 중 오류가 발생했습니다:', error);
+			// 에러 발생 시 알림 표시
+			if (error instanceof Error) {
+				alert(`초기화 오류: ${error.message}`);
+			} else {
+				alert('초기화 중 오류가 발생했습니다.');
+			}
+		}
 	};
 
 	const handleApply = () => {
@@ -496,9 +507,11 @@
 		mapInstance.map.setZoom(zoom);
 
 		resultArray.forEach((result) => {
-			const marker = createCompanyMarker(result, 300, false);
-			markerClustering.addMarker(marker);
-			mapInstance.companyMarkers.push(marker);
+			if (mapInstance) {
+				const marker = createCompanyMarker(result, 300, false);
+				markerClustering.addMarker(marker);
+				mapInstance.companyMarkers.push(marker);
+			}
 		});
 
 		searchResults = resultArray;

@@ -162,12 +162,7 @@ export function onFilterChange(selectedFilters: any, groupId: string, optionId: 
 			...((newFilters[groupId] as any) || {}),
 			value: checked ? optionId : ''
 		};
-	} else if (groupId === 'representative_age') {
-		newFilters[groupId] = {
-			...((newFilters[groupId] as any) || {}),
-			value: checked
-		};
-	} else if (groupId === 'establishment_year') {
+	} else if (groupId === 'representative_age' || groupId === 'establishment_year') {
 		newFilters[groupId] = {
 			...((newFilters[groupId] as any) || {}),
 			value: checked
