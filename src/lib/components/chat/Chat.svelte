@@ -1446,7 +1446,8 @@
 					}
 					// for rooibos app only, add company info to user context
 					if ($selectedCompanyInfo.business_registration_number) {
-						userContext = formatCompanyInfo($selectedCompanyInfo);
+						const companyInfo = formatCompanyInfo($selectedCompanyInfo);
+						userContext = `${userContext ? userContext + '\n\n' : ''}Company Master Data:\n${companyInfo}\n\n[IMPORTANT INSTRUCTION]\nThe above Company Master Data represents baseline information. If there are any overlapping data points in other contexts, please prioritize and use the information from other contexts over this master data. This ensures the most up-to-date and accurate information is used in your responses.\n\nPlease carefully analyze and cross-reference all data points before providing responses.`;
 					}
 
 					responseMessage.userContext = userContext;
