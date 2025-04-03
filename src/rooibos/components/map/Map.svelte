@@ -210,6 +210,11 @@
 		longitude: ''
 	};
 
+	$: if (error !== null) {
+		resultViewMode = 'list';
+		companyList = searchResults;
+	}
+
 	function clearMarkers() {
 		if (mapInstance?.companyMarkers) {
 			mapInstance.companyMarkers.forEach((marker) => marker.setMap(null));
@@ -503,6 +508,7 @@
 	onMount(() => {
 		const initialize = async () => {
 			try {
+				error = "error";
 				const options = {
 					enableHighAccuracy: true,
 					maximumAge: 0,
