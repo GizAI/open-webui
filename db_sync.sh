@@ -110,13 +110,38 @@ else
 fi
 
 # 대상 DB 삭제 및 재생성 (존재하지 않을 때 에러 무시)
-echo "🔹 기존 대상 DB 삭제 및 재생성 중..."
-PGPASSWORD=$DEST_PASSWORD dropdb -h $DEST_HOST -p $DEST_PORT -U $DEST_USER $DEST_DB 2>/dev/null || echo "⚠️ 대상 DB가 존재하지 않아 삭제 과정을 생략합니다."
+echo "🔹 기존 대상 DB 확인 중..."
 
-PGPASSWORD=$DEST_PASSWORD createdb -h $DEST_HOST -p $DEST_PORT -U $DEST_USER $DEST_DB
-if [ $? -ne 0 ]; then
-  echo "❌ 대상 DB 생성 중 오류 발생!"
-  exit 1
+# 대상 DB가 존재하는지 확인
+PGPASSWORD=$DEST_PASSWORD psql -h $DEST_HOST -p $DEST_PORT -U $DEST_USER -d postgres -c "SELECT 1 FROM pg_database WHERE datname='$DEST_DB'" | grep -q 1
+DB_EXISTS=$?
+
+if [ $DB_EXISTS -eq 0 ]; then
+  read -p "⚠️ 데이터베이스 '$DEST_DB'가 이미 존재합니다. 삭제하고 새로 생성하시겠습니까? (Y/n): " drop_choice
+  if [[ "$drop_choice" != "n" && "$drop_choice" != "N" ]]; then
+    echo "🔹 기존 대상 DB 삭제 중..."
+    PGPASSWORD=$DEST_PASSWORD dropdb -h $DEST_HOST -p $DEST_PORT -U $DEST_USER $DEST_DB
+    if [ $? -ne 0 ]; then
+      echo "❌ 대상 DB 삭제 중 오류 발생!"
+      exit 1
+    fi
+    
+    echo "🔹 대상 DB 생성 중..."
+    PGPASSWORD=$DEST_PASSWORD createdb -h $DEST_HOST -p $DEST_PORT -U $DEST_USER $DEST_DB
+    if [ $? -ne 0 ]; then
+      echo "❌ 대상 DB 생성 중 오류 발생!"
+      exit 1
+    fi
+  else
+    echo "🔹 기존 대상 DB를 사용합니다."
+  fi
+else
+  echo "🔹 대상 DB 생성 중..."
+  PGPASSWORD=$DEST_PASSWORD createdb -h $DEST_HOST -p $DEST_PORT -U $DEST_USER $DEST_DB
+  if [ $? -ne 0 ]; then
+    echo "❌ 대상 DB 생성 중 오류 발생!"
+    exit 1
+  fi
 fi
 
 # 대상 DB 복원
