@@ -1219,7 +1219,7 @@
 			);
 		}
 
-		console.log(data);
+		//console.log(data);
 		if (autoScroll) {
 			scrollToBottom();
 		}
@@ -1488,7 +1488,7 @@
 					}
 					files.push(fileObj)
 				} else {
-					console.warn('ÆÄÀÏÀÌ °´Ã¼°¡ ¾Æ´Õ´Ï´Ù:', file);
+					console.warn('íŒŒì¼ì´ ê°ì²´ê°€ ì•„ë‹™ë‹ˆë‹¤:', file);
 				}
 			});
 		}

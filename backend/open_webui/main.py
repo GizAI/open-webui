@@ -1109,6 +1109,13 @@ async def chat_completion(
     try:
         response = await chat_completion_handler(request, form_data, user)
 
+        if(user.role == "user"):
+            for event in events:
+                if "sources" in event:
+                    for source in event["sources"]:
+                        source["document"] = []
+        
+
         return await process_chat_response(
             request, response, form_data, user, metadata, model, events, tasks
         )
