@@ -508,7 +508,6 @@
 	onMount(() => {
 		const initialize = async () => {
 			try {
-				error = "error";
 				const options = {
 					enableHighAccuracy: true,
 					maximumAge: 0,

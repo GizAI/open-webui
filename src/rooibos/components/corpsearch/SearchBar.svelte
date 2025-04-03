@@ -324,7 +324,7 @@
 			</button>
 		</div>
 		<div class="text-xl font-semibold text-gray-800 dark:text-gray-400 px-2">기업찾기</div>
-		{#if searchCompanyResults.length >= 2 && !isSearchMode}
+		{#if searchCompanyResults.length >= 1 && !isSearchMode}
 			<button
 				type="button"
 				on:click={toggleViewMode}
