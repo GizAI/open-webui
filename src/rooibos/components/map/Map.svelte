@@ -325,7 +325,13 @@
 		});
 		naver.maps.Event.addListener(marker, 'click', () => {
 			updateSelectedMarker(marker, result, selectedZIndex);
-			companyInfo = result;
+			companyInfo = {
+				...result,
+				id: result.master_id || '',
+				company_id: result.master_id || '',
+				files: [],
+				business_registration_number: result.business_registration_number ? Number(result.business_registration_number) : undefined
+			};
 			showCompanyInfo = true;
 			activeFilterGroup = null;
 			if ($mobile) {
@@ -396,7 +402,7 @@
 
 			clearMarkers();
 
-			const firstPoint = createLatLng(location?.lat, location?.lng);
+			const firstPoint = createLatLng(location?.lat || 0, location?.lng || 0);
 			mapInstance.map.setCenter(firstPoint);
 			mapInstance.map.setZoom(zoom);
 
@@ -414,7 +420,7 @@
 
 	const handleReset = () => {
 		selectedFilters = {
-			radius: { checked: true, value: '200' }
+			radius: '200'
 		};
 		handleSearch('', selectedFilters);
 	};
@@ -550,8 +556,8 @@
 
 		initialize();
 
-		window.addEventListener('clusterClick', (e: CustomEvent) => {
-			companyList = e.detail.markers.map((marker) => marker.company_info);
+		window.addEventListener('clusterClick', (e: any) => {
+			companyList = e.detail.markers.map((marker: any) => marker.company_info);
 			resultViewMode = 'list';
 			showCompanyInfo = false;
 		});
@@ -712,7 +718,7 @@
 		right: 0;
 		width: 30%;
 		height: 100%;
-		z-index: 51;
+		z-index: 45;
 		transition: margin-left 0.3s ease-in-out;
 		padding-top: 80px; /* 검색 바 높이 + 더 큰 여유 공간 */
 	}
