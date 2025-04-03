@@ -576,4 +576,11 @@ Return the result in the following JSON format:
         
         body.setdefault("messages", []).insert(0, context_message)
         logger.info(f"[{request_id}] inlet 함수 종료")
+
+        await self.emit_status(
+                    __event_emitter__,
+                    level="status",
+                    message="답변을 준비중입니다. 잠시만 기다려 주세요",
+                    done=False,
+                )
         return body
