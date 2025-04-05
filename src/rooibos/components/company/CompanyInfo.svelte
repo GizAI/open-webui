@@ -219,6 +219,7 @@
 			transform: translateY(100%);
 			transform-origin: bottom;
 			margin-top: 0;
+			z-index: 60;
 		}
 
 		.company-info-wrapper.mobile.fullscreen {
@@ -227,6 +228,7 @@
 			height: calc(100vh - env(safe-area-inset-top) - env(safe-area-inset-bottom));
 			padding-bottom: env(safe-area-inset-bottom);
 			transform-origin: bottom;
+			z-index: 60;
 		}
 
 		.company-info-wrapper.mobile.fullscreen.active {

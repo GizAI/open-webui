@@ -552,12 +552,16 @@
 
 				const module = await import('./MarkerClustering');
 				const MarkerClustering = module.default;
-				markerClustering = new MarkerClustering({
-					map: mapInstance.map,
-					gridSize: 60,
-					maxZoom: zoom + 1,
-					disableClickZoom: false
-				});
+				
+				// mapInstance가 null이 아닌지 확인 후 markerClustering 초기화
+				if (mapInstance) {
+					markerClustering = new MarkerClustering({
+						map: mapInstance.map,
+						gridSize: 60,
+						maxZoom: zoom + 1,
+						disableClickZoom: false
+					});
+				}
 
 				handleSearch('', selectedFilters);
 			} catch (err) {
@@ -610,7 +614,7 @@
 	</title>
 </svelte:head>
 
-{#if !($showSidebar && $mobile)}
+{#if !($showSidebar && $mobile) && !($mobile && showCompanyInfo && isFullscreen)}
 	<div class="search-bar-wrapper w-full" class:sidebar-visible={$showSidebar}>
 		<SearchBar
 			onSearch={handleSearch}
@@ -638,7 +642,7 @@
 	</div>
 {/if}
 
-{#if showCompanyInfo && companyInfo && !($showSidebar && $mobile)}
+{#if showCompanyInfo && companyInfo}
 	<div class="company-info-container" class:sidebar-visible={$showSidebar}>
 		<CompanyInfo {companyInfo} onClose={closeCompanyInfo} {isFullscreen} />
 	</div>
