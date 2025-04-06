@@ -265,7 +265,7 @@
 					/>
 				</svg>
 			</div>
-			<div class=" self-center">{$i18n.t('Interface')}1</div>
+			<div class=" self-center">{$i18n.t('Interface')}</div>
 		</button>
 
 		<button
