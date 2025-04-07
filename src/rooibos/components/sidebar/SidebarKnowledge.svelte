@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { getContext, onMount } from 'svelte';
-	const i18n = getContext('i18n');
+	const i18n: any = getContext('i18n');
 	import { goto } from '$app/navigation';
 	import { mobile, showSidebar, chatId, knowledge } from '$lib/stores';
 	import { getKnowledgeBaseList } from '$lib/apis/knowledge';
@@ -20,6 +20,7 @@
 	}
 
 	let knowledgeBases: KnowledgeBase[] = [];
+	let isOpen = true; // 초기값을 true로 설정
 
 	async function fetchKnowledgeBases() {
 		try {
@@ -67,16 +68,19 @@
 		name={$i18n.t('Knowledge')}
 		onAdd={handleAddClick}
 		onAddLabel={$i18n.t('Create a knowledge base')}
+		bind:open={isOpen}
 	>
-		{#each knowledgeBases as base}
-			<button
-				class="w-full flex items-center space-x-3 px-2 py-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-900 transition text-sm text-left"
-				on:click|stopPropagation={() => handleKnowledgeClick(base.id)}
-			>
-				<div class="flex-1 truncate text-gray-700 dark:text-gray-300">
-					{base.name}
-				</div>
-			</button>
-		{/each}
+		<div class="ml-3 pl-1 flex flex-col border-s border-gray-100 dark:border-gray-900 overflow-y-auto scrollbar-hidden" style="max-height: 40vh;">
+			{#each knowledgeBases as base}
+				<button
+					class="w-full flex items-center space-x-3 px-2 py-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-900 transition text-sm text-left"
+					on:click|stopPropagation={() => handleKnowledgeClick(base.id)}
+				>
+					<div class="flex-1 truncate text-gray-700 dark:text-gray-300">
+						{base.name}
+					</div>
+				</button>
+			{/each}
+		</div>
 	</Folder>
 </div>
