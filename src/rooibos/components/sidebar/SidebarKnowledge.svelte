@@ -20,7 +20,7 @@
 	}
 
 	let knowledgeBases: KnowledgeBase[] = [];
-	let isOpen = true; // 초기값을 true로 설정
+	let isOpen = false; // 초기값을 false로 변경하여 기본적으로 접힌 상태로 설정
 
 	async function fetchKnowledgeBases() {
 		try {
