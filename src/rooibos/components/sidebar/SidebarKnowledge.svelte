@@ -60,27 +60,35 @@
 			showSidebar.set(false);
 		}
 	};
+	
+	// 폴더 헤더를 더블클릭했을 때 지식 베이스 페이지로 이동하는 함수
+	const handleFolderDoubleClick = () => {
+		goToKnowledgePage();
+	};
 </script>
 
-<div on:click={goToKnowledgePage} class="cursor-pointer">
+<div class="cursor-pointer">
 	<Folder
 		className="px-2 mt-0.5"
 		name={$i18n.t('Knowledge')}
 		onAdd={handleAddClick}
 		onAddLabel={$i18n.t('Create a knowledge base')}
 		bind:open={isOpen}
+		on:dblclick={handleFolderDoubleClick}
 	>
-		<div class="ml-3 pl-1 flex flex-col border-s border-gray-100 dark:border-gray-900 overflow-y-auto scrollbar-hidden" style="max-height: 40vh;">
-			{#each knowledgeBases as base}
-				<button
-					class="w-full flex items-center space-x-3 px-2 py-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-900 transition text-sm text-left"
-					on:click|stopPropagation={() => handleKnowledgeClick(base.id)}
-				>
-					<div class="flex-1 truncate text-gray-700 dark:text-gray-300">
-						{base.name}
-					</div>
-				</button>
-			{/each}
+		<div class="ml-3 pl-1 flex flex-col border-s border-gray-100 dark:border-gray-900">
+			<div class="overflow-y-auto scrollbar-hidden" style="max-height: calc(100vh - 220px);">
+				{#each knowledgeBases as base}
+					<button
+						class="w-full flex items-center space-x-3 px-2 py-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-900 transition text-sm text-left"
+						on:click|stopPropagation={() => handleKnowledgeClick(base.id)}
+					>
+						<div class="flex-1 truncate text-gray-700 dark:text-gray-300">
+							{base.name}
+						</div>
+					</button>
+				{/each}
+			</div>
 		</div>
 	</Folder>
 </div>
