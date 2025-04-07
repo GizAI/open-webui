@@ -275,8 +275,13 @@
 			file.data = file.data ?? { content: '' };
 			selectedFile = file;
 
-			if (!showAddTextContentModal) {
+			// txt 파일인 경우에만 NoteEditorModal 열기
+			const isTxtFile = file.meta?.name?.toLowerCase().endsWith('.txt');
+			if (isTxtFile && !showAddTextContentModal) {
 				showAddTextContentModal = true;
+			} else if (!isTxtFile) {
+				// NoteEditorModal 닫기 (다른 파일 타입인 경우)
+				showAddTextContentModal = false;
 			}
 		} else {
 			selectedFile = null;
@@ -1309,11 +1314,56 @@
 			<div class="{!largeScreen ? 'flex-col' : 'flex-row'} flex pb-2.5 gap-3">
 				{#if largeScreen}
 					<div class="flex-1 flex justify-start w-full h-full max-h-full">
-						{#if selectedFile}
-							<!-- 파일 내용은 이제 NoteEditorModal에서 표시됩니다 -->
+						{#if selectedFile && !selectedFile.meta?.name?.toLowerCase().endsWith('.txt')}
+							<div class="flex flex-col w-full h-full max-h-full">
+								<div class="shrink-0 mb-2 flex items-center">
+									<div class="flex-1 text-xl font-medium">
+										<span class="line-clamp-1">
+											{selectedFile?.meta?.name || selectedFile?.name || '파일명 없음'}
+										</span>
+									</div>
+								</div>
+
+								<div class="flex-1 w-full h-full max-h-full bg-transparent outline-hidden overflow-y-auto scrollbar-hidden">
+									{#if selectedFile?.meta?.name?.toLowerCase().endsWith('.jpg') || selectedFile?.meta?.name?.toLowerCase().endsWith('.jpeg') || selectedFile?.meta?.name?.toLowerCase().endsWith('.png') || selectedFile?.meta?.name?.toLowerCase().endsWith('.gif')}
+										<!-- 이미지 파일인 경우 -->
+										<div class="flex justify-center h-full">
+											<img 
+												src={`${WEBUI_API_BASE_URL}/files/${selectedFile.id}/content`} 
+												alt={selectedFile?.meta?.name || selectedFile?.name} 
+												class="object-contain"
+												style="max-width: 100%; max-height: 100%;"
+											/>
+										</div>
+									{:else if selectedFile?.meta?.name?.toLowerCase().endsWith('.pdf')}
+										<!-- PDF 파일인 경우 -->
+										<div class="h-full">
+											<iframe 
+												src={`${WEBUI_API_BASE_URL}/files/${selectedFile.id}/content`} 
+												title={selectedFile?.meta?.name || selectedFile?.name}
+												class="w-full h-full border-0"
+											></iframe>
+										</div>
+									{:else if selectedFile?.data?.content}
+										<!-- 텍스트 내용이 있는 경우 -->
+										<div class="whitespace-pre-wrap p-4">
+											{selectedFile.data.content}
+										</div>
+									{:else}
+										<!-- 지원되지 않는 파일 타입 -->
+										<div class="flex flex-col items-center justify-center h-full p-4">
+											<div class="text-lg mb-4">
+												{selectedFile?.meta?.name || selectedFile?.name || '파일명 없음'}
+											</div>
+										</div>
+									{/if}
+								</div>
+							</div>
+						{:else if selectedFile?.meta?.name?.toLowerCase().endsWith('.txt')}
+							<!-- txt 파일은 NoteEditorModal에서 처리됨 -->
 							<div class="h-full flex w-full">
 								<div class="m-auto text-xs text-center text-gray-200 dark:text-gray-700">
-									{selectedFile?.meta?.name} 파일이 선택되었습니다. 편집기가 열립니다...
+									메모 파일이 선택되었습니다. 편집기가 열립니다...
 								</div>
 							</div>
 						{:else}
@@ -1325,12 +1375,65 @@
 						{/if}
 					</div>
 				{:else if !largeScreen && selectedFileId !== null}
-					<!-- 모바일에서도 NoteEditorModal을 사용합니다 -->
-					<div class="h-full flex w-full">
-						<div class="m-auto text-xs text-center text-gray-200 dark:text-gray-700">
-							{selectedFile?.meta?.name} 파일이 선택되었습니다. 편집기가 열립니다...
+					<!-- 모바일에서 파일 선택시 -->
+					{#if selectedFile && !selectedFile.meta?.name?.toLowerCase().endsWith('.txt')}
+						<div class="flex flex-col justify-start h-full max-h-full p-2 w-full">
+							<div class="flex flex-col w-full h-full max-h-full">
+								<div class="shrink-0 mb-2 flex items-center">
+									<div class="mr-2">
+										<button
+											class="w-full text-left text-sm p-1.5 rounded-lg dark:text-gray-300 dark:hover:text-white hover:bg-black/5 dark:hover:bg-gray-850"
+											on:click={() => {
+												selectedFileId = null;
+											}}
+										>
+											<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+												<path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" />
+											</svg>
+										</button>
+									</div>
+									<div class="flex-1 text-xl line-clamp-1">
+										{selectedFile?.meta?.name || selectedFile?.name || '파일명 없음'}
+									</div>
+								</div>
+
+								<div class="flex-1 w-full h-full max-h-full py-2.5 px-3.5 rounded-lg bg-transparent overflow-y-auto scrollbar-hidden">
+									{#if selectedFile?.meta?.name?.toLowerCase().endsWith('.jpg') || selectedFile?.meta?.name?.toLowerCase().endsWith('.jpeg') || selectedFile?.meta?.name?.toLowerCase().endsWith('.png') || selectedFile?.meta?.name?.toLowerCase().endsWith('.gif')}
+										<!-- 이미지 파일인 경우 (모바일) -->
+										<div class="flex justify-center h-full">
+											<img 
+												src={`${WEBUI_API_BASE_URL}/files/${selectedFile.id}/content`}
+												alt={selectedFile?.meta?.name || selectedFile?.name} 
+												class="object-contain"
+												style="max-width: 100%; max-height: 100%;"
+											/>
+										</div>
+									{:else if selectedFile?.meta?.name?.toLowerCase().endsWith('.pdf')}
+										<!-- PDF 파일인 경우 (모바일) -->
+										<div class="h-full">
+											<iframe 
+												src={`${WEBUI_API_BASE_URL}/files/${selectedFile.id}/content`}
+												title={selectedFile?.meta?.name || selectedFile?.name}
+												class="w-full h-full border-0"
+											></iframe>
+										</div>
+									{:else if selectedFile?.data?.content}
+										<!-- 텍스트 내용이 있는 경우 -->
+										<div class="whitespace-pre-wrap p-4">
+											{selectedFile.data.content}
+										</div>
+									{:else}
+										<!-- 지원되지 않는 파일 타입 -->
+										<div class="flex flex-col items-center justify-center h-full p-4">
+											<div class="text-lg mb-4">
+												{selectedFile?.meta?.name || selectedFile?.name || '파일명 없음'}
+											</div>
+										</div>
+									{/if}
+								</div>
+							</div>
 						</div>
-					</div>
+					{/if}
 				{/if}
 
 				<!-- 메모 섹션 -->
@@ -1420,6 +1523,7 @@
 													} else {
 														selectedFile = null; // 먼저 파일 참조 초기화
 														selectedFileId = memo.id;
+														// txt 파일이므로 NoteEditorModal을 열어줍니다
 														setTimeout(() => {
 															showAddTextContentModal = true;
 														}, 50);
@@ -1543,9 +1647,7 @@
 													} else {
 														selectedFile = null; // 먼저 파일 참조 초기화
 														selectedFileId = file.id;
-														setTimeout(() => {
-															showAddTextContentModal = true;
-														}, 50);
+														// txt 파일이 아니므로 NoteEditorModal은 자동으로 열리지 않음
 													}
 												}}
 											>
