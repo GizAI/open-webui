@@ -64,7 +64,6 @@
 	import { createNewRooibosFolder, getRooibosFolders } from '$rooibos/components/apis/folder';
 	import RooibosFolderMenu from '$rooibos/components/folder/RooibosFolderMenu.svelte';
 	import RooibosFolder from '$rooibos/components/folder/RooibosFolder.svelte';
-	import SidebarKnowledge from '$rooibos/components/sidebar/SidebarKnowledge.svelte';
 	import SidebarCorpSearch from '$rooibos/components/sidebar/SidebarCorpSearch.svelte';
 	import SidebarCorpFolder from '$rooibos/components/sidebar/SidebarCorpFolder.svelte';
 
@@ -638,7 +637,6 @@
 		<div class="flex-1 flex flex-col overflow-hidden">
 			{#if !search}
 				<SidebarCorpFolder open={false}/>
-				<SidebarKnowledge />
 			{/if}
 			<div
 				class="relative flex flex-col overflow-y-auto scrollbar-hidden {$temporaryChatEnabled
