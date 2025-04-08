@@ -400,6 +400,7 @@
 			setTimeout(() => {
 				selectedFileId = uploadedFile.id;
 				contentType = 'memo';
+				scrollToContent(); // 콘텐츠 영역으로 스크롤
 			}, 100);
 		}
 	};
@@ -473,6 +474,8 @@
 						keys: ['meta.name', 'meta.description']
 					});
 				}
+				contentType = 'file';
+				scrollToContent(); // 콘텐츠 영역으로 스크롤
 				return uploadedFile;
 			} else {
 				toast.error($i18n.t('Failed to upload file.'));
@@ -1096,6 +1099,7 @@
 					
 					// 모달 표시
 					showChatModal = true;
+					scrollToContent(); // 콘텐츠 영역으로 스크롤
 				}
 			} else {
 				console.error("채팅을 로드하는 데 실패했습니다:", data.message);
@@ -1238,6 +1242,19 @@
 		} catch (error) {
 			console.error('파일명 변경 오류:', error);
 			toast.error($i18n.t('Failed to rename file.'));
+		}
+	};
+
+	// 콘텐츠 영역으로 스크롤하기 위한 참조
+	let contentRef;
+
+	// 모바일에서 콘텐츠 영역으로 스크롤하는 함수
+	const scrollToContent = () => {
+		if ($mobile && contentRef) {
+			// 다음 렌더링 사이클에서 스크롤 수행
+			setTimeout(() => {
+				contentRef.scrollIntoView({ behavior: 'smooth', block: 'start' });
+			}, 100);
 		}
 	};
 
@@ -1460,6 +1477,7 @@
 															selectedFile = null; // 먼저 파일 참조 초기화
 															selectedFileId = memo.id;
 															contentType = 'memo';
+															scrollToContent(); // 콘텐츠 영역으로 스크롤
 														}
 													}}
 												>
@@ -1580,6 +1598,7 @@
 															selectedFile = null; // 먼저 파일 참조 초기화
 															selectedFileId = file.id;
 															contentType = 'file';
+															scrollToContent(); // 콘텐츠 영역으로 스크롤
 														}
 													}}
 												>
@@ -1657,7 +1676,7 @@
 				</div>
 
 				<!-- 오른쪽 콘텐츠 영역 -->
-				<div class="flex-1 flex flex-col h-full {$mobile ? '' : 'ml-3'}">
+				<div class="flex-1 flex flex-col h-full {$mobile ? '' : 'ml-3'}" bind:this={contentRef}>
 					{#if showFileCloseButton}
 						<div class="flex justify-end mb-2">
 							<button 
