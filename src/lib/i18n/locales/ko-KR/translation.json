@@ -1210,7 +1210,7 @@
 	"Won": "승리",
 	"Works together with top-k. A higher value (e.g., 0.95) will lead to more diverse text, while a lower value (e.g., 0.5) will generate more focused and conservative text.": "",
 	"Workspace": "나의 챗봇",
-	"Workspace Permissions": "나의 챗봇봇 권한",
+	"Workspace Permissions": "나의 챗봇 권한",
 	"Write": "",
 	"Write a prompt suggestion (e.g. Who are you?)": "프롬프트 제안 작성 (예: 당신은 누구인가요?)",
 	"Write a summary in 50 words that summarizes [topic or keyword].": "[주제 또는 키워드]에 대한 50단어 요약문 작성.",
