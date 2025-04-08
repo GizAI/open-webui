@@ -9,8 +9,9 @@
 	import { renameNoteFolder, deleteFolderById, getFolderById } from '$rooibos/components/apis/folder';
 	import Pencil from '$lib/components/icons/Pencil.svelte';
 	import FolderForm from './FolderForm.svelte';
-	import { FolderIcon, Trash2Icon, Share2Icon } from 'lucide-svelte';
+	import { FolderIcon, Trash2Icon, Share2Icon, Building2Icon } from 'lucide-svelte';
 	import ConfirmDialog from '$lib/components/common/ConfirmDialog.svelte';
+	import CompanyForm from './CompanyForm.svelte';
 
 	// i18n 스토어 설정
 	const i18n: { subscribe: any; t: (key: string) => string } = getContext('i18n');
@@ -44,6 +45,8 @@
 	let managementFolderId: string | null = null;
 	let showDeleteConfirm = false;
 	let deletingFolderId: string | null = null;
+	let showCompanyForm = false;
+	let currentFolderId: string | null = null;
 
 	function handleFolderClick(folder: any) {
 		const isTrash = 
@@ -157,6 +160,25 @@
 		folders[updatedFolder.id] = updatedFolder;
 		dispatch('update', { folderId: updatedFolder.id, newData: updatedFolder });
 	}
+
+	// 기업 추가 모달 열기/닫기
+	function openCompanyForm(e: Event, folderId: string) {
+		e.stopPropagation();
+		currentFolderId = folderId;
+		showCompanyForm = true;
+	}
+
+	function closeCompanyForm() {
+		showCompanyForm = false;
+		currentFolderId = null;
+	}
+
+	// 기업 정보 추가 성공 처리
+	function handleCompanyAdded(e: CustomEvent) {
+		const companyData = e.detail;
+		toast.success(`기업 정보 (${companyData.company_name})가 성공적으로 추가되었습니다.`);
+		closeCompanyForm();
+	}
 </script>
 
 <ul class="folder-list">
@@ -170,7 +192,13 @@
 						class="cursor-text bg-transparent border-b border-dashed focus:outline-none"
 						on:blur={() => submitRename(folderId)}
 						on:keydown={(e) => {
-							if (e.key === 'Enter') e.target.blur();
+							if (e.key === 'Enter') {
+								try {
+									if (e.target) e.target.blur();
+								} catch (error) {
+									// 오류 무시
+								}
+							}
 						}}
 						autofocus
 					/>
@@ -211,6 +239,13 @@
 									>
 										<Pencil strokeWidth="2" />
 										<div class="flex items-center">{$i18n.t('이름변경')}</div>
+									</DropdownMenu.Item>
+									<DropdownMenu.Item
+										class="flex gap-2 items-center px-3 py-1.5 text-sm cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 rounded-md"
+										on:click={(e) => openCompanyForm(e, folderId)}
+									>
+										<Building2Icon strokeWidth="2" />
+										<div class="flex items-center">{$i18n.t('기업추가')}</div>
 									</DropdownMenu.Item>
 									<DropdownMenu.Item
 										class="flex gap-2 items-center px-3 py-1.5 text-sm cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 rounded-md"
@@ -275,6 +310,16 @@
 			{/if}
 		</div>
 	</ConfirmDialog>
+{/if}
+
+<!-- 기업 추가 모달 -->
+{#if showCompanyForm && currentFolderId}
+	<CompanyForm
+		show={showCompanyForm}
+		folderId={currentFolderId}
+		on:close={closeCompanyForm}
+		on:added={handleCompanyAdded}
+	/>
 {/if}
 
 <style>

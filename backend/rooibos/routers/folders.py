@@ -162,7 +162,8 @@ async def getFolderCompanyList(folderId: str, request: Request):
     
     try:
         with get_db() as db:
-            query = """
+            # 1. rb_master_company 조회 쿼리
+            query_public = """
                 SELECT DISTINCT
                     f.id,
                     f.created_at,
@@ -170,13 +171,36 @@ async def getFolderCompanyList(folderId: str, request: Request):
                     f.company_id,
                     f.user_id,
                     rf.name as folder_name,
-                    rmc.master_id,
+                    rmc.master_id::text as master_id,
                     rmc.company_name,
                     rmc.address,
-                    rmc.business_registration_number
+                    rmc.business_registration_number,
+                    'public' as company_type
                 FROM corp_bookmark f
                 INNER JOIN rb_master_company rmc
-                    ON f.company_id::text = rmc.master_id::text
+                    ON f.business_registration_number::text = rmc.business_registration_number::text
+                LEFT JOIN rb_folder rf 
+                    ON f.folder_id = rf.id    
+                WHERE 1=1
+            """
+            
+            # 2. private_company_info 조회 쿼리
+            query_private = """
+                SELECT DISTINCT
+                    f.id,
+                    f.created_at,
+                    f.updated_at,
+                    f.company_id,
+                    f.user_id,
+                    rf.name as folder_name,
+                    pci.smtp_id::text as master_id,
+                    pci.company_name,
+                    pci.address,
+                    pci.business_registration_number,
+                    'private' as company_type
+                FROM corp_bookmark f
+                INNER JOIN private_company_info pci
+                    ON f.business_registration_number::text = pci.business_registration_number::text
                 LEFT JOIN rb_folder rf 
                     ON f.folder_id = rf.id    
                 WHERE 1=1
@@ -192,23 +216,33 @@ async def getFolderCompanyList(folderId: str, request: Request):
                 shared = True
                 
             if deleted:
-                query += "AND f.user_id = :userId AND f.is_deleted = TRUE"
+                query_public += " AND f.user_id = :userId AND f.is_deleted = TRUE"
+                query_private += " AND f.user_id = :userId AND f.is_deleted = TRUE"
                 log.info("Getting deleted bookmarks only")
             elif shared:
-                query += """ AND f.user_id != :userId
+                query_public += """ AND f.user_id != :userId
+                AND (f.access_control::jsonb -> 'write' -> 'user_ids') ? :userId"""
+                query_private += """ AND f.user_id != :userId
                 AND (f.access_control::jsonb -> 'write' -> 'user_ids') ? :userId"""
                 log.info("Getting shared bookmarks with write access (excluding user's own bookmarks)")
             else:
-                query += " AND f.user_id = :userId AND f.folder_id = :folderId AND (f.is_deleted IS NULL OR f.is_deleted = FALSE)"
+                query_public += " AND f.user_id = :userId AND f.folder_id = :folderId AND (f.is_deleted IS NULL OR f.is_deleted = FALSE)"
+                query_private += " AND f.user_id = :userId AND f.folder_id = :folderId AND (f.is_deleted IS NULL OR f.is_deleted = FALSE)"
                 log.info("Getting active bookmarks only")
                 
-            query += " ORDER BY f.updated_at DESC"
+            # UNION ALL로 두 쿼리 결합
+            final_query = f"""
+            {query_public}
+            UNION ALL
+            {query_private}
+            ORDER BY updated_at DESC
+            """
             
             params = {"userId": userId, "folderId": folderId}
-            log.info(f"Executing SQL query: {query}")
+            log.info(f"Executing SQL query: {final_query}")
             log.info(f"Parameters: {params}")
             
-            result = db.execute(text(query), params)
+            result = db.execute(text(final_query), params)
             companyList = [dict(row._mapping) for row in result.fetchall()]    
 
         log.info(f"getFolderCompanyList - returning {len(companyList)} results")

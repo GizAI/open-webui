@@ -1098,3 +1098,309 @@ async def get_chat_by_share_id(share_id: str, request: Request):
             "message": str(e)
         }
 
+@router.post("/company/add")
+async def add_private_company_info(request: Request):
+    """
+    기업 정보를 private_company_info 테이블에 저장합니다.
+    """
+    try:
+        data = await request.json()
+        company_data = data.get("company_data", {})
+        folder_id = data.get("folder_id")
+        user_id = data.get("userId")
+        
+        # 내부 식별용 사업자등록번호 생성 (시스템 내부용)
+        internal_id = f"PRIVATE-{str(uuid.uuid4())[:8]}"
+        
+        # smtp_id용 UUID 생성
+        smtp_id = f"SMTP-{str(uuid.uuid4())}"
+        
+        # 필수 필드 확인
+        if not company_data.get("company_name"):
+            return {
+                "success": False,
+                "error": "필수 정보 누락",
+                "message": "회사명은 필수 입력 항목입니다."
+            }
+        
+        # 사용자 ID 추가
+        company_data["user_id"] = user_id
+        
+        # 쿼리 및 파라미터 준비
+        columns = []
+        placeholders = []
+        values = {}
+        
+        for i, (key, value) in enumerate(company_data.items(), 1):
+            if value is not None:
+                columns.append(key)
+                placeholders.append(f":{key}")
+                values[key] = value
+        
+        # 사업자등록번호 내부용 추가
+        if "business_registration_number" not in columns:
+            columns.append("business_registration_number")
+            placeholders.append(":business_registration_number")
+            values["business_registration_number"] = internal_id
+        
+        # smtp_id 추가
+        columns.append("smtp_id")
+        placeholders.append(":smtp_id")
+        values["smtp_id"] = smtp_id
+        
+        columns_str = ", ".join(columns)
+        placeholders_str = ", ".join(placeholders)
+        
+        # 1. private_company_info 테이블에 기업 정보 저장
+        insert_query = f"""
+        INSERT INTO private_company_info ({columns_str})
+        VALUES ({placeholders_str})
+        RETURNING smtp_id, company_name
+        """
+        
+        with get_db() as db:
+            log.info(f"Executing query: {insert_query} with values: {values}")
+            result = db.execute(text(insert_query), values)
+            inserted = result.fetchone()
+            
+            if not inserted:
+                return {
+                    "success": False,
+                    "error": "저장 실패",
+                    "message": "기업 정보를 저장하는 데 실패했습니다."
+                }
+            
+            inserted_smtp_id = inserted[0]
+            company_name = inserted[1]
+            
+            # 2. 폴더 ID가 있으면 corp_bookmark 테이블에도 추가
+            if folder_id:
+                # corp_bookmark 테이블에 추가
+                bookmark_query = """
+                INSERT INTO corp_bookmark (user_id, company_id, business_registration_number, folder_id, created_at, updated_at)
+                VALUES (:user_id, :company_id, :business_registration_number, :folder_id, now(), now())
+                RETURNING id
+                """
+                
+                bookmark_result = db.execute(
+                    text(bookmark_query),
+                    {
+                        "user_id": user_id,
+                        "company_id": inserted_smtp_id,  # 여기서 smtp_id를 company_id로 사용
+                        "business_registration_number": internal_id,
+                        "folder_id": folder_id
+                    }
+                )
+                bookmark_row = bookmark_result.fetchone()
+                if bookmark_row:
+                    log.info(f"Added company to bookmark with id: {bookmark_row[0]}")
+        
+            db.commit()
+                
+            return {
+                "success": True,
+                "message": "기업 정보가 성공적으로 저장되었습니다.",
+                "data": {
+                    "smtp_id": inserted_smtp_id,
+                    "company_name": company_name,
+                    "user_id": user_id
+                }
+            }
+            
+    except Exception as e:
+        log.error("기업 정보 저장 오류: " + str(e))
+        return {
+            "success": False,
+            "error": "저장 실패",
+            "message": str(e)
+        }
+
+@router.get("/private/{id}")
+async def get_private_company_by_id(id: str, request: Request):
+    search_params = request.query_params
+    user_id = search_params.get("user_id")
+    
+    try:
+        bookmark_sql_query = """
+        SELECT DISTINCT
+            f.id as bookmark_id,
+            f.created_at,
+            f.updated_at,
+            f.company_id, f.user_id as bookmark_user_id,
+            f.folder_id,
+            f.data::jsonb as data_files,
+            f.access_control::jsonb,
+            jsonb_agg(DISTINCT
+                CASE
+                    WHEN f.data IS NOT NULL
+                    THEN jsonb_build_object(
+                        'id', fi.id,
+                        'user_id', fi.user_id,
+                        'filename', fi.filename,
+                        'meta', fi.meta,
+                        'created_at', fi.created_at,
+                        'hash', fi.hash,
+                        'data', fi."data",
+                        'updated_at', fi.updated_at,
+                        'path', fi."path",
+                        'access_control', fi.access_control
+                    )
+                    ELSE NULL
+                END
+            ) FILTER (WHERE f.data IS NOT NULL) AS files,
+            pci.smtp_id as master_id,
+            pci.company_name,
+            pci.representative,
+            pci.postal_code,
+            pci.address,
+            pci.phone_number,
+            pci.fax_number,
+            pci.website,
+            pci.email,
+            pci.company_type,
+            pci.establishment_date,
+            pci.founding_date,
+            pci.employee_count,
+            pci.industry_code1,
+            pci.industry_code2,
+            pci.industry,
+            pci.main_product,
+            pci.main_bank,
+            pci.main_branch,
+            pci.group_name,
+            pci.stock_code,
+            pci.business_registration_number,
+            pci.corporate_number,
+            pci.english_name,
+            pci.trade_name,
+            pci.fiscal_month,
+            pci.region1,
+            pci.region2,
+            pci.industry_major,
+            pci.industry_middle,
+            pci.industry_small,
+            pci.latitude,
+            pci.longitude,
+            'private' as company_type
+        FROM corp_bookmark f
+        INNER JOIN private_company_info pci ON f.business_registration_number::text = pci.business_registration_number::text
+        LEFT JOIN file fi
+            ON fi.id::text = ANY(ARRAY(
+                SELECT jsonb_array_elements_text(f.data::jsonb->'file_ids')
+            ))
+        WHERE f.id = :id
+        AND (f.is_deleted IS NULL OR f.is_deleted = FALSE)           
+        GROUP BY
+            f.id, f.created_at, f.updated_at, f.company_id, f.user_id,
+            pci.smtp_id,
+            pci.company_name,
+            pci.representative,
+            pci.postal_code,
+            pci.address,
+            pci.phone_number,
+            pci.fax_number,
+            pci.website,
+            pci.email,
+            pci.company_type,
+            pci.establishment_date,
+            pci.founding_date,
+            pci.employee_count,
+            pci.industry_code1,
+            pci.industry_code2,
+            pci.industry,
+            pci.main_product,
+            pci.main_bank,
+            pci.main_branch,
+            pci.group_name,
+            pci.stock_code,
+            pci.business_registration_number,
+            pci.corporate_number,
+            pci.english_name,
+            pci.trade_name,
+            pci.fiscal_month,
+            pci.region1,
+            pci.region2,
+            pci.industry_major,
+            pci.industry_middle,
+            pci.industry_small,
+            pci.latitude,
+            pci.longitude
+        ORDER BY f.updated_at DESC
+        """
+        
+        stmt = text(bookmark_sql_query)
+        params = {"id": id}
+        
+        with get_db() as db:
+            compiled_query = stmt.compile(dialect=db.bind.dialect, compile_kwargs={"literal_binds": True})
+            log.info(f"Final executed bookmark query: {compiled_query} | Parameters: {params}")
+            
+            bookmark_result = db.execute(stmt, params)
+            bookmark_data = [row._mapping for row in bookmark_result.fetchall()]
+            
+            if not bookmark_data:
+                return {
+                    "success": False,
+                    "error": "북마크를 찾을 수 없음",
+                    "message": f"Bookmark with id '{id}' 를 찾을 수 없습니다."
+                }
+            
+            bookmark_user_id = bookmark_data[0].bookmark_user_id
+            access_control = bookmark_data[0].access_control
+            
+            if user_id and user_id != bookmark_user_id:
+                
+                if access_control is None:
+                    return {
+                        "success": False,
+                        "error": "권한 없음",
+                        "message": f"Bookmark with id '{id}' 에 대한 접근 권한이 없습니다."
+                    }
+                
+                user_groups = Groups.get_groups_by_member_id(user_id)
+                user_group_ids = [group.id for group in user_groups]
+                
+                write_permission = access_control.get("write", {})
+                permitted_group_ids = write_permission.get("group_ids", [])
+                permitted_user_ids = write_permission.get("user_ids", [])
+                
+                if not (user_id in permitted_user_ids or any(
+                    group_id in permitted_group_ids for group_id in user_group_ids
+                )):
+                    return {
+                        "success": False,
+                        "error": "권한 없음",
+                        "message": f"Bookmark with id '{id}' 에 대한 접근 권한이 없습니다."
+                    }
+            
+            # Chat List 조회
+            conditions = []
+            
+            bookmark_owner_id = bookmark_data[0].bookmark_user_id            
+            
+            # 항상 북마크 소유자의 채팅을 가져옴
+            conditions.append("user_id = " + format_parameter(bookmark_owner_id))
+            conditions.append("c.business_registration_number = " + format_parameter(bookmark_data[0].business_registration_number))
+            
+            chat_query = "SELECT * FROM chat c WHERE " + " AND ".join(conditions)
+            chat_query = get_executable_query(chat_query, [])
+            
+            log.info(f"Final executed chat query: {chat_query}")
+            chat_result = db.execute(text(chat_query))
+            chat_list = [row._mapping for row in chat_result.fetchall()]
+        
+        return {
+            "success": True,
+            "bookmark": bookmark_data,
+            "bookmark_total": len(bookmark_data),
+            "chatList": chat_list,
+            "chat_total": len(chat_list)
+        }
+    except Exception as e:
+        log.error("Get private company by ID error: " + str(e))
+        return {
+            "success": False,
+            "error": "Fetch failed",
+            "message": str(e)
+        }
+

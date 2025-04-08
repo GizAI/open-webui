@@ -38,6 +38,9 @@
 	import { formatDate } from '$rooibos/components/common/helper';
 	import { formatFileSize } from '$lib/utils';
 
+	// 컴포넌트 속성 추가
+	export let isPrivateCompany = false;
+
 	type Bookmark = {
 		id: string;
 		company_id: string;
@@ -855,60 +858,105 @@
 			pane.expand();
 		}
 
-		id = $page.params.id;
+		// 데이터 로드
+		await loadCompanyData();
 
-		const queryParams = new URLSearchParams({
-			business_registration_number:
-				bookmark?.business_registration_number !== undefined
-					? bookmark?.business_registration_number.toString()
-					: '',
-			user_id: currentUser?.id ?? '',
-			is_shared: isShared.toString()
-		});
+		const dropZone = document.querySelector('body');
+		dropZone?.addEventListener('dragover', onDragOver);
+		dropZone?.addEventListener('drop', onDrop);
+		dropZone?.addEventListener('dragleave', onDragLeave);
+	});
 
-		const response = await fetch(
-			`${WEBUI_API_BASE_URL}/rooibos/mycompanies/${id}?${queryParams.toString()}`,
-			{
+	// 데이터 로드 함수
+	async function loadCompanyData() {
+		if (!id) {
+			id = $page.params.id;
+		}
+		if (!id) return;
+		
+		try {
+			const currentUser = get(user);
+			const queryParams = new URLSearchParams({
+				user_id: currentUser?.id ?? '',
+				is_shared: isShared.toString()
+			});
+			
+			// isPrivateCompany에 따라 다른 엔드포인트 호출
+			const endpoint = isPrivateCompany ? 'private/' : '';
+			const url = `${WEBUI_API_BASE_URL}/rooibos/mycompanies/${endpoint}${id}?${queryParams.toString()}`;
+			
+			const response = await fetch(url, {
 				method: 'GET',
 				headers: {
 					Accept: 'application/json',
 					'Content-Type': 'application/json',
 					authorization: `Bearer ${localStorage.token}`
 				}
+			});
+			
+			const data = await response.json();
+			
+			if (data.success === false) {
+				await goto('/');
+				return;
 			}
-		);
-
-		const data = await response.json();
-		
-		if(data.success === false) {
-			await goto('/');
-			return;
-		}
-		
-		bookmark = data.bookmark[0];
-		chatList = data.chatList;
-		
-
-		filteredItems = bookmark?.files ?? [];
-
-		const dropZone = document.querySelector('body');
-		dropZone?.addEventListener('dragover', onDragOver);
-		dropZone?.addEventListener('drop', onDrop);
-		dropZone?.addEventListener('dragleave', onDragLeave);
-
-		// 북마크 정보가 로드된 후 isShared 상태를 업데이트하는 리액티브 선언
-		$: if (bookmark && currentUser) {
+			
+			bookmark = data.bookmark[0];
+			chatList = data.chatList;
+			
 			// 북마크 소유자가 현재 사용자와 다른 경우 공유된 기업으로 처리
-			isShared = isShared || (bookmark.bookmark_user_id !== currentUser.id);
+			if (bookmark && currentUser) {
+				isShared = isShared || (bookmark.bookmark_user_id !== currentUser.id);
+			}
+			
+			if (bookmark && bookmark.files) {
+				// txt 파일과 기타 파일을 분리
+				memoItems = bookmark.files.filter((file) =>
+					file.meta && file.meta.name && file.meta.name.toLowerCase().endsWith('.txt')
+				);
+				filteredItems = bookmark.files.filter((file) =>
+					!file.meta || !file.meta.name || !file.meta.name.toLowerCase().endsWith('.txt')
+				);
+				
+				fuse = new Fuse(filteredItems, {
+					keys: ['meta.name', 'meta.description']
+				});
+				
+				memoFuse = new Fuse(memoItems, {
+					keys: ['meta.name', 'meta.description']
+				});
+			}
+			
+			if (!bookmark) {
+				// 북마크가 없으면 페이지를 이동
+				await goto('/');
+				return;
+			}
+			
+			// 모바일에서는 기본적으로 모든 섹션 접기
+			if (!largeScreen) {
+				showMemosSection = false;
+				showFilesSection = false;
+				showChatsSection = false;
+			}
+			// 메모 아이템이 없으면 메모 섹션 숨기기
+			else if (memoItems.length === 0) {
+				showMemosSection = false;
+			}
+			// 파일 아이템이 없으면 파일 섹션 숨기기
+			else if (filteredItems.length === 0) {
+				showFilesSection = false;
+			}
+			// 채팅 목록이 없으면 채팅 섹션 숨기기
+			else if (!chatList || chatList.length === 0) {
+				showChatsSection = false;
+			}
+		} catch (error) {
+			console.error('회사 정보 로드 중 오류:', error);
+			toast.error('데이터를 가져오는 중 오류가 발생했습니다.');
+			await goto('/');
 		}
-
-		// 모바일에서는 기본적으로 모든 섹션 접기
-		if (!largeScreen) {
-			showMemosSection = false;
-			showFilesSection = false;
-			showChatsSection = false;
-		}
-	});
+	}
 
 	onDestroy(() => {
 		mediaQuery?.removeEventListener('change', handleMediaQuery);

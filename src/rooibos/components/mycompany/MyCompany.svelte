@@ -187,7 +187,11 @@
 				class="flex space-x-4 cursor-pointer text-left w-full px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-850 transition rounded-xl"
 				on:click={() => {
 					if(isTrashView) return;
-					goto(`/rooibos/mycompanies/${bookmark.id}`);
+					if(bookmark.company_type === 'private') {
+						goto(`/rooibos/mycompanies/${bookmark.id}?type=private`);
+					} else {
+						goto(`/rooibos/mycompanies/${bookmark.id}`);
+					}
 				}}
 			>
 				<div class="w-full flex items-start justify-between">
