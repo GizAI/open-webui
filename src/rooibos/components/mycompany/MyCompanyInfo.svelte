@@ -41,6 +41,7 @@
 
 	
 	export let isPrivateCompany = false;
+	export let entityType = 'company'; // Default to 'company' if not specified
 	
 	type Bookmark = {
 		id: string;
@@ -1773,17 +1774,16 @@
 			</div>
 
 			<div class="flex-1 px-4 pb-4">
-				<div class="p-4 space-y-2">
-					<div class="flex justify-between items-center mb-2">
-						<h3 class="text-lg font-semibold">기본 정보</h3>
-					</div>
+				<div class="p-4 space-y-2">				
 
 					{#if isPrivateCompany}
 						<!-- 비공개 기업 정보 표시 전용 컴포넌트 -->
-						<PrivateCompanyDetail {bookmark} />
+						<PrivateCompanyDetail {bookmark} entityType={entityType} />
 					{:else}
-						<!-- 일반 기업 정보 표시 컴포넌트 -->
-						<CompanyDetail company={bookmark} />
+						<div class="flex justify-between items-center mb-2">
+							<h3 class="text-lg font-semibold">기본 정보</h3>
+						</div>
+						<CompanyDetail company={bookmark} {financialData} />
 					{/if}
 				</div>
 			</div>

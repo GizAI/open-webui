@@ -261,7 +261,7 @@
 				on:click={() => {
 					if(isTrashView) return;
 					if(bookmark.company_type === 'private') {
-						goto(`/rooibos/mycompanies/${bookmark.id}?type=private`);
+						goto(`/rooibos/mycompanies/${bookmark.id}?type=private&entity_type=${bookmark.entity_type?.toLowerCase() || 'company'}`);
 					} else {
 						goto(`/rooibos/mycompanies/${bookmark.id}`);
 					}
