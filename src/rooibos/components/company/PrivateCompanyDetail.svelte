@@ -1,50 +1,42 @@
 <script lang="ts">
 	import { MapPin, Briefcase, Calendar, Phone, Mail, Globe, Users } from 'lucide-svelte';
 	import { toast } from 'svelte-sonner';
+	import { onMount } from 'svelte';
 	import { WEBUI_API_BASE_URL } from '$lib/constants';
-
+	
 	// 북마크 데이터 받기
 	export let bookmark: any;
 	
-	// 수정 모드 관련 상태
-	let isEditing = false;
+	// 수정 모드 관련 상태 - 항상 수정 가능하도록 변경
 	let isSaving = false;
 	let editableData: any = null;
 	
-	// 필드를 편집 가능한지 여부를 결정하는 함수
-	function startEditing() {
-		// 원본 데이터 복사 (깊은 복사)
+	// 컴포넌트 초기화 시 바로 데이터 로드
+	onMount(() => {
+		// 컴포넌트가 마운트되면 바로 편집 가능한 데이터 초기화
 		editableData = {
-			company_name: bookmark.company_name || '',
-			representative: bookmark.representative || '',
-			address: bookmark.address || '',
-			phone_number: bookmark.phone_number || '',
-			fax_number: bookmark.fax_number || '',
-			email: bookmark.email || '',
-			website: bookmark.website || '',
-			establishment_date: bookmark.establishment_date || '',
-			employee_count: bookmark.employee_count || '',
-			industry: bookmark.industry || '',
-			main_product: bookmark.main_product || '',
-			business_registration_number: bookmark.business_registration_number || ''
+			company_name: bookmark?.company_name || '',
+			representative: bookmark?.representative || '',
+			address: bookmark?.address || '',
+			phone_number: bookmark?.phone_number || '',
+			fax_number: bookmark?.fax_number || '',
+			email: bookmark?.email || '',
+			website: bookmark?.website || '',
+			establishment_date: bookmark?.establishment_date || '',
+			employee_count: bookmark?.employee_count || '',
+			industry: bookmark?.industry || '',
+			main_product: bookmark?.main_product || '',
+			business_registration_number: bookmark?.business_registration_number || ''
 		};
-		
-		isEditing = true;
-	}
-	
-	// 편집 취소
-	function cancelEditing() {
-		isEditing = false;
-		editableData = null;
-	}
+	});
 	
 	// 데이터 저장
 	async function saveData() {
-		if (!bookmark || !editableData) return;
+		if (!editableData) return;
+		
+		isSaving = true;
 		
 		try {
-			isSaving = true;
-			
 			const response = await fetch(`${WEBUI_API_BASE_URL}/rooibos/mycompanies/company/update`, {
 				method: 'PUT',
 				headers: {
@@ -61,16 +53,8 @@
 			
 			if (data.success) {
 				toast.success('기업 정보가 성공적으로 업데이트되었습니다.');
-				
-				// 성공 시 북마크 데이터 업데이트 (원본 객체 업데이트)
-				Object.keys(editableData).forEach(key => {
-					if (editableData[key] !== undefined) {
-						bookmark[key] = editableData[key];
-					}
-				});
-				
-				isEditing = false;
-				editableData = null;
+				// 북마크 객체 업데이트
+				Object.assign(bookmark, editableData);
 			} else {
 				toast.error(`저장 실패: ${data.message || '알 수 없는 오류'}`);
 			}
@@ -83,20 +67,19 @@
 	}
 	
 	// 날짜 포맷 함수
-	function formatDate(dateString) {
+	function formatDate(dateString: string): string {
 		if (!dateString) return '';
 		
-		// YYYY-MM-DD 형식이면 그대로 반환
-		if (/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
+		try {
+			const date = new Date(dateString);
+			return date.toLocaleDateString('ko-KR', {
+				year: 'numeric',
+				month: 'long',
+				day: 'numeric'
+			});
+		} catch (error) {
 			return dateString;
 		}
-		
-		// YYYYMMDD 형식이면 하이픈 추가
-		if (/^\d{8}$/.test(dateString)) {
-			return dateString.replace(/(\d{4})(\d{2})(\d{2})/, '$1-$2-$3');
-		}
-		
-		return dateString;
 	}
 </script>
 
@@ -110,17 +93,9 @@
 						<MapPin size={16} class="text-blue-500" />
 						기본 정보
 					</h3>
-					{#if !isEditing}
-						<button
-							class="text-sm px-2 py-1 bg-blue-100 text-blue-600 hover:bg-blue-200 rounded transition-colors"
-							on:click={startEditing}
-						>
-							수정
-						</button>
-					{/if}
 				</div>
 				
-				{#if isEditing && editableData}
+				{#if editableData}
 					<!-- 수정 폼 -->
 					<div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm space-y-4">
 						<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -236,13 +211,6 @@
 						
 						<div class="flex justify-end space-x-2 mt-4 p-2">
 							<button
-								class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors"
-								on:click={cancelEditing}
-								disabled={isSaving}
-							>
-								취소
-							</button>
-							<button
 								class="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md transition-colors"
 								on:click={saveData}
 								disabled={isSaving}
@@ -252,75 +220,14 @@
 						</div>
 					</div>
 				{:else}
-					<!-- 조회 화면 - 기본 정보 -->
-					<div class="space-y-1">
-						{#if bookmark.business_registration_number}
-							<p class="text-sm flex items-center justify-between">
-								<span>사업자 등록 번호</span>
-								<span>{bookmark.business_registration_number}</span>
-							</p>
-						{/if}
-						{#if bookmark.representative}
-							<p class="text-sm flex items-center justify-between">
-								<span>대표이사</span>
-								<span>{bookmark.representative}</span>
-							</p>
-						{/if}
-						{#if bookmark.address}
-							<p class="text-sm flex items-center justify-between">
-								<span>주소</span>
-								<span>{bookmark.address}</span>
-							</p>
-						{/if}
-						{#if bookmark.phone_number}
-							<p class="text-sm flex items-center justify-between">
-								<span>전화번호</span>
-								<span>{bookmark.phone_number}</span>
-							</p>
-						{/if}
-						{#if bookmark.fax_number}
-							<p class="text-sm flex items-center justify-between">
-								<span>팩스</span>
-								<span>{bookmark.fax_number}</span>
-							</p>
-						{/if}
-						{#if bookmark.email}
-							<p class="text-sm flex items-center justify-between">
-								<span>이메일</span>
-								<span>{bookmark.email}</span>
-							</p>
-						{/if}
-						{#if bookmark.website}
-							<p class="text-sm flex items-center justify-between">
-								<span>웹사이트</span>
-								<a
-									href={bookmark.website.startsWith('http') ? bookmark.website : `https://${bookmark.website}`}
-									target="_blank"
-									rel="noopener noreferrer"
-									class="text-blue-500 underline"
-								>
-									{bookmark.website}
-								</a>
-							</p>
-						{/if}
-						{#if bookmark.establishment_date}
-							<p class="text-sm flex items-center justify-between">
-								<span>설립일</span>
-								<span>{formatDate(bookmark.establishment_date)}</span>
-							</p>
-						{/if}
-						{#if bookmark.employee_count}
-							<p class="text-sm flex items-center justify-between">
-								<span>직원수</span>
-								<span>{bookmark.employee_count}명</span>
-							</p>
-						{/if}
+					<div class="h-40 flex items-center justify-center">
+						<div class="text-gray-400">로딩 중...</div>
 					</div>
 				{/if}
 			</div>
 
 			<!-- 업종 정보 -->
-			{#if (bookmark.industry || bookmark.main_product) && !isEditing}
+			{#if (bookmark.industry || bookmark.main_product) && !editableData}
 				<div class="space-y-2 border-t border-gray-100 pt-6 text-gray-900 dark:text-gray-400">
 					<h3 class="text-sm font-semibold text-gray-400 flex items-center gap-2">
 						<Briefcase size={16} class="text-blue-500" />
