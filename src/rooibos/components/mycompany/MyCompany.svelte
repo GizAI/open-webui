@@ -22,6 +22,8 @@
 	import { getFolderById } from '$rooibos/components/apis/folder';
 	import { triggerFolderUpdate } from '$rooibos/stores';
 	import Badge from '$lib/components/common/Badge.svelte';
+	import { Building2Icon } from 'lucide-svelte';
+	import CompanyForm from '$rooibos/components/folder/CompanyForm.svelte';
 
 	let loaded = false;
 	let selectedItem: any = null;
@@ -30,6 +32,10 @@
 	let deleteConfirmTitle = "나의기업에서 삭제하시겠습니까?";
 	let folderName = ""; // Variable to store folder name
 	let isSharedView = false;
+	
+	// 기업 추가 모달 관련 변수
+	let showCompanyForm = false;
+	let currentFolderId: string | null = null;
 	
 	interface Bookmark {
 		id: string;
@@ -96,6 +102,59 @@
 			triggerFolderUpdate();
 		}
 	};
+
+	// 기업 정보 추가 성공 처리
+	function handleCompanyAdded(e: CustomEvent) {
+		const companyData = e.detail;
+		// 기업 추가 후 폴더 정보 갱신을 위해 전역 트리거 업데이트
+		triggerFolderUpdate();
+		// 현재 페이지 데이터도 새로고침
+		refreshFolderData();
+	}
+	
+	// 기업 추가 모달 열기/닫기
+	function openCompanyForm() {
+		if(!$page.params.id) return;
+		currentFolderId = $page.params.id;
+		showCompanyForm = true;
+	}
+	
+	function closeCompanyForm() {
+		showCompanyForm = false;
+		currentFolderId = null;
+	}
+	
+	// 페이지 데이터 새로고침
+	async function refreshFolderData() {
+		if (!$page.params.id) return;
+		loaded = false;
+		
+		const folderId = $page.params.id;
+		const currentUser = get(user);
+		
+		const urlParams = new URLSearchParams(window.location.search);
+		const isDeleted = urlParams.get('deleted') || 'false';
+		const isShared = urlParams.get('shared') || 'false';
+		
+		const response = await fetch(
+			`${WEBUI_API_BASE_URL}/rooibos/folders/${folderId}/companies?userId=${currentUser?.id}&deleted=${isDeleted}&shared=${isShared}`,
+			{
+				method: 'GET',
+				headers: {
+					'Content-Type': 'application/json',
+					authorization: `Bearer ${localStorage.token}`
+				}
+			}
+		);
+
+		if (!response.ok) {
+			throw new Error('검색 요청 실패');
+		}
+
+		const data = await response.json();
+		bookmarks = data.data;
+		loaded = true;
+	}
 
 	$: (async () => {
 		if (!$page.params.id) return;
@@ -165,20 +224,33 @@
 		}}
 	/>
 
-	<div class="mb-2 flex items-center">
-		{#if !$showSidebar}
-			<button
-				id="sidebar-toggle-button"
-				class="sidebar-toggle-button p-2 mr-2"
-				on:click={() => showSidebar.set(true)}
-				aria-label="Toggle Sidebar"
+	<div class="mb-2 flex items-center justify-between">
+		<div class="flex items-center">
+			{#if !$showSidebar}
+				<button
+					id="sidebar-toggle-button"
+					class="sidebar-toggle-button p-2 mr-2"
+					on:click={() => showSidebar.set(true)}
+					aria-label="Toggle Sidebar"
+				>
+					<MenuLines />
+				</button>
+			{/if}
+			<!-- Display folder name here -->
+			{#if folderName}
+				<h2 class="text-xl font-bold">{folderName}</h2>
+			{/if}
+		</div>
+		
+		<!-- 기업 추가 버튼 -->
+		{#if !isTrashView && !isSharedView}
+			<button 
+				class="flex items-center gap-1 px-3 py-1.5 bg-transparent border border-yellow-500 text-yellow-500 hover:bg-yellow-50 rounded-md text-sm transition-colors mt-1"
+				on:click={openCompanyForm}
 			>
-				<MenuLines />
+				<Building2Icon size={16} />
+				<span>기업추가</span>
 			</button>
-		{/if}
-		<!-- Display folder name here -->
-		{#if folderName}
-			<h2 class="text-xl font-bold">{folderName}</h2>
 		{/if}
 	</div>
 
@@ -246,4 +318,14 @@
 	<div class="w-full h-full flex justify-center items-center">
 		<Spinner />
 	</div>
+{/if}
+
+<!-- 기업 추가 모달 -->
+{#if showCompanyForm && currentFolderId}
+	<CompanyForm
+		show={showCompanyForm}
+		folderId={currentFolderId}
+		on:close={closeCompanyForm}
+		on:added={handleCompanyAdded}
+	/>
 {/if}

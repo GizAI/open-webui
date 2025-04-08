@@ -124,7 +124,7 @@
         on:mousedown={closeModal}
     >
         <div
-            class="m-auto rounded-2xl w-[38rem] max-w-full mx-4 my-4 bg-gray-50 dark:bg-gray-950 max-h-[90vh] shadow-3xl overflow-auto"
+            class="m-auto rounded-2xl w-[38rem] max-w-full mx-4 my-2 bg-gray-50 dark:bg-gray-950 max-h-[90vh] shadow-3xl overflow-auto"
             in:flyAndScale
             on:mousedown={(e) => e.stopPropagation()}
         >
@@ -134,7 +134,7 @@
                 </h2>
             </div>
             
-            <form on:submit|preventDefault={handleSubmit} class="px-6 py-3">
+            <form on:submit|preventDefault={handleSubmit} class="px-6 py-3 pb-4">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <!-- 기본 정보 섹션 -->
                     <div class="md:col-span-2">
@@ -279,7 +279,7 @@
                     </div>
                 </div>
                 
-                <div class="mt-2 flex justify-end gap-3">
+                <div class="mt-1 flex justify-end gap-3">
                     <button
                         type="button"
                         class="px-4 py-1.5 bg-gray-200 hover:bg-gray-300 text-gray-800 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-white rounded-md transition-colors"
@@ -290,7 +290,7 @@
                     </button>
                     <button
                         type="submit"
-                        class="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
+                        class="px-4 py-1.5 bg-transparent border border-yellow-500 text-yellow-500 hover:bg-yellow-50 rounded-md transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
                         disabled={isSubmitting}
                     >
                         {isSubmitting ? $i18n.t('저장 중...') : $i18n.t('저장')}
