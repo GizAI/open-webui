@@ -20,7 +20,7 @@
 	import AddFilesPlaceholder from '$lib/components/AddFilesPlaceholder.svelte';
 
 	import AddContentMenu from './CorpBookmarksBase/AddContentMenu.svelte';
-	import NoteEditorModal from '$rooibos/components/note/NoteEditorModal.svelte';
+	import NoteEditor from '$rooibos/components/note/NoteEditor.svelte';
 
 	import SyncConfirmDialog from '$lib/components/common/ConfirmDialog.svelte';
 	import MenuLines from '$lib/components/icons/MenuLines.svelte';
@@ -147,7 +147,6 @@
 	let bookmark: Bookmark | null = null;
 	let financialData: FinancialData | null = null;
 	let query = '';
-	let showAddTextContentModal = false;
 	let showSyncConfirmModal = false;
 	let showAccessControlModal = false;
 	let chatList: any = null;
@@ -229,7 +228,6 @@
 		// 메모 파일인 경우 모달로 열지 않고 콘텐츠 영역에 표시
 		if (selectedFile.meta?.name?.toLowerCase().endsWith('.txt')) {
 			contentType = 'memo';
-			showAddTextContentModal = false;
 		} else {
 			contentType = 'file';
 		}
@@ -239,19 +237,20 @@
 		showFileCloseButton = false;
 	}
 
+	// 모달 상태 변경 로직 수정
 	function handleModalStateChange(currentModalState: boolean) {
 		if (previousModalState && !currentModalState) {
-			selectedFileId = null;
-			selectedFile = null;
+				selectedFileId = null;
+				selectedFile = null;
 		}
 		previousModalState = currentModalState;
 	}
-	
+
 	function handleAccessControlModalStateChange(currentModalState: boolean) {
 		previousAccessControlModalState = currentModalState;
 	}
-	
-	$: handleModalStateChange(showAddTextContentModal);
+
+	// 필요한 모달에 reactive 설정
 	$: handleAccessControlModalStateChange(showAccessControlModal);
 
 	$: if (bookmark && bookmark.files) {
@@ -298,14 +297,12 @@
 			file.data = file.data ?? { content: '' };
 			selectedFile = file;
 
-			// txt 파일인 경우에는 모달로 열지 않고 콘텐츠 영역에 표시
+			// txt 파일인 경우 콘텐츠 영역에 표시
 			const isTxtFile = file.meta?.name?.toLowerCase().endsWith('.txt');
 			if (isTxtFile) {
 				contentType = 'memo';
-				showAddTextContentModal = false;
 			} else {
 				contentType = 'file';
-				showAddTextContentModal = false;
 			}
 		} else {
 			selectedFile = null;
@@ -399,11 +396,10 @@
 				keys: ['meta.name', 'meta.description']
 			});
 			
-			// 업로드된 파일 열기 - 모달 대신 컨텐츠 영역에 표시
+			// 업로드된 파일 열기 - 오른쪽 영역에 표시
 			setTimeout(() => {
 				selectedFileId = uploadedFile.id;
 				contentType = 'memo';
-				showAddTextContentModal = true; // 편집 화면은 여전히 필요
 			}, 100);
 		}
 	};
@@ -792,13 +788,12 @@
 			
 			// 메모 파일인 경우 콘텐츠 영역에 표시
 			if (filename && filename.toLowerCase().endsWith('.txt')) {
-				showAddTextContentModal = false;
 				contentType = 'memo';
 			}
 			
 			toast.success($i18n.t('Content updated successfully.'));
 		} catch (e) {
-			toast.error(e);
+				toast.error(e);
 		}
 	};
 
@@ -1201,21 +1196,13 @@
 		if (!file || !file.id) return;
 		
 		try {
-			const response = await updateFileDataContentById(
-				localStorage.token,
-				file.id,
-				newContent
-			);
+			const response = await updateFileDataContentById(localStorage.token, file.id, newContent);
 			
-			// 업데이트 성공 시
 			if (response && response.status === 200) {
 				// 파일의 내용을 업데이트
 				if (selectedFile && selectedFile.id === file.id) {
 					selectedFile.data.content = newContent;
 				}
-				
-				// 모달 닫기
-				showAddTextContentModal = false;
 				
 				// 메모 파일인 경우 콘텐츠 영역에 표시
 				if (file.meta?.name?.toLowerCase().endsWith('.txt')) {
@@ -1229,6 +1216,28 @@
 		} catch (error) {
 			console.error('콘텐츠 업데이트 오류:', error);
 			toast.error($i18n.t('Failed to update content.'));
+		}
+	};
+
+	// 파일명 변경 핸들러 함수 추가
+	const renameFileHandler = async (fileId, newName) => {
+		if (!fileId) return;
+		
+		try {
+			console.log('파일명 변경:', newName);
+			const response = await updateFileFilenameById(localStorage.token, fileId, newName);
+			
+			if (response && response.status === 200) {
+				toast.success($i18n.t('File renamed successfully.'));
+				
+				// 파일 목록 새로고침
+				await fetchAndUpdateFiles();
+			} else {
+				toast.error($i18n.t('Failed to rename file.'));
+			}
+		} catch (error) {
+			console.error('파일명 변경 오류:', error);
+			toast.error($i18n.t('Failed to rename file.'));
 		}
 	};
 
@@ -1264,77 +1273,6 @@
 	)}
 	on:confirm={() => {
 		syncDirectoryHandler();
-	}}
-/>
-
-<NoteEditorModal
-	bind:show={showAddTextContentModal}
-	initialTitle={selectedFile ? selectedFile?.meta?.name?.replace(/\.txt$/i, '') || '' : ''}
-	initialContent={selectedFile ? selectedFile?.data?.content || '' : ''}
-	selectedFile={selectedFile || tempFileForNoteEditor}
-	on:autosave={(e) => {
-		if (selectedFile) {
-			selectedFile.data.content = e.detail.content;
-			
-			// 이름 변경이 있을 경우 (name이 변경됨)
-			if (e.detail.name && e.detail.name !== selectedFile?.meta?.name?.replace(/\.txt$/i, '')) {
-				// 이름에서 모든 .txt 확장자 제거하고 깨끗한 베이스 이름 얻기
-				let cleanedName = e.detail.name;
-				while(cleanedName.toLowerCase().endsWith('.txt')) {
-					cleanedName = cleanedName.substring(0, cleanedName.length - 4);
-				}
-				
-				// .txt 확장자 한 번만 추가
-				selectedFile.meta.name = cleanedName + '.txt';
-			}
-			
-			updateFileContentHandler();
-		}
-	}}
-	on:submit={(e) => {		
-		if (selectedFile) {
-			selectedFile.data.content = e.detail.content;
-			
-			// 이름에서 모든 .txt 확장자 제거하고 깨끗한 베이스 이름 얻기
-			let cleanedName = e.detail.name;
-			while(cleanedName.toLowerCase().endsWith('.txt')) {
-				cleanedName = cleanedName.substring(0, cleanedName.length - 4);
-			}
-			
-			// .txt 확장자 한 번만 추가
-			selectedFile.meta.name = cleanedName + '.txt';
-			
-			updateFileContentHandler();
-		} else {
-			// 확장자가 없는 이름으로 파일 생성
-			let cleanedName = e.detail.name;
-			while(cleanedName.toLowerCase().endsWith('.txt')) {
-				cleanedName = cleanedName.substring(0, cleanedName.length - 4);
-			}
-			
-			const file = createFileFromText(cleanedName, e.detail.content);
-			uploadFileHandler(file);
-		}
-		showAddTextContentModal = false;
-		selectedFileId = null;
-		selectedFile = null;
-	}}
-	on:uploadRequest={async (e) => {
-		// 확장자가 없는 이름으로 파일 생성
-		let cleanedName = e.detail.name;
-		while(cleanedName.toLowerCase().endsWith('.txt')) {
-			cleanedName = cleanedName.substring(0, cleanedName.length - 4);
-		}
-		
-		const file = createFileFromText(cleanedName, e.detail.content);
-		if (file) {
-			const uploadedFile = await uploadFileHandler(file);
-			if (uploadedFile && e.detail.callback) {
-				e.detail.callback(uploadedFile);
-			}
-			selectedFile = uploadedFile;
-		}
-		showAddTextContentModal = true;
 	}}
 />
 
@@ -1790,36 +1728,86 @@
 							</div>
 						</div>
 					{:else if contentType === 'memo' && selectedFile}
-						<!-- 메모 콘텐츠 표시 - 메모 에디터 내용 직접 렌더링 -->
-						<div class="flex flex-col w-full h-full">
-							<div class="shrink-0 mb-2 flex items-center">
-								<div class="flex-1 text-xl font-medium">
-									<span class="line-clamp-1">
-										{selectedFile?.meta?.name ? selectedFile.meta.name.replace('.txt', '') : '무제'}
-									</span>
+						<div class="flex-1 flex flex-col h-full">
+							<div class="flex justify-between items-center w-full py-2 px-4 bg-white dark:bg-gray-900 border-b dark:border-gray-700">
+								<div class="text-lg font-medium truncate">
+									<input 
+										type="text"
+										class="w-full bg-transparent border-none outline-none px-0 font-medium"
+										value={selectedFile?.meta?.name ? selectedFile.meta.name.replace('.txt', '') : '무제'} 
+										on:blur={(e) => {
+											if (e.target.value.trim() !== '') {
+												// 기존 이름과 다른 경우에만 업데이트
+												const cleanedName = e.target.value.replace(/\.txt$/i, '');
+												if (cleanedName !== selectedFile.meta.name.replace(/\.txt$/i, '')) {
+													selectedFile.meta.name = cleanedName + '.txt';
+													updateFileContentHandler();
+												}
+											}
+										}}
+									/>
 								</div>
 								<button 
-									class="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 p-1"
+									class="ml-2 p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-800"
 									on:click={() => {
-										showAddTextContentModal = true;
+										selectedFileId = null;
+										selectedFile = null;
+										contentType = 'company';
 									}}
 								>
 									<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-										<path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
+										<path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
 									</svg>
 								</button>
 							</div>
-
-							<div class="flex-1 w-full h-full max-h-full bg-white dark:bg-gray-800 overflow-y-auto scrollbar-hidden p-4 rounded-lg">
-								{#if selectedFile?.data?.content}
-									<div class="prose prose-sm dark:prose-invert max-w-none">
-										{@html selectedFile.data.content}
-									</div>
-								{:else}
-									<div class="text-center text-gray-500 py-4">
-										내용이 없습니다
-									</div>
-								{/if}
+							<div class="flex-1 overflow-auto p-4">
+								<NoteEditor 
+									initialTitle={selectedFile?.meta?.name ? selectedFile.meta.name.replace('.txt', '') : '무제'}
+									initialContent={selectedFile?.data?.content || '<p></p>'}
+									selectedFile={selectedFile}
+									on:change={(e) => {
+										if (selectedFile && selectedFile.data) {
+											selectedFile.data.content = e.detail;
+											updateFileContent(selectedFile, e.detail);
+										}
+									}}
+									on:titleChange={(e) => {
+										if (selectedFile && selectedFile.meta) {
+											const cleanedName = e.detail.replace(/\.txt$/i, '');
+											selectedFile.meta.name = cleanedName + '.txt';
+											updateFileContentHandler();
+										}
+									}}
+								/>
+							</div>
+						</div>
+					{:else if contentType === 'file' && selectedFile}
+						<div class="flex-1 flex flex-col">
+							<div class="flex justify-between items-center w-full py-2 px-4 bg-white dark:bg-gray-900 border-b dark:border-gray-700">
+								<div class="text-lg font-medium truncate">
+									<span>{selectedFile?.meta?.name || '파일'}</span>
+								</div>
+								<button 
+									class="ml-2 p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-800"
+									on:click={() => {
+										selectedFileId = null;
+										selectedFile = null;
+										contentType = 'company';
+									}}
+								>
+									<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+										<path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+									</svg>
+								</button>
+							</div>
+							<div class="flex-1 overflow-auto p-4">
+								<!-- 파일 내용 표시 -->
+								<iframe
+									src={selectedFile?.url}
+									title={selectedFile?.meta?.name || '파일'}
+									class="w-full h-full border-0"
+									sandbox="allow-scripts allow-same-origin"
+								></iframe>
 							</div>
 						</div>
 					{/if}
@@ -1831,17 +1819,8 @@
 	{/if}
 </div>
 
-<!-- NoteEditorModal은 유지하되, showAddTextContentModal이 false일 때는 표시하지 않음 -->
-{#if showAddTextContentModal}
-	<NoteEditorModal
-		bind:show={showAddTextContentModal}
-		file={selectedFile || tempFileForNoteEditor}
-		onSave={updateFileContent}
-		onDelete={deleteFileHandler}
-		onRename={renameFileHandler}
-	/>
-{/if}
-
+<!-- 다른 모달들은 그대로 유지 -->
+{#if showChatModal}
 <Modal size="xl" bind:show={showChatModal}>
 	<div class="flex flex-col h-[80vh] dark:bg-gray-900 text-gray-700 dark:text-gray-100">
 		<div class="flex justify-between items-center px-5 py-3 border-b border-gray-200 dark:border-gray-700">
@@ -1893,3 +1872,4 @@
 		</div>
 	</div>
 </Modal>
+{/if}
