@@ -221,6 +221,24 @@
 	let memoQuery = '';
 	let fileQuery = '';
 
+	// 현재 표시할 콘텐츠 상태 추가
+	let contentType = 'company'; // 'company', 'file', 'memo'
+	let showFileCloseButton = false;
+	
+	$: if (selectedFileId && selectedFile) {
+		// 메모 파일인 경우 모달로 열지 않고 콘텐츠 영역에 표시
+		if (selectedFile.meta?.name?.toLowerCase().endsWith('.txt')) {
+			contentType = 'memo';
+			showAddTextContentModal = false;
+		} else {
+			contentType = 'file';
+		}
+		showFileCloseButton = true;
+	} else if (!selectedFileId && !selectedFile) {
+		contentType = 'company';
+		showFileCloseButton = false;
+	}
+
 	function handleModalStateChange(currentModalState: boolean) {
 		if (previousModalState && !currentModalState) {
 			selectedFileId = null;
@@ -280,20 +298,23 @@
 			file.data = file.data ?? { content: '' };
 			selectedFile = file;
 
-			// txt 파일인 경우에만 NoteEditorModal 열기
+			// txt 파일인 경우에는 모달로 열지 않고 콘텐츠 영역에 표시
 			const isTxtFile = file.meta?.name?.toLowerCase().endsWith('.txt');
-			if (isTxtFile && !showAddTextContentModal) {
-				showAddTextContentModal = true;
-			} else if (!isTxtFile) {
-				// NoteEditorModal 닫기 (다른 파일 타입인 경우)
+			if (isTxtFile) {
+				contentType = 'memo';
+				showAddTextContentModal = false;
+			} else {
+				contentType = 'file';
 				showAddTextContentModal = false;
 			}
 		} else {
 			selectedFile = null;
 			selectedFileId = null;
+			contentType = 'company';
 		}
 	} else {
 		selectedFile = null;
+		if (!contentType) contentType = 'company';
 	}
 
 	const createFileFromText = (name: string, content: string) => {
@@ -378,10 +399,11 @@
 				keys: ['meta.name', 'meta.description']
 			});
 			
-			// 업로드된 파일 열기
+			// 업로드된 파일 열기 - 모달 대신 컨텐츠 영역에 표시
 			setTimeout(() => {
 				selectedFileId = uploadedFile.id;
-				showAddTextContentModal = true;
+				contentType = 'memo';
+				showAddTextContentModal = true; // 편집 화면은 여전히 필요
 			}, 100);
 		}
 	};
@@ -767,6 +789,14 @@
 				console.log('파일명 업데이트:', filename);
 				const filenameRes = await updateFileFilenameById(localStorage.token, fileId, filename);
 			}
+			
+			// 메모 파일인 경우 콘텐츠 영역에 표시
+			if (filename && filename.toLowerCase().endsWith('.txt')) {
+				showAddTextContentModal = false;
+				contentType = 'memo';
+			}
+			
+			toast.success($i18n.t('Content updated successfully.'));
 		} catch (e) {
 			toast.error(e);
 		}
@@ -1160,6 +1190,48 @@
 		}
 	}
 
+	const closeContent = () => {
+		selectedFileId = null;
+		selectedFile = null;
+		contentType = 'company';
+		showFileCloseButton = false;
+	};
+
+	const updateFileContent = async (file, newContent) => {
+		if (!file || !file.id) return;
+		
+		try {
+			const response = await updateFileDataContentById(
+				localStorage.token,
+				file.id,
+				newContent
+			);
+			
+			// 업데이트 성공 시
+			if (response && response.status === 200) {
+				// 파일의 내용을 업데이트
+				if (selectedFile && selectedFile.id === file.id) {
+					selectedFile.data.content = newContent;
+				}
+				
+				// 모달 닫기
+				showAddTextContentModal = false;
+				
+				// 메모 파일인 경우 콘텐츠 영역에 표시
+				if (file.meta?.name?.toLowerCase().endsWith('.txt')) {
+					contentType = 'memo';
+				}
+				
+				toast.success($i18n.t('Content updated successfully.'));
+			} else {
+				toast.error($i18n.t('Failed to update content.'));
+			}
+		} catch (error) {
+			console.error('콘텐츠 업데이트 오류:', error);
+			toast.error($i18n.t('Failed to update content.'));
+		}
+	};
+
 </script>
 
 {#if dragged}
@@ -1361,391 +1433,18 @@
 				: ''} flex flex-col w-full mt-4 h-[calc(100vh-8rem)]"
 			class:mobile={$mobile}
 		>
-			<!-- attach file -->
-			<div class="{!largeScreen ? 'flex-col' : 'flex-row'} flex pb-2.5 gap-3">
-				{#if largeScreen}
-					<div class="flex-1 flex justify-start w-full h-full max-h-full">
-						{#if selectedFile && !selectedFile.meta?.name?.toLowerCase().endsWith('.txt')}
-							<div class="flex flex-col w-full h-full max-h-full">
-								<div class="shrink-0 mb-2 flex items-center">
-									<div class="flex-1 text-xl font-medium">
-										<span class="line-clamp-1">
-											{selectedFile?.meta?.name || selectedFile?.name || '파일명 없음'}
-										</span>
-									</div>
-								</div>
-
-								<div class="flex-1 w-full h-full max-h-full bg-transparent outline-hidden overflow-y-auto scrollbar-hidden">
-									{#if selectedFile?.meta?.name?.toLowerCase().endsWith('.jpg') || selectedFile?.meta?.name?.toLowerCase().endsWith('.jpeg') || selectedFile?.meta?.name?.toLowerCase().endsWith('.png') || selectedFile?.meta?.name?.toLowerCase().endsWith('.gif')}
-										<!-- 이미지 파일인 경우 -->
-										<div class="flex justify-center h-full">
-											<img 
-												src={`${WEBUI_API_BASE_URL}/files/${selectedFile.id}/content`} 
-												alt={selectedFile?.meta?.name || selectedFile?.name} 
-												class="object-contain"
-												style="max-width: 100%; max-height: 100%;"
-											/>
-										</div>
-									{:else if selectedFile?.meta?.name?.toLowerCase().endsWith('.pdf')}
-										<!-- PDF 파일인 경우 -->
-										<div class="h-full">
-											<iframe 
-												src={`${WEBUI_API_BASE_URL}/files/${selectedFile.id}/content`} 
-												title={selectedFile?.meta?.name || selectedFile?.name}
-												class="w-full h-full border-0"
-											></iframe>
-										</div>
-									{:else if selectedFile?.data?.content}
-										<!-- 텍스트 내용이 있는 경우 -->
-										<div class="whitespace-pre-wrap p-4">
-											{selectedFile.data.content}
-										</div>
-									{:else}
-										<!-- 지원되지 않는 파일 타입 -->
-										<div class="flex flex-col items-center justify-center h-full p-4">
-											<div class="text-lg mb-4">
-												{selectedFile?.meta?.name || selectedFile?.name || '파일명 없음'}
-											</div>
-										</div>
-									{/if}
-								</div>
-							</div>
-						{:else if selectedFile?.meta?.name?.toLowerCase().endsWith('.txt')}
-							<!-- txt 파일은 NoteEditorModal에서 처리됨 -->
-							<div class="h-full flex w-full">
-								<div class="m-auto text-xs text-center text-gray-200 dark:text-gray-700">
-									메모 파일이 선택되었습니다. 편집기가 열립니다...
-								</div>
-							</div>
-						{:else}
-							<div class="h-full flex w-full">
-								<div class="m-auto text-xs text-center text-gray-200 dark:text-gray-700">
-									{$i18n.t('Drag and drop a file to upload or select a file to view')}
-								</div>
-							</div>
-						{/if}
-					</div>
-				{:else if !largeScreen && selectedFileId !== null}
-					<!-- 모바일에서 파일 선택시 -->
-					{#if selectedFile && !selectedFile.meta?.name?.toLowerCase().endsWith('.txt')}
-						<div class="flex flex-col justify-start h-full max-h-full p-2 w-full">
-							<div class="flex flex-col w-full h-full max-h-full">
-								<div class="shrink-0 mb-2 flex items-center">
-									<div class="mr-2">
-										<button
-											class="w-full text-left text-sm p-1.5 rounded-lg dark:text-gray-300 dark:hover:text-white hover:bg-black/5 dark:hover:bg-gray-850"
-											on:click={() => {
-												selectedFileId = null;
-											}}
-										>
-											<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-												<path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" />
-											</svg>
-										</button>
-									</div>
-									<div class="flex-1 text-xl line-clamp-1">
-										{selectedFile?.meta?.name || selectedFile?.name || '파일명 없음'}
-									</div>
-								</div>
-
-								<div class="flex-1 w-full h-full max-h-full py-2.5 px-3.5 rounded-lg bg-transparent overflow-y-auto scrollbar-hidden">
-									{#if selectedFile?.meta?.name?.toLowerCase().endsWith('.jpg') || selectedFile?.meta?.name?.toLowerCase().endsWith('.jpeg') || selectedFile?.meta?.name?.toLowerCase().endsWith('.png') || selectedFile?.meta?.name?.toLowerCase().endsWith('.gif')}
-										<!-- 이미지 파일인 경우 (모바일) -->
-										<div class="flex justify-center h-full">
-											<img 
-												src={`${WEBUI_API_BASE_URL}/files/${selectedFile.id}/content`}
-												alt={selectedFile?.meta?.name || selectedFile?.name} 
-												class="object-contain"
-												style="max-width: 100%; max-height: 100%;"
-											/>
-										</div>
-									{:else if selectedFile?.meta?.name?.toLowerCase().endsWith('.pdf')}
-										<!-- PDF 파일인 경우 (모바일) -->
-										<div class="h-full">
-											<iframe 
-												src={`${WEBUI_API_BASE_URL}/files/${selectedFile.id}/content`}
-												title={selectedFile?.meta?.name || selectedFile?.name}
-												class="w-full h-full border-0"
-											></iframe>
-										</div>
-									{:else if selectedFile?.data?.content}
-										<!-- 텍스트 내용이 있는 경우 -->
-										<div class="whitespace-pre-wrap p-4">
-											{selectedFile.data.content}
-										</div>
-									{:else}
-										<!-- 지원되지 않는 파일 타입 -->
-										<div class="flex flex-col items-center justify-center h-full p-4">
-											<div class="text-lg mb-4">
-												{selectedFile?.meta?.name || selectedFile?.name || '파일명 없음'}
-											</div>
-										</div>
-									{/if}
-								</div>
-							</div>
-						</div>
-					{/if}
-				{/if}
-
-				<!-- 메모 섹션 -->
-				<div class="{largeScreen ? 'flex-shrink-0 w-72 max-w-72' : 'w-full'} flex flex-col py-2 rounded-2xl border border-gray-50 h-full dark:border-gray-850">
-					<div class="px-3 py-1 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center cursor-pointer"
-						on:click={() => showMemosSection = !showMemosSection}
-					>
-						<h2 class="text-sm font-medium">메모</h2>
-						<button class="text-gray-500">
-							{#if showMemosSection}
-								<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-									<path fill-rule="evenodd" d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z" clip-rule="evenodd" />
-								</svg>
-							{:else}
-								<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-									<path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
-								</svg>
-							{/if}
-						</button>
-					</div>
-					
-					{#if showMemosSection}
-						<div class="w-full h-full flex flex-col">
-							<div class="px-3">
-								<div class="flex mb-0.5">
-									<div class="self-center ml-1 mr-3">
-										<svg
-											xmlns="http://www.w3.org/2000/svg"
-											viewBox="0 0 20 20"
-											fill="currentColor"
-											class="w-4 h-4"
-										>
-											<path
-												fill-rule="evenodd"
-												d="M9 3.5a5.5 5.5 0 100 11 5.5 5.5 0 000-11zM2 9a7 7 0 1112.452 4.391l3.328 3.329a.75.75 0 11-1.06 1.06l-3.329-3.328A7 7 0 012 9z"
-												clip-rule="evenodd"
-											/>
-										</svg>
-									</div>
-									<input
-										class="w-full text-sm pr-4 py-1 rounded-r-xl outline-none bg-transparent"
-										bind:value={memoQuery}
-										placeholder="메모 검색"
-										on:focus={() => {
-											selectedFileId = null;
-										}}
-									/>
-									
-									<div>
-										<button
-											class="ml-1 px-2 py-1 text-sm rounded hover:bg-gray-100 dark:hover:bg-gray-800"
-											on:click={() => {
-												selectedFileId = null;
-												selectedFile = null;
-												setTimeout(() => {
-													createAndUploadMemo('새 메모', '<p></p>');
-												}, 50);
-											}}
-										>
-											<svg 
-												xmlns="http://www.w3.org/2000/svg" 
-												viewBox="0 0 24 24" 
-												fill="none" 
-												stroke="currentColor" 
-												stroke-width="2" 
-												stroke-linecap="round" 
-												stroke-linejoin="round" 
-												class="size-5"
-											>
-												<path d="M12 5v14m-7-7h14" />
-											</svg>
-										</button>
-									</div>
-								</div>
-							</div>
-
-							{#if memoItems.length > 0}
-								<div class="flex overflow-y-auto h-full w-full scrollbar-hidden text-xs">
-									<!-- 메모 목록 커스텀 표시 -->
-									<div class="w-full">
-										{#each memoItems as memo}
-											<div 
-												class="mt-1 px-2 py-2 rounded-lg {selectedFileId === memo.id ? 'bg-gray-50 dark:bg-gray-850' : 'bg-transparent'} hover:bg-gray-50 dark:hover:bg-gray-850 transition flex justify-between cursor-pointer"
-												on:click={() => {
-													if (selectedFileId === memo.id) {
-														selectedFileId = null;
-													} else {
-														selectedFile = null; // 먼저 파일 참조 초기화
-														selectedFileId = memo.id;
-														// txt 파일이므로 NoteEditorModal을 열어줍니다
-														setTimeout(() => {
-															showAddTextContentModal = true;
-														}, 50);
-													}
-												}}
-											>
-												<div class="flex items-center gap-2 overflow-hidden">
-													<div class="font-medium text-sm truncate">
-														{memo?.meta?.name ? memo.meta.name.replace('.txt', '') : '무제'}
-													</div>
-													<div class="text-xs text-gray-500 whitespace-nowrap">
-														{memo.created_at ? formatDate(memo.created_at) : formatDate(new Date().toISOString())}
-													</div>
-												</div>
-												<button 
-													class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 self-center"
-													on:click|stopPropagation={() => {
-														selectedFileId = null;
-														deleteFileHandler(memo.id);
-													}}
-												>
-													<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-														<path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
-													</svg>
-												</button>
-											</div>
-										{/each}
-									</div>
-								</div>
-							{:else}
-								<div class="my-3 flex flex-col justify-center text-center text-gray-500 text-xs">
-									<div>
-										메모가 없습니다
-									</div>
-								</div>
-							{/if}
-						</div>
-					{/if}
-				</div>
-
-				<!-- 첨부파일 섹션 -->
-				<div class="{largeScreen ? 'flex-shrink-0 w-72 max-w-72' : 'w-full'} flex flex-col py-2 rounded-2xl border border-gray-50 h-full dark:border-gray-850">
-					<div class="px-3 py-1 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center cursor-pointer"
-						on:click={() => showFilesSection = !showFilesSection}
-					>
-						<h2 class="text-sm font-medium">첨부파일</h2>
-						<button class="text-gray-500">
-							{#if showFilesSection}
-								<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-									<path fill-rule="evenodd" d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z" clip-rule="evenodd" />
-								</svg>
-							{:else}
-								<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-									<path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
-								</svg>
-							{/if}
-						</button>
-					</div>
-					
-					{#if showFilesSection}
-						<div class="w-full h-full flex flex-col">
-							<div class="px-3">
-								<div class="flex mb-0.5">
-									<div class="self-center ml-1 mr-3">
-										<svg
-											xmlns="http://www.w3.org/2000/svg"
-											viewBox="0 0 20 20"
-											fill="currentColor"
-											class="w-4 h-4"
-										>
-											<path
-												fill-rule="evenodd"
-												d="M9 3.5a5.5 5.5 0 100 11 5.5 5.5 0 000-11zM2 9a7 7 0 1112.452 4.391l3.328 3.329a.75.75 0 11-1.06 1.06l-3.329-3.328A7 7 0 012 9z"
-												clip-rule="evenodd"
-											/>
-										</svg>
-									</div>
-									<input
-										class="w-full text-sm pr-4 py-1 rounded-r-xl outline-none bg-transparent"
-										bind:value={fileQuery}
-										placeholder="파일 검색"
-										on:focus={() => {
-											selectedFileId = null;
-										}}
-									/>
-
-									<div>
-										<button
-											class="ml-1 px-2 py-1 text-sm rounded hover:bg-gray-100 dark:hover:bg-gray-800"
-											on:click={() => {
-												document.getElementById('files-input').click();
-											}}
-										>
-											<svg 
-												xmlns="http://www.w3.org/2000/svg" 
-												viewBox="0 0 24 24" 
-												fill="none" 
-												stroke="currentColor" 
-												stroke-width="2" 
-												stroke-linecap="round" 
-												stroke-linejoin="round" 
-												class="size-5"
-											>
-												<path d="M12 5v14m-7-7h14" />
-											</svg>
-										</button>
-									</div>
-								</div>
-							</div>
-
-							{#if filteredItems.length > 0}
-								<div class="flex overflow-y-auto h-full w-full scrollbar-hidden text-xs">
-									<!-- 첨부파일 목록 커스텀 표시 -->
-									<div class="w-full">
-										{#each filteredItems as file}
-											<div 
-												class="mt-1 px-2 py-2 rounded-lg {selectedFileId === file.id ? 'bg-gray-50 dark:bg-gray-850' : 'bg-transparent'} hover:bg-gray-50 dark:hover:bg-gray-850 transition flex justify-between cursor-pointer"
-												on:click={() => {
-													if (selectedFileId === file.id) {
-														selectedFileId = null;
-													} else {
-														selectedFile = null; // 먼저 파일 참조 초기화
-														selectedFileId = file.id;
-														// txt 파일이 아니므로 NoteEditorModal은 자동으로 열리지 않음
-													}
-												}}
-											>
-												<div class="flex-1 overflow-hidden">
-													<div class="font-medium text-sm truncate">
-														{file?.meta?.name || file?.name || '파일명 없음'}
-													</div>
-													<div class="flex items-center gap-2 text-xs text-gray-500">
-														<span>{file.created_at ? formatDate(file.created_at) : ''}</span>
-														<span>{formatFileSize(file?.size || file?.meta?.size || 0)}</span>
-													</div>
-												</div>
-												<button 
-													class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 self-center"
-													on:click|stopPropagation={() => {
-														selectedFileId = null;
-														deleteFileHandler(file.id);
-													}}
-												>
-													<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-														<path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
-													</svg>
-												</button>
-											</div>
-										{/each}
-									</div>
-								</div>
-							{:else}
-								<div class="my-3 flex flex-col justify-center text-center text-gray-500 text-xs">
-									<div>
-										첨부파일이 없습니다
-									</div>
-								</div>
-							{/if}
-						</div>
-					{/if}
-				</div>
-
-				<!-- 채팅 리스트 섹션 -->
-				{#if chatList && chatList.length > 0}
-					<div class="{largeScreen ? 'flex-shrink-0 w-60 max-w-60' : 'w-full'} flex flex-col border border-gray-50 dark:border-gray-850 rounded-2xl">
+			<!-- 두 열 레이아웃으로 변경 -->
+			<div class="flex-1 flex flex-row h-full">
+				<!-- 왼쪽 사이드바: 메모/첨부 목록 -->
+				<div class="flex-shrink-0 w-72 max-w-72 flex flex-col gap-1 pr-3 h-full">
+					<!-- 메모 섹션 -->
+					<div class="flex flex-col py-1 rounded-2xl border border-gray-50 dark:border-gray-850 h-[200px]">
 						<div class="px-3 py-1 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center cursor-pointer"
-							on:click={() => showChatsSection = !showChatsSection}
+							on:click={() => showMemosSection = !showMemosSection}
 						>
-							<h2 class="text-sm font-medium">채팅</h2>
+							<h2 class="text-sm font-medium">메모</h2>
 							<button class="text-gray-500">
-								{#if showChatsSection}
+								{#if showMemosSection}
 									<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
 										<path fill-rule="evenodd" d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z" clip-rule="evenodd" />
 									</svg>
@@ -1756,34 +1455,373 @@
 								{/if}
 							</button>
 						</div>
-						{#if showChatsSection}
-							<div class="flex-1 overflow-y-auto p-2 max-h-[150px]">
-								{#each chatList as chat}
-									<button
-										type="button"
-										on:click={() => moveToExistingChat(chat)}
-										class="mb-1 w-full text-left rounded bg-gray-50 dark:bg-gray-800 p-1 cursor-pointer text-xs"
-									>
-										{chat.title}
-									</button>
-								{/each}
+						
+						{#if showMemosSection}
+							<div class="w-full h-full flex flex-col">
+								<div class="px-3">
+									<div class="flex mb-0.5">
+										<div class="self-center ml-1 mr-3">
+											<svg
+												xmlns="http://www.w3.org/2000/svg"
+												viewBox="0 0 20 20"
+												fill="currentColor"
+												class="w-4 h-4"
+											>
+												<path
+													fill-rule="evenodd"
+													d="M9 3.5a5.5 5.5 0 100 11 5.5 5.5 0 000-11zM2 9a7 7 0 1112.452 4.391l3.328 3.329a.75.75 0 11-1.06 1.06l-3.329-3.328A7 7 0 012 9z"
+													clip-rule="evenodd"
+												/>
+											</svg>
+										</div>
+										<input
+											class="w-full text-sm pr-4 py-1 rounded-r-xl outline-none bg-transparent"
+											bind:value={memoQuery}
+											placeholder="메모 검색"
+										/>
+										
+										<div>
+											<button
+												class="ml-1 px-2 py-1 text-sm rounded hover:bg-gray-100 dark:hover:bg-gray-800"
+												on:click={() => {
+													selectedFileId = null;
+													selectedFile = null;
+													setTimeout(() => {
+														createAndUploadMemo('새 메모', '<p></p>');
+													}, 50);
+												}}
+											>
+												<svg 
+													xmlns="http://www.w3.org/2000/svg" 
+													viewBox="0 0 24 24" 
+													fill="none" 
+													stroke="currentColor" 
+													stroke-width="2" 
+													stroke-linecap="round" 
+													stroke-linejoin="round" 
+													class="size-5"
+												>
+													<path d="M12 5v14m-7-7h14" />
+												</svg>
+											</button>
+										</div>
+									</div>
+								</div>
+
+								{#if memoItems.length > 0}
+									<div class="flex overflow-y-auto h-full w-full scrollbar-hidden text-xs">
+										<!-- 메모 목록 커스텀 표시 -->
+										<div class="w-full">
+											{#each memoItems as memo}
+												<div 
+													class="mt-1 px-2 py-2 rounded-lg {selectedFileId === memo.id ? 'bg-gray-50 dark:bg-gray-850' : 'bg-transparent'} hover:bg-gray-50 dark:hover:bg-gray-850 transition flex justify-between cursor-pointer"
+													on:click={() => {
+														if (selectedFileId === memo.id) {
+															closeContent();
+														} else {
+															selectedFile = null; // 먼저 파일 참조 초기화
+															selectedFileId = memo.id;
+															contentType = 'memo';
+														}
+													}}
+												>
+													<div class="flex items-center gap-2 overflow-hidden">
+														<div class="font-medium text-sm truncate">
+															{memo?.meta?.name ? memo.meta.name.replace('.txt', '') : '무제'}
+														</div>
+														<div class="text-xs text-gray-500 whitespace-nowrap">
+															{memo.created_at ? formatDate(memo.created_at) : formatDate(new Date().toISOString())}
+														</div>
+													</div>
+													<button 
+														class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 self-center"
+														on:click|stopPropagation={() => {
+															if (selectedFileId === memo.id) {
+																closeContent();
+															}
+															deleteFileHandler(memo.id);
+														}}
+													>
+														<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+															<path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+														</svg>
+													</button>
+												</div>
+											{/each}
+										</div>
+									</div>
+								{:else}
+									<div class="my-3 flex flex-col justify-center text-center text-gray-500 text-xs">
+										<div>
+											메모가 없습니다
+										</div>
+									</div>
+								{/if}
 							</div>
 						{/if}
 					</div>
-				{/if}
-			</div>
 
-			<div class="flex-1 px-4 pb-4">
-				<div class="p-4 space-y-2">				
-
-					{#if isPrivateCompany}
-						<!-- 비공개 기업 정보 표시 전용 컴포넌트 -->
-						<PrivateCompanyDetail {bookmark} entityType={entityType} />
-					{:else}
-						<div class="flex justify-between items-center mb-2">
-							<h3 class="text-lg font-semibold">기본 정보</h3>
+					<!-- 첨부파일 섹션 -->
+					<div class="flex flex-col py-1 rounded-2xl border border-gray-50 dark:border-gray-850 mt-1 h-[200px]">
+						<div class="px-3 py-1 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center cursor-pointer"
+							on:click={() => showFilesSection = !showFilesSection}
+						>
+							<h2 class="text-sm font-medium">첨부파일</h2>
+							<button class="text-gray-500">
+								{#if showFilesSection}
+									<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+										<path fill-rule="evenodd" d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z" clip-rule="evenodd" />
+									</svg>
+								{:else}
+									<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+										<path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+									</svg>
+								{/if}
+							</button>
 						</div>
-						<CompanyDetail company={bookmark} {financialData} />
+						
+						{#if showFilesSection}
+							<div class="w-full h-full flex flex-col">
+								<div class="px-3">
+									<div class="flex mb-0.5">
+										<div class="self-center ml-1 mr-3">
+											<svg
+												xmlns="http://www.w3.org/2000/svg"
+												viewBox="0 0 20 20"
+												fill="currentColor"
+												class="w-4 h-4"
+											>
+												<path
+													fill-rule="evenodd"
+													d="M9 3.5a5.5 5.5 0 100 11 5.5 5.5 0 000-11zM2 9a7 7 0 1112.452 4.391l3.328 3.329a.75.75 0 11-1.06 1.06l-3.329-3.328A7 7 0 012 9z"
+													clip-rule="evenodd"
+												/>
+											</svg>
+										</div>
+										<input
+											class="w-full text-sm pr-4 py-1 rounded-r-xl outline-none bg-transparent"
+											bind:value={fileQuery}
+											placeholder="파일 검색"
+										/>
+
+										<div>
+											<button
+												class="ml-1 px-2 py-1 text-sm rounded hover:bg-gray-100 dark:hover:bg-gray-800"
+												on:click={() => {
+													document.getElementById('files-input').click();
+												}}
+											>
+												<svg 
+													xmlns="http://www.w3.org/2000/svg" 
+													viewBox="0 0 24 24" 
+													fill="none" 
+													stroke="currentColor" 
+													stroke-width="2" 
+													stroke-linecap="round" 
+													stroke-linejoin="round" 
+													class="size-5"
+												>
+													<path d="M12 5v14m-7-7h14" />
+												</svg>
+											</button>
+										</div>
+									</div>
+								</div>
+
+								{#if filteredItems.length > 0}
+									<div class="flex overflow-y-auto h-full w-full scrollbar-hidden text-xs">
+										<!-- 첨부파일 목록 커스텀 표시 -->
+										<div class="w-full">
+											{#each filteredItems as file}
+												<div 
+													class="mt-1 px-2 py-2 rounded-lg {selectedFileId === file.id ? 'bg-gray-50 dark:bg-gray-850' : 'bg-transparent'} hover:bg-gray-50 dark:hover:bg-gray-850 transition flex justify-between cursor-pointer"
+													on:click={() => {
+														if (selectedFileId === file.id) {
+															closeContent();
+														} else {
+															selectedFile = null; // 먼저 파일 참조 초기화
+															selectedFileId = file.id;
+															contentType = 'file';
+														}
+													}}
+												>
+													<div class="flex-1 overflow-hidden">
+														<div class="font-medium text-sm truncate">
+															{file?.meta?.name || file?.name || '파일명 없음'}
+														</div>
+														<div class="flex items-center gap-2 text-xs text-gray-500">
+															<span>{file.created_at ? formatDate(file.created_at) : ''}</span>
+															<span>{formatFileSize(file?.size || file?.meta?.size || 0)}</span>
+														</div>
+													</div>
+													<button 
+														class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 self-center"
+														on:click|stopPropagation={() => {
+															if (selectedFileId === file.id) {
+																closeContent();
+															}
+															deleteFileHandler(file.id);
+														}}
+													>
+														<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+															<path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+														</svg>
+													</button>
+												</div>
+											{/each}
+										</div>
+									</div>
+								{:else}
+									<div class="my-3 flex flex-col justify-center text-center text-gray-500 text-xs">
+										<div>
+											첨부파일이 없습니다
+										</div>
+									</div>
+								{/if}
+							</div>
+						{/if}
+					</div>
+
+					<!-- 채팅 리스트 섹션 -->
+					{#if chatList && chatList.length > 0}
+						<div class="flex flex-col border border-gray-50 dark:border-gray-850 rounded-2xl mt-1 h-[150px]">
+							<div class="px-3 py-1 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center cursor-pointer"
+								on:click={() => showChatsSection = !showChatsSection}
+							>
+								<h2 class="text-sm font-medium">채팅</h2>
+								<button class="text-gray-500">
+									{#if showChatsSection}
+										<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+											<path fill-rule="evenodd" d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z" clip-rule="evenodd" />
+										</svg>
+									{:else}
+										<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+											<path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+										</svg>
+									{/if}
+								</button>
+							</div>
+							{#if showChatsSection}
+								<div class="flex-1 overflow-y-auto p-2 max-h-[150px]">
+									{#each chatList as chat}
+										<button
+											type="button"
+											on:click={() => moveToExistingChat(chat)}
+											class="mb-1 w-full text-left rounded bg-gray-50 dark:bg-gray-800 p-1 cursor-pointer text-xs"
+										>
+											{chat.title}
+										</button>
+									{/each}
+								</div>
+							{/if}
+						</div>
+					{/if}
+				</div>
+
+				<!-- 오른쪽 콘텐츠 영역 -->
+				<div class="flex-1 flex flex-col h-full ml-3">
+					{#if showFileCloseButton}
+						<div class="flex justify-end mb-2">
+							<button 
+								class="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 p-1"
+								on:click={closeContent}
+							>
+								<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+								</svg>
+							</button>
+						</div>
+					{/if}
+
+					{#if contentType === 'company'}
+						<!-- 기업 상세 정보 표시 -->
+						<div class="p-4 space-y-2 h-full overflow-auto">				
+							{#if isPrivateCompany}
+								<!-- 비공개 기업 정보 표시 전용 컴포넌트 -->
+								<PrivateCompanyDetail {bookmark} entityType={entityType} />
+							{:else}
+								<CompanyDetail company={bookmark} {financialData} />
+							{/if}
+						</div>
+					{:else if contentType === 'file' && selectedFile}
+						<!-- 파일 콘텐츠 표시 -->
+						<div class="flex flex-col w-full h-full">
+							<div class="shrink-0 mb-2 flex items-center">
+								<div class="flex-1 text-xl font-medium">
+									<span class="line-clamp-1">
+										{selectedFile?.meta?.name || selectedFile?.name || '파일명 없음'}
+									</span>
+								</div>
+							</div>
+
+							<div class="flex-1 w-full h-full max-h-full bg-transparent outline-hidden overflow-y-auto scrollbar-hidden">
+								{#if selectedFile?.meta?.name?.toLowerCase().endsWith('.jpg') || selectedFile?.meta?.name?.toLowerCase().endsWith('.jpeg') || selectedFile?.meta?.name?.toLowerCase().endsWith('.png') || selectedFile?.meta?.name?.toLowerCase().endsWith('.gif')}
+									<!-- 이미지 파일인 경우 -->
+									<div class="flex justify-center h-full">
+										<img 
+											src={`${WEBUI_API_BASE_URL}/files/${selectedFile.id}/content`} 
+											alt={selectedFile?.meta?.name || selectedFile?.name} 
+											class="object-contain"
+											style="max-width: 100%; max-height: 100%;"
+										/>
+									</div>
+								{:else if selectedFile?.meta?.name?.toLowerCase().endsWith('.pdf')}
+									<!-- PDF 파일인 경우 -->
+									<div class="h-full">
+										<iframe 
+											src={`${WEBUI_API_BASE_URL}/files/${selectedFile.id}/content`} 
+											title={selectedFile?.meta?.name || selectedFile?.name}
+											class="w-full h-full border-0"
+										></iframe>
+									</div>
+								{:else if selectedFile?.data?.content}
+									<!-- 텍스트 내용이 있는 경우 -->
+									<div class="whitespace-pre-wrap p-4">
+										{selectedFile.data.content}
+									</div>
+								{:else}
+									<!-- 지원되지 않는 파일 타입 -->
+									<div class="flex flex-col items-center justify-center h-full p-4">
+										<div class="text-lg mb-4">
+											{selectedFile?.meta?.name || selectedFile?.name || '파일명 없음'}
+										</div>
+									</div>
+								{/if}
+							</div>
+						</div>
+					{:else if contentType === 'memo' && selectedFile}
+						<!-- 메모 콘텐츠 표시 - 메모 에디터 내용 직접 렌더링 -->
+						<div class="flex flex-col w-full h-full">
+							<div class="shrink-0 mb-2 flex items-center">
+								<div class="flex-1 text-xl font-medium">
+									<span class="line-clamp-1">
+										{selectedFile?.meta?.name ? selectedFile.meta.name.replace('.txt', '') : '무제'}
+									</span>
+								</div>
+								<button 
+									class="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 p-1"
+									on:click={() => {
+										showAddTextContentModal = true;
+									}}
+								>
+									<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+										<path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
+									</svg>
+								</button>
+							</div>
+
+							<div class="flex-1 w-full h-full max-h-full bg-white dark:bg-gray-800 overflow-y-auto scrollbar-hidden p-4 rounded-lg">
+								{#if selectedFile?.data?.content}
+									<div class="prose prose-sm dark:prose-invert max-w-none">
+										{@html selectedFile.data.content}
+									</div>
+								{:else}
+									<div class="text-center text-gray-500 py-4">
+										내용이 없습니다
+									</div>
+								{/if}
+							</div>
+						</div>
 					{/if}
 				</div>
 			</div>
@@ -1792,6 +1830,17 @@
 		<Spinner />
 	{/if}
 </div>
+
+<!-- NoteEditorModal은 유지하되, showAddTextContentModal이 false일 때는 표시하지 않음 -->
+{#if showAddTextContentModal}
+	<NoteEditorModal
+		bind:show={showAddTextContentModal}
+		file={selectedFile || tempFileForNoteEditor}
+		onSave={updateFileContent}
+		onDelete={deleteFileHandler}
+		onRename={renameFileHandler}
+	/>
+{/if}
 
 <Modal size="xl" bind:show={showChatModal}>
 	<div class="flex flex-col h-[80vh] dark:bg-gray-900 text-gray-700 dark:text-gray-100">
