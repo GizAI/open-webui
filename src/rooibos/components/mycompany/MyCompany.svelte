@@ -271,7 +271,13 @@
 					<div class="self-start flex-1 px-1 mb-1">
 						<div class="flex items-center gap-2 mb-1">
 							{#if bookmark.company_type === 'private'}
-								<Badge type="success" content="내가 추가한 기업" />
+								{#if bookmark.entity_type?.toLowerCase() === 'company'}
+									<Badge type="success" content="내가 추가한 기업" />
+								{:else if bookmark.entity_type?.toLowerCase() === 'customer'}
+									<Badge type="success" content="내가 추가한 고객" />
+								{:else}
+									<Badge type="success" content="내가 추가한 기업" />
+								{/if}
 							{/if}
 						</div>
 						<div class="flex items-center gap-2 mb-1">

@@ -175,7 +175,8 @@ async def getFolderCompanyList(folderId: str, request: Request):
                     rmc.company_name,
                     rmc.address,
                     rmc.business_registration_number,
-                    'public' as company_type
+                    'public' as company_type,
+                    NULL AS entity_type
                 FROM corp_bookmark f
                 INNER JOIN rb_master_company rmc
                     ON f.business_registration_number::text = rmc.business_registration_number::text
@@ -197,7 +198,8 @@ async def getFolderCompanyList(folderId: str, request: Request):
                     pci.company_name,
                     pci.address,
                     pci.business_registration_number,
-                    'private' as company_type
+                    'private' as company_type,
+                    pci.entity_type
                 FROM corp_bookmark f
                 INNER JOIN private_entity_info pci
                     ON f.business_registration_number::text = pci.business_registration_number::text
