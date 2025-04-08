@@ -21,6 +21,7 @@
 	import { deleteCompanyBookmark, permanentDeleteCompanyBookmark, restoreCompanyBookmark } from '$rooibos/components/apis/company';
 	import { getFolderById } from '$rooibos/components/apis/folder';
 	import { triggerFolderUpdate } from '$rooibos/stores';
+	import Badge from '$lib/components/common/Badge.svelte';
 
 	let loaded = false;
 	let selectedItem: any = null;
@@ -196,11 +197,16 @@
 			>
 				<div class="w-full flex items-start justify-between">
 					<div class="self-start flex-1 px-1 mb-1">
-						<div class="font-semibold line-clamp-1 h-fit">
-							{#if isTrashView}
-								{bookmark.folder_name} / {bookmark.company_name}
-							{:else}
-								{bookmark.company_name}
+						<div class="flex items-center gap-2 mb-1">
+							<div class="font-semibold line-clamp-1 h-fit">
+								{#if isTrashView}
+									{bookmark.folder_name} / {bookmark.company_name}
+								{:else}
+									{bookmark.company_name}
+								{/if}
+							</div>
+							{#if bookmark.company_type === 'private'}
+								<Badge type="success" content="내가 추가한 기업" />
 							{/if}
 						</div>
 						<div class="text-xs overflow-hidden text-ellipsis line-clamp-1">
