@@ -37,7 +37,7 @@
 	import { getUserById } from '$lib/apis/users';
 	import { formatDate } from '$rooibos/components/common/helper';
 	import { formatFileSize } from '$lib/utils';
-	import PrivateCompanyDetail from '../company/PrivateCompanyDetail.svelte';
+	import PrivateCompanyDetail from '$rooibos/components/company/PrivateCompanyDetail.svelte';
 
 	
 	export let isPrivateCompany = false;
