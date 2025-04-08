@@ -241,10 +241,10 @@
 										<div class="flex items-center">{$i18n.t('이름변경')}</div>
 									</DropdownMenu.Item>
 									<DropdownMenu.Item
-										class="flex gap-2 items-center px-3 py-1.5 text-sm cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 rounded-md"
+										class="flex gap-2 items-center px-3 py-1 text-sm cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 rounded-md"
 										on:click={(e) => openCompanyForm(e, folderId)}
 									>
-										<Building2Icon strokeWidth="2" />
+										<Building2Icon strokeWidth="2" size={14} />
 										<div class="flex items-center">{$i18n.t('기업추가')}</div>
 									</DropdownMenu.Item>
 									<DropdownMenu.Item

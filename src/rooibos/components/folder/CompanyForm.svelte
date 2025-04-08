@@ -124,165 +124,165 @@
         on:mousedown={closeModal}
     >
         <div
-            class="m-auto rounded-2xl w-[38rem] max-w-full mx-4 my-2 bg-gray-50 dark:bg-gray-950 max-h-[90vh] shadow-3xl overflow-auto"
+            class="m-auto rounded-2xl w-[38rem] max-w-full mx-4 my-2 bg-gray-50 dark:bg-gray-950 max-h-[85vh] shadow-3xl overflow-auto"
             in:flyAndScale
             on:mousedown={(e) => e.stopPropagation()}
         >
-            <div class="px-6 py-5 border-b border-gray-200 dark:border-gray-800">
+            <div class="px-6 py-3 border-b border-gray-200 dark:border-gray-800">
                 <h2 class="text-lg font-semibold dark:text-gray-200">
                     {$i18n.t('기업정보 추가')}
                 </h2>
             </div>
             
-            <form on:submit|preventDefault={handleSubmit} class="px-6 py-3 pb-4">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <form on:submit|preventDefault={handleSubmit} class="px-6 py-1 pb-0">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
                     <!-- 기본 정보 섹션 -->
                     <div class="md:col-span-2">
-                        <h3 class="text-sm font-semibold text-gray-500 mb-2">기본 정보</h3>
+                        <h3 class="text-sm font-semibold text-gray-500 mb-1">기본 정보</h3>
                     </div>
                     
                     <!-- 회사명 -->
                     <div class="form-group">
-                        <label for="company_name" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        <label for="company_name" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-0.5">
                             회사명 <span class="text-red-500">*</span>
                         </label>
                         <input
                             type="text"
                             id="company_name"
                             bind:value={companyData.company_name}
-                            class="w-full px-3 py-1.5 border border-gray-300 dark:border-gray-700 rounded-md dark:bg-gray-800 dark:text-gray-200 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                            class="w-full px-3 py-1 border border-gray-300 dark:border-gray-700 rounded-md dark:bg-gray-800 dark:text-gray-200 focus:outline-none focus:ring-1 focus:ring-blue-500"
                             required
                         />
                     </div>
                     
                     <!-- 대표자 -->
                     <div class="form-group">
-                        <label for="representative" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        <label for="representative" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-0.5">
                             대표자
                         </label>
                         <input
                             type="text"
                             id="representative"
                             bind:value={companyData.representative}
-                            class="w-full px-3 py-1.5 border border-gray-300 dark:border-gray-700 rounded-md dark:bg-gray-800 dark:text-gray-200 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                            class="w-full px-3 py-1 border border-gray-300 dark:border-gray-700 rounded-md dark:bg-gray-800 dark:text-gray-200 focus:outline-none focus:ring-1 focus:ring-blue-500"
                         />
                     </div>
                     
                     <!-- 주소 -->
                     <div class="form-group md:col-span-2">
-                        <label for="address" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        <label for="address" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-0.5">
                             주소
                         </label>
                         <input
                             type="text"
                             id="address"
                             bind:value={companyData.address}
-                            class="w-full px-3 py-1.5 border border-gray-300 dark:border-gray-700 rounded-md dark:bg-gray-800 dark:text-gray-200 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                            class="w-full px-3 py-1 border border-gray-300 dark:border-gray-700 rounded-md dark:bg-gray-800 dark:text-gray-200 focus:outline-none focus:ring-1 focus:ring-blue-500"
                         />
                     </div>
                     
                     <!-- 설립일 -->
                     <div class="form-group">
-                        <label for="establishment_date" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        <label for="establishment_date" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-0.5">
                             설립일
                         </label>
                         <input
                             type="date"
                             id="establishment_date"
                             bind:value={companyData.establishment_date}
-                            class="w-full px-3 py-1.5 border border-gray-300 dark:border-gray-700 rounded-md dark:bg-gray-800 dark:text-gray-200 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                            class="w-full px-3 py-1 border border-gray-300 dark:border-gray-700 rounded-md dark:bg-gray-800 dark:text-gray-200 focus:outline-none focus:ring-1 focus:ring-blue-500"
                         />
                     </div>
                     
                     <!-- 직원 수 -->
                     <div class="form-group">
-                        <label for="employee_count" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        <label for="employee_count" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-0.5">
                             직원 수
                         </label>
                         <input
                             type="number"
                             id="employee_count"
                             bind:value={companyData.employee_count}
-                            class="w-full px-3 py-1.5 border border-gray-300 dark:border-gray-700 rounded-md dark:bg-gray-800 dark:text-gray-200 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                            class="w-full px-3 py-1 border border-gray-300 dark:border-gray-700 rounded-md dark:bg-gray-800 dark:text-gray-200 focus:outline-none focus:ring-1 focus:ring-blue-500"
                         />
                     </div>
                     
                     <!-- 전화번호 -->
                     <div class="form-group">
-                        <label for="phone_number" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        <label for="phone_number" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-0.5">
                             전화번호
                         </label>
                         <input
                             type="text"
                             id="phone_number"
                             bind:value={companyData.phone_number}
-                            class="w-full px-3 py-1.5 border border-gray-300 dark:border-gray-700 rounded-md dark:bg-gray-800 dark:text-gray-200 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                            class="w-full px-3 py-1 border border-gray-300 dark:border-gray-700 rounded-md dark:bg-gray-800 dark:text-gray-200 focus:outline-none focus:ring-1 focus:ring-blue-500"
                         />
                     </div>
                     
                     <!-- 웹사이트 -->
                     <div class="form-group">
-                        <label for="website" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        <label for="website" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-0.5">
                             웹사이트
                         </label>
                         <input
                             type="url"
                             id="website"
                             bind:value={companyData.website}
-                            class="w-full px-3 py-1.5 border border-gray-300 dark:border-gray-700 rounded-md dark:bg-gray-800 dark:text-gray-200 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                            class="w-full px-3 py-1 border border-gray-300 dark:border-gray-700 rounded-md dark:bg-gray-800 dark:text-gray-200 focus:outline-none focus:ring-1 focus:ring-blue-500"
                             placeholder="https://example.com"
                         />
                     </div>
                     
                     <!-- 이메일 -->
                     <div class="form-group">
-                        <label for="email" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        <label for="email" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-0.5">
                             이메일
                         </label>
                         <input
                             type="email"
                             id="email"
                             bind:value={companyData.email}
-                            class="w-full px-3 py-1.5 border border-gray-300 dark:border-gray-700 rounded-md dark:bg-gray-800 dark:text-gray-200 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                            class="w-full px-3 py-1 border border-gray-300 dark:border-gray-700 rounded-md dark:bg-gray-800 dark:text-gray-200 focus:outline-none focus:ring-1 focus:ring-blue-500"
                         />
                     </div>
                     
                     <!-- 업종 정보 섹션 -->
-                    <div class="md:col-span-2 mt-2">
-                        <h3 class="text-sm font-semibold text-gray-500 mb-2">업종 정보</h3>
+                    <div class="md:col-span-2 mt-1">
+                        <h3 class="text-sm font-semibold text-gray-500 mb-1">업종 정보</h3>
                     </div>
                     
                     <!-- 업종 -->
                     <div class="form-group">
-                        <label for="industry" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        <label for="industry" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-0.5">
                             업종
                         </label>
                         <input
                             type="text"
                             id="industry"
                             bind:value={companyData.industry}
-                            class="w-full px-3 py-1.5 border border-gray-300 dark:border-gray-700 rounded-md dark:bg-gray-800 dark:text-gray-200 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                            class="w-full px-3 py-1 border border-gray-300 dark:border-gray-700 rounded-md dark:bg-gray-800 dark:text-gray-200 focus:outline-none focus:ring-1 focus:ring-blue-500"
                         />
                     </div>
                     
                     <!-- 주요상품 -->
                     <div class="form-group">
-                        <label for="main_product" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        <label for="main_product" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-0.5">
                             주요상품
                         </label>
                         <input
                             type="text"
                             id="main_product"
                             bind:value={companyData.main_product}
-                            class="w-full px-3 py-1.5 border border-gray-300 dark:border-gray-700 rounded-md dark:bg-gray-800 dark:text-gray-200 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                            class="w-full px-3 py-1 border border-gray-300 dark:border-gray-700 rounded-md dark:bg-gray-800 dark:text-gray-200 focus:outline-none focus:ring-1 focus:ring-blue-500"
                         />
                     </div>
                 </div>
                 
-                <div class="mt-1 flex justify-end gap-3">
+                <div class="flex justify-end gap-3 mb-0">
                     <button
                         type="button"
-                        class="px-4 py-1.5 bg-gray-200 hover:bg-gray-300 text-gray-800 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-white rounded-md transition-colors"
+                        class="px-4 py-1 bg-gray-200 hover:bg-gray-300 text-gray-800 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-white rounded-md transition-colors"
                         on:click={closeModal}
                         disabled={isSubmitting}
                     >
@@ -290,7 +290,7 @@
                     </button>
                     <button
                         type="submit"
-                        class="px-4 py-1.5 bg-transparent border border-yellow-500 text-yellow-500 hover:bg-yellow-50 rounded-md transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
+                        class="px-4 py-1 bg-transparent border border-yellow-500 text-yellow-500 hover:bg-yellow-50 rounded-md transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
                         disabled={isSubmitting}
                     >
                         {isSubmitting ? $i18n.t('저장 중...') : $i18n.t('저장')}
@@ -303,6 +303,6 @@
 
 <style>
     .form-group {
-        margin-bottom: 0.5rem;
+        margin-bottom: 0.25rem;
     }
 </style> 

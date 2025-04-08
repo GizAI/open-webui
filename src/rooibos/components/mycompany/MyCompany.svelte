@@ -245,10 +245,10 @@
 		<!-- 기업 추가 버튼 -->
 		{#if !isTrashView && !isSharedView}
 			<button 
-				class="flex items-center gap-1 px-3 py-1.5 bg-transparent border border-yellow-500 text-yellow-500 hover:bg-yellow-50 rounded-md text-sm transition-colors mt-1"
+				class="flex items-center gap-1 px-2.5 py-1 bg-transparent border border-yellow-500 text-yellow-500 hover:bg-yellow-50 rounded-md text-xs transition-colors mt-0.5"
 				on:click={openCompanyForm}
 			>
-				<Building2Icon size={16} />
+				<Building2Icon size={14} />
 				<span>기업추가</span>
 			</button>
 		{/if}
@@ -270,6 +270,11 @@
 				<div class="w-full flex items-start justify-between">
 					<div class="self-start flex-1 px-1 mb-1">
 						<div class="flex items-center gap-2 mb-1">
+							{#if bookmark.company_type === 'private'}
+								<Badge type="success" content="내가 추가한 기업" />
+							{/if}
+						</div>
+						<div class="flex items-center gap-2 mb-1">
 							<div class="font-semibold line-clamp-1 h-fit">
 								{#if isTrashView}
 									{bookmark.folder_name} / {bookmark.company_name}
@@ -277,9 +282,6 @@
 									{bookmark.company_name}
 								{/if}
 							</div>
-							{#if bookmark.company_type === 'private'}
-								<Badge type="success" content="내가 추가한 기업" />
-							{/if}
 						</div>
 						<div class="text-xs overflow-hidden text-ellipsis line-clamp-1">
 							{bookmark.address}
