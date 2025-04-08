@@ -400,6 +400,7 @@
 			setTimeout(() => {
 				selectedFileId = uploadedFile.id;
 				contentType = 'memo';
+				scrollToContent(); // 콘텐츠 영역으로 스크롤
 			}, 100);
 		}
 	};
@@ -473,6 +474,8 @@
 						keys: ['meta.name', 'meta.description']
 					});
 				}
+				contentType = 'file';
+				scrollToContent(); // 콘텐츠 영역으로 스크롤
 				return uploadedFile;
 			} else {
 				toast.error($i18n.t('Failed to upload file.'));
@@ -1096,6 +1099,7 @@
 					
 					// 모달 표시
 					showChatModal = true;
+					scrollToContent(); // 콘텐츠 영역으로 스크롤
 				}
 			} else {
 				console.error("채팅을 로드하는 데 실패했습니다:", data.message);
@@ -1241,6 +1245,19 @@
 		}
 	};
 
+	// 콘텐츠 영역으로 스크롤하기 위한 참조
+	let contentRef;
+
+	// 모바일에서 콘텐츠 영역으로 스크롤하는 함수
+	const scrollToContent = () => {
+		if ($mobile && contentRef) {
+			// 다음 렌더링 사이클에서 스크롤 수행
+			setTimeout(() => {
+				contentRef.scrollIntoView({ behavior: 'smooth', block: 'start' });
+			}, 100);
+		}
+	};
+
 </script>
 
 {#if dragged}
@@ -1368,13 +1385,13 @@
 		<div
 			class="company-info-wrapper active {isFullscreen
 				? 'fullscreen'
-				: ''} flex flex-col w-full mt-4 h-[calc(100vh-8rem)]"
+				: ''} flex flex-col w-full mt-4 {$mobile ? 'h-auto' : 'h-[calc(100vh-8rem)]'}"
 			class:mobile={$mobile}
 		>
 			<!-- 두 열 레이아웃으로 변경 -->
-			<div class="flex-1 flex flex-row h-full">
+			<div class="flex-1 flex {$mobile ? 'flex-col' : 'flex-row'} h-full">
 				<!-- 왼쪽 사이드바: 메모/첨부 목록 -->
-				<div class="flex-shrink-0 w-72 max-w-72 flex flex-col gap-1 pr-3 h-full">
+				<div class="flex-shrink-0 {$mobile ? 'w-full mb-4' : 'w-72 max-w-72 pr-3'} flex flex-col gap-1 h-full">
 					<!-- 메모 섹션 -->
 					<div class="flex flex-col py-1 rounded-2xl border border-gray-50 dark:border-gray-850">
 						<div class="px-3 py-1 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center cursor-pointer"
@@ -1447,7 +1464,7 @@
 								</div>
 
 								{#if memoItems.length > 0}
-									<div class="flex overflow-y-auto h-full w-full scrollbar-hidden text-xs">
+									<div class="flex overflow-y-auto {$mobile ? 'max-h-48' : 'h-full'} w-full scrollbar-hidden text-xs">
 										<!-- 메모 목록 커스텀 표시 -->
 										<div class="w-full">
 											{#each memoItems as memo}
@@ -1460,6 +1477,7 @@
 															selectedFile = null; // 먼저 파일 참조 초기화
 															selectedFileId = memo.id;
 															contentType = 'memo';
+															scrollToContent(); // 콘텐츠 영역으로 스크롤
 														}
 													}}
 												>
@@ -1567,7 +1585,7 @@
 								</div>
 
 								{#if filteredItems.length > 0}
-									<div class="flex overflow-y-auto h-full w-full scrollbar-hidden text-xs">
+									<div class="flex overflow-y-auto {$mobile ? 'max-h-48' : 'h-full'} w-full scrollbar-hidden text-xs">
 										<!-- 첨부파일 목록 커스텀 표시 -->
 										<div class="w-full">
 											{#each filteredItems as file}
@@ -1580,6 +1598,7 @@
 															selectedFile = null; // 먼저 파일 참조 초기화
 															selectedFileId = file.id;
 															contentType = 'file';
+															scrollToContent(); // 콘텐츠 영역으로 스크롤
 														}
 													}}
 												>
@@ -1622,7 +1641,7 @@
 
 					<!-- 채팅 리스트 섹션 -->
 					{#if chatList && chatList.length > 0}
-						<div class="flex flex-col border border-gray-50 dark:border-gray-850 rounded-2xl mt-0.5">
+						<div class="flex flex-col border border-gray-50 dark:border-gray-850 rounded-2xl {$mobile ? 'mb-4' : 'mt-0.5'}">
 							<div class="px-3 py-1 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center cursor-pointer"
 								on:click={() => showChatsSection = !showChatsSection}
 							>
@@ -1657,7 +1676,7 @@
 				</div>
 
 				<!-- 오른쪽 콘텐츠 영역 -->
-				<div class="flex-1 flex flex-col h-full ml-3">
+				<div class="flex-1 flex flex-col h-full {$mobile ? '' : 'ml-3'}" bind:this={contentRef}>
 					{#if showFileCloseButton}
 						<div class="flex justify-end mb-2">
 							<button 

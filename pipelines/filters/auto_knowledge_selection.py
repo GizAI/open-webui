@@ -27,17 +27,19 @@ logger.setLevel(logging.DEBUG)
 # 콘솔 핸들러 설정
 console_handler = logging.StreamHandler()
 console_handler.setLevel(logging.INFO)
-console_format = logging.Formatter("[%(name)s] %(asctime)s - %(levelname)s - %(message)s")
+console_format = logging.Formatter(
+    "[%(name)s] %(asctime)s - %(levelname)s - %(message)s"
+)
 console_handler.setFormatter(console_format)
 logger.addHandler(console_handler)
 
 # 일반 로그 파일 핸들러 설정 (날짜별 로그 파일 및 로테이션)
 log_file = os.path.join(LOG_DIR, f"auto_kb_{datetime.now().strftime('%Y%m%d')}.log")
 file_handler = RotatingFileHandler(
-    log_file, 
-    maxBytes=10*1024*1024,  # 10MB
-    backupCount=30,         # 최대 30개 백업 파일 유지
-    encoding='utf-8'
+    log_file,
+    maxBytes=10 * 1024 * 1024,  # 10MB
+    backupCount=30,  # 최대 30개 백업 파일 유지
+    encoding="utf-8",
 )
 file_handler.setLevel(logging.DEBUG)
 file_format = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
@@ -45,17 +47,20 @@ file_handler.setFormatter(file_format)
 logger.addHandler(file_handler)
 
 # 오류 전용 로그 파일 핸들러 설정
-error_log_file = os.path.join(LOG_DIR, f"auto_kb_error_{datetime.now().strftime('%Y%m%d')}.log")
+error_log_file = os.path.join(
+    LOG_DIR, f"auto_kb_error_{datetime.now().strftime('%Y%m%d')}.log"
+)
 error_file_handler = RotatingFileHandler(
     error_log_file,
-    maxBytes=10*1024*1024,  # 10MB
-    backupCount=30,         # 최대 30개 백업 파일 유지
-    encoding='utf-8'
+    maxBytes=10 * 1024 * 1024,  # 10MB
+    backupCount=30,  # 최대 30개 백업 파일 유지
+    encoding="utf-8",
 )
 error_file_handler.setLevel(logging.ERROR)
 error_format = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
 error_file_handler.setFormatter(error_format)
 logger.addHandler(error_file_handler)
+
 
 # 커스텀 에러 로깅 함수 정의
 def log_error(request_id, e, error_info=None, additional_info=None):
@@ -64,29 +69,29 @@ def log_error(request_id, e, error_info=None, additional_info=None):
     """
     error_message = f"[{request_id}] 예외 발생: {e}"
     logger.error(error_message)
-    
+
     if error_info:
         logger.error(f"[{request_id}] 상세 오류 정보:\n{error_info}")
-    
+
     if additional_info:
         logger.error(f"[{request_id}] 추가 정보: {additional_info}")
-    
+
     # NoneType 오류인 경우 더 자세한 정보 출력
     if "'NoneType' object has no attribute 'get'" in str(e):
         logger.error(f"[{request_id}] NoneType 오류 특별 진단 시작 ---------------")
-        
+
         # 호출 스택 추적 정보 추가
         stack_trace = traceback.format_exc()
         frame_info = []
         for i, line in enumerate(stack_trace.splitlines()):
             if "File " in line:
                 frame_info.append(line.strip())
-        
+
         if frame_info:
             logger.error(f"[{request_id}] 호출 스택 정보:")
             for frame in frame_info:
                 logger.error(f"[{request_id}]   {frame}")
-        
+
         logger.error(f"[{request_id}] NoneType 오류 특별 진단 종료 ---------------")
 
 
@@ -309,16 +314,18 @@ Return the result in the following JSON format:
         __user__: Optional[dict] = None,
         __model__: Optional[dict] = None,
     ) -> dict:
-        request_id = datetime.now().strftime("%Y%m%d%H%M%S") + "_" + str(id(__request__))[-6:]
+        request_id = (
+            datetime.now().strftime("%Y%m%d%H%M%S") + "_" + str(id(__request__))[-6:]
+        )
         logger.info(f"[{request_id}] inlet 함수 시작")
-        
+
         try:
             logger.debug(f"[{request_id}] body: {body}")
             if __user__ is None:
                 logger.warning(f"[{request_id}] __user__ 객체가 None입니다.")
             else:
                 logger.debug(f"[{request_id}] __user__ ID: {__user__.get('id')}")
-            
+
             # 유저 객체 보정
             if __user__ is None:
                 user_data = {}
@@ -335,7 +342,7 @@ Return the result in the following JSON format:
                 )
                 user = Users.get_user_by_id(__user__["id"])
                 logger.debug(f"[{request_id}] 조회된 user 객체: {user}")
-                
+
             user_object = UserModel(**user_data)
             logger.debug(f"[{request_id}] 생성된 user_object: {user_object}")
 
@@ -345,7 +352,9 @@ Return the result in the following JSON format:
             logger.info(f"[{request_id}] Knowledge Base 선택 시작")
             kb_plan = await self.select_knowledge_base(body, __user__)
             if kb_plan is None:
-                logger.warning(f"[{request_id}] select_knowledge_base 결과가 None입니다")
+                logger.warning(
+                    f"[{request_id}] select_knowledge_base 결과가 None입니다"
+                )
                 raise ValueError("select_knowledge_base result is None")
 
             logger.debug(f"[{request_id}] kb_plan: {kb_plan}")
@@ -357,7 +366,7 @@ Return the result in the following JSON format:
                 ],
                 "stream": False,
             }
-            
+
             logger.info(f"[{request_id}] LLM 호출: Knowledge Base 선택")
             kb_response = await generate_chat_completion(
                 request=__request__, form_data=kb_payload, user=user
@@ -368,8 +377,12 @@ Return the result in the following JSON format:
                 kb_content = ""
             else:
                 logger.debug(f"[{request_id}] kb_response: {kb_response}")
-                kb_content = kb_response["choices"][0]["message"]["content"] if kb_response else ""
-            
+                kb_content = (
+                    kb_response["choices"][0]["message"]["content"]
+                    if kb_response
+                    else ""
+                )
+
             logger.debug(f"[{request_id}] kb_content: {kb_content}")
 
             if kb_content == "None":
@@ -381,30 +394,40 @@ Return the result in the following JSON format:
                     logger.debug(f"[{request_id}] 파싱된 kb_result: {kb_result}")
 
                     if kb_result is None:
-                        logger.warning(f"[{request_id}] kb_result 파싱 결과가 None입니다")
+                        logger.warning(
+                            f"[{request_id}] kb_result 파싱 결과가 None입니다"
+                        )
                         selected_knowledge_bases = []
                     else:
-                        selected_knowledge_bases = kb_result.get("selected_knowledge_bases", [])
-                        logger.debug(f"[{request_id}] selected_knowledge_bases: {selected_knowledge_bases}")
+                        selected_knowledge_bases = kb_result.get(
+                            "selected_knowledge_bases", []
+                        )
+                        logger.debug(
+                            f"[{request_id}] selected_knowledge_bases: {selected_knowledge_bases}"
+                        )
                 except Exception as e:
                     error_info = traceback.format_exc()
                     log_error(
-                        request_id, 
-                        e, 
-                        error_info, 
-                        f"파싱 대상 문자열: {kb_content[:200]}..."
+                        request_id,
+                        e,
+                        error_info,
+                        f"파싱 대상 문자열: {kb_content[:200]}...",
                     )
                     selected_knowledge_bases = []
 
             ###################################################################
             # 2) 웹 검색 필요 여부 판단
             ###################################################################
-            logger.debug(f"[{request_id}] 웹 검색 모드 상태: {self.valves.auto_search_mode}")
+            logger.debug(
+                f"[{request_id}] 웹 검색 모드 상태: {self.valves.auto_search_mode}"
+            )
             if self.valves.auto_search_mode:
                 logger.info(f"[{request_id}] 웹 검색 필요 여부 판단 시작")
                 ws_plan = await self.determine_web_search_needed(body, __user__)
                 if ws_plan is None:
-                    logger.warning(f"[{request_id}] determine_web_search_needed 결과가 None입니다")
+                    logger.warning(
+                        f"[{request_id}] determine_web_search_needed 결과가 None입니다"
+                    )
                     raise ValueError("determine_web_search_needed result is None")
 
                 ws_payload = {
@@ -426,8 +449,12 @@ Return the result in the following JSON format:
                     ws_content = ""
                 else:
                     logger.debug(f"[{request_id}] ws_response: {ws_response}")
-                    ws_content = ws_response["choices"][0]["message"]["content"] if ws_response else ""
-                
+                    ws_content = (
+                        ws_response["choices"][0]["message"]["content"]
+                        if ws_response
+                        else ""
+                    )
+
                 logger.debug(f"[{request_id}] ws_content: {ws_content}")
                 ws_result = parse_json_content(ws_content)
                 logger.debug(f"[{request_id}] 파싱된 ws_result: {ws_result}")
@@ -437,11 +464,15 @@ Return the result in the following JSON format:
                     web_search_enabled = False
                 else:
                     web_search_enabled = ws_result.get("web_search_enabled", False)
-                    logger.debug(f"[{request_id}] web_search_enabled 값: {web_search_enabled}")
+                    logger.debug(
+                        f"[{request_id}] web_search_enabled 값: {web_search_enabled}"
+                    )
 
                 if isinstance(web_search_enabled, str):
                     web_search_enabled = web_search_enabled.lower() in ["true", "yes"]
-                    logger.debug(f"[{request_id}] web_search_enabled 문자열 변환 후: {web_search_enabled}")
+                    logger.debug(
+                        f"[{request_id}] web_search_enabled 문자열 변환 후: {web_search_enabled}"
+                    )
 
                 if web_search_enabled:
                     logger.info(f"[{request_id}] 웹 검색 실행")
@@ -457,14 +488,20 @@ Return the result in the following JSON format:
             ###################################################################
             # 선택된 Knowledge Base가 있으면 body에 추가 (기존 files와 병합)
             ###################################################################
-            logger.info(f"[{request_id}] 선택된 Knowledge Base 처리 시작, 개수: {len(selected_knowledge_bases)}")
+            logger.info(
+                f"[{request_id}] 선택된 Knowledge Base 처리 시작, 개수: {len(selected_knowledge_bases)}"
+            )
             selected_kb_names = []
             for selected_knowledge_base in selected_knowledge_bases:
-                logger.debug(f"[{request_id}] 처리 중인 Knowledge Base: {selected_knowledge_base}")
+                logger.debug(
+                    f"[{request_id}] 처리 중인 Knowledge Base: {selected_knowledge_base}"
+                )
                 if not isinstance(selected_knowledge_base, dict):
-                    logger.warning(f"[{request_id}] selected_knowledge_base가 딕셔너리가 아닙니다: {type(selected_knowledge_base)}")
+                    logger.warning(
+                        f"[{request_id}] selected_knowledge_base가 딕셔너리가 아닙니다: {type(selected_knowledge_base)}"
+                    )
                     continue
-                    
+
                 kb_id = selected_knowledge_base.get("id")
                 kb_name = selected_knowledge_base.get("name")
                 logger.debug(f"[{request_id}] kb_id: {kb_id}, kb_name: {kb_name}")
@@ -473,30 +510,51 @@ Return the result in the following JSON format:
                     selected_kb_names.append(kb_name)
                     logger.debug(f"[{request_id}] Knowledge Base 정보 조회: {kb_id}")
                     selected_knowledge_base_info = Knowledges.get_knowledge_by_id(kb_id)
-                    logger.debug(f"[{request_id}] 조회된 Knowledge Base 정보: {selected_knowledge_base_info}")
+                    logger.debug(
+                        f"[{request_id}] 조회된 Knowledge Base 정보: {selected_knowledge_base_info}"
+                    )
 
                     if selected_knowledge_base_info:
                         logger.debug(f"[{request_id}] Knowledge Base 파일 정보 처리")
-                        if not hasattr(selected_knowledge_base_info, 'data') or selected_knowledge_base_info.data is None:
-                            logger.warning(f"[{request_id}] selected_knowledge_base_info.data가 없거나 None입니다")
+                        if (
+                            not hasattr(selected_knowledge_base_info, "data")
+                            or selected_knowledge_base_info.data is None
+                        ):
+                            logger.warning(
+                                f"[{request_id}] selected_knowledge_base_info.data가 없거나 None입니다"
+                            )
                             continue
-                            
-                        knowledge_file_ids = selected_knowledge_base_info.data.get("file_ids", [])
-                        logger.debug(f"[{request_id}] knowledge_file_ids: {knowledge_file_ids}")
-                        knowledge_files = Files.get_file_metadatas_by_ids(knowledge_file_ids)
-                        logger.debug(f"[{request_id}] knowledge_files 개수: {len(knowledge_files)}")
+
+                        knowledge_file_ids = selected_knowledge_base_info.data.get(
+                            "file_ids", []
+                        )
+                        logger.debug(
+                            f"[{request_id}] knowledge_file_ids: {knowledge_file_ids}"
+                        )
+                        knowledge_files = Files.get_file_metadatas_by_ids(
+                            knowledge_file_ids
+                        )
+                        logger.debug(
+                            f"[{request_id}] knowledge_files 개수: {len(knowledge_files)}"
+                        )
                         knowledge_dict = selected_knowledge_base_info.model_dump()
-                        knowledge_dict["files"] = [file.model_dump() for file in knowledge_files]
+                        knowledge_dict["files"] = [
+                            file.model_dump() for file in knowledge_files
+                        ]
                         knowledge_dict["type"] = "collection"
 
                         if "files" not in body:
                             body["files"] = []
                         body["files"].append(knowledge_dict)
-                        logger.debug(f"[{request_id}] body['files'] 개수: {len(body['files'])}")
+                        logger.debug(
+                            f"[{request_id}] body['files'] 개수: {len(body['files'])}"
+                        )
 
             if selected_kb_names:
-                kb_names_str = ', '.join(selected_kb_names)
-                logger.info(f"[{request_id}] 선택된 Knowledge Base 이름: {kb_names_str}")
+                kb_names_str = ", ".join(selected_kb_names)
+                logger.info(
+                    f"[{request_id}] 선택된 Knowledge Base 이름: {kb_names_str}"
+                )
                 await self.emit_status(
                     __event_emitter__,
                     level="status",
@@ -507,15 +565,17 @@ Return the result in the following JSON format:
         except Exception as e:
             error_info = traceback.format_exc()
             log_error(request_id, e, error_info)
-            
+
             # NoneType 오류인 경우 더 자세한 정보 출력
             if "'NoneType' object has no attribute 'get'" in str(e):
                 logger.error(f"[{request_id}] NoneType 오류 상세 분석:")
                 logger.error(f"[{request_id}] __user__: {__user__}")
                 if __user__ is not None:
                     logger.error(f"[{request_id}] __user__ 타입: {type(__user__)}")
-                    logger.error(f"[{request_id}] __user__ 키: {__user__.keys() if hasattr(__user__, 'keys') else 'No keys method'}")
-                
+                    logger.error(
+                        f"[{request_id}] __user__ 키: {__user__.keys() if hasattr(__user__, 'keys') else 'No keys method'}"
+                    )
+
             await self.emit_status(
                 __event_emitter__,
                 level="status",
@@ -531,16 +591,13 @@ Return the result in the following JSON format:
             "role": "system",
             "content": (
                 "You are a multidisciplinary expert with contextual adaptation capabilities. You possess deep expertise in the following fields: project management, psychology, economics, design, marketing, and engineering. You are able to use this knowledge in an integrated manner while adapting your approach to the specific needs of each request.\n\n"
-                
                 "The user is seeking high-level expertise to answer their questions or help them with their professional and personal projects. Each request may require a different level of depth, communication style, and analytical framework.\n\n"
-                
                 "Basic Structure for All Responses:\n"
                 "1. Begin by precisely understanding the request, asking clarifying questions if necessary.\n"
                 "2. Adapt your depth level according to the context (quick response or in-depth analysis).\n"
                 "3. Use clear and accessible language, avoiding corporate jargon unless relevant.\n"
                 "4. Check the logical consistency of your response before finalizing it.\n"
                 "5. End with a bullet-point summary of the essential elements to remember.\n\n"
-                
                 "Analytical Approach (to apply as relevant):\n"
                 "- Leverage your interdisciplinary expertise (PM, psychology, economics, design, marketing, engineering).\n"
                 "- Cite relevant references when they strengthen your point (e.g., Ries, 2011; McKinsey, 2021).\n"
@@ -548,39 +605,47 @@ Return the result in the following JSON format:
                 "- Highlight any contradictions or tensions in the analysis.\n"
                 "- Use recognized analytical frameworks when appropriate (RICE, OKRs, Double Diamond, etc.).\n"
                 "- Identify potentially problematic assumptions using data or logic.\n\n"
-                
                 "Response Enrichment (to use selectively):\n"
                 "- Illustrate your points with concrete and concise anecdotes.\n"
                 "- Integrate relevant academic knowledge by explaining it simply.\n"
                 "- Propose alternative scenario simulations when it helps decision-making.\n"
                 "- Present the advantages and disadvantages of different options when a decision needs to be made.\n"
                 "- Structure complex points in narrative form to facilitate understanding.\n\n"
-                
                 "Contextual Adaptation:\n"
                 "- Keep in memory the objectives and constraints mentioned previously in the conversation.\n"
                 "- If the user seems stressed, acknowledge it and suggest concrete steps to move forward.\n"
                 "- Maintain consistency in the terminology used unless requested otherwise.\n"
                 "- Follow a continuous improvement process by taking into account user feedback.\n"
                 "- Keep track of recurring topics to allow for further exploration later.\n\n"
-                
                 "Output Format:\n"
                 "1. A direct answer to the main question\n"
                 "2. A structured analysis using relevant techniques\n"
                 "3. Concrete examples or illustrations if appropriate\n"
                 "4. A final bullet-point summary\n"
                 "5. Follow-up or further exploration suggestions if relevant\n\n"
-                
                 "**IMPORTANT: Additionally, please respond in the language used by the user in their input.**"
             ),
         }
-        
+
         body.setdefault("messages", []).insert(0, context_message)
         logger.info(f"[{request_id}] inlet 함수 종료")
 
         await self.emit_status(
-                    __event_emitter__,
-                    level="status",
-                    message="답변을 준비중입니다. 잠시만 기다려 주세요",
-                    done=False,
-                )
+            __event_emitter__,
+            level="status",
+            message="답변을 준비중입니다. 잠시만 기다려 주세요",
+            done=False,
+        )
         return body
+
+    async def outlet(
+        self,
+        body: dict,
+        __user__: Optional[dict] = None,
+        __event_emitter__: Callable[[Any], Awaitable[None]] = None,
+    ) -> dict:
+        await self.emit_status(
+            __event_emitter__,
+            level="status",
+            done=True,
+        )
