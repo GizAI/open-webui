@@ -29,7 +29,7 @@
 	let selectedItem: any = null;
 	let showDeleteConfirm = false;
 	let isTrashView = false;
-	let deleteConfirmTitle = "나의기업에서 삭제하시겠습니까?";
+	let deleteConfirmTitle = "나의 고객에서 삭제하시겠습니까?";
 	let folderName = ""; // Variable to store folder name
 	let isSharedView = false;
 	
@@ -169,7 +169,7 @@
 		isSharedView = isShared === 'true';
 		
 		deleteConfirmTitle = isTrashView ? 
-			"휴지통에서 완전히 삭제하시겠습니까?" : "나의기업에서 삭제하시겠습니까?";
+			"휴지통에서 완전히 삭제하시겠습니까?" : "나의 고객에서 삭제하시겠습니까?";
 		
 		// 특별 폴더의 경우 고정된 이름 설정
 		if (isTrashView || folderId.startsWith('trash-folder-')) {
@@ -211,7 +211,7 @@
 
 <svelte:head>
 	<title>
-		나의기업 | {$WEBUI_NAME}
+		나의 고객 | {$WEBUI_NAME}
 	</title>
 </svelte:head>
 
@@ -249,7 +249,7 @@
 				on:click={openCompanyForm}
 			>
 				<Building2Icon size={14} />
-				<span>기업추가</span>
+				<span>고객추가</span>
 			</button>
 		{/if}
 	</div>

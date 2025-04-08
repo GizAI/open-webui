@@ -250,7 +250,7 @@
 
 <DeleteConfirmDialog
 	bind:show={showDeleteConfirm}
-	title="나의기업에서 삭제하시겠습니까?"
+	title="나의 고객에서 삭제하시겠습니까?"
 	on:confirm={confirmDelete}
 />
 

@@ -951,12 +951,12 @@ async def moveBookmark(request: Request):
             "bookmark": updated_bookmark
         }
     except Exception as e:
-        log.error("나의기업 이동 실패: %s", e)
+        log.error("나의 고객 이동 실패: %s", e)
         raise HTTPException(
             status_code=500,
             detail={
                 "success": False,
-                "error": "나의기업 이동 실패",
+                "error": "나의 고객 이동 실패",
                 "message": str(e)
             }
         )
@@ -1099,15 +1099,18 @@ async def get_chat_by_share_id(share_id: str, request: Request):
         }
 
 @router.post("/company/add")
-async def add_private_company_info(request: Request):
+async def add_private_entity_info(request: Request):
     """
-    기업 정보를 private_company_info 테이블에 저장합니다.
+    기업 정보를 private_entity_info 테이블에 저장합니다.
     """
     try:
         data = await request.json()
         company_data = data.get("company_data", {})
+        customer_data = data.get("customer_data", {})
         folder_id = data.get("folder_id")
         user_id = data.get("userId")
+        entity_type = data.get("entity_type", "COMPANY")  # 'COMPANY' 또는 'CUSTOMER' 값, 기본값은 'COMPANY'
+        item_type = data.get("item_type", "company")
         
         # 내부 식별용 사업자등록번호 생성 (시스템 내부용)
         internal_id = f"PRIVATE-{str(uuid.uuid4())[:8]}"
@@ -1116,27 +1119,49 @@ async def add_private_company_info(request: Request):
         smtp_id = f"SMTP-{str(uuid.uuid4())}"
         
         # 필수 필드 확인
-        if not company_data.get("company_name"):
-            return {
-                "success": False,
-                "error": "필수 정보 누락",
-                "message": "회사명은 필수 입력 항목입니다."
-            }
-        
-        # 사용자 ID 추가
-        company_data["user_id"] = user_id
-        
-        # 쿼리 및 파라미터 준비
-        columns = []
-        placeholders = []
-        values = {}
-        
-        for i, (key, value) in enumerate(company_data.items(), 1):
-            if value is not None:
-                columns.append(key)
-                placeholders.append(f":{key}")
-                values[key] = value
-        
+        if item_type == "company":
+            if not company_data.get("company_name"):
+                return {
+                    "success": False,
+                    "error": "필수 정보 누락",
+                    "message": "회사명은 필수 입력 항목입니다."
+                }
+            # 사용자 ID 추가
+            company_data["user_id"] = user_id
+            
+            # 쿼리 및 파라미터 준비
+            columns = []
+            placeholders = []
+            values = {}
+            
+            for i, (key, value) in enumerate(company_data.items(), 1):
+                if value is not None:
+                    columns.append(key)
+                    placeholders.append(f":{key}")
+                    values[key] = value
+        else:  # customer
+            if not customer_data.get("representative"):
+                return {
+                    "success": False,
+                    "error": "필수 정보 누락",
+                    "message": "대표자는 필수 입력 항목입니다."
+                }
+            # 데이터 변환: 고객 데이터를 회사 데이터 형식으로 변환
+            # 대표자를 회사명 필드에 저장
+            customer_data["company_name"] = customer_data.get("representative", "")
+            customer_data["user_id"] = user_id
+            
+            # 쿼리 및 파라미터 준비
+            columns = []
+            placeholders = []
+            values = {}
+            
+            for i, (key, value) in enumerate(customer_data.items(), 1):
+                if value is not None:
+                    columns.append(key)
+                    placeholders.append(f":{key}")
+                    values[key] = value
+                    
         # 사업자등록번호 내부용 추가
         if "business_registration_number" not in columns:
             columns.append("business_registration_number")
@@ -1148,12 +1173,17 @@ async def add_private_company_info(request: Request):
         placeholders.append(":smtp_id")
         values["smtp_id"] = smtp_id
         
+        # entity_type 추가
+        columns.append("entity_type")
+        placeholders.append(":entity_type")
+        values["entity_type"] = entity_type
+        
         columns_str = ", ".join(columns)
         placeholders_str = ", ".join(placeholders)
         
-        # 1. private_company_info 테이블에 기업 정보 저장
+        # 1. private_entity_info 테이블에 기업 정보 저장
         insert_query = f"""
-        INSERT INTO private_company_info ({columns_str})
+        INSERT INTO private_entity_info ({columns_str})
         VALUES ({placeholders_str})
         RETURNING smtp_id, company_name
         """
@@ -1283,7 +1313,7 @@ async def get_private_company_by_id(id: str, request: Request):
             pci.longitude,
             'private' as company_type
         FROM corp_bookmark f
-        INNER JOIN private_company_info pci ON f.business_registration_number::text = pci.business_registration_number::text
+        INNER JOIN private_entity_info pci ON f.business_registration_number::text = pci.business_registration_number::text
         LEFT JOIN file fi
             ON fi.id::text = ANY(ARRAY(
                 SELECT jsonb_array_elements_text(f.data::jsonb->'file_ids')
@@ -1405,9 +1435,9 @@ async def get_private_company_by_id(id: str, request: Request):
         }
 
 @router.put("/company/update")
-async def update_private_company_info(request: Request):
+async def update_private_entity_info(request: Request):
     """
-    기업 정보를 private_company_info 테이블에서 업데이트합니다.
+    기업 정보를 private_entity_info 테이블에서 업데이트합니다.
     """
     try:
         data = await request.json()
@@ -1447,7 +1477,7 @@ async def update_private_company_info(request: Request):
         
         # 업데이트 쿼리 구성
         update_query = f"""
-        UPDATE private_company_info
+        UPDATE private_entity_info
         SET {", ".join(set_clauses)}
         WHERE business_registration_number = :business_registration_number
         RETURNING smtp_id, company_name

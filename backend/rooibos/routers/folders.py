@@ -184,7 +184,7 @@ async def getFolderCompanyList(folderId: str, request: Request):
                 WHERE 1=1
             """
             
-            # 2. private_company_info 조회 쿼리
+            # 2. private_entity_info 조회 쿼리
             query_private = """
                 SELECT DISTINCT
                     f.id,
@@ -199,7 +199,7 @@ async def getFolderCompanyList(folderId: str, request: Request):
                     pci.business_registration_number,
                     'private' as company_type
                 FROM corp_bookmark f
-                INNER JOIN private_company_info pci
+                INNER JOIN private_entity_info pci
                     ON f.business_registration_number::text = pci.business_registration_number::text
                 LEFT JOIN rb_folder rf 
                     ON f.folder_id = rf.id    

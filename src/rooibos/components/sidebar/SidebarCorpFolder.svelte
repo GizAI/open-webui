@@ -163,7 +163,7 @@
 <RooibosFolder
 	collapsible={collapsible}
 	className="px-2 mt-0.5"
-	name="나의 기업"
+	name="나의 고객"
 	onAdd={() => createRooibosFolder('Untitled', 'corp')}
 	onAddLabel={$i18n.t('New Folder')}
 	open={open}

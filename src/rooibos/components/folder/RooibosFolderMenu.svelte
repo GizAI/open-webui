@@ -245,7 +245,7 @@
 										on:click={(e) => openCompanyForm(e, folderId)}
 									>
 										<Building2Icon strokeWidth="2" size={14} />
-										<div class="flex items-center">{$i18n.t('기업추가')}</div>
+										<div class="flex items-center">{$i18n.t('고객추가')}</div>
 									</DropdownMenu.Item>
 									<DropdownMenu.Item
 										class="flex gap-2 items-center px-3 py-1.5 text-sm cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 rounded-md"
@@ -302,7 +302,7 @@
 				{#if folders[deletingFolderId].deleted_bookmark_count > 0}
 					<div class="ml-2 mb-1">· {$i18n.t('휴지통의 기업')}: {folders[deletingFolderId].deleted_bookmark_count}개</div>
 				{/if}
-				<div class="mt-2 text-red-500">{$i18n.t('폴더를 삭제하기 전에 나의 기업에서 제거해주세요.')}</div>
+				<div class="mt-2 text-red-500">{$i18n.t('폴더를 삭제하기 전에 나의 고객에서 제거해주세요.')}</div>
 			{:else}
 				<div>{$i18n.t('이 작업은 "{{NAME}}" 폴더를 삭제합니다.', {
 					NAME: folders[deletingFolderId].name
