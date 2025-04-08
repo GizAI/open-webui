@@ -1376,7 +1376,7 @@
 				<!-- 왼쪽 사이드바: 메모/첨부 목록 -->
 				<div class="flex-shrink-0 w-72 max-w-72 flex flex-col gap-1 pr-3 h-full">
 					<!-- 메모 섹션 -->
-					<div class="flex flex-col py-1 rounded-2xl border border-gray-50 dark:border-gray-850 h-[200px]">
+					<div class="flex flex-col py-1 rounded-2xl border border-gray-50 dark:border-gray-850">
 						<div class="px-3 py-1 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center cursor-pointer"
 							on:click={() => showMemosSection = !showMemosSection}
 						>
@@ -1395,7 +1395,7 @@
 						</div>
 						
 						{#if showMemosSection}
-							<div class="w-full h-full flex flex-col">
+							<div class="w-full flex flex-col">
 								<div class="px-3">
 									<div class="flex mb-0.5">
 										<div class="self-center ml-1 mr-3">
@@ -1500,7 +1500,7 @@
 					</div>
 
 					<!-- 첨부파일 섹션 -->
-					<div class="flex flex-col py-1 rounded-2xl border border-gray-50 dark:border-gray-850 mt-1 h-[200px]">
+					<div class="flex flex-col py-1 rounded-2xl border border-gray-50 dark:border-gray-850 mt-0.5">
 						<div class="px-3 py-1 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center cursor-pointer"
 							on:click={() => showFilesSection = !showFilesSection}
 						>
@@ -1519,7 +1519,7 @@
 						</div>
 						
 						{#if showFilesSection}
-							<div class="w-full h-full flex flex-col">
+							<div class="w-full flex flex-col">
 								<div class="px-3">
 									<div class="flex mb-0.5">
 										<div class="self-center ml-1 mr-3">
@@ -1622,7 +1622,7 @@
 
 					<!-- 채팅 리스트 섹션 -->
 					{#if chatList && chatList.length > 0}
-						<div class="flex flex-col border border-gray-50 dark:border-gray-850 rounded-2xl mt-1 h-[150px]">
+						<div class="flex flex-col border border-gray-50 dark:border-gray-850 rounded-2xl mt-0.5">
 							<div class="px-3 py-1 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center cursor-pointer"
 								on:click={() => showChatsSection = !showChatsSection}
 							>
@@ -1640,7 +1640,7 @@
 								</button>
 							</div>
 							{#if showChatsSection}
-								<div class="flex-1 overflow-y-auto p-2 max-h-[150px]">
+								<div class="overflow-y-auto p-2">
 									{#each chatList as chat}
 										<button
 											type="button"
