@@ -37,10 +37,11 @@
 	import { getUserById } from '$lib/apis/users';
 	import { formatDate } from '$rooibos/components/common/helper';
 	import { formatFileSize } from '$lib/utils';
+	import PrivateCompanyDetail from '$rooibos/components/company/PrivateCompanyDetail.svelte';
 
-	// 컴포넌트 속성 추가
+	
 	export let isPrivateCompany = false;
-
+	
 	type Bookmark = {
 		id: string;
 		company_id: string;
@@ -1157,6 +1158,7 @@
 			console.error(error);
 		}
 	}
+
 </script>
 
 {#if dragged}
@@ -1771,7 +1773,19 @@
 			</div>
 
 			<div class="flex-1 px-4 pb-4">
-				<CompanyDetail company={bookmark} bind:financialData />
+				<div class="p-4 space-y-2">
+					<div class="flex justify-between items-center mb-2">
+						<h3 class="text-lg font-semibold">기본 정보</h3>
+					</div>
+
+					{#if isPrivateCompany}
+						<!-- 비공개 기업 정보 표시 전용 컴포넌트 -->
+						<PrivateCompanyDetail {bookmark} />
+					{:else}
+						<!-- 일반 기업 정보 표시 컴포넌트 -->
+						<CompanyDetail company={bookmark} />
+					{/if}
+				</div>
 			</div>
 		</div>
 	{:else}

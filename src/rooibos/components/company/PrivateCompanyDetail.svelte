@@ -1,0 +1,347 @@
+<script lang="ts">
+	import { MapPin, Briefcase, Calendar, Phone, Mail, Globe, Users } from 'lucide-svelte';
+	import { toast } from 'svelte-sonner';
+	import { WEBUI_API_BASE_URL } from '$lib/constants';
+
+	// 북마크 데이터 받기
+	export let bookmark: any;
+	
+	// 수정 모드 관련 상태
+	let isEditing = false;
+	let isSaving = false;
+	let editableData: any = null;
+	
+	// 필드를 편집 가능한지 여부를 결정하는 함수
+	function startEditing() {
+		// 원본 데이터 복사 (깊은 복사)
+		editableData = {
+			company_name: bookmark.company_name || '',
+			representative: bookmark.representative || '',
+			address: bookmark.address || '',
+			phone_number: bookmark.phone_number || '',
+			fax_number: bookmark.fax_number || '',
+			email: bookmark.email || '',
+			website: bookmark.website || '',
+			establishment_date: bookmark.establishment_date || '',
+			employee_count: bookmark.employee_count || '',
+			industry: bookmark.industry || '',
+			main_product: bookmark.main_product || '',
+			business_registration_number: bookmark.business_registration_number || ''
+		};
+		
+		isEditing = true;
+	}
+	
+	// 편집 취소
+	function cancelEditing() {
+		isEditing = false;
+		editableData = null;
+	}
+	
+	// 데이터 저장
+	async function saveData() {
+		if (!bookmark || !editableData) return;
+		
+		try {
+			isSaving = true;
+			
+			const response = await fetch(`${WEBUI_API_BASE_URL}/rooibos/mycompanies/company/update`, {
+				method: 'PUT',
+				headers: {
+					'Content-Type': 'application/json',
+					'Authorization': `Bearer ${localStorage.token}`
+				},
+				body: JSON.stringify({
+					company_data: editableData,
+					business_registration_number: bookmark.business_registration_number
+				})
+			});
+			
+			const data = await response.json();
+			
+			if (data.success) {
+				toast.success('기업 정보가 성공적으로 업데이트되었습니다.');
+				
+				// 성공 시 북마크 데이터 업데이트 (원본 객체 업데이트)
+				Object.keys(editableData).forEach(key => {
+					if (editableData[key] !== undefined) {
+						bookmark[key] = editableData[key];
+					}
+				});
+				
+				isEditing = false;
+				editableData = null;
+			} else {
+				toast.error(`저장 실패: ${data.message || '알 수 없는 오류'}`);
+			}
+		} catch (error) {
+			console.error('기업 정보 저장 중 오류:', error);
+			toast.error('기업 정보 저장 중 오류가 발생했습니다.');
+		} finally {
+			isSaving = false;
+		}
+	}
+	
+	// 날짜 포맷 함수
+	function formatDate(dateString) {
+		if (!dateString) return '';
+		
+		// YYYY-MM-DD 형식이면 그대로 반환
+		if (/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
+			return dateString;
+		}
+		
+		// YYYYMMDD 형식이면 하이픈 추가
+		if (/^\d{8}$/.test(dateString)) {
+			return dateString.replace(/(\d{4})(\d{2})(\d{2})/, '$1-$2-$3');
+		}
+		
+		return dateString;
+	}
+</script>
+
+<div class="company-info-wrapper active flex flex-col w-full overflow-hidden">
+	<div class="flex-1 px-4 pb-4">
+		<div class="space-y-6 mt-2">
+			<!-- 기본 정보 -->
+			<div class="space-y-2 border-gray-100 pb-4 text-gray-900 dark:text-gray-500">
+				<div class="flex justify-between items-center mb-2">
+					<h3 class="text-sm font-semibold text-gray-400 flex items-center gap-2">
+						<MapPin size={16} class="text-blue-500" />
+						기본 정보
+					</h3>
+					{#if !isEditing}
+						<button
+							class="text-sm px-2 py-1 bg-blue-100 text-blue-600 hover:bg-blue-200 rounded transition-colors"
+							on:click={startEditing}
+						>
+							수정
+						</button>
+					{/if}
+				</div>
+				
+				{#if isEditing && editableData}
+					<!-- 수정 폼 -->
+					<div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm space-y-4">
+						<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+							<div class="space-y-2">
+								<label class="block text-sm font-medium text-gray-700 dark:text-gray-300">회사명</label>
+								<input
+									type="text"
+									bind:value={editableData.company_name}
+									class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+								/>
+							</div>
+							
+							<div class="space-y-2">
+								<label class="block text-sm font-medium text-gray-700 dark:text-gray-300">대표자</label>
+								<input
+									type="text"
+									bind:value={editableData.representative}
+									class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+								/>
+							</div>
+							
+							<div class="space-y-2 md:col-span-2">
+								<label class="block text-sm font-medium text-gray-700 dark:text-gray-300">주소</label>
+								<input
+									type="text"
+									bind:value={editableData.address}
+									class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+								/>
+							</div>
+							
+							<div class="space-y-2">
+								<label class="block text-sm font-medium text-gray-700 dark:text-gray-300">전화번호</label>
+								<input
+									type="text"
+									bind:value={editableData.phone_number}
+									class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+								/>
+							</div>
+							
+							<div class="space-y-2">
+								<label class="block text-sm font-medium text-gray-700 dark:text-gray-300">팩스</label>
+								<input
+									type="text"
+									bind:value={editableData.fax_number}
+									class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+								/>
+							</div>
+							
+							<div class="space-y-2">
+								<label class="block text-sm font-medium text-gray-700 dark:text-gray-300">이메일</label>
+								<input
+									type="email"
+									bind:value={editableData.email}
+									class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+								/>
+							</div>
+							
+							<div class="space-y-2">
+								<label class="block text-sm font-medium text-gray-700 dark:text-gray-300">웹사이트</label>
+								<input
+									type="text"
+									bind:value={editableData.website}
+									class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+								/>
+							</div>
+							
+							<div class="space-y-2">
+								<label class="block text-sm font-medium text-gray-700 dark:text-gray-300">설립일</label>
+								<input
+									type="date"
+									bind:value={editableData.establishment_date}
+									class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+								/>
+							</div>
+							
+							<div class="space-y-2">
+								<label class="block text-sm font-medium text-gray-700 dark:text-gray-300">직원수</label>
+								<input
+									type="number"
+									bind:value={editableData.employee_count}
+									class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+								/>
+							</div>
+						</div>
+						
+						<!-- 업종 정보 -->
+						<div class="space-y-2 pt-4 border-t border-gray-100">
+							<h3 class="text-sm font-semibold text-gray-400 flex items-center gap-2 mb-4">
+								<Briefcase size={16} class="text-blue-500" />
+								업종 정보
+							</h3>
+							
+							<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+								<div class="space-y-2 md:col-span-2">
+									<label class="block text-sm font-medium text-gray-700 dark:text-gray-300">업종</label>
+									<input
+										type="text"
+										bind:value={editableData.industry}
+										class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+									/>
+								</div>
+								
+								<div class="space-y-2 md:col-span-2">
+									<label class="block text-sm font-medium text-gray-700 dark:text-gray-300">주요 상품</label>
+									<input
+										type="text"
+										bind:value={editableData.main_product}
+										class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+									/>
+								</div>
+							</div>
+						</div>
+						
+						<div class="flex justify-end space-x-2 mt-4 p-2">
+							<button
+								class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors"
+								on:click={cancelEditing}
+								disabled={isSaving}
+							>
+								취소
+							</button>
+							<button
+								class="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md transition-colors"
+								on:click={saveData}
+								disabled={isSaving}
+							>
+								{isSaving ? '저장 중...' : '저장'}
+							</button>
+						</div>
+					</div>
+				{:else}
+					<!-- 조회 화면 - 기본 정보 -->
+					<div class="space-y-1">
+						{#if bookmark.business_registration_number}
+							<p class="text-sm flex items-center justify-between">
+								<span>사업자 등록 번호</span>
+								<span>{bookmark.business_registration_number}</span>
+							</p>
+						{/if}
+						{#if bookmark.representative}
+							<p class="text-sm flex items-center justify-between">
+								<span>대표이사</span>
+								<span>{bookmark.representative}</span>
+							</p>
+						{/if}
+						{#if bookmark.address}
+							<p class="text-sm flex items-center justify-between">
+								<span>주소</span>
+								<span>{bookmark.address}</span>
+							</p>
+						{/if}
+						{#if bookmark.phone_number}
+							<p class="text-sm flex items-center justify-between">
+								<span>전화번호</span>
+								<span>{bookmark.phone_number}</span>
+							</p>
+						{/if}
+						{#if bookmark.fax_number}
+							<p class="text-sm flex items-center justify-between">
+								<span>팩스</span>
+								<span>{bookmark.fax_number}</span>
+							</p>
+						{/if}
+						{#if bookmark.email}
+							<p class="text-sm flex items-center justify-between">
+								<span>이메일</span>
+								<span>{bookmark.email}</span>
+							</p>
+						{/if}
+						{#if bookmark.website}
+							<p class="text-sm flex items-center justify-between">
+								<span>웹사이트</span>
+								<a
+									href={bookmark.website.startsWith('http') ? bookmark.website : `https://${bookmark.website}`}
+									target="_blank"
+									rel="noopener noreferrer"
+									class="text-blue-500 underline"
+								>
+									{bookmark.website}
+								</a>
+							</p>
+						{/if}
+						{#if bookmark.establishment_date}
+							<p class="text-sm flex items-center justify-between">
+								<span>설립일</span>
+								<span>{formatDate(bookmark.establishment_date)}</span>
+							</p>
+						{/if}
+						{#if bookmark.employee_count}
+							<p class="text-sm flex items-center justify-between">
+								<span>직원수</span>
+								<span>{bookmark.employee_count}명</span>
+							</p>
+						{/if}
+					</div>
+				{/if}
+			</div>
+
+			<!-- 업종 정보 -->
+			{#if (bookmark.industry || bookmark.main_product) && !isEditing}
+				<div class="space-y-2 border-t border-gray-100 pt-6 text-gray-900 dark:text-gray-400">
+					<h3 class="text-sm font-semibold text-gray-400 flex items-center gap-2">
+						<Briefcase size={16} class="text-blue-500" />
+						업종 정보
+					</h3>
+					<div class="space-y-1">
+						{#if bookmark.industry}
+							<p class="text-sm flex items-center justify-between">
+								<span>업종</span>
+								<span>{bookmark.industry}</span>
+							</p>
+						{/if}
+						{#if bookmark.main_product}
+							<p class="text-sm flex items-center justify-between">
+								<span>주요상품</span>
+								<span>{bookmark.main_product}</span>
+							</p>
+						{/if}
+					</div>
+				</div>
+			{/if}
+		</div>
+	</div>
+</div> 

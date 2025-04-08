@@ -1404,3 +1404,82 @@ async def get_private_company_by_id(id: str, request: Request):
             "message": str(e)
         }
 
+@router.put("/company/update")
+async def update_private_company_info(request: Request):
+    """
+    기업 정보를 private_company_info 테이블에서 업데이트합니다.
+    """
+    try:
+        data = await request.json()
+        company_data = data.get("company_data", {})
+        business_registration_number = data.get("business_registration_number")
+        
+        # 사업자등록번호 필수 확인
+        if not business_registration_number:
+            return {
+                "success": False,
+                "error": "필수 정보 누락",
+                "message": "사업자등록번호는 필수 입력 항목입니다."
+            }
+        
+        # 업데이트할 필드 정리
+        set_clauses = []
+        params = {"business_registration_number": business_registration_number}
+        
+        for key, value in company_data.items():
+            # 업데이트 가능한 필드 목록 (필요에 따라 조정)
+            allowed_fields = [
+                "company_name", "representative", "address", "phone_number", 
+                "fax_number", "email", "website", "establishment_date", 
+                "employee_count", "industry", "main_product"
+            ]
+            
+            if key in allowed_fields:
+                set_clauses.append(f"{key} = :{key}")
+                params[key] = value
+        
+        if not set_clauses:
+            return {
+                "success": False,
+                "error": "업데이트 정보 누락",
+                "message": "업데이트할 정보가 없습니다."
+            }
+        
+        # 업데이트 쿼리 구성
+        update_query = f"""
+        UPDATE private_company_info
+        SET {", ".join(set_clauses)}
+        WHERE business_registration_number = :business_registration_number
+        RETURNING smtp_id, company_name
+        """
+        
+        with get_db() as db:
+            log.info(f"Executing query: {update_query} with params: {params}")
+            result = db.execute(text(update_query), params)
+            updated = result.fetchone()
+            
+            if not updated:
+                return {
+                    "success": False,
+                    "error": "업데이트 실패",
+                    "message": "해당 사업자등록번호를 가진 기업 정보를 찾을 수 없습니다."
+                }
+            
+            db.commit()
+            
+            return {
+                "success": True,
+                "message": "기업 정보가 성공적으로 업데이트되었습니다.",
+                "data": {
+                    "smtp_id": updated[0],
+                    "company_name": updated[1]
+                }
+            }
+    except Exception as e:
+        log.error("기업 정보 업데이트 오류: " + str(e))
+        return {
+            "success": False,
+            "error": "업데이트 실패",
+            "message": str(e)
+        }
+
