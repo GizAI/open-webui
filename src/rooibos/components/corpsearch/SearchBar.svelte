@@ -100,8 +100,8 @@
 			searchResults = [];
 			addressList = [];
 		}
-		resultViewMode = 'list';
-		toggleViewMode();
+		// resultViewMode = 'list'; // 이 라인을 주석처리하여 지도 뷰를 유지합니다
+		// toggleViewMode(); // 불필요한 뷰 전환을 제거합니다
 	}
 
 	function handleLocationChange() {
@@ -259,12 +259,13 @@
 	}
 
 	onMount(() => {
-		const savedHistory = localStorage.getItem('searchHistory');
-		if (savedHistory) {
-			const sevenDays = 7 * 24 * 60 * 60 * 1000;
-			const now = Date.now();
-			searchHistory = JSON.parse(savedHistory).filter((item) => now - item.timestamp <= sevenDays);
-			localStorage.setItem('searchHistory', JSON.stringify(searchHistory));
+		try {
+			const savedHistory = localStorage.getItem('searchHistory');
+			if (savedHistory) {
+				searchHistory = JSON.parse(savedHistory);
+			}
+		} catch (error) {
+			console.error('검색 이력을 불러오는데 실패했습니다:', error);
 		}
 
 		filterGroups.forEach((group) => {
@@ -279,12 +280,18 @@
 		onScroll();
 
 		resizeObserver = new ResizeObserver(() => {
-			onScroll();
+			if (filterScrollRef) {
+				onScroll();
+			}
 		});
 
 		if (filterScrollRef) {
 			resizeObserver.observe(filterScrollRef);
 		}
+		
+		// 항상 지도 뷰로 시작하도록 설정
+		resultViewMode = 'map';
+		dispatch('showCompanyListClick', resultViewMode);
 
 		return () => {
 			if (filterScrollRef) {
@@ -303,6 +310,15 @@
 	function toggleViewMode() {
 		resultViewMode = resultViewMode === 'map' ? 'list' : 'map';
 		dispatch('showCompanyListClick', resultViewMode);
+	}
+
+	// 필터 액션 핸들러 추가
+	function handleAction(action: string) {
+		if (action === 'apply') {
+			onApply();
+		} else if (action === 'reset') {
+			onReset();
+		}
 	}
 </script>
 

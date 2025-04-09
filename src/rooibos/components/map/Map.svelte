@@ -209,9 +209,16 @@
 		latitude: '',
 		longitude: ''
 	};
+	// 기본 위치 정보 (서울시청)
+	const DEFAULT_LOCATION = {
+		lat: 37.5666805,
+		lng: 126.9784147,
+		name: '서울시청'
+	};
 
 	$: if (error !== null) {
-		resultViewMode = 'list';
+		// 오류가 있더라도 지도 뷰를 유지하기 위해 주석 처리
+		// resultViewMode = 'list';
 		companyList = searchResults;
 	}
 
@@ -389,6 +396,9 @@
 		console.log('Searching for:', searchValue, 'with filters:', filters);
 		activeFilterGroup = null;
 		isListIconVisible = true;
+		
+		// 지도 뷰를 기본으로 설정
+		resultViewMode = 'map';
 
 		try {
 			searchResults = await fetchSearchResults(searchValue, filters);
@@ -440,9 +450,12 @@
 		handleSearch(searchValue, selectedFilters);
 	};
 
-	const initializeMap = (position: any) => {
+	function initializeMap(position: any) {
 		const mapContainer = document.getElementById('map');
 
+		// 항상 지도 뷰로 초기화
+		resultViewMode = 'map';
+		
 		handleSearch('', selectedFilters);
 
 		if (!mapContainer) {
@@ -465,6 +478,21 @@
 			map: map
 		});
 
+		// 기본 위치를 사용하는 경우 라벨 표시
+		if (position.name && position.name === DEFAULT_LOCATION.name) {
+			new naver.maps.InfoWindow({
+				content: `<div style="padding: 10px; text-align: center;"><strong>현재 위치:</strong> ${position.name}<br><span style="font-size: 12px; color: #666;">실제 위치를 가져올 수 없어 기본 위치를 사용합니다.</span></div>`,
+				maxWidth: 300,
+				backgroundColor: "#fff",
+				borderColor: "#ccc",
+				borderWidth: 2,
+				anchorSize: new naver.maps.Size(10, 10),
+				anchorSkew: true,
+				anchorColor: "#fff",
+				pixelOffset: new naver.maps.Point(10, -5)
+			}).open(map, marker);
+		}
+
 		mapInstance = { map, marker, infoWindow: null, companyMarkers: [] };
 		loading = false;
 
@@ -472,14 +500,16 @@
 	};
 
 	const moveToCurrentLocation = () => {
-		if (!location || !mapInstance) {
-			alert('현재 위치를 가져올 수 없습니다.');
+		if (!mapInstance) {
+			alert('지도를 사용할 수 없습니다.');
 			return;
 		}
 
 		if (userLocation) {
-			location.lat = userLocation.lat;
-			location.lng = userLocation.lng;
+			location = {
+				lat: userLocation.lat,
+				lng: userLocation.lng
+			};
 			const currentLocation = createLatLng(userLocation.lat, userLocation.lng);
 			mapInstance.map.setCenter(currentLocation);
 
@@ -493,6 +523,8 @@
 				});
 			}
 			handleSearch('', selectedFilters);
+		} else {
+			alert('현재 위치를 가져올 수 없습니다.');
 		}
 	};
 
@@ -533,22 +565,33 @@
 					timeout: 5000
 				};
 
-				const position = await new Promise<GeolocationPosition>((resolve, reject) => {
-					navigator.geolocation.getCurrentPosition(resolve, reject, options);
-				});
+				try {
+					const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+						navigator.geolocation.getCurrentPosition(resolve, reject, options);
+					});
 
-				location = {
-					lat: position.coords.latitude,
-					lng: position.coords.longitude
-				};
+					location = {
+						lat: position.coords.latitude,
+						lng: position.coords.longitude
+					};
 
-				userLocation = {
-					lat: position.coords.latitude,
-					lng: position.coords.longitude
-				};
+					userLocation = {
+						lat: position.coords.latitude,
+						lng: position.coords.longitude
+					};
+				} catch (geoError) {
+					console.error('위치 정보를 가져오는데 실패했습니다:', geoError);
+					error = `위치 정보를 가져오는데 실패했습니다: ${(geoError as Error).message}`;
+					
+					// 기본 위치 사용
+					location = { ...DEFAULT_LOCATION };
+					
+					// 오류가 있어도 지도 뷰를 유지
+					resultViewMode = 'map';
+				}
 
 				await loadNaverMapScript();
-				initializeMap(location);
+				initializeMap(location || DEFAULT_LOCATION);
 
 				const module = await import('./MarkerClustering');
 				const MarkerClustering = module.default;
@@ -564,9 +607,40 @@
 				}
 
 				handleSearch('', selectedFilters);
+				
+				// 지도 뷰로 강제 설정
+				resultViewMode = 'map';
 			} catch (err) {
 				const errorMessage = (err as Error).message;
 				error = errorMessage;
+				
+				// 오류가 발생해도 기본 위치로 지도 초기화 시도
+				try {
+					await loadNaverMapScript();
+					initializeMap(DEFAULT_LOCATION);
+					
+					const module = await import('./MarkerClustering');
+					const MarkerClustering = module.default;
+					
+					if (mapInstance) {
+						markerClustering = new MarkerClustering({
+							map: mapInstance.map,
+							gridSize: 60,
+							maxZoom: zoom + 1,
+							disableClickZoom: false
+						});
+						
+						handleSearch('', selectedFilters);
+						
+						// 지도 뷰로 강제 설정
+						resultViewMode = 'map';
+					}
+				} catch (mapErr) {
+					console.error('지도 초기화 실패:', mapErr);
+					// 지도 초기화도 실패하면 목록 뷰로 전환
+					resultViewMode = 'list';
+				}
+			} finally {
 				loading = false;
 			}
 		};
@@ -575,6 +649,7 @@
 
 		window.addEventListener('clusterClick', (e: any) => {
 			companyList = e.detail.markers.map((marker: any) => marker.company_info);
+			// 클러스터 클릭시 목록 보기로 전환
 			resultViewMode = 'list';
 			showCompanyInfo = false;
 		});
@@ -655,12 +730,24 @@
 {/if}
 
 {#if error}
-	<div class="fixed inset-0 flex items-center justify-center">
-		<p class="text-red-500">
-			{error === 'User denied Geolocation'
-				? '위치 접근을 허용해주세요.'
-				: '위치를 가져오는데 실패했습니다.'}
-		</p>
+	<div class="fixed inset-0 flex items-center justify-center z-40" style="pointer-events: none;">
+		<div class="bg-white/90 p-4 rounded-lg shadow-lg border border-gray-300 max-w-md text-center" style="pointer-events: auto;">
+			<p class="text-red-500 font-medium mb-2">
+				{error === 'User denied Geolocation'
+					? '위치 접근을 허용해주세요.'
+					: '현재 위치를 가져오는데 실패했습니다.'}
+			</p>
+			<p class="text-gray-700 text-sm mb-3">
+				기본 위치(서울시청)에서 지도를 시작합니다. 
+				현재 네트워크 상태나 위치 권한을 확인해 주세요.
+			</p>
+			<button 
+				class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
+				on:click={() => error = null}
+			>
+				확인
+			</button>
+		</div>
 	</div>
 {/if}
 
