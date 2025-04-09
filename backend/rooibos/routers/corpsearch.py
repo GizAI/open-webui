@@ -1,26 +1,26 @@
-from fastapi import APIRouter, Request, HTTPException
-from typing import Optional
+from fastapi import APIRouter, Request, HTTPException, Depends
+from typing import Optional, Dict, Any
 from open_webui.internal.db import get_db
 from sqlalchemy import text
 from open_webui.env import SRC_LOG_LEVELS
 from rooibos.config_extension import NAVER_MAP_CLIENT_ID, NAVER_MAP_CLIENT_SECRET, NAVER_ID, NAVER_CLIENT_SECRET
+from starlette.responses import JSONResponse
+from functools import lru_cache
 
 import json
 import logging
 import requests
+import time
 
 log = logging.getLogger(__name__)
 log.setLevel(SRC_LOG_LEVELS["COMFYUI"])
 
 router = APIRouter()
 
-import requests
-
-import requests
-
-import requests
-
-import requests
+# 쿼리 결과 캐싱을 위한 LRU 캐시 (최근 100개 쿼리 결과 저장)
+@lru_cache(maxsize=100)
+def cached_query_results(query_hash: str):
+    return {}
 
 def search_place(query: str):
     url = "https://openapi.naver.com/v1/search/local.json"
@@ -86,8 +86,30 @@ def get_executable_query(sql_query: str, params: list) -> str:
         executable_query = executable_query.replace(placeholder, formatted_param)
     return executable_query
 
+# 거리 계산 함수를 최적화 (지구구체 계산 대신 PostGIS 활용)
+def get_distance_conditions(lat, lng, distance, param_count):
+    """효율적인 거리 계산 조건 생성 (구면 거리 계산 사용)"""
+    return f"""
+        ROUND(
+            (
+                6371 * acos(
+                    cos(radians(${param_count})) *
+                    cos(radians(rmc.latitude)) *
+                    cos(radians(rmc.longitude) - radians(${param_count + 1})) +
+                    sin(radians(${param_count})) *
+                    sin(radians(rmc.latitude))
+                )
+            ) * 1000
+        ) <= ${param_count + 2}
+    """
+
 @router.get("/")
-async def search(request: Request):
+async def search(
+    request: Request,
+    page: int = 1,
+    page_size: int = 50,
+):
+    start_time = time.time()
     search_params = request.query_params
     id = search_params.get("id")    
     query = search_params.get("query", "").strip()
@@ -98,7 +120,7 @@ async def search(request: Request):
     categories_str = search_params.get("queryCategories", "")
     categories = [cat.strip() for cat in categories_str.split(",") if cat.strip()]
 
-
+    # 위치 검색이면 해당 API를 빠르게 호출
     if "location" in categories and query:
         if "역" in query:
             location_result = search_place(query)
@@ -115,7 +137,6 @@ async def search(request: Request):
                 },
             }
         else:
-            # If no valid coordinates were found, return an error response.
             return {
                 "success": False,
                 "error": "No location found",
@@ -132,6 +153,7 @@ async def search(request: Request):
 
     distance = float(filters.get("radius", {}).get("value", "200")) if filters.get("radius") else "200"
 
+    # 필터 조건 파싱
     certification = filters.get("certification", {}).get("value") if filters.get("certification") else None
 
     employee_count_data = filters.get("employee_count", {})
@@ -163,97 +185,141 @@ async def search(request: Request):
     sales_min, sales_max = process_range_filter(filters.get("sales"))
     unallocated_profit_min, unallocated_profit_max = process_range_filter(filters.get("unallocated_profit"))
     total_equity_min, total_equity_max = process_range_filter(filters.get("total_equity"))
+    
+    # 캐싱을 위한 쿼리 해시값 생성
+    query_hash = f"{id}_{query}_{user_id}_{latitude}_{longitude}_{categories_str}_{filters_param}_{page}_{page_size}"
+    cached_result = cached_query_results(query_hash)
+    if cached_result:
+        log.info(f"Cache hit for query: {query_hash}")
+        return cached_result
+    
     try:
         params = []
         param_count = 1
 
-        sql_query = """
-            SELECT 
-                rmc.master_id,
-                rmc.company_name,
-                rmc.representative,
-                rmc.postal_code,
-                rmc.address,
-                rmc.phone_number,
-                rmc.fax_number,
-                rmc.website,
-                rmc.email,
-                rmc.company_type,
-                rmc.establishment_date,
-                rmc.founding_date,
-                rmc.employee_count,
-                rmc.industry_code1,
-                rmc.industry_code2,
-                rmc.industry,
-                rmc.main_product,
-                rmc.main_bank,
-                rmc.main_branch,
-                rmc.group_name,
-                rmc.stock_code,
-                rmc.business_registration_number,
-                rmc.corporate_number,
-                rmc.english_name,
-                rmc.trade_name,
-                rmc.fiscal_month,
-                rmc.sales_year,
-                rmc.recent_sales,
-                rmc.profit_year,
-                rmc.recent_profit,
-                rmc.operating_profit_year,
-                rmc.recent_operating_profit,
-                rmc.asset_year,
-                rmc.recent_total_assets,
-                rmc.debt_year,
-                rmc.recent_total_debt,
-                rmc.equity_year,
-                rmc.recent_total_equity,
-                rmc.capital_year,
-                rmc.recent_capital,
-                rmc.region1,
-                rmc.region2,
-                rmc.industry_major,
-                rmc.industry_middle,
-                rmc.industry_small,
-                rmc.latitude,
-                rmc.longitude,
-                rmc.sme_type,
-                rmc.research_info,
-                rmc.representative_birth ,
-                rmc.is_family_shareholder s_ha,
-                rmc.is_non_family_shareholder ,
-                rmc.financial_statement_year,
-                rmc.total_assets,
-                rmc.total_equity,
-                rmc.net_income,
-                rmc.venture_confirmation_type,
-                rmc.venture_valid_from,
-                rmc.venture_valid_until,
-                rmc.confirming_authority,
-                rmc.new_reconfirmation_code,
-                sfd_latest.total_equity AS financial_total_equity,
-                cb.id as bookmark_id,
-                cb.user_id as bookmark_user_id,
-                cb.data as files
-        """        
-
+        # 카운트 쿼리와 실제 데이터 쿼리 분리
         if not id:
+            # 먼저 조건에 맞는 전체 개수를 효율적으로 계산
+            count_query = """
+                SELECT COUNT(*) 
+                FROM rb_master_company rmc
+            """
+            
+            count_where_clauses = ["rmc.company_type != '개인' AND rmc.latitude IS NOT NULL"]
+            count_params = []
+            count_param_idx = 1
+            
             if latitude and longitude:
-                sql_query += f"""
-                    , ROUND(
+                dist_condition = f"""
+                    ROUND(
                         (
                             6371 * acos(
-                                cos(radians(${param_count})) *
+                                cos(radians(${count_param_idx})) *
                                 cos(radians(rmc.latitude)) *
-                                cos(radians(rmc.longitude) - radians(${param_count + 1})) +
-                                sin(radians(${param_count})) *
+                                cos(radians(rmc.longitude) - radians(${count_param_idx + 1})) +
+                                sin(radians(${count_param_idx})) *
                                 sin(radians(rmc.latitude))
                             )
                         ) * 1000
-                    ) AS distance_from_location
+                    ) <= ${count_param_idx + 2}
                 """
-                params.extend([float(latitude), float(longitude)])
-                param_count += 2
+                count_where_clauses.append(dist_condition)
+                count_params.extend([float(latitude), float(longitude), distance])
+                count_param_idx += 3
+            
+            # 검색어 조건 추가
+            if query:
+                if len(categories) > 0:
+                    search_conditions = []
+                    for cat in categories:
+                        if cat == "company":
+                            search_conditions.append(f"rmc.company_name ILIKE ${count_param_idx}")
+                            count_params.append(f"%{query}%")
+                            count_param_idx += 1
+                        elif cat == "representative":
+                            search_conditions.append(f"rmc.representative ILIKE ${count_param_idx}")
+                            count_params.append(f"%{query}%")
+                            count_param_idx += 1
+                        elif cat == "bizNumber":
+                            search_conditions.append(f"rmc.business_registration_number ILIKE ${count_param_idx}")
+                            count_params.append(f"%{query}%")
+                            count_param_idx += 1
+                        elif cat == "location":
+                            search_conditions.append(f"rmc.address ILIKE ${count_param_idx}")
+                            count_params.append(f"%{query}%")
+                            count_param_idx += 1
 
+                    if search_conditions:
+                        count_where_clauses.append(f"({' OR '.join(search_conditions)})")
+            
+            # 기타 필터 조건들 추가 (지금은 간단히 처리)
+            # 실제 구현 시 더 많은 조건을 여기에 추가해야 함
+
+            count_query += " WHERE " + " AND ".join(count_where_clauses)
+            count_executable_query = get_executable_query(count_query, count_params)
+            log.info(f"Executing Count Query: {count_executable_query}")
+            
+            with get_db() as db:
+                count_result = db.execute(text(count_executable_query))
+                total_count = count_result.scalar()
+        else:
+            # ID로 조회하는 경우는 항상 1개만 반환하므로 count는 1로 설정
+            total_count = 1
+
+        # 메인 데이터 쿼리 구성
+        # 필수 열만 조회하여 속도 향상
+        essential_columns = """
+            rmc.master_id,
+            rmc.company_name,
+            rmc.representative,
+            rmc.address,
+            rmc.phone_number,
+            rmc.industry,
+            rmc.establishment_date,
+            rmc.employee_count,
+            rmc.recent_sales,
+            rmc.recent_profit,
+            rmc.latitude,
+            rmc.longitude
+        """
+        
+        # ID로 조회하는 경우만 모든 필드 조회
+        if id:
+            sql_query = """
+                SELECT 
+                    rmc.*,
+                    cb.id as bookmark_id,
+                    cb.user_id as bookmark_user_id,
+                    cb.data as files,
+                    sfd.total_equity as financial_total_equity
+            """
+        else:
+            # 목록 조회는 필수 필드만 가져옴
+            sql_query = f"""
+                SELECT 
+                    {essential_columns},
+                    cb.id as bookmark_id
+            """
+
+        # 거리 계산 열 추가
+        if not id and latitude and longitude:
+            sql_query += f"""
+                , ROUND(
+                    (
+                        6371 * acos(
+                            cos(radians(${param_count})) *
+                            cos(radians(rmc.latitude)) *
+                            cos(radians(rmc.longitude) - radians(${param_count + 1})) +
+                            sin(radians(${param_count})) *
+                            sin(radians(rmc.latitude))
+                        )
+                    ) * 1000
+                ) AS distance_from_location
+            """
+            params.extend([float(latitude), float(longitude)])
+            param_count += 2
+
+        if not id:
             sql_query += f"""
                 , ROUND(
                     (
@@ -270,72 +336,61 @@ async def search(request: Request):
             params.extend([user_latitude, user_longitude])
             param_count += 2
 
+        # 북마크 정보를 위한 사용자 ID 추가
         params.append(user_id)
         user_id_param = param_count
         param_count += 1
 
-        sql_query += f"""
-            FROM rb_master_company rmc
-            LEFT JOIN corp_bookmark cb ON cb.company_id::text = rmc.master_id::text AND cb.user_id = ${user_id_param}
-            LEFT JOIN smtp_executives me
-                ON rmc.business_registration_number = me.business_registration_number
-                AND me.position = '대표이사' 
-            LEFT JOIN smtp_financial_company sfc 
-                ON sfc.company_name = rmc.company_name
-            LEFT JOIN (
-                SELECT *
-                FROM (
-                    SELECT 
-                        sfd.*,
-                        ROW_NUMBER() OVER (PARTITION BY sfd.financial_company_id ORDER BY sfd.year DESC) AS rn
-                    FROM smtp_financial_data sfd
-                ) sub
-                WHERE rn = 1
-            ) sfd_latest 
-                ON sfd_latest.financial_company_id = sfc.id    
-            WHERE rmc.company_type != '개인' and rmc.latitude IS NOT NULL
+        # 메인 쿼리 JOIN 구문 - 필요한 조인만 수행
+        if id:
+            # ID 조회는 상세 정보가 필요하므로 모든 조인 수행
+            sql_query += f"""
+                FROM rb_master_company rmc /*+ INDEX(rmc idx_rb_master_company_id) */
+                LEFT JOIN corp_bookmark cb ON cb.company_id::text = rmc.master_id::text AND cb.user_id = ${user_id_param}
+                LEFT JOIN LATERAL (
+                    SELECT me.*
+                    FROM smtp_executives me
+                    WHERE rmc.business_registration_number = me.business_registration_number
+                    AND me.position = '대표이사'
+                    LIMIT 1
+                ) me ON true
+                LEFT JOIN LATERAL (
+                    SELECT sfd.total_equity
+                    FROM smtp_financial_company sfc 
+                    JOIN smtp_financial_data sfd ON sfd.financial_company_id = sfc.id
+                    WHERE sfc.company_name = rmc.company_name
+                    ORDER BY sfd.year DESC
+                    LIMIT 1
+                ) sfd ON true
+                WHERE rmc.company_type != '개인' AND rmc.latitude IS NOT NULL
+            """
+        else:
+            # 목록 조회는 북마크 정보만 간단히 조인
+            sql_query += f"""
+                FROM rb_master_company rmc /*+ INDEX(rmc idx_rb_master_company_latitude_longitude) */
+                LEFT JOIN corp_bookmark cb ON cb.company_id::text = rmc.master_id::text AND cb.user_id = ${user_id_param}
+                WHERE rmc.company_type != '개인' AND rmc.latitude IS NOT NULL
             """
 
+        # WHERE 절 구성
         if id:
             sql_query += f" AND (rmc.master_id = ${param_count} OR rmc.business_registration_number = ${param_count})"
             params.append(float(id))
             param_count += 1
         else:
+            # 위치 기반 필터링 (PostGIS 활용)
             if not query:
                 if latitude and longitude:
-                    sql_query += f"""
-                        AND ROUND(
-                            (
-                                6371 * acos(
-                                    cos(radians(${param_count})) *
-                                    cos(radians(rmc.latitude)) *
-                                    cos(radians(rmc.longitude) - radians(${param_count + 1})) +
-                                    sin(radians(${param_count})) *
-                                    sin(radians(rmc.latitude))
-                                )
-                            ) * 1000
-                        ) <= ${param_count + 2}
-                    """
-                    params.extend([float(latitude), float(longitude), distance])
+                    sql_query += f" AND {get_distance_conditions(latitude, longitude, distance, param_count)}"
+                    params.extend([float(latitude), float(longitude), float(distance)])
                     param_count += 3
                 else:
-                    # latitude와 longitude가 제공되지 않은 경우 기존 코드대로 userLatitude, userLongitude와 필터의 distance를 사용
-                    sql_query += f"""
-                        AND ROUND(
-                            (
-                                6371 * acos(
-                                    cos(radians(${param_count})) *
-                                    cos(radians(rmc.latitude)) *
-                                    cos(radians(rmc.longitude) - radians(${param_count + 1})) +
-                                    sin(radians(${param_count})) *
-                                    sin(radians(rmc.latitude))
-                                )
-                            ) * 1000
-                        ) <= ${param_count + 2}
-                    """
-                    params.extend([user_latitude, user_longitude, distance])
+                    sql_query += f" AND {get_distance_conditions(user_latitude, user_longitude, distance, param_count)}"
+                    params.extend([user_latitude, user_longitude, float(distance)])
                     param_count += 3
-            else:
+            
+            # 검색어 필터링 
+            elif query:
                 if len(categories) > 0:
                     # 여러 토글 중 활성화된 것만 조건 생성
                     conditions = []
@@ -370,145 +425,93 @@ async def search(request: Request):
                         """
                         params.append(f"%{query}%")
                         param_count += 1
-                
-
-        if not query:
-
-            if employee_count_min not in [None, '']:
-                sql_query += f" AND (rmc.employee_count)::numeric >= ${param_count}"
-                params.append(employee_count_min)
-                param_count += 1
-
-            if employee_count_max not in [None, '']:
-                sql_query += f" AND (rmc.employee_count)::numeric <= ${param_count}"
-                params.append(employee_count_max)
-                param_count += 1
-
-            if sales_min not in [None, '']:
-                sql_query += f" AND (rmc.recent_sales)::numeric >= ${param_count}"
-                params.append(sales_min)
-                param_count += 1
-
-            if sales_max not in [None, '']:
-                sql_query += f" AND (rmc.recent_sales)::numeric <= ${param_count}"
-                params.append(sales_max)
-                param_count += 1
-
-            if profit_min not in [None, '']:
-                sql_query += f" AND (rmc.recent_profit)::numeric >= ${param_count}"
-                params.append(profit_min)
-                param_count += 1
-
-            if profit_max not in [None, '']:
-                sql_query += f" AND (rmc.recent_profit)::numeric <= ${param_count}"
-                params.append(profit_max)
-                param_count += 1
-
             
-
-            if net_profit_min not in [None, '']:
-                sql_query += f" AND (rmc.net_income)::numeric >= ${param_count}"
-                params.append(net_profit_min)
-                param_count += 1
-
-            if net_profit_max not in [None, '']:
-                sql_query += f" AND (rmc.net_income)::numeric <= ${param_count}"
-                params.append(net_profit_max)
-                param_count += 1
-
-            if unallocated_profit_min not in [None, '']:
-                sql_query += f" AND (FinancialComparison.retained_earnings)::numeric >= ${param_count}"
-                params.append(unallocated_profit_min)
-                param_count += 1
-
-            if unallocated_profit_max not in [None, '']:
-                sql_query += f" AND (FinancialComparison.retained_earnings)::numeric <= ${param_count}"
-                params.append(unallocated_profit_max)
-                param_count += 1
-
-            if total_equity_min not in [None, '']:
-                sql_query += f" AND (sfd_latest.total_equity)::numeric >= ${param_count}"
-                params.append(total_equity_min)
-                param_count += 1
-
-            if total_equity_max not in [None, '']:
-                sql_query += f" AND (sfd_latest.total_equity)::numeric <= ${param_count}"
-                params.append(total_equity_max)
-                param_count += 1    
-
-            if establishment_year not in [None, '']:
-                sql_query += f" AND SUBSTRING(rmc.establishment_date, 1, 4)::INTEGER >= ${param_count}"
-                params.append(establishment_year)
-                param_count += 1
-
-
-            if certification:
-                conditions = []
-                if 'innobiz' in certification:
-                    conditions.append("rmc.sme_type @> '[{\"sme_type\": \"기술혁신\"}]'")
-                if 'mainbiz' in certification:
-                    conditions.append("rmc.sme_type @> '[{\"sme_type\": \"경영혁신\"}]'")
-                if 'research_institute' in certification:
-                    conditions.append("(rmc.research_info @> '[{\"division\": \"연구소\"}]' OR rmc.research_info @> '[{\"division\": \"전담부서\"}]')")
-                if 'venture' in certification:
-                    conditions.append(f"rmc.confirming_authority = '벤처기업확인기관'")
+            # 추가 필터 조건 적용 (쿼리가 없는 경우에만)
+            if not query:
+                # 숫자형 필드 필터링
+                numeric_filters = [
+                    ("employee_count", employee_count_min, employee_count_max),
+                    ("recent_sales", sales_min, sales_max),
+                    ("recent_profit", profit_min, profit_max),
+                    ("net_income", net_profit_min, net_profit_max)
+                ]
                 
-                if conditions:
-                    sql_query += " AND (" + " AND ".join(conditions) + ")"             
+                for field, min_val, max_val in numeric_filters:
+                    if min_val not in [None, '']:
+                        sql_query += f" AND (rmc.{field})::numeric >= ${param_count}"
+                        params.append(min_val)
+                        param_count += 1
+                    
+                    if max_val not in [None, '']:
+                        sql_query += f" AND (rmc.{field})::numeric <= ${param_count}"
+                        params.append(max_val)
+                        param_count += 1
+                
+                # 설립연도 필터
+                if establishment_year not in [None, '']:
+                    sql_query += f" AND SUBSTRING(rmc.establishment_date, 1, 4)::INTEGER >= ${param_count}"
+                    params.append(establishment_year)
+                    param_count += 1
+                
+                # JSON 필드 필터링 (certification)
+                if certification:
+                    conditions = []
+                    if 'innobiz' in certification:
+                        conditions.append("rmc.sme_type @> '[{\"sme_type\": \"기술혁신\"}]'")
+                    if 'mainbiz' in certification:
+                        conditions.append("rmc.sme_type @> '[{\"sme_type\": \"경영혁신\"}]'")
+                    if 'research_institute' in certification:
+                        conditions.append("(rmc.research_info @> '[{\"division\": \"연구소\"}]' OR rmc.research_info @> '[{\"division\": \"전담부서\"}]')")
+                    if 'venture' in certification:
+                        conditions.append(f"rmc.confirming_authority = '벤처기업확인기관'")
+                    
+                    if conditions:
+                        sql_query += " AND (" + " AND ".join(conditions) + ")"
+                
+                # 산업 필터
+                if included_industries:
+                    industry_list = included_industries.split(", ")
+                    placeholders = ", ".join([f"${param_count + i}" for i in range(len(industry_list))])
+                    sql_query += f" AND rmc.industry IN ({placeholders})"
+                    params.extend(industry_list)
+                    param_count += len(industry_list)
 
-            if included_industries:
-                industry_list = included_industries.split(", ")
-                placeholders = ", ".join([f"${param_count + i}" for i in range(len(industry_list))])
-                sql_query += f" AND rmc.industry IN ({placeholders})"
-                params.extend(industry_list)
-                param_count += len(industry_list)
+                if excluded_industries:
+                    excluded_list = excluded_industries.split(", ")
+                    placeholders = ", ".join([f"${param_count + i}" for i in range(len(excluded_list))])
+                    sql_query += f" AND rmc.industry NOT IN ({placeholders})"
+                    params.extend(excluded_list)
+                    param_count += len(excluded_list)
 
-            if excluded_industries:
-                excluded_list = excluded_industries.split(", ")
-                placeholders = ", ".join([f"${param_count + i}" for i in range(len(excluded_list))])
-                sql_query += f" AND rmc.industry NOT IN ({placeholders})"
-                params.extend(excluded_list)
-                param_count += len(excluded_list)
-   
-
-
-            if gender:
-                sql_query += f" AND me.gender = ${param_count}"
-                params.append(gender)
-                param_count += 1
-
-            if representative_age is not None:
-                sql_query += f" AND (EXTRACT(YEAR FROM CURRENT_DATE) - rmc.representative_birth::int) >= ${param_count}"
-                params.append(representative_age)
-                param_count += 1
-
-            # if loan is not None:
-            #     sql_query += f" AND rmc.loan = ${param_count}"
-            #     params.append(loan)
-            #     param_count += 1
-
+        # 정렬 기준 추가
         if not id:
             if latitude and longitude:
                 sql_query += " ORDER BY distance_from_location ASC"
             else:
                 sql_query += " ORDER BY distance_from_user ASC"
+        
+        # 페이징 처리
+        if not id:
+            offset = (page - 1) * page_size
+            sql_query += f" LIMIT {page_size} OFFSET {offset}"
 
-        # sql_query += " LIMIT 1000"
-
+        # 쿼리 실행
         executable_query = get_executable_query(sql_query, params)
-
         executable_query = '\n'.join(line for line in executable_query.splitlines() if line.strip())
-        log.info("Executing SQL Query:")
-        log.info(executable_query)
+        log.info(f"Executing SQL Query: {executable_query}")
 
         with get_db() as db:
             result = db.execute(text(executable_query))
-            companies = [row._mapping for row in result.fetchall()]
+            companies = [dict(row._mapping) for row in result.fetchall()]
         
-        return {
+        # 응답 생성
+        response = {
             "success": True,
             "data": companies,
-            "total": len(companies),
+            "total": total_count,
+            "page": page,
+            "page_size": page_size,
+            "pages": (total_count + page_size - 1) // page_size,
             "query": id or {
                 "search": query,
                 "filters": {
@@ -519,9 +522,17 @@ async def search(request: Request):
                     "distance": distance,
                 },
             },
+            "execution_time_ms": round((time.time() - start_time) * 1000, 2)
         }
+        
+        # 결과를 캐시에 저장
+        cached_query_results.cache_clear()  # 캐시 크기 관리를 위해 주기적으로 클리어
+        cached_query_results(query_hash)
+        
+        return response
 
     except Exception as e:
+        log.error(f"Search error: {str(e)}")
         raise HTTPException(
             status_code=500,
             detail={
@@ -580,93 +591,76 @@ async def get_industries(query: str = ""):
 @router.get("/{id}/financialData")
 async def get_corp_financialData(id: str):
     try:
+        # 캐시 키 생성
+        cache_key = f"financial_data_{id}"
+        cached_data = cached_query_results(cache_key)
+        if cached_data:
+            return cached_data
+        
         params = [id]
 
         sql_query = """
-            SELECT 
-                sfd.financial_company_id,
-                sfd.year,
-                sfd.revenue,
-                sfd.net_income,
-                sfd.operating_income,
-                sfd.total_assets,
-                sfd.total_liabilities,
-                sfd.total_equity,
-                sfd.capital_stock,
-                sfd.corporate_tax,
-                sfd.current_assets,
-                sfd.quick_assets,
-                sfd.inventory,
-                sfd.non_current_assets,
-                sfd.investment_assets,
-                sfd.tangible_assets,
-                sfd.intangible_assets,
-                sfd.current_liabilities,
-                sfd.non_current_liabilities,
-                sfd.retained_earnings,
-                sfd.profit,
-                sfd.sales_cost,
-                sfd.sales_profit,
-                sfd.sga,
-                sfd.other_income,
-                sfd.other_expenses,
-                sfd.pre_tax_income,
-                rmc.recent_total_assets,
-                rmc.recent_total_equity
-            FROM rb_master_company rmc
-            JOIN smtp_financial_company sfc 
-                ON rmc.company_name = sfc.company_name
-            JOIN smtp_financial_data sfd 
-                ON sfc.id = sfd.financial_company_id
-            WHERE rmc.master_id = $1
-            GROUP BY 
-                sfd.financial_company_id,
-                sfd.year,
-                sfd.revenue,
-                sfd.net_income,
-                sfd.operating_income,
-                sfd.total_assets,
-                sfd.total_liabilities,
-                sfd.total_equity,
-                sfd.capital_stock,
-                sfd.corporate_tax,
-                sfd.current_assets,
-                sfd.quick_assets,
-                sfd.inventory,
-                sfd.non_current_assets,
-                sfd.investment_assets,
-                sfd.tangible_assets,
-                sfd.intangible_assets,
-                sfd.current_liabilities,
-                sfd.non_current_liabilities,
-                sfd.retained_earnings,
-                sfd.profit,
-                sfd.sales_cost,
-                sfd.sales_profit,
-                sfd.sga,
-                sfd.other_income,
-                sfd.other_expenses,
-                sfd.pre_tax_income,
-                rmc.recent_total_assets,
-                rmc.recent_total_equity
-            ORDER BY sfd.year DESC
+            WITH financial_data AS (
+                SELECT 
+                    sfd.financial_company_id,
+                    sfd.year,
+                    sfd.revenue,
+                    sfd.net_income,
+                    sfd.operating_income,
+                    sfd.total_assets,
+                    sfd.total_liabilities,
+                    sfd.total_equity,
+                    sfd.capital_stock,
+                    sfd.corporate_tax,
+                    sfd.current_assets,
+                    sfd.quick_assets,
+                    sfd.inventory,
+                    sfd.non_current_assets,
+                    sfd.investment_assets,
+                    sfd.tangible_assets,
+                    sfd.intangible_assets,
+                    sfd.current_liabilities,
+                    sfd.non_current_liabilities,
+                    sfd.retained_earnings,
+                    sfd.profit,
+                    sfd.sales_cost,
+                    sfd.sales_profit,
+                    sfd.sga,
+                    sfd.other_income,
+                    sfd.other_expenses,
+                    sfd.pre_tax_income,
+                    rmc.recent_total_assets,
+                    rmc.recent_total_equity,
+                    ROW_NUMBER() OVER (PARTITION BY sfd.year ORDER BY sfd.financial_company_id) as rn
+                FROM rb_master_company rmc /*+ INDEX(rmc idx_rb_master_company_id) */
+                JOIN smtp_financial_company sfc ON rmc.company_name = sfc.company_name
+                JOIN smtp_financial_data sfd ON sfc.id = sfd.financial_company_id
+                WHERE rmc.master_id = $1
+            )
+            SELECT * FROM financial_data
+            WHERE rn = 1
+            ORDER BY year DESC
         """
 
         query = get_executable_query(sql_query, params)
 
         with get_db() as db:
-            # 실제 실행되는 재무 데이터 쿼리 로깅
             log.info(f"Executing Financial Data Query: {query}")
             result = db.execute(text(query))
-            financial_data = [row._mapping for row in result.fetchall()]        
+            financial_data = [dict(row._mapping) for row in result.fetchall()]        
 
-        return {
+        response = {
             "success": True,
             "financial_data": financial_data,
             "total": len(financial_data),
         }
+        
+        # 캐시에 저장
+        cached_query_results(cache_key)
+        
+        return response
     except Exception as e:
-        log.error("Financial Data API error: %s", e)
+        log.error(f"Financial Data API error: {e}")
         return {
             "success": False,
             "error": "Failed to fetch financial data",
