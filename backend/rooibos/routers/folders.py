@@ -150,116 +150,214 @@ async def getFolderCompanyList(folderId: str, request: Request):
     deleted_param = search_params.get("deleted", "false")
     shared_param = search_params.get("shared", "false")
     
-    # 모든 쿼리 파라미터 로그 출력
-    log.info(f"All query parameters: {dict(request.query_params)}")
-    log.info(f"Raw shared parameter value: '{shared_param}'")
-        
+    # 페이징 파라미터 처리 추가
+    page = int(search_params.get("page", "1"))
+    page_size = int(search_params.get("page_size", "100"))
+    offset = (page - 1) * page_size
+    
     # 대소문자 구분 없이 파라미터 처리
     deleted = deleted_param.lower() in ["true", "1", "yes", "y"]
     shared = shared_param.lower() in ["true", "1", "yes", "y"]
     
-    log.info(f"getFolderCompanyList - final deleted value: {deleted}, shared value: {shared}")
+    # 폴더 ID에서 공유 폴더 특별 처리
+    isSharedFolder = folderId.startswith("shared-folder-")
+    if isSharedFolder:
+        shared = True
     
     try:
         with get_db() as db:
-            # 1. rb_master_company 조회 쿼리
-            query_public = """
-                SELECT DISTINCT
-                    f.id,
-                    f.created_at,
-                    f.updated_at,
-                    f.company_id,
-                    f.user_id,
-                    rf.name as folder_name,
-                    rmc.master_id::text as master_id,
-                    rmc.company_name,
-                    rmc.address,
-                    rmc.business_registration_number,
-                    'public' as company_type,
-                    NULL AS entity_type
-                FROM corp_bookmark f
-                INNER JOIN rb_master_company rmc
-                    ON f.business_registration_number::text = rmc.business_registration_number::text
-                LEFT JOIN rb_folder rf 
-                    ON f.folder_id = rf.id    
-                WHERE 1=1
+            # 1. 필요한 컬럼만 선택
+            # 2. LEFT JOIN 대신 INNER JOIN 사용 (조건에 맞는 데이터만 필요)
+            # 3. 성능 저하 요소(타입 변환, 중복 비교) 제거
+            # 4. 페이징 적용
+            
+            # 공통 필드 정의 (중복 코드 제거)
+            common_fields = """
+                f.id,
+                f.created_at,
+                f.updated_at,
+                f.company_id,
+                f.user_id,
+                rf.name as folder_name
             """
             
-            # 2. private_entity_info 조회 쿼리
-            query_private = """
-                SELECT DISTINCT
-                    f.id,
-                    f.created_at,
-                    f.updated_at,
-                    f.company_id,
-                    f.user_id,
-                    rf.name as folder_name,
-                    pci.smtp_id::text as master_id,
-                    pci.company_name,
-                    pci.address,
-                    pci.business_registration_number,
-                    'private' as company_type,
-                    pci.entity_type
-                FROM corp_bookmark f
-                INNER JOIN private_entity_info pci
-                    ON f.business_registration_number::text = pci.business_registration_number::text
-                LEFT JOIN rb_folder rf 
-                    ON f.folder_id = rf.id    
-                WHERE 1=1
-            """
+            # 카운트 쿼리를 위한 조건 생성
+            count_condition = ""
+            count_params = {"userId": userId}
             
-            # 폴더 ID 확인 로그 추가
-            log.info(f"Folder ID: {folderId}")
-            
-            # 폴더 ID에서 공유 폴더 특별 처리
-            isSharedFolder = folderId.startswith("shared-folder-")
-            if isSharedFolder:
-                log.info("This is a shared folder ID")
-                shared = True
-                
             if deleted:
-                query_public += " AND f.user_id = :userId AND f.is_deleted = TRUE"
-                query_private += " AND f.user_id = :userId AND f.is_deleted = TRUE"
-                log.info("Getting deleted bookmarks only")
+                count_condition = "f.user_id = :userId AND f.is_deleted = TRUE"
             elif shared:
-                query_public += """ AND f.user_id != :userId
-                AND (f.access_control::jsonb -> 'write' -> 'user_ids') ? :userId"""
-                query_private += """ AND f.user_id != :userId
-                AND (f.access_control::jsonb -> 'write' -> 'user_ids') ? :userId"""
-                log.info("Getting shared bookmarks with write access (excluding user's own bookmarks)")
+                count_condition = "f.user_id != :userId AND (f.access_control::jsonb -> 'write' -> 'user_ids') ? :userId"
             else:
-                query_public += " AND f.user_id = :userId AND f.folder_id = :folderId AND (f.is_deleted IS NULL OR f.is_deleted = FALSE)"
-                query_private += " AND f.user_id = :userId AND f.folder_id = :folderId AND (f.is_deleted IS NULL OR f.is_deleted = FALSE)"
-                log.info("Getting active bookmarks only")
-                
-            # UNION ALL로 두 쿼리 결합
-            final_query = f"""
-            {query_public}
-            UNION ALL
-            {query_private}
-            ORDER BY updated_at DESC
+                count_condition = "f.user_id = :userId AND f.folder_id = :folderId AND (f.is_deleted IS NULL OR f.is_deleted = FALSE)"
+                count_params["folderId"] = folderId
+            
+            # 전체 레코드 수 조회 (페이징을 위해)
+            count_query = f"""
+                SELECT COUNT(*) as total
+                FROM corp_bookmark f
+                WHERE {count_condition}
             """
             
-            params = {"userId": userId, "folderId": folderId}
-            log.info(f"Executing SQL query: {final_query}")
-            log.info(f"Parameters: {params}")
+            total_result = db.execute(text(count_query), count_params).fetchone()
+            total_count = total_result[0] if total_result else 0
             
+            # 쿼리 최적화 1: public 회사 정보
+            if deleted:
+                query_public = f"""
+                    SELECT 
+                        {common_fields},
+                        rmc.master_id::text as master_id,
+                        rmc.company_name,
+                        rmc.address,
+                        rmc.business_registration_number,
+                        'public' as company_type,
+                        NULL AS entity_type
+                    FROM corp_bookmark f
+                    JOIN rb_folder rf ON f.folder_id = rf.id
+                    JOIN rb_master_company rmc
+                        ON f.business_registration_number = rmc.business_registration_number
+                    WHERE f.user_id = :userId AND f.is_deleted = TRUE
+                """
+            elif shared:
+                query_public = f"""
+                    SELECT 
+                        {common_fields},
+                        rmc.master_id::text as master_id,
+                        rmc.company_name,
+                        rmc.address,
+                        rmc.business_registration_number,
+                        'public' as company_type,
+                        NULL AS entity_type
+                    FROM corp_bookmark f
+                    JOIN rb_folder rf ON f.folder_id = rf.id
+                    JOIN rb_master_company rmc 
+                        ON f.business_registration_number = rmc.business_registration_number
+                    WHERE f.user_id != :userId 
+                    AND (f.access_control::jsonb -> 'write' -> 'user_ids') ? :userId
+                """
+            else:
+                query_public = f"""
+                    SELECT 
+                        {common_fields},
+                        rmc.master_id::text as master_id,
+                        rmc.company_name,
+                        rmc.address,
+                        rmc.business_registration_number,
+                        'public' as company_type,
+                        NULL AS entity_type
+                    FROM corp_bookmark f
+                    JOIN rb_folder rf ON f.folder_id = rf.id
+                    JOIN rb_master_company rmc 
+                        ON f.business_registration_number = rmc.business_registration_number
+                    WHERE f.user_id = :userId 
+                    AND f.folder_id = :folderId 
+                    AND (f.is_deleted IS NULL OR f.is_deleted = FALSE)
+                """
+            
+            # 쿼리 최적화 2: private 회사 정보
+            if deleted:
+                query_private = f"""
+                    SELECT 
+                        {common_fields},
+                        pci.smtp_id::text as master_id,
+                        pci.company_name,
+                        pci.address,
+                        pci.business_registration_number,
+                        'private' as company_type,
+                        pci.entity_type
+                    FROM corp_bookmark f
+                    JOIN rb_folder rf ON f.folder_id = rf.id
+                    JOIN private_entity_info pci 
+                        ON f.business_registration_number = pci.business_registration_number
+                    WHERE f.user_id = :userId AND f.is_deleted = TRUE
+                """
+            elif shared:
+                query_private = f"""
+                    SELECT 
+                        {common_fields},
+                        pci.smtp_id::text as master_id,
+                        pci.company_name,
+                        pci.address,
+                        pci.business_registration_number,
+                        'private' as company_type,
+                        pci.entity_type
+                    FROM corp_bookmark f
+                    JOIN rb_folder rf ON f.folder_id = rf.id
+                    JOIN private_entity_info pci 
+                        ON f.business_registration_number = pci.business_registration_number
+                    WHERE f.user_id != :userId 
+                    AND (f.access_control::jsonb -> 'write' -> 'user_ids') ? :userId
+                """
+            else:
+                query_private = f"""
+                    SELECT 
+                        {common_fields},
+                        pci.smtp_id::text as master_id,
+                        pci.company_name,
+                        pci.address,
+                        pci.business_registration_number,
+                        'private' as company_type,
+                        pci.entity_type
+                    FROM corp_bookmark f
+                    JOIN rb_folder rf ON f.folder_id = rf.id
+                    JOIN private_entity_info pci 
+                        ON f.business_registration_number = pci.business_registration_number
+                    WHERE f.user_id = :userId 
+                    AND f.folder_id = :folderId 
+                    AND (f.is_deleted IS NULL OR f.is_deleted = FALSE)
+                """
+            
+            # 최종 쿼리
+            final_query = f"""
+            SELECT * FROM (
+                {query_public}
+                UNION ALL
+                {query_private}
+            ) AS combined_results
+            ORDER BY updated_at DESC
+            LIMIT :limit OFFSET :offset
+            """
+            
+            params = {
+                "userId": userId, 
+                "folderId": folderId, 
+                "limit": page_size, 
+                "offset": offset
+            }
+            
+            # 실행 계획 분석 (개발 환경에서만)
+            if log.level <= logging.DEBUG:
+                explain_query = f"EXPLAIN ANALYZE {final_query}"
+                explain_result = db.execute(text(explain_query), params)
+                for row in explain_result:
+                    log.debug(f"EXPLAIN: {row[0]}")
+            
+            # 실제 쿼리 실행
             result = db.execute(text(final_query), params)
-            companyList = [dict(row._mapping) for row in result.fetchall()]    
+            companyList = [dict(row._mapping) for row in result.fetchall()]
 
-        log.info(f"getFolderCompanyList - returning {len(companyList)} results")
+        log.info(f"getFolderCompanyList - returning {len(companyList)} results (total: {total_count})")
+        
         return {
             "success": True,
             "data": companyList,
-            "total": len(companyList),
+            "total": total_count,
+            "page": page,
+            "page_size": page_size,
+            "has_more": (page * page_size) < total_count
         }
     except Exception as e:
-        log.error("Search API error: " + str(e))
-        return {
-            "success": False,
-            "error": "Search failed",
-            "message": str(e)
-        }
+        log.error(f"getFolderCompanyList - error: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail={
+                "success": False, 
+                "error": "Failed to fetch company list for folder",
+                "message": str(e)
+            }
+        )
 
 @router.get("/trash/companies")
 async def getTrashCompanyList(request: Request):    
