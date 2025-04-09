@@ -237,21 +237,21 @@
 										class="flex gap-2 items-center px-3 py-1.5 text-sm cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 rounded-md"
 										on:click={(e) => startEditing(e, folderId)}
 									>
-										<Pencil strokeWidth="2" />
+										<Pencil strokeWidth="2" size={18} />
 										<div class="flex items-center">{$i18n.t('이름변경')}</div>
 									</DropdownMenu.Item>
 									<DropdownMenu.Item
-										class="flex gap-2 items-center px-3 py-1 text-sm cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 rounded-md"
+										class="flex gap-2 items-center px-3 py-1.5 text-sm cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 rounded-md"
 										on:click={(e) => openCompanyForm(e, folderId)}
 									>
-										<Building2Icon strokeWidth="2" size={14} />
-										<div class="flex items-center">{$i18n.t('고객추가')}</div>
+										<Building2Icon strokeWidth="2" size={18} />
+										<div class="flex items-center">{$i18n.t('정보추가')}</div>
 									</DropdownMenu.Item>
 									<DropdownMenu.Item
 										class="flex gap-2 items-center px-3 py-1.5 text-sm cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 rounded-md"
 										on:click={(e) => showDeleteConfirmDialog(e, folderId)}
 									>
-										<Trash2Icon strokeWidth="2" />
+										<Trash2Icon strokeWidth="2" size={18} />
 										<div class="flex items-center">{$i18n.t('폴더삭제')}</div>
 									</DropdownMenu.Item>
 									<!-- 관리 메뉴 항목 추가 -->

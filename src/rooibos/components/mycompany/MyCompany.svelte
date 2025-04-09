@@ -249,7 +249,7 @@
 				on:click={openCompanyForm}
 			>
 				<Building2Icon size={14} />
-				<span>고객추가</span>
+				<span>정보추가</span>
 			</button>
 		{/if}
 	</div>
