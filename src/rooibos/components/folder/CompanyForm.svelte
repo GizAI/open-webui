@@ -168,7 +168,7 @@
         on:mousedown={closeModal}
     >
         <div
-            class="rounded-2xl w-[38rem] max-w-[calc(100%-2rem)] bg-gray-50 dark:bg-gray-950 max-h-[60vh] shadow-3xl overflow-hidden flex flex-col"
+            class="rounded-2xl w-[38rem] max-w-[calc(100%-2rem)] bg-gray-50 dark:bg-gray-950 max-h-[85vh] shadow-3xl overflow-hidden flex flex-col"
             in:flyAndScale
             on:mousedown={(e) => e.stopPropagation()}
         >
@@ -423,5 +423,10 @@
 <style>
     .form-group {
         margin-bottom: 0.125rem;
+    }
+    /* 폼이 내용에 맞게 자동으로 높이 조정되도록 설정 */
+    form {
+        max-height: calc(85vh - 6rem);
+        overflow-y: auto;
     }
 </style> 
