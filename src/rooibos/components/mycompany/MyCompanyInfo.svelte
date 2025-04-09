@@ -1968,7 +1968,7 @@
 			</div>
 		</div>
 	{:else}
-		<div class="w-full h-full flex justify-center items-center" style="min-height: 100vh;">
+		<div class="w-full h-full flex justify-center items-center" style="min-height: calc(100vh - 10rem);">
 			<Spinner />
 		</div>
 	{/if}
