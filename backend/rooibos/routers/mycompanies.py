@@ -84,33 +84,54 @@ async def get_mycompany_by_id(id: str, request: Request):
     user_id = search_params.get("user_id")
     
     try:
+        # 1. 기존 쿼리 최적화:
+        #   - WITH 절 사용하여 파일 정보를 미리 필터링
+        #   - 필요 없는 LEFT JOIN 제거 (smtp_financial_company, smtp_executives)
+        #   - 주석을 추가하여 가독성 향상
         bookmark_sql_query = """
+        WITH file_data AS (
+            -- 파일 정보를 미리 필터링하여 메인 쿼리와 조인
+            SELECT 
+                file_id,
+                jsonb_build_object(
+                    'id', fi.id,
+                    'user_id', fi.user_id,
+                    'filename', fi.filename,
+                    'meta', fi.meta,
+                    'created_at', fi.created_at,
+                    'hash', fi.hash,
+                    'data', fi."data",
+                    'updated_at', fi.updated_at,
+                    'path', fi."path",
+                    'access_control', fi.access_control
+                ) AS file_info
+            FROM (
+                -- 북마크에서 파일 ID만 추출하는 서브쿼리
+                SELECT 
+                    jsonb_array_elements_text(f.data::jsonb->'file_ids') AS file_id
+                FROM corp_bookmark f
+                WHERE f.id = :id AND (f.is_deleted IS NULL OR f.is_deleted = FALSE)
+            ) AS file_ids
+            JOIN file fi ON fi.id::text = file_ids.file_id
+        )
         SELECT DISTINCT
+            -- 북마크 기본 정보
             f.id as bookmark_id,
             f.created_at,
             f.updated_at,
-            f.company_id, f.user_id as bookmark_user_id,
+            f.company_id, 
+            f.user_id as bookmark_user_id,
             f.folder_id,
             f.data::jsonb as data_files,
             f.access_control::jsonb,
-            jsonb_agg(DISTINCT
-                CASE
-                    WHEN f.data IS NOT NULL
-                    THEN jsonb_build_object(
-                        'id', fi.id,
-                        'user_id', fi.user_id,
-                        'filename', fi.filename,
-                        'meta', fi.meta,
-                        'created_at', fi.created_at,
-                        'hash', fi.hash,
-                        'data', fi."data",
-                        'updated_at', fi.updated_at,
-                        'path', fi."path",
-                        'access_control', fi.access_control
-                    )
-                    ELSE NULL
-                END
-            ) FILTER (WHERE f.data IS NOT NULL) AS files,
+            
+            -- 파일 정보를 집계 (파일이 있는 경우에만)
+            CASE WHEN f.data IS NOT NULL 
+                THEN jsonb_agg(fd.file_info) 
+                ELSE NULL 
+            END AS files,
+            
+            -- 회사 기본 정보
             rmc.master_id,
             rmc.company_name,
             rmc.representative,
@@ -120,6 +141,9 @@ async def get_mycompany_by_id(id: str, request: Request):
             rmc.fax_number,
             rmc.website,
             rmc.email,
+            rmc.business_registration_number,
+            
+            -- 회사 추가 정보
             rmc.company_type,
             rmc.establishment_date,
             rmc.founding_date,
@@ -132,10 +156,11 @@ async def get_mycompany_by_id(id: str, request: Request):
             rmc.main_branch,
             rmc.group_name,
             rmc.stock_code,
-            rmc.business_registration_number,
             rmc.corporate_number,
             rmc.english_name,
             rmc.trade_name,
+            
+            -- 재무 정보
             rmc.fiscal_month,
             rmc.sales_year,
             rmc.recent_sales,
@@ -151,6 +176,8 @@ async def get_mycompany_by_id(id: str, request: Request):
             rmc.recent_total_equity,
             rmc.capital_year,
             rmc.recent_capital,
+            
+            -- 지역 및 산업 정보
             rmc.region1,
             rmc.region2,
             rmc.industry_major,
@@ -158,6 +185,8 @@ async def get_mycompany_by_id(id: str, request: Request):
             rmc.industry_small,
             rmc.latitude,
             rmc.longitude,
+            
+            -- 기타 회사 정보
             rmc.sme_type,
             rmc.research_info,
             rmc.representative_birth,
@@ -173,81 +202,31 @@ async def get_mycompany_by_id(id: str, request: Request):
             rmc.confirming_authority,
             rmc.new_reconfirmation_code
         FROM corp_bookmark f
-        INNER JOIN rb_master_company rmc ON f.company_id::text = rmc.master_id::text
-        LEFT JOIN smtp_financial_company fc
-            ON rmc.company_name = fc.company_name
-        LEFT JOIN smtp_executives me
-            ON rmc.business_registration_number = me.business_registration_number
-            AND me.position = '대표이사'
-        LEFT JOIN file fi
-            ON fi.id::text = ANY(ARRAY(
-                SELECT jsonb_array_elements_text(f.data::jsonb->'file_ids')
-            ))
+        -- 기업 정보와 조인 (타입 맞추기 위해 ::text 유지)
+        JOIN rb_master_company rmc ON f.company_id::text = rmc.master_id::text
+        -- 파일 정보와 LEFT JOIN (파일이 없어도 기업 정보는 반환)
+        LEFT JOIN file_data fd ON f.data IS NOT NULL
         WHERE f.id = :id
         AND (f.is_deleted IS NULL OR f.is_deleted = FALSE)           
         GROUP BY
-            f.id, f.created_at, f.updated_at, f.company_id, f.user_id,
-            rmc.master_id,
-            rmc.company_name,
-            rmc.representative,
-            rmc.postal_code,
-            rmc.address,
-            rmc.phone_number,
-            rmc.fax_number,
-            rmc.website,
-            rmc.email,
-            rmc.company_type,
-            rmc.establishment_date,
-            rmc.founding_date,
-            rmc.employee_count,
-            rmc.industry_code1,
-            rmc.industry_code2,
-            rmc.industry,
-            rmc.main_product,
-            rmc.main_bank,
-            rmc.main_branch,
-            rmc.group_name,
-            rmc.stock_code,
-            rmc.business_registration_number,
-            rmc.corporate_number,
-            rmc.english_name,
-            rmc.trade_name,
-            rmc.fiscal_month,
-            rmc.sales_year,
-            rmc.recent_sales,
-            rmc.profit_year,
-            rmc.recent_profit,
-            rmc.operating_profit_year,
-            rmc.recent_operating_profit,
-            rmc.asset_year,
-            rmc.recent_total_assets,
-            rmc.debt_year,
-            rmc.recent_total_debt,
-            rmc.equity_year,
-            rmc.recent_total_equity,
-            rmc.capital_year,
-            rmc.recent_capital,
-            rmc.region1,
-            rmc.region2,
-            rmc.industry_major,
-            rmc.industry_middle,
-            rmc.industry_small,
-            rmc.latitude,
-            rmc.longitude,
-            rmc.sme_type,
-            rmc.research_info,
-            rmc.representative_birth,
-            rmc.is_family_shareholder,
-            rmc.is_non_family_shareholder,
-            rmc.financial_statement_year,
-            rmc.total_assets,
-            rmc.total_equity,
-            rmc.net_income,
-            rmc.venture_confirmation_type,
-            rmc.venture_valid_from,
-            rmc.venture_valid_until,
-            rmc.confirming_authority,
-            rmc.new_reconfirmation_code
+            -- 필요한 컬럼만 GROUP BY에 포함 (JSON 타입 컬럼은 제외하거나 캐스팅)
+            f.id, f.created_at, f.updated_at, f.company_id, f.user_id, f.folder_id, 
+            -- JSON 컬럼을 TEXT로 변환하여 GROUP BY 가능하게 함
+            f.data::text, f.access_control::text,
+            rmc.master_id, rmc.company_name, rmc.representative, rmc.postal_code, rmc.address,
+            rmc.phone_number, rmc.fax_number, rmc.website, rmc.email, rmc.company_type,
+            rmc.establishment_date, rmc.founding_date, rmc.employee_count, rmc.industry_code1,
+            rmc.industry_code2, rmc.industry, rmc.main_product, rmc.main_bank, rmc.main_branch,
+            rmc.group_name, rmc.stock_code, rmc.business_registration_number, rmc.corporate_number,
+            rmc.english_name, rmc.trade_name, rmc.fiscal_month, rmc.sales_year, rmc.recent_sales,
+            rmc.profit_year, rmc.recent_profit, rmc.operating_profit_year, rmc.recent_operating_profit,
+            rmc.asset_year, rmc.recent_total_assets, rmc.debt_year, rmc.recent_total_debt,
+            rmc.equity_year, rmc.recent_total_equity, rmc.capital_year, rmc.recent_capital,
+            rmc.region1, rmc.region2, rmc.industry_major, rmc.industry_middle, rmc.industry_small,
+            rmc.latitude, rmc.longitude, rmc.sme_type, rmc.research_info, rmc.representative_birth,
+            rmc.is_family_shareholder, rmc.is_non_family_shareholder, rmc.financial_statement_year,
+            rmc.total_assets, rmc.total_equity, rmc.net_income, rmc.venture_confirmation_type,
+            rmc.venture_valid_from, rmc.venture_valid_until, rmc.confirming_authority, rmc.new_reconfirmation_code
         ORDER BY f.updated_at DESC
         """
         
@@ -255,9 +234,12 @@ async def get_mycompany_by_id(id: str, request: Request):
         params = {"id": id}
         
         with get_db() as db:
-            compiled_query = stmt.compile(dialect=db.bind.dialect, compile_kwargs={"literal_binds": True})
-            log.info(f"Final executed bookmark query: {compiled_query} | Parameters: {params}")
+            # 디버그 레벨에서만 로깅
+            if log.level <= logging.DEBUG:
+                compiled_query = stmt.compile(dialect=db.bind.dialect, compile_kwargs={"literal_binds": True})
+                log.debug(f"Query: {compiled_query}")
             
+            # 실제 쿼리 실행
             bookmark_result = db.execute(stmt, params)
             bookmark_data = [row._mapping for row in bookmark_result.fetchall()]
             
@@ -296,7 +278,7 @@ async def get_mycompany_by_id(id: str, request: Request):
                         "message": f"Bookmark with id '{id}' 에 대한 접근 권한이 없습니다."
                     }
             
-            # Chat List 조회
+            # Chat List 조회 - 기존 로직 유지
             conditions = []
             
             bookmark_owner_id = bookmark_data[0].bookmark_user_id            
@@ -308,7 +290,10 @@ async def get_mycompany_by_id(id: str, request: Request):
             chat_query = "SELECT * FROM chat c WHERE " + " AND ".join(conditions)
             chat_query = get_executable_query(chat_query, [])
             
-            log.info(f"Final executed chat query: {chat_query}")
+            # 디버그 레벨에서만 로깅
+            if log.level <= logging.DEBUG:
+                log.debug(f"Chat query: {chat_query}")
+                
             chat_result = db.execute(text(chat_query))
             chat_list = [row._mapping for row in chat_result.fetchall()]
         
@@ -320,7 +305,7 @@ async def get_mycompany_by_id(id: str, request: Request):
             "chat_total": len(chat_list)
         }
     except Exception as e:
-        log.error("Get mycompany by ID error: " + str(e))
+        log.error(f"Get mycompany by ID error: {str(e)}")
         return {
             "success": False,
             "error": "Fetch failed",
@@ -1322,6 +1307,8 @@ async def get_private_company_by_id(id: str, request: Request):
         AND (f.is_deleted IS NULL OR f.is_deleted = FALSE)           
         GROUP BY
             f.id, f.created_at, f.updated_at, f.company_id, f.user_id,
+            -- JSON 필드는 TEXT로 캐스팅하여 GROUP BY에 사용
+            f.data::text, f.access_control::text, f.folder_id,
             pci.smtp_id,
             pci.company_name,
             pci.representative,
@@ -1362,8 +1349,11 @@ async def get_private_company_by_id(id: str, request: Request):
         params = {"id": id}
         
         with get_db() as db:
-            compiled_query = stmt.compile(dialect=db.bind.dialect, compile_kwargs={"literal_binds": True})
-            log.info(f"Final executed bookmark query: {compiled_query} | Parameters: {params}")
+            if log.level <= logging.DEBUG:
+                compiled_query = stmt.compile(dialect=db.bind.dialect, compile_kwargs={"literal_binds": True})
+                log.debug(f"Private company query: {compiled_query} | Parameters: {params}")
+            else:
+                log.info(f"Executing private company query for id={id}")
             
             bookmark_result = db.execute(stmt, params)
             bookmark_data = [row._mapping for row in bookmark_result.fetchall()]
@@ -1415,7 +1405,11 @@ async def get_private_company_by_id(id: str, request: Request):
             chat_query = "SELECT * FROM chat c WHERE " + " AND ".join(conditions)
             chat_query = get_executable_query(chat_query, [])
             
-            log.info(f"Final executed chat query: {chat_query}")
+            if log.level <= logging.DEBUG:
+                log.debug(f"Chat query: {chat_query}")
+            else:
+                log.info(f"Executing chat query for bookmark_id={id}")
+                
             chat_result = db.execute(text(chat_query))
             chat_list = [row._mapping for row in chat_result.fetchall()]
         
@@ -1427,7 +1421,7 @@ async def get_private_company_by_id(id: str, request: Request):
             "chat_total": len(chat_list)
         }
     except Exception as e:
-        log.error("Get private company by ID error: " + str(e))
+        log.error(f"Get private company by ID error: {str(e)}")
         return {
             "success": False,
             "error": "Fetch failed",
