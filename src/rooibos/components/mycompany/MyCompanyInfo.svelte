@@ -355,7 +355,8 @@
 			size: file.size,
 			status: 'uploading',
 			error: '',
-			itemId: tempItemId
+			itemId: tempItemId,
+			isCreating: true // 메모 생성 중임을 나타내는 플래그 추가
 		};
 
 		// 임시 항목을 메모 리스트에 추가
@@ -375,7 +376,8 @@
 						return {
 							...item,
 							id: uploadedFile.id,
-							status: 'completed'
+							status: 'completed',
+							isCreating: false // 생성 완료 표시
 						};
 					}
 					return item;
@@ -420,7 +422,8 @@
 			size: file.size,
 			status: 'uploading',
 			error: '',
-			itemId: tempItemId
+			itemId: tempItemId,
+			isCreating: true // 생성 중 플래그 추가
 		};
 
 		// 모든 파일 타입을 bookmark.files에 추가
@@ -448,7 +451,7 @@
 				if (bookmark && bookmark.files) {
 					bookmark.files = bookmark.files.map(f => {
 						if (f.itemId === tempItemId || (f.name === file.name && f.status === 'uploading')) {
-							return { ...f, status: 'completed', id: uploadedFile.id };
+							return { ...f, status: 'completed', id: uploadedFile.id, isCreating: false }; // 생성 완료 플래그 설정
 						}
 						return f;
 					});
@@ -1408,8 +1411,10 @@
 										<div class="w-full">
 											{#each memoItems as memo}
 												<div 
-													class="mt-1 px-2 py-2 rounded-lg {selectedFileId === memo.id ? 'bg-gray-50 dark:bg-gray-850' : 'bg-transparent'} hover:bg-gray-50 dark:hover:bg-gray-850 transition flex justify-between cursor-pointer"
+													class="mt-1 px-2 py-2 rounded-lg {selectedFileId === memo.id ? 'bg-gray-50 dark:bg-gray-850' : 'bg-transparent'} hover:bg-gray-50 dark:hover:bg-gray-850 transition flex justify-between cursor-pointer
+													{memo.isCreating ? 'opacity-70' : ''}"
 													on:click={() => {
+														if (memo.isCreating) return; // 생성 중일 때는 클릭 불가
 														if (selectedFileId === memo.id) {
 															closeContent();
 														} else {
@@ -1421,14 +1426,14 @@
 													}}
 												>
 													<div class="flex items-center gap-2 overflow-hidden">
-														<div class="font-medium text-sm truncate">
+														<div class="font-medium text-sm truncate flex items-center">
 															{memo?.meta?.name ? memo.meta.name.replace('.txt', '') : '무제'}
 														</div>
 														<div class="text-xs text-gray-500 whitespace-nowrap">
 															{memo.created_at ? formatDate(memo.created_at) : formatDate(new Date().toISOString())}
 														</div>
 													</div>
-													{#if (!memo.user_id && currentUser) || (memo.user_id === currentUser.id) || (currentUser && bookmark && currentUser.id === bookmark.bookmark_user_id)}
+													{#if ((!memo.user_id && currentUser) || (memo.user_id === currentUser.id) || (currentUser && bookmark && currentUser.id === bookmark.bookmark_user_id)) && !memo.isCreating}
 													<button 
 														class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 self-center"
 														on:click|stopPropagation={() => {
@@ -1442,6 +1447,13 @@
 															<path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
 														</svg>
 													</button>
+													{:else if memo.isCreating}
+													<div class="self-center text-gray-400">
+														<svg class="h-4 w-4 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+															<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+															<path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+														</svg>
+													</div>
 													{/if}
 												</div>
 											{/each}
@@ -1531,8 +1543,10 @@
 										<div class="w-full">
 											{#each filteredItems as file}
 												<div 
-													class="mt-1 px-2 py-2 rounded-lg {selectedFileId === file.id ? 'bg-gray-50 dark:bg-gray-850' : 'bg-transparent'} hover:bg-gray-50 dark:hover:bg-gray-850 transition flex justify-between cursor-pointer"
+													class="mt-1 px-2 py-2 rounded-lg {selectedFileId === file.id ? 'bg-gray-50 dark:bg-gray-850' : 'bg-transparent'} hover:bg-gray-50 dark:hover:bg-gray-850 transition flex justify-between cursor-pointer
+													{file.isCreating ? 'opacity-70' : ''}"
 													on:click={() => {
+														if (file.isCreating) return; // 생성 중일 때는 클릭 불가
 														if (selectedFileId === file.id) {
 															closeContent();
 														} else {
@@ -1544,15 +1558,18 @@
 													}}
 												>
 													<div class="flex-1 overflow-hidden">
-														<div class="font-medium text-sm truncate">
+														<div class="font-medium text-sm truncate flex items-center">
 															{file?.meta?.name || file?.name || '파일명 없음'}
+															{#if file.isCreating}
+															<span class="ml-2 text-xs text-gray-500">(업로드 중...)</span>
+															{/if}
 														</div>
 														<div class="flex items-center gap-2 text-xs text-gray-500">
 															<span>{file.created_at ? formatDate(file.created_at) : ''}</span>
 															<span>{formatFileSize(file?.size || file?.meta?.size || 0)}</span>
 														</div>
 													</div>
-													{#if (!file.user_id && currentUser) || (file.user_id === currentUser.id) || (currentUser && bookmark && currentUser.id === bookmark.bookmark_user_id)}
+													{#if ((!file.user_id && currentUser) || (file.user_id === currentUser.id) || (currentUser && bookmark && currentUser.id === bookmark.bookmark_user_id)) && !file.isCreating}
 													<button 
 														class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 self-center"
 														on:click|stopPropagation={() => {
@@ -1566,6 +1583,13 @@
 															<path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
 														</svg>
 													</button>
+													{:else if file.isCreating}
+													<div class="self-center text-gray-400">
+														<svg class="h-4 w-4 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+															<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+															<path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+														</svg>
+													</div>
 													{/if}
 												</div>
 											{/each}
