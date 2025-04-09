@@ -221,7 +221,6 @@
 
 	// 현재 표시할 콘텐츠 상태 추가
 	let contentType = 'company'; // 'company', 'file', 'memo'
-	let showFileCloseButton = false;
 	
 	$: if (selectedFileId && selectedFile) {
 		// 메모 파일인 경우 모달로 열지 않고 콘텐츠 영역에 표시
@@ -230,10 +229,8 @@
 		} else {
 			contentType = 'file';
 		}
-		showFileCloseButton = true;
 	} else if (!selectedFileId && !selectedFile) {
 		contentType = 'company';
-		showFileCloseButton = false;
 	}
 
 	// 모달 상태 변경 로직 수정
@@ -1182,7 +1179,6 @@
 		selectedFileId = null;
 		selectedFile = null;
 		contentType = 'company';
-		showFileCloseButton = false;
 	};
 
 	const updateFileContent = async (file, newContent) => {
@@ -1669,19 +1665,6 @@
 
 				<!-- 오른쪽 콘텐츠 영역 -->
 				<div class="flex-1 flex flex-col h-full {$mobile ? '' : 'ml-3'}" bind:this={contentRef}>
-					{#if showFileCloseButton}
-						<div class="flex justify-end mb-2">
-							<button 
-								class="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 p-1"
-								on:click={closeContent}
-							>
-								<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-								</svg>
-							</button>
-						</div>
-					{/if}
-
 					{#if contentType === 'company'}
 						<!-- 기업 상세 정보 표시 -->
 						<div class="p-4 space-y-2 h-full overflow-auto">				
@@ -1695,15 +1678,27 @@
 					{:else if contentType === 'file' && selectedFile}
 						<!-- 파일 콘텐츠 표시 -->
 						<div class="flex flex-col w-full h-full">
-							<div class="shrink-0 mb-2 flex items-center">
-								<div class="flex-1 text-xl font-medium">
+							<div class="flex justify-between items-center w-full py-2 px-4 bg-white dark:bg-gray-900">
+								<div class="text-lg font-medium truncate">
 									<span class="line-clamp-1">
 										{selectedFile?.meta?.name || selectedFile?.name || '파일명 없음'}
 									</span>
 								</div>
+								<button 
+									class="ml-2 p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-800"
+									on:click={() => {
+										selectedFileId = null;
+										selectedFile = null;
+										contentType = 'company';
+									}}
+								>
+									<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+										<path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+									</svg>
+								</button>
 							</div>
 
-							<div class="flex-1 w-full h-full max-h-full bg-transparent outline-hidden overflow-y-auto scrollbar-hidden">
+							<div class="flex-1 w-full h-full max-h-full bg-transparent outline-hidden overflow-y-auto scrollbar-hidden p-4">
 								{#if selectedFile?.meta?.name?.toLowerCase().endsWith('.jpg') || selectedFile?.meta?.name?.toLowerCase().endsWith('.jpeg') || selectedFile?.meta?.name?.toLowerCase().endsWith('.png') || selectedFile?.meta?.name?.toLowerCase().endsWith('.gif')}
 									<!-- 이미지 파일인 경우 -->
 									<div class="flex justify-center h-full">
@@ -1774,7 +1769,7 @@
 										}}
 									/>
 								</div>
-								<!-- <button 
+								<button 
 									class="ml-2 p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-800"
 									on:click={() => {
 										selectedFileId = null;
@@ -1785,7 +1780,7 @@
 									<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
 										<path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
 									</svg>
-								</button> -->
+								</button>
 							</div>
 							<div class="flex-1 overflow-auto p-4">
 								<NoteEditor 
@@ -1829,7 +1824,7 @@
 						</div>
 					{:else if contentType === 'file' && selectedFile}
 						<div class="flex-1 flex flex-col">
-							<div class="flex justify-between items-center w-full py-2 px-4 bg-white dark:bg-gray-900 border-b dark:border-gray-700">
+							<div class="flex justify-between items-center w-full py-2 px-4 bg-white dark:bg-gray-900">
 								<div class="text-lg font-medium truncate">
 									<span>{selectedFile?.meta?.name || '파일'}</span>
 								</div>
