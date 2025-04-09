@@ -475,8 +475,11 @@
 						keys: ['meta.name', 'meta.description']
 					});
 				}
-				contentType = 'file';
-				scrollToContent(); // 콘텐츠 영역으로 스크롤
+				// 파일 업로드 후 자동으로 선택
+				selectedFileId = uploadedFile.id;
+				const isTxtFile = file.name.toLowerCase().endsWith('.txt');
+				contentType = isTxtFile ? 'memo' : 'file';
+				scrollToContent();
 				return uploadedFile;
 			} else {
 				toast.error($i18n.t('Failed to upload file.'));
