@@ -121,6 +121,11 @@
 	let user = null;
 	export let placeholder = '';
 
+	// 회사 정보가 있을 때 북마크 아이콘 표시
+	$: if ($selectedCompanyInfo?.company_name) {
+		showBookmarkIcon = true;
+	}
+
 	let visionCapableModels = [];
 	$: visionCapableModels = [...(atSelectedModel ? [atSelectedModel] : selectedModels)].filter(
 		(model) => $models.find((m) => m.id === model)?.info?.meta?.capabilities?.vision ?? true
@@ -483,43 +488,47 @@
 											{$selectedCompanyInfo.company_name}
 											{#if showBookmarkIcon}
 												{#if $selectedCompanyInfo.bookmark_id}
-													<svg
-														xmlns="http://www.w3.org/2000/svg"
-														class="h-4 w-4 ml-1.5 text-yellow-500 cursor-pointer"
-														fill="currentColor"
-														viewBox="0 0 24 24"
-														stroke="currentColor"
-														on:click={() => {
-															if ($selectedCompanyInfo.bookmark_id) {
-																goto(`/rooibos/mycompanies/${$selectedCompanyInfo.bookmark_id}`);
-															}
-														}}
-													>
-														<path
-															stroke-linecap="round"
-															stroke-linejoin="round"
-															stroke-width="2"
-															d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"
-														/>
-													</svg>
+													<Tooltip content="북마크 페이지로 이동" placement="top">
+														<svg
+															xmlns="http://www.w3.org/2000/svg"
+															class="h-6 w-6 ml-2 text-yellow-500 cursor-pointer hover:text-yellow-600 transition-colors"
+															fill="currentColor"
+															viewBox="0 0 24 24"
+															stroke="currentColor"
+															on:click={() => {
+																if ($selectedCompanyInfo.bookmark_id) {
+																	goto(`/rooibos/mycompanies/${$selectedCompanyInfo.bookmark_id}`);
+																}
+															}}
+														>
+															<path
+																stroke-linecap="round"
+																stroke-linejoin="round"
+																stroke-width="2"
+																d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"
+															/>
+														</svg>
+													</Tooltip>
 												{:else}
-													<svg
-														xmlns="http://www.w3.org/2000/svg"
-														class="h-4 w-4 ml-1.5 text-gray-500 cursor-pointer"
-														fill="none"
-														viewBox="0 0 24 24"
-														stroke="currentColor"
-														on:click={() => {
-															showFolderSelect = true;
-														}}
-													>
-														<path
-															stroke-linecap="round"
-															stroke-linejoin="round"
-															stroke-width="2"
-															d="M5 5v14l7-7 7 7V5z"
-														/>
-													</svg>
+													<Tooltip content="북마크에 추가" placement="top">
+														<svg
+															xmlns="http://www.w3.org/2000/svg"
+															class="h-6 w-6 ml-2 text-gray-500 cursor-pointer hover:text-gray-700 transition-colors"
+															fill="none"
+															viewBox="0 0 24 24"
+															stroke="currentColor"
+															on:click={() => {
+																showFolderSelect = true;
+															}}
+														>
+															<path
+																stroke-linecap="round"
+																stroke-linejoin="round"
+																stroke-width="2"
+																d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"
+															/>
+														</svg>
+													</Tooltip>
 												{/if}
 											{/if}
 										</div>
