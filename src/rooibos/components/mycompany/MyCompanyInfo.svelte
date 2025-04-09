@@ -1187,7 +1187,7 @@
 		try {
 			const response = await updateFileDataContentById(localStorage.token, file.id, newContent);
 			
-			if (response && response.status === 200) {
+			if (response) {
 				// 파일의 내용을 업데이트
 				if (selectedFile && selectedFile.id === file.id) {
 					selectedFile.data.content = newContent;
@@ -1198,7 +1198,6 @@
 					contentType = 'memo';
 				}
 				
-				toast.success($i18n.t('Content updated successfully.'));
 			} else {
 				toast.error($i18n.t('Failed to update content.'));
 			}
