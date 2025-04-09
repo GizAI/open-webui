@@ -729,28 +729,6 @@
 	</div>
 {/if}
 
-{#if error}
-	<div class="fixed inset-0 flex items-center justify-center z-40" style="pointer-events: none;">
-		<div class="bg-white/90 p-4 rounded-lg shadow-lg border border-gray-300 max-w-md text-center" style="pointer-events: auto;">
-			<p class="text-red-500 font-medium mb-2">
-				{error === 'User denied Geolocation'
-					? '위치 접근을 허용해주세요.'
-					: '현재 위치를 가져오는데 실패했습니다.'}
-			</p>
-			<p class="text-gray-700 text-sm mb-3">
-				기본 위치(서울시청)에서 지도를 시작합니다. 
-				현재 네트워크 상태나 위치 권한을 확인해 주세요.
-			</p>
-			<button 
-				class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
-				on:click={() => error = null}
-			>
-				확인
-			</button>
-		</div>
-	</div>
-{/if}
-
 <div id="map" class="w-full h-full relative" />
 
 <button
