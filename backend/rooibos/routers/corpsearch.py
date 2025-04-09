@@ -592,11 +592,6 @@ async def search(
             result = db.execute(text(executable_query))
             companies = [dict(row._mapping) for row in result.fetchall()]
         
-        # 디버그: 회사 좌표 정보와 계산된 거리 로깅 
-        for company in companies:
-            if 'distance_from_user' in company and 'latitude' in company and 'longitude' in company:
-                log.info(f"Company: {company.get('company_name')}, Coords: lat={company.get('latitude')}, lng={company.get('longitude')}, Distance: {company.get('distance_from_user')}m")
-        
         # 응답 생성
         response = {
             "success": True,
