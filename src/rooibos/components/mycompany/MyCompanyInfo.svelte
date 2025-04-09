@@ -1439,8 +1439,8 @@
 														if (selectedFileId === memo.id) {
 															closeContent();
 														} else {
-															selectedFile = null; // 먼저 파일 참조 초기화
 															selectedFileId = memo.id;
+															// selectedFile은 반응형 로직에 의해 자동으로 업데이트됨
 															contentType = 'memo';
 															scrollToContent(); // 콘텐츠 영역으로 스크롤
 														}
@@ -1571,8 +1571,8 @@
 														if (selectedFileId === file.id) {
 															closeContent();
 														} else {
-															selectedFile = null; // 먼저 파일 참조 초기화
 															selectedFileId = file.id;
+															// selectedFile은 반응형 로직에 의해 자동으로 업데이트됨
 															contentType = 'file';
 															scrollToContent(); // 콘텐츠 영역으로 스크롤
 														}
@@ -1675,66 +1675,11 @@
 								<CompanyDetail company={bookmark} {financialData} />
 							{/if}
 						</div>
-					{:else if contentType === 'file' && selectedFile}
-						<!-- 파일 콘텐츠 표시 -->
-						<div class="flex flex-col w-full h-full">
-							<div class="flex justify-between items-center w-full py-2 px-4 bg-white dark:bg-gray-900">
-								<div class="text-lg font-medium truncate">
-									<span class="line-clamp-1">
-										{selectedFile?.meta?.name || selectedFile?.name || '파일명 없음'}
-									</span>
-								</div>
-								<button 
-									class="ml-2 p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-800"
-									on:click={() => {
-										selectedFileId = null;
-										selectedFile = null;
-										contentType = 'company';
-									}}
-								>
-									<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-										<path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
-									</svg>
-								</button>
-							</div>
-
-							<div class="flex-1 w-full h-full max-h-full bg-transparent outline-hidden overflow-y-auto scrollbar-hidden p-4">
-								{#if selectedFile?.meta?.name?.toLowerCase().endsWith('.jpg') || selectedFile?.meta?.name?.toLowerCase().endsWith('.jpeg') || selectedFile?.meta?.name?.toLowerCase().endsWith('.png') || selectedFile?.meta?.name?.toLowerCase().endsWith('.gif')}
-									<!-- 이미지 파일인 경우 -->
-									<div class="flex justify-center h-full">
-										<img 
-											src={`${WEBUI_API_BASE_URL}/files/${selectedFile.id}/content`} 
-											alt={selectedFile?.meta?.name || selectedFile?.name} 
-											class="object-contain"
-											style="max-width: 100%; max-height: 100%;"
-										/>
-									</div>
-								{:else if selectedFile?.meta?.name?.toLowerCase().endsWith('.pdf')}
-									<!-- PDF 파일인 경우 -->
-									<div class="h-full">
-										<iframe 
-											src={`${WEBUI_API_BASE_URL}/files/${selectedFile.id}/content`} 
-											title={selectedFile?.meta?.name || selectedFile?.name}
-											class="w-full h-full border-0"
-										></iframe>
-									</div>
-								{:else if selectedFile?.data?.content}
-									<!-- 텍스트 내용이 있는 경우 -->
-									<div class="whitespace-pre-wrap p-4">
-										{selectedFile.data.content}
-									</div>
-								{:else}
-									<!-- 지원되지 않는 파일 타입 -->
-									<div class="flex flex-col items-center justify-center h-full p-4">
-										<div class="text-lg mb-4">
-											{selectedFile?.meta?.name || selectedFile?.name || '파일명 없음'}
-										</div>
-									</div>
-								{/if}
-							</div>
-						</div>
 					{:else if contentType === 'memo' && selectedFile}
+						<!-- 메모 콘텐츠 표시 -->
 						<div class="flex-1 flex flex-col h-full">
+							<!-- 필요할 경우 최신 파일 데이터 가져오기 -->
+							{#key selectedFileId}
 							<div class="flex justify-between items-center w-full py-2 px-4 bg-white dark:bg-gray-900">
 								<div class="text-lg font-medium truncate">
 									<input 
@@ -1821,12 +1766,102 @@
 									}}
 								/>
 							</div>
+							{/key}
 						</div>
 					{:else if contentType === 'file' && selectedFile}
-						<div class="flex-1 flex flex-col">
+						<!-- 파일 콘텐츠 표시 -->
+						<div class="flex flex-col w-full h-full">
 							<div class="flex justify-between items-center w-full py-2 px-4 bg-white dark:bg-gray-900">
 								<div class="text-lg font-medium truncate">
-									<span>{selectedFile?.meta?.name || '파일'}</span>
+									<span class="line-clamp-1">
+										{selectedFile?.meta?.name || selectedFile?.name || '파일명 없음'}
+									</span>
+								</div>
+								<button 
+									class="ml-2 p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-800"
+									on:click={() => {
+										selectedFileId = null;
+										selectedFile = null;
+										contentType = 'company';
+									}}
+								>
+									<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+										<path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+									</svg>
+								</button>
+							</div>
+
+							<div class="flex-1 w-full h-full max-h-full bg-transparent outline-hidden overflow-y-auto scrollbar-hidden p-4">
+								{#if selectedFile?.meta?.name?.toLowerCase().endsWith('.jpg') || selectedFile?.meta?.name?.toLowerCase().endsWith('.jpeg') || selectedFile?.meta?.name?.toLowerCase().endsWith('.png') || selectedFile?.meta?.name?.toLowerCase().endsWith('.gif')}
+									<!-- 이미지 파일인 경우 -->
+									<div class="flex justify-center h-full">
+										<img 
+											src={`${WEBUI_API_BASE_URL}/files/${selectedFile.id}/content`} 
+											alt={selectedFile?.meta?.name || selectedFile?.name} 
+											class="object-contain"
+											style="max-width: 100%; max-height: 100%;"
+										/>
+									</div>
+								{:else if selectedFile?.meta?.name?.toLowerCase().endsWith('.pdf')}
+									<!-- PDF 파일인 경우 -->
+									<div class="h-full">
+										<iframe 
+											src={`${WEBUI_API_BASE_URL}/files/${selectedFile.id}/content`} 
+											title={selectedFile?.meta?.name || selectedFile?.name}
+											class="w-full h-full border-0"
+										></iframe>
+									</div>
+								{:else if selectedFile?.data?.content}
+									<!-- 텍스트 내용이 있는 경우 -->
+									<div class="whitespace-pre-wrap p-4">
+										{selectedFile.data.content}
+									</div>
+								{:else}
+									<!-- 지원되지 않는 파일 타입 -->
+									<div class="flex flex-col items-center justify-center h-full p-4">
+										<div class="text-lg mb-4">
+											{selectedFile?.meta?.name || selectedFile?.name || '파일명 없음'}
+										</div>
+									</div>
+								{/if}
+							</div>
+						</div>
+					{:else if contentType === 'memo' && selectedFile}
+						<!-- 메모 콘텐츠 표시 -->
+						<div class="flex-1 flex flex-col h-full">
+							<div class="flex justify-between items-center w-full py-2 px-4 bg-white dark:bg-gray-900">
+								<div class="text-lg font-medium truncate">
+									<input 
+										type="text"
+										class="w-full bg-transparent border-none outline-none px-0 font-medium"
+										value={selectedFile?.meta?.name ? selectedFile.meta.name.replace('.txt', '') : '무제'} 
+										on:blur={(e) => {
+											if (e.target.value.trim() !== '') {
+												// 기존 이름과 다른 경우에만 업데이트
+												const cleanedName = e.target.value.replace(/\.txt$/i, '');
+												const newFilename = cleanedName + '.txt';
+												
+												if (newFilename !== selectedFile.meta.name) {
+													selectedFile.meta.name = newFilename;
+													
+													// 왼쪽 메모 목록에도 즉시 업데이트
+													memoItems = memoItems.map(memo => {
+														if (memo.id === selectedFile.id) {
+															return { ...memo, meta: { ...memo.meta, name: newFilename } };
+														}
+														return memo;
+													});
+													
+													// Fuse 인스턴스 업데이트
+													memoFuse = new Fuse(memoItems, {
+														keys: ['meta.name', 'meta.description']
+													});
+													
+													updateFileContentHandler();
+												}
+											}
+										}}
+									/>
 								</div>
 								<button 
 									class="ml-2 p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-800"
@@ -1842,13 +1877,43 @@
 								</button>
 							</div>
 							<div class="flex-1 overflow-auto p-4">
-								<!-- 파일 내용 표시 -->
-								<iframe
-									src={selectedFile?.url}
-									title={selectedFile?.meta?.name || '파일'}
-									class="w-full h-full border-0"
-									sandbox="allow-scripts allow-same-origin"
-								></iframe>
+								<NoteEditor 
+									initialTitle={selectedFile?.meta?.name ? selectedFile.meta.name.replace('.txt', '') : '무제'}
+									initialContent={selectedFile?.data?.content || '<p></p>'}
+									selectedFile={selectedFile}
+									on:change={(e) => {
+										if (selectedFile && selectedFile.data) {
+											selectedFile.data.content = e.detail;
+											updateFileContent(selectedFile, e.detail);
+										}
+									}}
+									on:titleChange={(e) => {
+										if (selectedFile && selectedFile.meta) {
+											const cleanedName = e.detail.replace(/\.txt$/i, '');
+											const newFilename = cleanedName + '.txt';
+											
+											// 기존 이름과 다른 경우에만 업데이트
+											if (selectedFile.meta.name !== newFilename) {
+												selectedFile.meta.name = newFilename;
+												
+												// 왼쪽 메모 목록에도 즉시 업데이트
+												memoItems = memoItems.map(memo => {
+													if (memo.id === selectedFile.id) {
+														return { ...memo, meta: { ...memo.meta, name: newFilename } };
+													}
+													return memo;
+												});
+												
+												// Fuse 인스턴스 업데이트
+												memoFuse = new Fuse(memoItems, {
+													keys: ['meta.name', 'meta.description']
+												});
+												
+												updateFileContentHandler();
+											}
+										}
+									}}
+								/>
 							</div>
 						</div>
 					{/if}
