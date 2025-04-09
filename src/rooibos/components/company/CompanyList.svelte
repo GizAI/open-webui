@@ -293,9 +293,7 @@
 								<div class="text-sm text-gray-500 mt-1">
 									대표자: {result.representative ?? '정보없음'} | 설립연도: {formatDateForCompany(
 										result.establishment_date
-									)} | 직원수: {result.employee_count ?? '정보없음'} | 거리: {formatDistance(
-										result.distance_from_user
-									)}
+									)} | 직원수: {result.employee_count ?? '정보없음'}
 								</div>
 							{/if}
 						</div>
