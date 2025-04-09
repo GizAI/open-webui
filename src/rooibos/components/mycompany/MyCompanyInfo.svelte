@@ -793,6 +793,32 @@
 			if (filename) {
 				console.log('파일명 업데이트:', filename);
 				const filenameRes = await updateFileFilenameById(localStorage.token, fileId, filename);
+				
+				// UI에서 메모 항목 이름 즉시 업데이트 (왼쪽 메모 목록)
+				if (filenameRes && filenameRes.status === 200) {
+					// memoItems 배열에서 해당 메모 항목 찾아 이름 업데이트
+					memoItems = memoItems.map(memo => {
+						if (memo.id === fileId) {
+							return { ...memo, meta: { ...memo.meta, name: filename } };
+						}
+						return memo;
+					});
+					
+					// bookmark.files 배열에서도 해당 파일 이름 업데이트
+					if (bookmark && bookmark.files) {
+						bookmark.files = bookmark.files.map(file => {
+							if (file.id === fileId) {
+								return { ...file, meta: { ...file.meta, name: filename } };
+							}
+							return file;
+						});
+					}
+					
+					// Fuse 인스턴스 업데이트
+					memoFuse = new Fuse(memoItems, {
+						keys: ['meta.name', 'meta.description']
+					});
+				}
 			}
 			
 			// 메모 파일인 경우 콘텐츠 영역에 표시
@@ -800,7 +826,6 @@
 				contentType = 'memo';
 			}
 			
-			toast.success($i18n.t('Content updated successfully.'));
 		} catch (e) {
 				toast.error(e);
 		}
@@ -1725,8 +1750,24 @@
 											if (e.target.value.trim() !== '') {
 												// 기존 이름과 다른 경우에만 업데이트
 												const cleanedName = e.target.value.replace(/\.txt$/i, '');
-												if (cleanedName !== selectedFile.meta.name.replace(/\.txt$/i, '')) {
-													selectedFile.meta.name = cleanedName + '.txt';
+												const newFilename = cleanedName + '.txt';
+												
+												if (newFilename !== selectedFile.meta.name) {
+													selectedFile.meta.name = newFilename;
+													
+													// 왼쪽 메모 목록에도 즉시 업데이트
+													memoItems = memoItems.map(memo => {
+														if (memo.id === selectedFile.id) {
+															return { ...memo, meta: { ...memo.meta, name: newFilename } };
+														}
+														return memo;
+													});
+													
+													// Fuse 인스턴스 업데이트
+													memoFuse = new Fuse(memoItems, {
+														keys: ['meta.name', 'meta.description']
+													});
+													
 													updateFileContentHandler();
 												}
 											}
@@ -1760,8 +1801,27 @@
 									on:titleChange={(e) => {
 										if (selectedFile && selectedFile.meta) {
 											const cleanedName = e.detail.replace(/\.txt$/i, '');
-											selectedFile.meta.name = cleanedName + '.txt';
-											updateFileContentHandler();
+											const newFilename = cleanedName + '.txt';
+											
+											// 기존 이름과 다른 경우에만 업데이트
+											if (selectedFile.meta.name !== newFilename) {
+												selectedFile.meta.name = newFilename;
+												
+												// 왼쪽 메모 목록에도 즉시 업데이트
+												memoItems = memoItems.map(memo => {
+													if (memo.id === selectedFile.id) {
+														return { ...memo, meta: { ...memo.meta, name: newFilename } };
+													}
+													return memo;
+												});
+												
+												// Fuse 인스턴스 업데이트
+												memoFuse = new Fuse(memoItems, {
+													keys: ['meta.name', 'meta.description']
+												});
+												
+												updateFileContentHandler();
+											}
 										}
 									}}
 								/>
