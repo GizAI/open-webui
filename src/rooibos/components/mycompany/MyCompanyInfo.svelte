@@ -160,7 +160,6 @@
 	let memoFuse: any = null;
 	let debounceTimeout: any = null;
 	let mediaQuery: any;
-	let dragged = false;
 	let id: any = null;
 	let isShared = false;
 	const currentUser = get(user);
@@ -825,39 +824,6 @@
 		}
 	};
 
-	const onDragOver = (e: any) => {
-		e.preventDefault();
-
-		if (e.dataTransfer?.types?.includes('Files')) {
-			dragged = true;
-		} else {
-			dragged = false;
-		}
-	};
-
-	const onDragLeave = () => {
-		dragged = false;
-	};
-
-	const onDrop = async (e: any) => {
-		e.preventDefault();
-		dragged = false;
-
-		if (e.dataTransfer?.types?.includes('Files')) {
-			if (e.dataTransfer?.files) {
-				const inputFiles = e.dataTransfer?.files;
-
-				if (inputFiles && inputFiles.length > 0) {
-					for (const file of inputFiles) {
-						await uploadFileHandler(file);
-					}
-				} else {
-					toast.error($i18n.t(`File not found.`));
-				}
-			}
-		}
-	};
-
 	onMount(async () => {
 		const urlParams = new URLSearchParams(window.location.search);
 		isShared = urlParams.get('shared') === 'true';
@@ -894,11 +860,6 @@
 
 		// 데이터 로드
 		await loadCompanyData();
-
-		const dropZone = document.querySelector('body');
-		dropZone?.addEventListener('dragover', onDragOver);
-		dropZone?.addEventListener('drop', onDrop);
-		dropZone?.addEventListener('dragleave', onDragLeave);
 	});
 
 	// 데이터 로드 함수
@@ -994,10 +955,6 @@
 
 	onDestroy(() => {
 		mediaQuery?.removeEventListener('change', handleMediaQuery);
-		const dropZone = document.querySelector('body');
-		dropZone?.removeEventListener('dragover', onDragOver);
-		dropZone?.removeEventListener('drop', onDrop);
-		dropZone?.removeEventListener('dragleave', onDragLeave);
 	});
 
 	export let isFullscreen = false;
@@ -1264,28 +1221,6 @@
 
 </script>
 
-{#if dragged}
-	<div
-		class="fixed {$showSidebar
-			? 'left-0 md:left-[260px] md:w-[calc(100%-260px)]'
-			: 'left-0'}  w-full h-full flex z-50 touch-none pointer-events-none"
-		id="dropzone"
-		role="region"
-		aria-label="Drag and Drop Container"
-	>
-		<div class="absolute w-full h-full backdrop-blur bg-gray-800/40 flex justify-center">
-			<div class="m-auto pt-64 flex flex-col justify-center">
-				<div class="max-w-md">
-					<AddFilesPlaceholder>
-						<div class=" mt-2 text-center text-sm dark:text-gray-200 w-full">
-							Drop any files here to add to my documents
-						</div>
-					</AddFilesPlaceholder>
-				</div>
-			</div>
-		</div>
-	</div>
-{/if}
 
 <SyncConfirmDialog
 	bind:show={showSyncConfirmModal}
