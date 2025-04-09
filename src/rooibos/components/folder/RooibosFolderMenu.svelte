@@ -185,7 +185,7 @@
 	{#each folderList as folderId (folderId)}
 		<li class="folder-item group relative">
 			{#if editingFolderId === folderId}
-				<div class="flex items-center justify-between hover:bg-gray-100 dark:hover:bg-gray-900 rounded-md py-1 text-xs">
+				<div class="flex items-center justify-between hover:bg-gray-100 dark:hover:bg-gray-900 rounded-md py-1 text-sm font-medium">
 					<input
 						type="text"
 						bind:value={editedName}
@@ -205,7 +205,7 @@
 				</div>
 			{:else}
 				<div 
-					class="flex items-center justify-between hover:bg-gray-100 dark:hover:bg-gray-900 rounded-md py-1 text-xs cursor-pointer"
+					class="flex items-center justify-between hover:bg-gray-100 dark:hover:bg-gray-900 rounded-md py-1 text-sm font-medium cursor-pointer"
 					on:click={() => handleFolderClick(folders[folderId])}
 				>
 					<div class="flex items-center gap-1.5 text-left">
@@ -238,21 +238,21 @@
 										transition={flyAndScale}
 									>
 										<DropdownMenu.Item
-											class="flex gap-2 items-center px-3 py-1.5 text-sm cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 rounded-md"
+											class="flex gap-2 items-center px-3 py-1.5 text-sm font-medium cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 rounded-md"
 											on:click={(e) => startEditing(e, folderId)}
 										>
 											<Pencil strokeWidth="2" size={18} />
 											<div class="flex items-center">{$i18n.t('이름변경')}</div>
 										</DropdownMenu.Item>
 										<DropdownMenu.Item
-											class="flex gap-2 items-center px-3 py-1.5 text-sm cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 rounded-md"
+											class="flex gap-2 items-center px-3 py-1.5 text-sm font-medium cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 rounded-md"
 											on:click={(e) => openCompanyForm(e, folderId)}
 										>
 											<Building2Icon strokeWidth="2" size={18} />
 											<div class="flex items-center">{$i18n.t('정보추가')}</div>
 										</DropdownMenu.Item>
 										<DropdownMenu.Item
-											class="flex gap-2 items-center px-3 py-1.5 text-sm cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 rounded-md"
+											class="flex gap-2 items-center px-3 py-1.5 text-sm font-medium cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 rounded-md"
 											on:click={(e) => showDeleteConfirmDialog(e, folderId)}
 										>
 											<Trash2Icon strokeWidth="2" size={18} />
@@ -330,7 +330,6 @@
 <style>
 	.folder-list {
 		padding-left: 1.2rem;
-		font-size: 0.8rem;
 	}
 	.folder-item {
 		margin-bottom: 0.1rem;
