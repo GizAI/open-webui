@@ -1777,7 +1777,9 @@
 			</div>
 		</div>
 	{:else}
-		<Spinner />
+		<div class="w-full h-full flex justify-center items-center" style="min-height: 100vh;">
+			<Spinner />
+		</div>
 	{/if}
 </div>
 
