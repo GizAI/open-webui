@@ -1490,7 +1490,7 @@
 															{memo.created_at ? formatDate(memo.created_at) : formatDate(new Date().toISOString())}
 														</div>
 													</div>
-													{#if (memo.user_id === currentUser.id) || (currentUser && bookmark && currentUser.id === bookmark.bookmark_user_id)}
+													{#if (!memo.user_id && currentUser) || (memo.user_id === currentUser.id) || (currentUser && bookmark && currentUser.id === bookmark.bookmark_user_id)}
 													<button 
 														class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 self-center"
 														on:click|stopPropagation={() => {
@@ -1614,7 +1614,7 @@
 															<span>{formatFileSize(file?.size || file?.meta?.size || 0)}</span>
 														</div>
 													</div>
-													{#if (file.user_id === currentUser.id) || (currentUser && bookmark && currentUser.id === bookmark.bookmark_user_id)}
+													{#if (!file.user_id && currentUser) || (file.user_id === currentUser.id) || (currentUser && bookmark && currentUser.id === bookmark.bookmark_user_id)}
 													<button 
 														class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 self-center"
 														on:click|stopPropagation={() => {
