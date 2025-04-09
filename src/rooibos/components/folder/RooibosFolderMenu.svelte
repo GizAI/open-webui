@@ -184,8 +184,8 @@
 <ul class="folder-list">
 	{#each folderList as folderId (folderId)}
 		<li class="folder-item group relative">
-			<div class="flex items-center justify-between hover:bg-gray-100 dark:hover:bg-gray-900 rounded-md py-1 text-xs">
-				{#if editingFolderId === folderId}
+			{#if editingFolderId === folderId}
+				<div class="flex items-center justify-between hover:bg-gray-100 dark:hover:bg-gray-900 rounded-md py-1 text-xs">
 					<input
 						type="text"
 						bind:value={editedName}
@@ -202,8 +202,13 @@
 						}}
 						autofocus
 					/>
-				{:else}
-					<button on:click={() => handleFolderClick(folders[folderId])} class="cursor-pointer flex items-center gap-1.5 text-left bg-transparent border-0 p-0 text-xs">
+				</div>
+			{:else}
+				<div 
+					class="flex items-center justify-between hover:bg-gray-100 dark:hover:bg-gray-900 rounded-md py-1 text-xs cursor-pointer"
+					on:click={() => handleFolderClick(folders[folderId])}
+				>
+					<div class="flex items-center gap-1.5 text-left">
 						{#if folders[folderId].isTrash}
 							<Trash2Icon size={16} strokeWidth={1.5} />
 							{folders[folderId].name}
@@ -214,60 +219,60 @@
 							<FolderIcon size={16} strokeWidth={1.5} />
 							{folders[folderId].name}
 						{/if}
-					</button>
-				{/if}
+					</div>
 
-				<div class="invisible group-hover:visible flex items-center">
-					{#if !folders[folderId].isTrash && !folders[folderId].isShared}
-						<Dropdown>
-							<Tooltip content={$i18n.t('More')}>
-								<button class="flex items-center justify-center h-6 w-6">
-									<span class="inline-block transform translate-y-[-2px]">...</span>
-								</button>
-							</Tooltip>
-							<div slot="content">
-								<DropdownMenu.Content
-									class="w-full max-w-[160px] rounded-lg px-1 py-1.5 z-50 bg-white dark:bg-gray-850 dark:text-white shadow-lg"
-									sideOffset={-2}
-									side="bottom"
-									align="start"
-									transition={flyAndScale}
-								>
-									<DropdownMenu.Item
-										class="flex gap-2 items-center px-3 py-1.5 text-sm cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 rounded-md"
-										on:click={(e) => startEditing(e, folderId)}
+					<div class="invisible group-hover:visible flex items-center" on:click|stopPropagation>
+						{#if !folders[folderId].isTrash && !folders[folderId].isShared}
+							<Dropdown>
+								<Tooltip content={$i18n.t('More')}>
+									<button class="flex items-center justify-center h-6 w-6">
+										<span class="inline-block transform translate-y-[-2px]">...</span>
+									</button>
+								</Tooltip>
+								<div slot="content">
+									<DropdownMenu.Content
+										class="w-full max-w-[160px] rounded-lg px-1 py-1.5 z-50 bg-white dark:bg-gray-850 dark:text-white shadow-lg"
+										sideOffset={-2}
+										side="bottom"
+										align="start"
+										transition={flyAndScale}
 									>
-										<Pencil strokeWidth="2" size={18} />
-										<div class="flex items-center">{$i18n.t('이름변경')}</div>
-									</DropdownMenu.Item>
-									<DropdownMenu.Item
-										class="flex gap-2 items-center px-3 py-1.5 text-sm cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 rounded-md"
-										on:click={(e) => openCompanyForm(e, folderId)}
-									>
-										<Building2Icon strokeWidth="2" size={18} />
-										<div class="flex items-center">{$i18n.t('정보추가')}</div>
-									</DropdownMenu.Item>
-									<DropdownMenu.Item
-										class="flex gap-2 items-center px-3 py-1.5 text-sm cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 rounded-md"
-										on:click={(e) => showDeleteConfirmDialog(e, folderId)}
-									>
-										<Trash2Icon strokeWidth="2" size={18} />
-										<div class="flex items-center">{$i18n.t('폴더삭제')}</div>
-									</DropdownMenu.Item>
-									<!-- 관리 메뉴 항목 추가 -->
-									<!-- <DropdownMenu.Item
-										class="flex gap-2 items-center px-3 py-1.5 text-sm cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 rounded-md"
-										on:click={(e) => { e.stopPropagation(); openManagement(folderId); }}
-									>
-										<Cog6 strokeWidth="2" />
-										<div class="flex items-center">{$i18n.t('폴더관리')}</div>
-									</DropdownMenu.Item> -->								
-								</DropdownMenu.Content>
-							</div>
-						</Dropdown>
-					{/if}
+										<DropdownMenu.Item
+											class="flex gap-2 items-center px-3 py-1.5 text-sm cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 rounded-md"
+											on:click={(e) => startEditing(e, folderId)}
+										>
+											<Pencil strokeWidth="2" size={18} />
+											<div class="flex items-center">{$i18n.t('이름변경')}</div>
+										</DropdownMenu.Item>
+										<DropdownMenu.Item
+											class="flex gap-2 items-center px-3 py-1.5 text-sm cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 rounded-md"
+											on:click={(e) => openCompanyForm(e, folderId)}
+										>
+											<Building2Icon strokeWidth="2" size={18} />
+											<div class="flex items-center">{$i18n.t('정보추가')}</div>
+										</DropdownMenu.Item>
+										<DropdownMenu.Item
+											class="flex gap-2 items-center px-3 py-1.5 text-sm cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 rounded-md"
+											on:click={(e) => showDeleteConfirmDialog(e, folderId)}
+										>
+											<Trash2Icon strokeWidth="2" size={18} />
+											<div class="flex items-center">{$i18n.t('폴더삭제')}</div>
+										</DropdownMenu.Item>
+										<!-- 관리 메뉴 항목 추가 -->
+										<!-- <DropdownMenu.Item
+											class="flex gap-2 items-center px-3 py-1.5 text-sm cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 rounded-md"
+											on:click={(e) => { e.stopPropagation(); openManagement(folderId); }}
+										>
+											<Cog6 strokeWidth="2" />
+											<div class="flex items-center">{$i18n.t('폴더관리')}</div>
+										</DropdownMenu.Item> -->								
+									</DropdownMenu.Content>
+								</div>
+							</Dropdown>
+						{/if}
+					</div>
 				</div>
-			</div>
+			{/if}
 
 			<!-- 재귀 렌더링: 자식 폴더가 있으면 -->
 			{#if folders[folderId].childrenIds && folders[folderId].childrenIds.length > 0}
