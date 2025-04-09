@@ -145,13 +145,15 @@ async def search(
                 "query": {"search": query, "filters": {}},
             }     
     
+    # 사용자 위치 정보 (항상 필요함)
     user_latitude = float(search_params.get("userLatitude", 0))
     user_longitude = float(search_params.get("userLongitude", 0))
     
     filters_param = search_params.get("filters")
     filters = json.loads(filters_param) if filters_param else {}
 
-    distance = float(filters.get("radius", {}).get("value", "200")) if filters.get("radius") else "200"
+    # 거리 제한은 검색어가 있는 경우에도 적용해야 함
+    distance = float(filters.get("radius", {}).get("value", "200")) if filters.get("radius") else 200
 
     # 필터 조건 파싱
     certification = filters.get("certification", {}).get("value") if filters.get("certification") else None
@@ -197,6 +199,10 @@ async def search(
         params = []
         param_count = 1
 
+        # 검색 위치 결정 - latitude/longitude가 지정되면 그 위치 사용, 아니면 사용자 위치 사용
+        search_latitude = float(latitude) if latitude else user_latitude
+        search_longitude = float(longitude) if longitude else user_longitude
+        
         # 카운트 쿼리와 실제 데이터 쿼리 분리
         if not id:
             # 먼저 조건에 맞는 전체 개수를 효율적으로 계산
@@ -209,26 +215,9 @@ async def search(
             count_params = []
             count_param_idx = 1
             
-            if latitude and longitude:
-                dist_condition = f"""
-                    ROUND(
-                        (
-                            6371 * acos(
-                                cos(radians(${count_param_idx})) *
-                                cos(radians(rmc.latitude)) *
-                                cos(radians(rmc.longitude) - radians(${count_param_idx + 1})) +
-                                sin(radians(${count_param_idx})) *
-                                sin(radians(rmc.latitude))
-                            )
-                        ) * 1000
-                    ) <= ${count_param_idx + 2}
-                """
-                count_where_clauses.append(dist_condition)
-                count_params.extend([float(latitude), float(longitude), distance])
-                count_param_idx += 3
-            
-            # 검색어 조건 추가
+            # 검색어 유무에 따라 다른 조건 적용
             if query:
+                # 검색어가 있는 경우: 거리 제한 없이 검색어만으로 필터링
                 if len(categories) > 0:
                     search_conditions = []
                     for cat in categories:
@@ -251,9 +240,89 @@ async def search(
 
                     if search_conditions:
                         count_where_clauses.append(f"({' OR '.join(search_conditions)})")
+                else:
+                    # 카테고리가 없으면 기본 검색 필드에서 검색
+                    count_where_clauses.append(f"""(
+                        rmc.company_name ILIKE ${count_param_idx}
+                        OR rmc.representative ILIKE ${count_param_idx}
+                        OR rmc.address ILIKE ${count_param_idx}
+                    )""")
+                    count_params.append(f"%{query}%")
+                    count_param_idx += 1
+            else:
+                # 검색어가 없는 경우: 거리 제한 적용
+                dist_condition = f"""
+                    ROUND(
+                        (
+                            6371 * acos(
+                                cos(radians(${count_param_idx})) *
+                                cos(radians(rmc.latitude)) *
+                                cos(radians(rmc.longitude) - radians(${count_param_idx + 1})) +
+                                sin(radians(${count_param_idx})) *
+                                sin(radians(rmc.latitude))
+                            )
+                        ) * 1000
+                    ) <= ${count_param_idx + 2}
+                """
+                count_where_clauses.append(dist_condition)
+                count_params.extend([search_latitude, search_longitude, distance])
+                count_param_idx += 3
             
-            # 기타 필터 조건들 추가 (지금은 간단히 처리)
-            # 실제 구현 시 더 많은 조건을 여기에 추가해야 함
+            # 기타 필터 조건들 추가
+            # 숫자형 필드 필터링
+            numeric_filters = [
+                ("employee_count", employee_count_min, employee_count_max),
+                ("recent_sales", sales_min, sales_max),
+                ("recent_profit", profit_min, profit_max),
+                ("net_income", net_profit_min, net_profit_max)
+            ]
+            
+            for field, min_val, max_val in numeric_filters:
+                if min_val not in [None, '']:
+                    count_where_clauses.append(f"(rmc.{field})::numeric >= ${count_param_idx}")
+                    count_params.append(min_val)
+                    count_param_idx += 1
+                
+                if max_val not in [None, '']:
+                    count_where_clauses.append(f"(rmc.{field})::numeric <= ${count_param_idx}")
+                    count_params.append(max_val)
+                    count_param_idx += 1
+            
+            # 설립연도 필터
+            if establishment_year not in [None, '']:
+                count_where_clauses.append(f"SUBSTRING(rmc.establishment_date, 1, 4)::INTEGER >= ${count_param_idx}")
+                count_params.append(establishment_year)
+                count_param_idx += 1
+            
+            # JSON 필드 필터링 (certification)
+            if certification:
+                cert_conditions = []
+                if 'innobiz' in certification:
+                    cert_conditions.append("rmc.sme_type @> '[{\"sme_type\": \"기술혁신\"}]'")
+                if 'mainbiz' in certification:
+                    cert_conditions.append("rmc.sme_type @> '[{\"sme_type\": \"경영혁신\"}]'")
+                if 'research_institute' in certification:
+                    cert_conditions.append("(rmc.research_info @> '[{\"division\": \"연구소\"}]' OR rmc.research_info @> '[{\"division\": \"전담부서\"}]')")
+                if 'venture' in certification:
+                    cert_conditions.append(f"rmc.confirming_authority = '벤처기업확인기관'")
+                
+                if cert_conditions:
+                    count_where_clauses.append("(" + " AND ".join(cert_conditions) + ")")
+            
+            # 산업 필터
+            if included_industries:
+                industry_list = included_industries.split(", ")
+                placeholders = ", ".join([f"${count_param_idx + i}" for i in range(len(industry_list))])
+                count_where_clauses.append(f"rmc.industry IN ({placeholders})")
+                count_params.extend(industry_list)
+                count_param_idx += len(industry_list)
+
+            if excluded_industries:
+                excluded_list = excluded_industries.split(", ")
+                placeholders = ", ".join([f"${count_param_idx + i}" for i in range(len(excluded_list))])
+                count_where_clauses.append(f"rmc.industry NOT IN ({placeholders})")
+                count_params.extend(excluded_list)
+                count_param_idx += len(excluded_list)
 
             count_query += " WHERE " + " AND ".join(count_where_clauses)
             count_executable_query = get_executable_query(count_query, count_params)
@@ -301,8 +370,8 @@ async def search(
                     cb.id as bookmark_id
             """
 
-        # 거리 계산 열 추가
-        if not id and latitude and longitude:
+        # 거리 계산 열 추가 (검색 중심점과의 거리)
+        if not id:
             sql_query += f"""
                 , ROUND(
                     (
@@ -314,12 +383,12 @@ async def search(
                             sin(radians(rmc.latitude))
                         )
                     ) * 1000
-                ) AS distance_from_location
+                ) AS distance_from_search
             """
-            params.extend([float(latitude), float(longitude)])
+            params.extend([search_latitude, search_longitude])
             param_count += 2
 
-        if not id:
+            # 추가: 항상 사용자 위치와의 거리도 계산 (검색 위치와 다를 수 있음)
             sql_query += f"""
                 , ROUND(
                     (
@@ -378,19 +447,9 @@ async def search(
             params.append(float(id))
             param_count += 1
         else:
-            # 위치 기반 필터링 (PostGIS 활용)
-            if not query:
-                if latitude and longitude:
-                    sql_query += f" AND {get_distance_conditions(latitude, longitude, distance, param_count)}"
-                    params.extend([float(latitude), float(longitude), float(distance)])
-                    param_count += 3
-                else:
-                    sql_query += f" AND {get_distance_conditions(user_latitude, user_longitude, distance, param_count)}"
-                    params.extend([user_latitude, user_longitude, float(distance)])
-                    param_count += 3
-            
-            # 검색어 필터링 
-            elif query:
+            # 검색어 유무에 따라 다른 조건 적용
+            if query:
+                # 검색어가 있는 경우: 거리 제한 없이 검색어로만 필터링
                 if len(categories) > 0:
                     # 여러 토글 중 활성화된 것만 조건 생성
                     conditions = []
@@ -415,80 +474,100 @@ async def search(
                     if conditions:
                         joined_conditions = " OR ".join(conditions)
                         sql_query += f" AND ({joined_conditions}) "
-                    else:
-                        sql_query += f"""
-                            AND (
-                                rmc.company_name ILIKE ${param_count}
-                                OR rmc.representative ILIKE ${param_count}
-                                OR rmc.address ILIKE ${param_count}
+                else:
+                    # 카테고리가 없으면 기본 검색 필드에서 검색
+                    sql_query += f"""
+                        AND (
+                            rmc.company_name ILIKE ${param_count}
+                            OR rmc.representative ILIKE ${param_count}
+                            OR rmc.address ILIKE ${param_count}
+                        )
+                    """
+                    params.append(f"%{query}%")
+                    param_count += 1
+            else:
+                # 검색어가 없는 경우에만 거리 제한 적용
+                distance_condition = f"""
+                    ROUND(
+                        (
+                            6371 * acos(
+                                cos(radians(${param_count})) *
+                                cos(radians(rmc.latitude)) *
+                                cos(radians(rmc.longitude) - radians(${param_count + 1})) +
+                                sin(radians(${param_count})) *
+                                sin(radians(rmc.latitude))
                             )
-                        """
-                        params.append(f"%{query}%")
-                        param_count += 1
+                        ) * 1000
+                    ) <= ${param_count + 2}
+                """
+                sql_query += f" AND {distance_condition}"
+                params.extend([search_latitude, search_longitude, float(distance)])
+                param_count += 3
             
-            # 추가 필터 조건 적용 (쿼리가 없는 경우에만)
-            if not query:
-                # 숫자형 필드 필터링
-                numeric_filters = [
-                    ("employee_count", employee_count_min, employee_count_max),
-                    ("recent_sales", sales_min, sales_max),
-                    ("recent_profit", profit_min, profit_max),
-                    ("net_income", net_profit_min, net_profit_max)
-                ]
-                
-                for field, min_val, max_val in numeric_filters:
-                    if min_val not in [None, '']:
-                        sql_query += f" AND (rmc.{field})::numeric >= ${param_count}"
-                        params.append(min_val)
-                        param_count += 1
-                    
-                    if max_val not in [None, '']:
-                        sql_query += f" AND (rmc.{field})::numeric <= ${param_count}"
-                        params.append(max_val)
-                        param_count += 1
-                
-                # 설립연도 필터
-                if establishment_year not in [None, '']:
-                    sql_query += f" AND SUBSTRING(rmc.establishment_date, 1, 4)::INTEGER >= ${param_count}"
-                    params.append(establishment_year)
+            # 추가 필터 조건 적용
+            # 숫자형 필드 필터링
+            numeric_filters = [
+                ("employee_count", employee_count_min, employee_count_max),
+                ("recent_sales", sales_min, sales_max),
+                ("recent_profit", profit_min, profit_max),
+                ("net_income", net_profit_min, net_profit_max)
+            ]
+            
+            for field, min_val, max_val in numeric_filters:
+                if min_val not in [None, '']:
+                    sql_query += f" AND (rmc.{field})::numeric >= ${param_count}"
+                    params.append(min_val)
                     param_count += 1
                 
-                # JSON 필드 필터링 (certification)
-                if certification:
-                    conditions = []
-                    if 'innobiz' in certification:
-                        conditions.append("rmc.sme_type @> '[{\"sme_type\": \"기술혁신\"}]'")
-                    if 'mainbiz' in certification:
-                        conditions.append("rmc.sme_type @> '[{\"sme_type\": \"경영혁신\"}]'")
-                    if 'research_institute' in certification:
-                        conditions.append("(rmc.research_info @> '[{\"division\": \"연구소\"}]' OR rmc.research_info @> '[{\"division\": \"전담부서\"}]')")
-                    if 'venture' in certification:
-                        conditions.append(f"rmc.confirming_authority = '벤처기업확인기관'")
-                    
-                    if conditions:
-                        sql_query += " AND (" + " AND ".join(conditions) + ")"
+                if max_val not in [None, '']:
+                    sql_query += f" AND (rmc.{field})::numeric <= ${param_count}"
+                    params.append(max_val)
+                    param_count += 1
+            
+            # 설립연도 필터
+            if establishment_year not in [None, '']:
+                sql_query += f" AND SUBSTRING(rmc.establishment_date, 1, 4)::INTEGER >= ${param_count}"
+                params.append(establishment_year)
+                param_count += 1
+            
+            # JSON 필드 필터링 (certification)
+            if certification:
+                conditions = []
+                if 'innobiz' in certification:
+                    conditions.append("rmc.sme_type @> '[{\"sme_type\": \"기술혁신\"}]'")
+                if 'mainbiz' in certification:
+                    conditions.append("rmc.sme_type @> '[{\"sme_type\": \"경영혁신\"}]'")
+                if 'research_institute' in certification:
+                    conditions.append("(rmc.research_info @> '[{\"division\": \"연구소\"}]' OR rmc.research_info @> '[{\"division\": \"전담부서\"}]')")
+                if 'venture' in certification:
+                    conditions.append(f"rmc.confirming_authority = '벤처기업확인기관'")
                 
-                # 산업 필터
-                if included_industries:
-                    industry_list = included_industries.split(", ")
-                    placeholders = ", ".join([f"${param_count + i}" for i in range(len(industry_list))])
-                    sql_query += f" AND rmc.industry IN ({placeholders})"
-                    params.extend(industry_list)
-                    param_count += len(industry_list)
+                if conditions:
+                    sql_query += " AND (" + " AND ".join(conditions) + ")"
+            
+            # 산업 필터
+            if included_industries:
+                industry_list = included_industries.split(", ")
+                placeholders = ", ".join([f"${param_count + i}" for i in range(len(industry_list))])
+                sql_query += f" AND rmc.industry IN ({placeholders})"
+                params.extend(industry_list)
+                param_count += len(industry_list)
 
-                if excluded_industries:
-                    excluded_list = excluded_industries.split(", ")
-                    placeholders = ", ".join([f"${param_count + i}" for i in range(len(excluded_list))])
-                    sql_query += f" AND rmc.industry NOT IN ({placeholders})"
-                    params.extend(excluded_list)
-                    param_count += len(excluded_list)
+            if excluded_industries:
+                excluded_list = excluded_industries.split(", ")
+                placeholders = ", ".join([f"${param_count + i}" for i in range(len(excluded_list))])
+                sql_query += f" AND rmc.industry NOT IN ({placeholders})"
+                params.extend(excluded_list)
+                param_count += len(excluded_list)
 
         # 정렬 기준 추가
         if not id:
-            if latitude and longitude:
-                sql_query += " ORDER BY distance_from_location ASC"
+            if query:
+                # 검색어가 있는 경우: 기본 정렬 (회사명)
+                sql_query += " ORDER BY rmc.company_name ASC"
             else:
-                sql_query += " ORDER BY distance_from_user ASC"
+                # 검색어가 없는 경우: 거리 기준 정렬
+                sql_query += " ORDER BY distance_from_search ASC"
         
         # 페이징 처리
         if not id:
