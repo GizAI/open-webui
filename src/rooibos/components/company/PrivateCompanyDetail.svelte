@@ -3,11 +3,12 @@
 	import { toast } from 'svelte-sonner';
 	import { onMount } from 'svelte';
 	import { WEBUI_API_BASE_URL } from '$lib/constants';
+	import { mobile } from '$lib/stores';
 	
 	// 북마크 데이터 받기
 	export let bookmark: any;
 	// URL에서 받은 엔티티 타입 (company 또는 customer)
-	export let entityType: string = '';
+	export let entityType: string = '';	
 	
 	// 수정 모드 관련 상태 - 항상 수정 가능하도록 변경
 	let isSaving = false;
@@ -104,9 +105,9 @@
 	}
 </script>
 
-<div class="company-info-wrapper active flex flex-col w-full overflow-hidden">
-	<div class="flex-1 px-4 pb-4">
-		<div class="space-y-6 mt-2">
+<div class="company-info-wrapper active flex flex-col w-full h-full {$mobile ? 'min-h-[90vh] max-h-[95vh] overflow-auto' : 'overflow-hidden'}">
+	<div class="flex-1 px-4 pb-4 {$mobile ? 'pt-0' : ''}">
+		<div class="space-y-4 mt-2">
 			<!-- 기본 정보 -->
 			<div class="space-y-2 border-gray-100 pb-4 text-gray-900 dark:text-gray-500">
 				<div class="flex justify-between items-center mb-2">
@@ -118,153 +119,144 @@
 				
 				{#if editableData}
 					<!-- 수정 폼 -->
-					<div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm space-y-4">
+					<div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm space-y-3">
 						{#if entityTypeValue === 'customer'}
 							<!-- 고객 정보 폼 -->
-							<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-								<div class="space-y-2 md:col-span-2">
+							<div class="grid grid-cols-2 gap-3 p-3">
+								<div class="space-y-1 col-span-2">
 									<label class="block text-sm font-medium text-gray-700 dark:text-gray-300">대표자</label>
 									<input
 										type="text"
 										bind:value={editableData.representative}
-										class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+										class="w-full px-3 py-1.5 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
 									/>
 								</div>
 								
-								<div class="space-y-2 md:col-span-2">
+								<div class="space-y-1 col-span-2">
 									<label class="block text-sm font-medium text-gray-700 dark:text-gray-300">주소</label>
 									<input
 										type="text"
 										bind:value={editableData.address}
-										class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+										class="w-full px-3 py-1.5 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
 									/>
 								</div>
 								
-								<div class="space-y-2">
+								<div class="space-y-1">
 									<label class="block text-sm font-medium text-gray-700 dark:text-gray-300">전화번호</label>
 									<input
 										type="text"
 										bind:value={editableData.phone_number}
-										class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+										class="w-full px-3 py-1.5 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
 									/>
 								</div>
 								
-								<div class="space-y-2">
+								<div class="space-y-1">
 									<label class="block text-sm font-medium text-gray-700 dark:text-gray-300">이메일</label>
 									<input
 										type="email"
 										bind:value={editableData.email}
-										class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+										class="w-full px-3 py-1.5 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
 									/>
 								</div>
 							</div>
 						{:else}
 							<!-- 기업 정보 폼 -->
-							<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-								<div class="space-y-2">
+							<div class="grid grid-cols-2 gap-3 p-3">
+								<div class="space-y-1">
 									<label class="block text-sm font-medium text-gray-700 dark:text-gray-300">회사명</label>
 									<input
 										type="text"
 										bind:value={editableData.company_name}
-										class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+										class="w-full px-3 py-1.5 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
 									/>
 								</div>
 								
-								<div class="space-y-2">
+								<div class="space-y-1">
 									<label class="block text-sm font-medium text-gray-700 dark:text-gray-300">대표자</label>
 									<input
 										type="text"
 										bind:value={editableData.representative}
-										class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+										class="w-full px-3 py-1.5 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
 									/>
 								</div>
 								
-								<div class="space-y-2 md:col-span-2">
-									<label class="block text-sm font-medium text-gray-700 dark:text-gray-300">주소</label>
-									<input
-										type="text"
-										bind:value={editableData.address}
-										class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-									/>
-								</div>
-								
-								<div class="space-y-2">
+								<div class="space-y-1">
 									<label class="block text-sm font-medium text-gray-700 dark:text-gray-300">전화번호</label>
 									<input
 										type="text"
 										bind:value={editableData.phone_number}
-										class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+										class="w-full px-3 py-1.5 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
 									/>
 								</div>
 								
-								<div class="space-y-2">
+								<div class="space-y-1">
 									<label class="block text-sm font-medium text-gray-700 dark:text-gray-300">팩스</label>
 									<input
 										type="text"
 										bind:value={editableData.fax_number}
-										class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+										class="w-full px-3 py-1.5 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
 									/>
 								</div>
 								
-								<div class="space-y-2">
+								<div class="space-y-1">
 									<label class="block text-sm font-medium text-gray-700 dark:text-gray-300">이메일</label>
 									<input
 										type="email"
 										bind:value={editableData.email}
-										class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+										class="w-full px-3 py-1.5 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
 									/>
 								</div>
 								
-								<div class="space-y-2">
+								<div class="space-y-1">
 									<label class="block text-sm font-medium text-gray-700 dark:text-gray-300">웹사이트</label>
 									<input
 										type="text"
 										bind:value={editableData.website}
-										class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+										class="w-full px-3 py-1.5 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
 									/>
 								</div>
 								
-								<div class="space-y-2">
+								<div class="space-y-1">
 									<label class="block text-sm font-medium text-gray-700 dark:text-gray-300">설립일</label>
 									<input
 										type="date"
 										bind:value={editableData.establishment_date}
-										class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+										class="w-full px-3 py-1.5 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
 									/>
 								</div>
 								
-								<div class="space-y-2">
+								<div class="space-y-1">
 									<label class="block text-sm font-medium text-gray-700 dark:text-gray-300">직원수</label>
 									<input
 										type="number"
 										bind:value={editableData.employee_count}
-										class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+										class="w-full px-3 py-1.5 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
 									/>
 								</div>
 							
 								<!-- 업종 정보 -->
-								<div class="space-y-2 pt-4 border-t border-gray-100 md:col-span-2">
-									<h3 class="text-sm font-semibold text-gray-400 flex items-center gap-2 mb-4">
+								<div class="space-y-1 pt-3 border-t border-gray-100 col-span-2 mt-2">
+									<h3 class="text-sm font-semibold text-gray-400 flex items-center gap-2 mb-3">
 										<Briefcase size={16} class="text-blue-500" />
 										업종 정보
 									</h3>
 									
-									<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-										<div class="space-y-2 md:col-span-2">
+									<div class="grid grid-cols-2 gap-3">
+										<div class="space-y-1 col-span-2">
 											<label class="block text-sm font-medium text-gray-700 dark:text-gray-300">업종</label>
 											<input
 												type="text"
 												bind:value={editableData.industry}
-												class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+												class="w-full px-3 py-1.5 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
 											/>
 										</div>
 										
-										<div class="space-y-2 md:col-span-2">
+										<div class="space-y-1 col-span-2">
 											<label class="block text-sm font-medium text-gray-700 dark:text-gray-300">주요 상품</label>
 											<input
 												type="text"
 												bind:value={editableData.main_product}
-												class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+												class="w-full px-3 py-1.5 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
 											/>
 										</div>
 									</div>
@@ -272,9 +264,9 @@
 							</div>
 						{/if}
 						
-						<div class="flex justify-end space-x-2 mt-4 p-2">
+						<div class="flex justify-end space-x-2 mt-3 p-2">
 							<button
-								class="px-4 py-2 text-sm font-medium text-yellow-500 border border-yellow-500 hover:bg-blue-50 bg-transparent rounded-md transition-colors"
+								class="px-4 py-1.5 text-sm font-medium text-yellow-500 border border-yellow-500 hover:bg-blue-50 bg-transparent rounded-md transition-colors"
 								on:click={saveData}
 								disabled={isSaving}
 							>
@@ -291,7 +283,7 @@
 
 			<!-- 업종 정보 (기업에만 표시) -->
 			{#if entityTypeValue !== 'customer' && (bookmark.industry || bookmark.main_product) && !editableData}
-				<div class="space-y-2 border-t border-gray-100 pt-6 text-gray-900 dark:text-gray-400">
+				<div class="space-y-2 border-t border-gray-100 pt-4 text-gray-900 dark:text-gray-400">
 					<h3 class="text-sm font-semibold text-gray-400 flex items-center gap-2">
 						<Briefcase size={16} class="text-blue-500" />
 						업종 정보
