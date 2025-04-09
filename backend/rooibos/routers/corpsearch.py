@@ -106,8 +106,6 @@ def get_distance_conditions(lat, lng, distance, param_count):
 @router.get("/")
 async def search(
     request: Request,
-    page: int = 1,
-    page_size: int = 50,
 ):
     start_time = time.time()
     search_params = request.query_params
@@ -192,7 +190,7 @@ async def search(
     total_equity_min, total_equity_max = process_range_filter(filters.get("total_equity"))
     
     # 캐싱을 위한 쿼리 해시값 생성
-    query_hash = f"{id}_{query}_{user_id}_{latitude}_{longitude}_{categories_str}_{filters_param}_{page}_{page_size}"
+    query_hash = f"{id}_{query}_{user_id}_{latitude}_{longitude}_{categories_str}_{filters_param}"
     cached_result = cached_query_results(query_hash)
     if cached_result:
         log.info(f"Cache hit for query: {query_hash}")
@@ -585,11 +583,6 @@ async def search(
                 # 검색어가 없는 경우: 거리 기준 정렬
                 sql_query += " ORDER BY distance_from_search ASC"
         
-        # 페이징 처리
-        if not id:
-            offset = (page - 1) * page_size
-            sql_query += f" LIMIT {page_size} OFFSET {offset}"
-
         # 쿼리 실행
         executable_query = get_executable_query(sql_query, params)
         executable_query = '\n'.join(line for line in executable_query.splitlines() if line.strip())
@@ -609,9 +602,6 @@ async def search(
             "success": True,
             "data": companies,
             "total": total_count,
-            "page": page,
-            "page_size": page_size,
-            "pages": (total_count + page_size - 1) // page_size,
             "query": id or {
                 "search": query,
                 "filters": {
