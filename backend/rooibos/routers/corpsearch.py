@@ -92,12 +92,12 @@ def get_distance_conditions(lat, lng, distance, param_count):
     return f"""
         ROUND(
             (
-                6371 * acos(
-                    cos(radians(${param_count})) *
-                    cos(radians(rmc.latitude)) *
-                    cos(radians(rmc.longitude) - radians(${param_count + 1})) +
-                    sin(radians(${param_count})) *
-                    sin(radians(rmc.latitude))
+                6371 * 2 * asin(
+                    sqrt(
+                        power(sin((radians(rmc.latitude) - radians(${param_count})) / 2), 2) +
+                        cos(radians(${param_count})) * cos(radians(rmc.latitude)) * 
+                        power(sin((radians(rmc.longitude) - radians(${param_count + 1})) / 2), 2)
+                    )
                 )
             ) * 1000
         ) <= ${param_count + 2}
@@ -148,6 +148,9 @@ async def search(
     # 사용자 위치 정보 (항상 필요함)
     user_latitude = float(search_params.get("userLatitude", 0))
     user_longitude = float(search_params.get("userLongitude", 0))
+    
+    # 디버그: 좌표값 로깅
+    log.info(f"User coordinates: lat={user_latitude}, lng={user_longitude}")
     
     filters_param = search_params.get("filters")
     filters = json.loads(filters_param) if filters_param else {}
@@ -254,12 +257,12 @@ async def search(
                 dist_condition = f"""
                     ROUND(
                         (
-                            6371 * acos(
-                                cos(radians(${count_param_idx})) *
-                                cos(radians(rmc.latitude)) *
-                                cos(radians(rmc.longitude) - radians(${count_param_idx + 1})) +
-                                sin(radians(${count_param_idx})) *
-                                sin(radians(rmc.latitude))
+                            6371 * 2 * asin(
+                                sqrt(
+                                    power(sin((radians(rmc.latitude) - radians(${count_param_idx})) / 2), 2) +
+                                    cos(radians(${count_param_idx})) * cos(radians(rmc.latitude)) * 
+                                    power(sin((radians(rmc.longitude) - radians(${count_param_idx + 1})) / 2), 2)
+                                )
                             )
                         ) * 1000
                     ) <= ${count_param_idx + 2}
@@ -360,8 +363,21 @@ async def search(
                     cb.id as bookmark_id,
                     cb.user_id as bookmark_user_id,
                     cb.data as files,
-                    sfd.total_equity as financial_total_equity
+                    sfd.total_equity as financial_total_equity,
+                    ROUND(
+                        (
+                            6371 * 2 * asin(
+                                sqrt(
+                                    power(sin((radians(rmc.latitude) - radians(${param_count})) / 2), 2) +
+                                    cos(radians(${param_count})) * cos(radians(rmc.latitude)) * 
+                                    power(sin((radians(rmc.longitude) - radians(${param_count + 1})) / 2), 2)
+                                )
+                            )
+                        ) * 1000
+                    ) AS distance_from_user
             """
+            params.extend([user_latitude, user_longitude])
+            param_count += 2
         else:
             # 목록 조회는 필수 필드만 가져옴
             sql_query = f"""
@@ -375,12 +391,12 @@ async def search(
             sql_query += f"""
                 , ROUND(
                     (
-                        6371 * acos(
-                            cos(radians(${param_count})) *
-                            cos(radians(rmc.latitude)) *
-                            cos(radians(rmc.longitude) - radians(${param_count + 1})) +
-                            sin(radians(${param_count})) *
-                            sin(radians(rmc.latitude))
+                        6371 * 2 * asin(
+                            sqrt(
+                                power(sin((radians(rmc.latitude) - radians(${param_count})) / 2), 2) +
+                                cos(radians(${param_count})) * cos(radians(rmc.latitude)) * 
+                                power(sin((radians(rmc.longitude) - radians(${param_count + 1})) / 2), 2)
+                            )
                         )
                     ) * 1000
                 ) AS distance_from_search
@@ -392,12 +408,12 @@ async def search(
             sql_query += f"""
                 , ROUND(
                     (
-                        6371 * acos(
-                            cos(radians(${param_count})) *
-                            cos(radians(rmc.latitude)) *
-                            cos(radians(rmc.longitude) - radians(${param_count + 1})) +
-                            sin(radians(${param_count})) *
-                            sin(radians(rmc.latitude))
+                        6371 * 2 * asin(
+                            sqrt(
+                                power(sin((radians(rmc.latitude) - radians(${param_count})) / 2), 2) +
+                                cos(radians(${param_count})) * cos(radians(rmc.latitude)) * 
+                                power(sin((radians(rmc.longitude) - radians(${param_count + 1})) / 2), 2)
+                            )
                         )
                     ) * 1000
                 ) AS distance_from_user
@@ -490,12 +506,12 @@ async def search(
                 distance_condition = f"""
                     ROUND(
                         (
-                            6371 * acos(
-                                cos(radians(${param_count})) *
-                                cos(radians(rmc.latitude)) *
-                                cos(radians(rmc.longitude) - radians(${param_count + 1})) +
-                                sin(radians(${param_count})) *
-                                sin(radians(rmc.latitude))
+                            6371 * 2 * asin(
+                                sqrt(
+                                    power(sin((radians(rmc.latitude) - radians(${param_count})) / 2), 2) +
+                                    cos(radians(${param_count})) * cos(radians(rmc.latitude)) * 
+                                    power(sin((radians(rmc.longitude) - radians(${param_count + 1})) / 2), 2)
+                                )
                             )
                         ) * 1000
                     ) <= ${param_count + 2}
@@ -582,6 +598,11 @@ async def search(
         with get_db() as db:
             result = db.execute(text(executable_query))
             companies = [dict(row._mapping) for row in result.fetchall()]
+        
+        # 디버그: 회사 좌표 정보와 계산된 거리 로깅 
+        for company in companies:
+            if 'distance_from_user' in company and 'latitude' in company and 'longitude' in company:
+                log.info(f"Company: {company.get('company_name')}, Coords: lat={company.get('latitude')}, lng={company.get('longitude')}, Distance: {company.get('distance_from_user')}m")
         
         # 응답 생성
         response = {
