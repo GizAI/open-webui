@@ -86,7 +86,7 @@
 		const sharedId = 'shared-folder-' + ($user?.id || '');
 		rooibosFolders[sharedId] = {
 			id: sharedId,
-			name: '공유 기업',
+			name: '공유받은 기업',
 			parent_id: null,
 			created_at: Date.now(),
 			updated_at: Date.now(),

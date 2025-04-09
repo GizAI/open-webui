@@ -175,7 +175,7 @@
 		if (isTrashView || folderId.startsWith('trash-folder-')) {
 			folderName = "휴지통";
 		} else if (isSharedView || folderId.startsWith('shared-folder-')) {
-			folderName = "공유 기업";
+			folderName = "공유받은 기업";
 		} else {
 			// 일반 폴더인 경우만 폴더 정보 가져오기
 			try {

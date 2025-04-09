@@ -258,6 +258,7 @@
 		memoItems = bookmark.files.filter(file => 
 			file.meta && file.meta.name && file.meta.name.toLowerCase().endsWith('.txt')
 		);
+		
 		filteredItems = bookmark.files.filter(file => 
 			!file.meta || !file.meta.name || !file.meta.name.toLowerCase().endsWith('.txt')
 		);
@@ -1489,6 +1490,7 @@
 															{memo.created_at ? formatDate(memo.created_at) : formatDate(new Date().toISOString())}
 														</div>
 													</div>
+													{#if (memo.user_id === currentUser.id) || (currentUser && bookmark && currentUser.id === bookmark.bookmark_user_id)}
 													<button 
 														class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 self-center"
 														on:click|stopPropagation={() => {
@@ -1502,6 +1504,7 @@
 															<path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
 														</svg>
 													</button>
+													{/if}
 												</div>
 											{/each}
 										</div>
@@ -1611,6 +1614,7 @@
 															<span>{formatFileSize(file?.size || file?.meta?.size || 0)}</span>
 														</div>
 													</div>
+													{#if (file.user_id === currentUser.id) || (currentUser && bookmark && currentUser.id === bookmark.bookmark_user_id)}
 													<button 
 														class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 self-center"
 														on:click|stopPropagation={() => {
@@ -1624,6 +1628,7 @@
 															<path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
 														</svg>
 													</button>
+													{/if}
 												</div>
 											{/each}
 										</div>
