@@ -103,11 +103,11 @@
 	}
 </script>
 
-<div class="company-info-wrapper active flex flex-col w-full h-full">
-	<div class="flex-1 px-4 pb-4 {$mobile ? 'pt-0' : ''}">
-		<div class="space-y-4 mt-2">
+<div class="company-info-wrapper active flex flex-col w-full">
+	<div class="px-4 pb-4 {$mobile ? 'pt-0' : ''}">
+		<div class="mt-2">
 			<!-- 기본 정보 -->
-			<div class="space-y-2 border-gray-100 pb-4 text-gray-900 dark:text-gray-500">
+			<div class="border-gray-100 pb-4 text-gray-900 dark:text-gray-500">
 				<div class="flex justify-between items-center mb-2">
 					<h3 class="text-sm font-semibold text-gray-400 flex items-center gap-2">
 						<MapPin size={16} class="text-blue-500" />
@@ -126,7 +126,7 @@
 				
 				{#if editableData}
 					<!-- 수정 폼 -->
-					<div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm space-y-3">
+					<div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm">
 						{#if entityTypeValue === 'customer'}
 							<!-- 고객 정보 폼 -->
 							<div class="grid grid-cols-2 gap-3 p-3">
@@ -251,14 +251,9 @@
 								</div>
 							
 								<!-- 업종 정보 -->
-								<div class="space-y-1 pt-3 border-t border-gray-100 col-span-2 mt-2">
-									<h3 class="text-sm font-semibold text-gray-400 flex items-center gap-2 mb-3">
-										<Briefcase size={16} class="text-blue-500" />
-										업종 정보
-									</h3>
-									
+								<div class="pt-3 border-gray-100 col-span-2 mt-2">									
 									<div class="grid grid-cols-2 gap-3">
-										<div class="space-y-1">
+										<div>
 											<label class="block text-sm font-medium text-gray-700 dark:text-gray-300">업종</label>
 											<input
 												type="text"
@@ -267,7 +262,7 @@
 											/>
 										</div>
 										
-										<div class="space-y-1">
+										<div>
 											<label class="block text-sm font-medium text-gray-700 dark:text-gray-300">주요 상품</label>
 											<input
 												type="text"
@@ -289,12 +284,12 @@
 
 			<!-- 업종 정보 (기업에만 표시) -->
 			{#if entityTypeValue !== 'customer' && (bookmark.industry || bookmark.main_product) && !editableData}
-				<div class="space-y-2 border-t border-gray-100 pt-4 text-gray-900 dark:text-gray-400">
-					<h3 class="text-sm font-semibold text-gray-400 flex items-center gap-2">
+				<div class="border-t border-gray-100 pt-4 mt-2 text-gray-900 dark:text-gray-400">
+					<h3 class="text-sm font-semibold text-gray-400 flex items-center gap-2 mb-2">
 						<Briefcase size={16} class="text-blue-500" />
 						업종 정보
 					</h3>
-					<div class="space-y-1">
+					<div>
 						<div class="text-sm flex items-center justify-between">
 							<div class="flex gap-2">
 								<span>업종:</span>
