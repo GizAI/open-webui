@@ -169,7 +169,7 @@
 						{:else}
 							<!-- 기업 정보 폼 -->
 							<div class="grid grid-cols-2 gap-3 p-3">
-								<div class="space-y-1">
+								<div class="{$mobile ? 'col-span-2' : ''} space-y-1">
 									<label class="block text-sm font-medium text-gray-700 dark:text-gray-300">회사명</label>
 									<input
 										type="text"
@@ -178,7 +178,7 @@
 									/>
 								</div>
 								
-								<div class="space-y-1">
+								<div class="{$mobile ? 'col-span-2' : ''} space-y-1">
 									<label class="block text-sm font-medium text-gray-700 dark:text-gray-300">대표자</label>
 									<input
 										type="text"
@@ -196,7 +196,7 @@
 									/>
 								</div>
 								
-								<div class="space-y-1">
+								<div class="{$mobile ? 'col-span-2' : ''} space-y-1">
 									<label class="block text-sm font-medium text-gray-700 dark:text-gray-300">전화번호</label>
 									<input
 										type="text"
@@ -205,7 +205,7 @@
 									/>
 								</div>
 								
-								<div class="space-y-1">
+								<div class="{$mobile ? 'col-span-2' : ''} space-y-1">
 									<label class="block text-sm font-medium text-gray-700 dark:text-gray-300">팩스</label>
 									<input
 										type="text"
@@ -214,7 +214,7 @@
 									/>
 								</div>
 								
-								<div class="space-y-1">
+								<div class="{$mobile ? 'col-span-2' : ''} space-y-1">
 									<label class="block text-sm font-medium text-gray-700 dark:text-gray-300">이메일</label>
 									<input
 										type="email"
@@ -223,7 +223,7 @@
 									/>
 								</div>
 								
-								<div class="space-y-1">
+								<div class="{$mobile ? 'col-span-2' : ''} space-y-1">
 									<label class="block text-sm font-medium text-gray-700 dark:text-gray-300">웹사이트</label>
 									<input
 										type="text"
@@ -232,7 +232,7 @@
 									/>
 								</div>
 								
-								<div class="space-y-1">
+								<div class="{$mobile ? 'col-span-2' : ''} space-y-1">
 									<label class="block text-sm font-medium text-gray-700 dark:text-gray-300">설립일</label>
 									<input
 										type="date"
@@ -241,7 +241,7 @@
 									/>
 								</div>
 								
-								<div class="space-y-1">
+								<div class="{$mobile ? 'col-span-2' : ''} space-y-1">
 									<label class="block text-sm font-medium text-gray-700 dark:text-gray-300">직원수</label>
 									<input
 										type="number"
@@ -253,7 +253,7 @@
 								<!-- 업종 정보 -->
 								<div class="pt-3 border-gray-100 col-span-2 mt-2">									
 									<div class="grid grid-cols-2 gap-3">
-										<div>
+										<div class="{$mobile ? 'col-span-2' : ''}">
 											<label class="block text-sm font-medium text-gray-700 dark:text-gray-300">업종</label>
 											<input
 												type="text"
@@ -262,7 +262,7 @@
 											/>
 										</div>
 										
-										<div>
+										<div class="{$mobile ? 'col-span-2' : ''}">
 											<label class="block text-sm font-medium text-gray-700 dark:text-gray-300">주요 상품</label>
 											<input
 												type="text"
