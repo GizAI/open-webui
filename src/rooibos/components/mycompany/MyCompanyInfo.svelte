@@ -410,6 +410,11 @@
 			return;
 		}
 		
+		if (file.name.toLowerCase().endsWith('.doc')) {
+			toast.error('doc 파일은 지원하지 않습니다. docx 파일로 변환 후 업로드 해주세요.');
+			return;
+		}
+		
 		const tempItemId = uuidv4();
 		const fileItem = {
 			type: 'file',
@@ -424,8 +429,7 @@
 			isCreating: true // 생성 중 플래그 추가
 		};
 
-		// 모든 파일 타입을 bookmark.files에 추가
-		bookmark.files = [...(bookmark.files ?? []), fileItem];
+	
 
 		if (['audio/mpeg', 'audio/wav', 'audio/ogg', 'audio/x-m4a'].includes(file['type'])) {
 			const res = await transcribeAudio(localStorage.token, file).catch((error) => {
@@ -442,8 +446,12 @@
 
 		try {
 			const uploadedFile = await uploadFile(localStorage.token, file);
-
-			if (uploadedFile) {				
+			const isUploadFailed = uploadedFile.hasOwnProperty('error');
+			if (uploadedFile && !isUploadFailed) {		
+				
+				// 모든 파일 타입을 bookmark.files에 추가
+				bookmark.files = [...(bookmark.files ?? []), fileItem];
+				
 				await addFileHandler(uploadedFile.id);
 				
 				if (bookmark && bookmark.files) {
