@@ -5,6 +5,7 @@ from datetime import datetime
 from pydantic import BaseModel, Field
 from typing import Callable, Awaitable, Any, Optional
 
+from open_webui.models.models import Models
 from open_webui.models.users import Users, UserModel
 from open_webui.utils.chat import generate_chat_completion
 from open_webui.utils.misc import get_last_user_message
@@ -92,7 +93,7 @@ class Filter:
     class Valves(BaseModel):
         status: bool = Field(default=True)
         auto_search_mode: bool = Field(default=False)
-        plan_model: str = Field(default="o3-mini")
+        plan_model: str = Field(default="openrouter/google/gemini-2.0-flash-001")
 
     def __init__(self):
         self.valves = self.Valves()
@@ -227,6 +228,54 @@ Return the result in the following JSON format:
             "model": self.valves.plan_model,
         }
 
+    async def determine_simple_query(
+        self, body: dict, __user__: Optional[dict]
+    ) -> Optional[dict]:
+        """사용자의 메시지가 단순 질문인지 판단하는 함수"""
+        messages = body["messages"]
+        user_message = get_last_user_message(messages)
+
+        system_prompt = """당신은 사용자의 질문이 단순한 질문인지 아닌지를 판단하는 시스템입니다.
+
+다음과 같은 경우를 단순 질문으로 간주합니다:
+1. 인사말 (예: "안녕하세요", "좋은 아침입니다")
+2. 일반적인 상식 질문 (예: "물은 몇 도에서 끓나요?")
+3. 기본적인 수학 문제 (예: "2 + 2는 얼마인가요?")
+4. 농담이나 유머 (예: "재미있는 농담 해주세요")
+5. 단순한 작문 요청 (예: "사과에 대한 짧은 글을 써주세요")
+6. 일상적인 대화 (예: "오늘 기분이 어떠세요?")
+7. 기본적인 정의나 개념 질문 (예: "민주주의란 무엇인가요?")
+
+다음과 같은 경우는 단순 질문이 아닙니다:
+1. 특정 분야의 전문적인 지식이 필요한 질문
+2. 최신 정보나 데이터가 필요한 질문
+3. 복잡한 분석이나 추론이 필요한 질문
+4. 특정 문서나 자료에 대한 참조가 필요한 질문
+5. 기술적인 문제해결이 필요한 질문
+
+결과를 다음 JSON 형식으로 반환하세요:
+{
+    "is_simple_query": boolean,
+    "reason": "판단 이유를 간단히 설명"
+}"""
+
+        prompt = (
+            "History:\n"
+            + "\n".join(
+                [
+                    f"{message['role'].upper()}: \"\"\"{message['content']}\"\"\""
+                    for message in messages[::-1][:4]
+                ]
+            )
+            + f"\nUser query: {user_message}"
+        )
+
+        return {
+            "system_prompt": system_prompt,
+            "prompt": prompt,
+            "model": self.valves.plan_model,
+        }
+
     async def inlet(
         self,
         body: dict,
@@ -258,60 +307,108 @@ Return the result in the following JSON format:
 
             user_object = UserModel(**user_data)
 
-            # 1) Knowledge Base 선택
-            print_log("info", f"[{request_id}] Knowledge Base 선택 시작")
-            kb_plan = await self.select_knowledge_base(body, __user__)
-            if kb_plan is None:
-                print_log("warning", f"[{request_id}] select_knowledge_base 결과가 None입니다")
-                raise ValueError("select_knowledge_base result is None")
+            # 0) 단순 질문 여부 판단
+            print_log("info", f"[{request_id}] 단순 질문 여부 판단 시작")
+            simple_query_plan = await self.determine_simple_query(body, __user__)
+            if simple_query_plan is None:
+                print_log("warning", f"[{request_id}] determine_simple_query 결과가 None입니다")
+                raise ValueError("determine_simple_query result is None")
 
-            kb_payload = {
-                "model": kb_plan["model"],
+            simple_query_payload = {
+                "model": simple_query_plan["model"],
                 "messages": [
-                    {"role": "system", "content": kb_plan["system_prompt"]},
-                    {"role": "user", "content": kb_plan["prompt"]},
+                    {"role": "system", "content": simple_query_plan["system_prompt"]},
+                    {"role": "user", "content": simple_query_plan["prompt"]},
                 ],
                 "stream": False,
             }
 
-            print_log("info", f"[{request_id}] LLM 호출: Knowledge Base 선택")
-            kb_response = await generate_chat_completion(
-                request=__request__, form_data=kb_payload, user=user
+            print_log("info", f"[{request_id}] LLM 호출: 단순 질문 여부 판단")
+            simple_query_response = await generate_chat_completion(
+                request=__request__, form_data=simple_query_payload, user=user
             )
 
-            if kb_response is None:
-                print_log("warning", f"[{request_id}] kb_response가 None입니다")
-                kb_content = ""
+            if simple_query_response is None:
+                print_log("warning", f"[{request_id}] simple_query_response가 None입니다")
+                is_simple_query = False
             else:
-                kb_content = (
-                    kb_response["choices"][0]["message"]["content"]
-                    if kb_response
-                    else ""
+                simple_query_content = simple_query_response["choices"][0]["message"]["content"]
+                simple_query_result = parse_json_content(simple_query_content)
+
+                if simple_query_result is None:
+                    print_log("warning", f"[{request_id}] simple_query_result 파싱 결과가 None입니다")
+                    is_simple_query = False
+                else:
+                    is_simple_query = simple_query_result.get("is_simple_query", False)
+                    reason = simple_query_result.get("reason", "")
+                    print_log("info", f"[{request_id}] 단순 질문 판단 결과: {is_simple_query}, 이유: {reason}")
+
+            if is_simple_query:
+                print_log("info", f"[{request_id}] 단순 질문으로 판단되어 Knowledge Base 선택 과정을 건너뜁니다")
+                selected_knowledge_bases = []
+                body["files"] = []
+                body["model"] = self.valves.plan_model
+                basic_model = Models.get_model_by_id(self.valves.plan_model)
+                if "metadata" not in body:
+                    body["metadata"] = {}
+                if basic_model:
+                    body["metadata"]["model"] = basic_model.model_dump()                
+                return body
+            else:
+                # 1) Knowledge Base 선택
+                print_log("info", f"[{request_id}] Knowledge Base 선택 시작")
+                kb_plan = await self.select_knowledge_base(body, __user__)
+                if kb_plan is None:
+                    print_log("warning", f"[{request_id}] select_knowledge_base 결과가 None입니다")
+                    raise ValueError("select_knowledge_base result is None")
+
+                kb_payload = {
+                    "model": kb_plan["model"],
+                    "messages": [
+                        {"role": "system", "content": kb_plan["system_prompt"]},
+                        {"role": "user", "content": kb_plan["prompt"]},
+                    ],
+                    "stream": False,
+                }
+
+                print_log("info", f"[{request_id}] LLM 호출: Knowledge Base 선택")
+                kb_response = await generate_chat_completion(
+                    request=__request__, form_data=kb_payload, user=user
                 )
 
-            if kb_content == "None":
-                selected_knowledge_bases = []
-                print_log("info", f"[{request_id}] 선택된 Knowledge Base가 없습니다.")
-            else:
-                try:
-                    kb_result = parse_json_content(kb_content)
-
-                    if kb_result is None:
-                        print_log("warning", f"[{request_id}] kb_result 파싱 결과가 None입니다")
-                        selected_knowledge_bases = []
-                    else:
-                        selected_knowledge_bases = kb_result.get(
-                            "selected_knowledge_bases", []
-                        )
-                except Exception as e:
-                    error_info = traceback.format_exc()
-                    log_error(
-                        request_id,
-                        e,
-                        error_info,
-                        f"파싱 대상 문자열: {kb_content[:200]}...",
+                if kb_response is None:
+                    print_log("warning", f"[{request_id}] kb_response가 None입니다")
+                    kb_content = ""
+                else:
+                    kb_content = (
+                        kb_response["choices"][0]["message"]["content"]
+                        if kb_response
+                        else ""
                     )
+
+                if kb_content == "None":
                     selected_knowledge_bases = []
+                    print_log("info", f"[{request_id}] 선택된 Knowledge Base가 없습니다.")
+                else:
+                    try:
+                        kb_result = parse_json_content(kb_content)
+
+                        if kb_result is None:
+                            print_log("warning", f"[{request_id}] kb_result 파싱 결과가 None입니다")
+                            selected_knowledge_bases = []
+                        else:
+                            selected_knowledge_bases = kb_result.get(
+                                "selected_knowledge_bases", []
+                            )
+                    except Exception as e:
+                        error_info = traceback.format_exc()
+                        log_error(
+                            request_id,
+                            e,
+                            error_info,
+                            f"파싱 대상 문자열: {kb_content[:200]}...",
+                        )
+                        selected_knowledge_bases = []
 
             # 2) 웹 검색 필요 여부 판단
             if self.valves.auto_search_mode:

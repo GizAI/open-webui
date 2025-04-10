@@ -1,13 +1,11 @@
 #기업 분석 보고서
 from pydantic import BaseModel, Field
-from typing import Callable, Awaitable, Any, Optional
 from typing import Callable, Awaitable, Any, Optional, TypedDict, List, Dict, Union
 import json
 import re
 
 from open_webui.routers.retrieval import process_web_search, SearchForm
 from open_webui.utils.middleware import chat_web_search_handler
-from open_webui.models.users import UserModel
 from open_webui.utils.chat import generate_chat_completion
 from open_webui.utils.misc import get_last_user_message
 from open_webui.models.users import Users, UserModel
