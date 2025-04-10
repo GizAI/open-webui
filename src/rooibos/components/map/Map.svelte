@@ -770,7 +770,7 @@
 		width: calc(100% - 256px);
 	}
 
-	@media (max-width: 768px) {
+	@media (max-width: 760px) {
 		.search-bar-wrapper.sidebar-visible {
 			margin-left: 0;
 			width: 100%;
