@@ -137,7 +137,7 @@
 				</div>
 
 				<div class="text-3xl @sm:text-4xl" in:fade={{ duration: 100 }}>
-					{#if models[selectedModelIdx]?.name}
+					{#if models[selectedModelIdx]?.info?.base_model_id}
 						{models[selectedModelIdx]?.name}
 					{:else}
 						{$i18n.t('Hello, {{name}}', { name: $user?.name })}
