@@ -74,8 +74,6 @@
 			const data = await response.json();
 			
 			if (data.success) {
-				toast.success('정보가 성공적으로 업데이트되었습니다.');
-				// 북마크 객체 업데이트
 				Object.assign(bookmark, editableData);
 			} else {
 				toast.error(`저장 실패: ${data.message || '알 수 없는 오류'}`);
@@ -176,6 +174,15 @@
 									<input
 										type="text"
 										bind:value={editableData.representative}
+										class="w-full px-3 py-1.5 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+									/>
+								</div>
+								
+								<div class="space-y-1 col-span-2">
+									<label class="block text-sm font-medium text-gray-700 dark:text-gray-300">주소</label>
+									<input
+										type="text"
+										bind:value={editableData.address}
 										class="w-full px-3 py-1.5 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
 									/>
 								</div>
