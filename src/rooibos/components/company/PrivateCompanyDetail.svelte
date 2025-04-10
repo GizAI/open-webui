@@ -104,7 +104,7 @@
 </script>
 
 <div class="company-info-wrapper active flex flex-col w-full">
-	<div class="px-4 pb-4 {$mobile ? 'pt-0' : ''}">
+	<div class="{$mobile ? 'pt-0' : ''}">
 		<div class="mt-2">
 			<!-- 기본 정보 -->
 			<div class="border-gray-100 pb-4 text-gray-900 dark:text-gray-500">
@@ -148,7 +148,7 @@
 									/>
 								</div>
 								
-								<div class="space-y-1">
+								<div class="space-y-1 col-span-2">
 									<label class="block text-sm font-medium text-gray-700 dark:text-gray-300">전화번호</label>
 									<input
 										type="text"
