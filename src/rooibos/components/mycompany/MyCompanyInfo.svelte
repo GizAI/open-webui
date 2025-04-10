@@ -716,9 +716,7 @@
 			})
 		});
 
-		if (res.ok) {
-			toast.success($i18n.t('File removed successfully.'));
-		} else {
+		if (!res.ok) {
 			// 실패 시 UI 복원 (롤백)
 			await fetchAndUpdateFiles();
 			toast.error($i18n.t('Failed to remove file.'));
