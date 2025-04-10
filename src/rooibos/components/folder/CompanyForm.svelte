@@ -346,7 +346,7 @@
                         <!-- 대표자 -->
                         <div class="form-group md:col-span-2">
                             <label for="customer_representative" class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-0">
-                                대표자 <span class="text-red-500">*</span>
+                                성명 <span class="text-red-500">*</span>
                             </label>
                             <input
                                 type="text"

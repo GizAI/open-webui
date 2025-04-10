@@ -105,7 +105,7 @@
 	}
 </script>
 
-<div class="company-info-wrapper active flex flex-col w-full h-full {$mobile ? 'min-h-[90vh] max-h-[95vh] overflow-auto' : 'overflow-hidden'}">
+<div class="company-info-wrapper active flex flex-col w-full h-full overflow-auto {$mobile ? 'min-h-[90vh] max-h-[95vh]' : ''}">
 	<div class="flex-1 px-4 pb-4 {$mobile ? 'pt-0' : ''}">
 		<div class="space-y-4 mt-2">
 			<!-- 기본 정보 -->
@@ -124,7 +124,7 @@
 							<!-- 고객 정보 폼 -->
 							<div class="grid grid-cols-2 gap-3 p-3">
 								<div class="space-y-1 col-span-2">
-									<label class="block text-sm font-medium text-gray-700 dark:text-gray-300">대표자</label>
+									<label class="block text-sm font-medium text-gray-700 dark:text-gray-300">성명</label>
 									<input
 										type="text"
 										bind:value={editableData.representative}
@@ -266,7 +266,7 @@
 						
 						<div class="flex justify-end space-x-2 mt-3 p-2">
 							<button
-								class="px-4 py-1.5 text-sm font-medium text-yellow-500 border border-yellow-500 hover:bg-blue-50 bg-transparent rounded-md transition-colors"
+								class="px-4 py-1.5 text-sm font-medium text-blue-500 border border-blue-500 hover:bg-blue-50 bg-transparent rounded-md transition-colors"
 								on:click={saveData}
 								disabled={isSaving}
 							>
