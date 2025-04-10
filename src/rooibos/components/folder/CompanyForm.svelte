@@ -409,7 +409,7 @@
                     </button>
                     <button
                         type="submit"
-                        class="px-2 py-0.5 bg-transparent border border-yellow-500 text-yellow-500 hover:bg-yellow-50 rounded-md transition-colors disabled:opacity-70 disabled:cursor-not-allowed text-xs"
+                        class="px-2 py-0.5 bg-transparent border border-blue-500 text-blue-500 hover:text-blue-600 rounded-md transition-colors disabled:opacity-70 disabled:cursor-not-allowed text-xs"
                         disabled={isSubmitting}
                     >
                         {isSubmitting ? '저장 중...' : '저장'}

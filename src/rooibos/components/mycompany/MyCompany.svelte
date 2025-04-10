@@ -245,7 +245,7 @@
 		<!-- 기업 추가 버튼 -->
 		{#if !isTrashView && !isSharedView}
 			<button 
-				class="flex items-center gap-1 px-2.5 py-1 bg-transparent border border-yellow-500 text-yellow-500 hover:bg-yellow-50 rounded-md text-xs transition-colors mt-0.5"
+				class="flex items-center gap-1 px-2.5 py-1 bg-transparent border border-blue-500 text-blue-500 hover:text-blue-600 rounded-md text-xs transition-colors mt-0.5"
 				on:click={openCompanyForm}
 			>
 				<Building2Icon size={14} />
