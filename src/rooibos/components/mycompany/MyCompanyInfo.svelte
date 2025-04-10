@@ -39,7 +39,6 @@
 	import { formatFileSize } from '$lib/utils';
 	import PrivateCompanyDetail from '$rooibos/components/company/PrivateCompanyDetail.svelte';
 
-	
 	export let isPrivateCompany = false;
 	export let entityType = 'company'; // Default to 'company' if not specified
 	
@@ -141,6 +140,8 @@
 	};
 
 	let largeScreen = true;
+	// 패드와 모바일에서도 수직 레이아웃을 사용하도록 하기 위한 변수
+	let isMobileOrTablet = false;
 	let pane: any;
 	let showSidepanel = true;
 	let minSize = 0;
@@ -284,7 +285,7 @@
 					return e.item;
 				})
 			: (bookmark?.files.filter(file => 
-				file.meta && file.meta.name && file.meta.name.toLowerCase().endsWith('.txt')
+					file.meta && file.meta.name && file.meta.name.toLowerCase().endsWith('.txt')
 			) ?? []);
 	}
 
@@ -841,20 +842,18 @@
 		}, 1000);
 	};
 
-	const handleMediaQuery = async (e: any) => {
-		if (e.matches) {
-			largeScreen = true;
-		} else {
-			largeScreen = false;
-		}
-	};
+	// 미디어 쿼리 핸들러(데스크탑: 1280px 이상, 그 미만은 모바일/패드)
+	function handleMediaQuery(e: MediaQueryListEvent | MediaQueryList) {
+		largeScreen = e.matches;
+		isMobileOrTablet = !e.matches;
+	}
 
 	onMount(async () => {
 		const urlParams = new URLSearchParams(window.location.search);
 		isShared = urlParams.get('shared') === 'true';
 
-		mediaQuery = window.matchMedia('(min-width: 1024px)');
-
+		// 데스크탑 모드를 1280px 이상으로 정의 (패드도 여기서 모바일처럼 취급)
+		mediaQuery = window.matchMedia('(min-width: 1280px)');
 		mediaQuery.addEventListener('change', handleMediaQuery);
 		handleMediaQuery(mediaQuery);
 
@@ -953,8 +952,8 @@
 				return;
 			}
 			
-			// 모바일에서는 기본적으로 모든 섹션 접기
-			if (!largeScreen) {
+			// 모바일/패드에서는 기본적으로 모든 섹션 접기
+			if (isMobileOrTablet) {
 				showMemosSection = false;
 				showFilesSection = false;
 				showChatsSection = false;
@@ -995,7 +994,7 @@
 				method: 'POST',
 				headers: {
 					'Content-Type': 'application/json',
-					Authorization: `Bearer ${localStorage.token}`
+					authorization: `Bearer ${localStorage.token}`
 				}
 			});
 			
@@ -1042,10 +1041,9 @@
 				{
 					method: 'GET',
 					headers: {
-						Accept: 'application/json',
 						'Content-Type': 'application/json',
 						authorization: `Bearer ${localStorage.token}`
-					}
+					}					
 				}
 			);
 
@@ -1112,7 +1110,7 @@
 					method: 'POST',
 					headers: {
 						'Content-Type': 'application/json',
-						Authorization: `Bearer ${localStorage.token}`
+						authorization: `Bearer ${localStorage.token}`
 					},
 					body: JSON.stringify({ access_control: newAccessControl })
 				}
@@ -1232,9 +1230,9 @@
 	// 콘텐츠 영역으로 스크롤하기 위한 참조
 	let contentRef;
 
-	// 모바일에서 콘텐츠 영역으로 스크롤하는 함수
+	// 모바일/패드에서 콘텐츠 영역으로 스크롤하는 함수
 	const scrollToContent = () => {
-		if ($mobile && contentRef) {
+		if (isMobileOrTablet && contentRef) {
 			// 다음 렌더링 사이클에서 스크롤 수행
 			setTimeout(() => {
 				contentRef.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -1298,7 +1296,7 @@
 						</div>
 					</button>
 				{/if}
-				<h1 class="{$mobile ? 'text-base sm:text-xl' : 'text-xl'} font-semibold mb-1 truncate flex items-center">
+				<h1 class="{isMobileOrTablet ? 'text-base sm:text-xl' : 'text-xl'} font-semibold mb-1 truncate flex items-center">
 					{bookmark.company_name}
 					{#if isShared && bookmark.bookmark_user_id && bookmark.bookmark_user_id !== currentUser?.id}
 						{#await getUserInfo(bookmark.bookmark_user_id) then userInfo}
@@ -1328,7 +1326,7 @@
 						</button>
 					</div>
 				{/if}
-				<ActionButtons companyInfo={bookmark} financialData={financialData} {isShared} />
+				<ActionButtons companyInfo={bookmark} financialData={financialData} isShared={isShared} />
 			</div>
 		</div>
 	</div>
@@ -1345,15 +1343,13 @@
 			accessRoles={['read', 'write']}
 		/>
 		<div
-			class="company-info-wrapper active {isFullscreen
-				? 'fullscreen'
-				: ''} flex flex-col w-full mt-4 {$mobile ? 'h-auto' : 'h-[calc(100vh-8rem)]'}"
-			class:mobile={$mobile}
+			class="company-info-wrapper active {isFullscreen ? 'fullscreen' : ''} flex flex-col w-full mt-4 {isMobileOrTablet ? 'h-auto' : 'h-[calc(100vh-8rem)]'}"
+			class:mobile={isMobileOrTablet}
 		>
 			<!-- 두 열 레이아웃으로 변경 -->
-			<div class="flex-1 flex {$mobile ? 'flex-col' : 'flex-row'} h-full">
+			<div class="flex-1 flex {isMobileOrTablet ? 'flex-col' : 'flex-row'} h-full">
 				<!-- 왼쪽 사이드바: 메모/첨부 목록 -->
-				<div class="flex-shrink-0 {$mobile ? 'w-full mb-4' : 'w-72 max-w-72 pr-3'} flex flex-col gap-1 h-full">
+				<div class="flex-shrink-0 {isMobileOrTablet ? 'w-full mb-4' : 'w-72 max-w-72 pr-3'} flex flex-col gap-1 h-full">
 					<!-- 메모 섹션 -->
 					<div class="flex flex-col py-1 rounded-2xl border border-gray-50 dark:border-gray-850">
 						<div class="px-3 py-1 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center cursor-pointer"
@@ -1442,7 +1438,7 @@
 								</div>
 
 								{#if memoItems.length > 0}
-									<div class="flex overflow-y-auto {$mobile ? 'max-h-48' : 'h-full'} w-full scrollbar-hidden text-xs">
+									<div class="flex overflow-y-auto {isMobileOrTablet ? 'max-h-48' : 'h-full'} w-full scrollbar-hidden text-xs">
 										<!-- 메모 목록 커스텀 표시 -->
 										<div class="w-full">
 											{#each memoItems as memo}
@@ -1590,7 +1586,7 @@
 								</div>
 
 								{#if filteredItems.length > 0}
-									<div class="flex overflow-y-auto {$mobile ? 'max-h-48' : 'h-full'} w-full scrollbar-hidden text-xs">
+									<div class="flex overflow-y-auto {isMobileOrTablet ? 'max-h-48' : 'h-full'} w-full scrollbar-hidden text-xs">
 										<!-- 첨부파일 목록 커스텀 표시 -->
 										<div class="w-full">
 											{#each filteredItems as file}
@@ -1660,7 +1656,7 @@
 
 					<!-- 채팅 리스트 섹션 -->
 					{#if chatList && chatList.length > 0}
-						<div class="flex flex-col border border-gray-50 dark:border-gray-850 rounded-2xl {$mobile ? 'mb-4' : 'mt-0.5'}">
+						<div class="flex flex-col border border-gray-50 dark:border-gray-850 rounded-2xl {isMobileOrTablet ? 'mb-4' : 'mt-0.5'}">
 							<div class="px-3 py-1 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center cursor-pointer"
 								on:click={() => showChatsSection = !showChatsSection}
 							>
@@ -1711,7 +1707,7 @@
 				</div>
 
 				<!-- 오른쪽 콘텐츠 영역 -->
-				<div class="flex-1 flex flex-col h-full {$mobile ? '' : 'ml-3'}" bind:this={contentRef}>
+				<div class="flex-1 flex flex-col h-full {isMobileOrTablet ? '' : 'ml-3'}" bind:this={contentRef}>
 					{#if contentType === 'company'}
 						<!-- 기업 상세 정보 표시 -->
 						<div class="p-4 space-y-2 h-full overflow-auto">				
@@ -1725,7 +1721,6 @@
 					{:else if contentType === 'memo' && selectedFile}
 						<!-- 메모 콘텐츠 표시 -->
 						<div class="flex-1 flex flex-col h-full">
-							<!-- 필요할 경우 최신 파일 데이터 가져오기 -->
 							{#key selectedFileId}
 							<div class="flex justify-between items-center w-full py-2 px-4 bg-white dark:bg-gray-900">
 								<div class="text-lg font-medium truncate">
@@ -1852,7 +1847,7 @@
 								{:else if selectedFile?.meta?.name?.toLowerCase().endsWith('.pdf')}
 									<!-- PDF 파일인 경우 -->
 									<div class="h-full">
-										{#if !$mobile}
+										{#if !isMobileOrTablet}
 											<!-- 데스크탑 환경에서는 iframe으로 PDF 표시 -->
 											<iframe 
 												src={`${WEBUI_API_BASE_URL}/files/${selectedFile.id}/content`} 
@@ -1860,7 +1855,7 @@
 												class="w-full h-full border-0"
 											></iframe>
 										{:else}
-											<!-- 모바일 환경에서는 텍스트 형태로 표시 -->
+											<!-- 모바일/패드 환경에서는 텍스트 형태로 표시 -->
 											<div class="whitespace-pre-wrap p-4">
 												<div class="mb-4 text-center">
 													<a 
@@ -2020,7 +2015,7 @@
 					class="w-5 h-5"
 				>
 					<path
-						d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.414-1.414L10 8.586l3.72-3.72a.75.75 0 10-1.414-1.414L10 10z"
+						d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.414-1.414L10 8.586l3.72-3.72a.75.75 0 10-1.414-1.414L10 10l-3.72-3.78z"
 					/>
 				</svg>
 			</button>
