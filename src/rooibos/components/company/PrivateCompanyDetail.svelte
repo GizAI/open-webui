@@ -157,7 +157,7 @@
 									/>
 								</div>
 								
-								<div class="space-y-1">
+								<div class="space-y-1 col-span-2">
 									<label class="block text-sm font-medium text-gray-700 dark:text-gray-300">이메일</label>
 									<input
 										type="email"
