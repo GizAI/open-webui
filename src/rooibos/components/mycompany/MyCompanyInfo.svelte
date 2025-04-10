@@ -1852,11 +1852,36 @@
 								{:else if selectedFile?.meta?.name?.toLowerCase().endsWith('.pdf')}
 									<!-- PDF 파일인 경우 -->
 									<div class="h-full">
-										<iframe 
-											src={`${WEBUI_API_BASE_URL}/files/${selectedFile.id}/content`} 
-											title={selectedFile?.meta?.name || selectedFile?.name}
-											class="w-full h-full border-0"
-										></iframe>
+										{#if !$mobile}
+											<!-- 데스크탑 환경에서는 iframe으로 PDF 표시 -->
+											<iframe 
+												src={`${WEBUI_API_BASE_URL}/files/${selectedFile.id}/content`} 
+												title={selectedFile?.meta?.name || selectedFile?.name}
+												class="w-full h-full border-0"
+											></iframe>
+										{:else}
+											<!-- 모바일 환경에서는 텍스트 형태로 표시 -->
+											<div class="whitespace-pre-wrap p-4">
+												<div class="mb-4 text-center">
+													<a 
+														href={`${WEBUI_API_BASE_URL}/files/${selectedFile.id}/content`}
+														target="_blank"
+														class="text-blue-500 underline"
+													>
+														{selectedFile?.meta?.name || '파일 다운로드'}
+													</a>
+												</div>
+												{#if selectedFile?.data?.content}
+													<div class="mt-4 border-t pt-4">
+														{selectedFile.data.content}
+													</div>
+												{:else}
+													<div class="mt-4 border-t pt-4 text-center italic">
+														PDF 내용을 표시할 수 없습니다.
+													</div>
+												{/if}
+											</div>
+										{/if}
 									</div>
 								{:else if selectedFile?.data?.content}
 									<!-- 텍스트 내용이 있는 경우 -->
