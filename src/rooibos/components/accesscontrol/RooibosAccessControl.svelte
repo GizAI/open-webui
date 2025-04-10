@@ -199,12 +199,12 @@
 				disabled={isLoading}
 			/>
 			<button
-				class="px-3 py-2 bg-blue-500 text-white rounded-lg text-sm whitespace-nowrap"
+				class="px-3 py-2 bg-transparent text-blue-500 border border-blue-500 rounded-lg text-sm whitespace-nowrap"
 				on:click={addUserEmail}
 				disabled={isLoading}
 			>
 				{#if isLoading}
-					<span class="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-1"></span>
+					<span class="inline-block w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mr-1"></span>
 				{/if}
 				{$i18n.t('추가')}
 			</button>
