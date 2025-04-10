@@ -103,21 +103,30 @@
 	}
 </script>
 
-<div class="company-info-wrapper active flex flex-col w-full h-full overflow-auto {$mobile ? 'min-h-[90vh] max-h-[95vh]' : ''}">
-	<div class="flex-1 px-4 pb-4 {$mobile ? 'pt-0' : ''}">
-		<div class="space-y-4 mt-2">
+<div class="company-info-wrapper active flex flex-col w-full">
+	<div class="{$mobile ? 'pt-0' : ''}">
+		<div class="mt-2">
 			<!-- 기본 정보 -->
-			<div class="space-y-2 border-gray-100 pb-4 text-gray-900 dark:text-gray-500">
+			<div class="border-gray-100 pb-4 text-gray-900 dark:text-gray-500">
 				<div class="flex justify-between items-center mb-2">
 					<h3 class="text-sm font-semibold text-gray-400 flex items-center gap-2">
 						<MapPin size={16} class="text-blue-500" />
 						{entityTypeValue === 'customer' ? '고객 정보' : '기업 정보'}
 					</h3>
+					{#if editableData}
+						<button
+							class="px-4 py-1.5 text-sm font-medium text-blue-500 border border-blue-500 hover:bg-blue-50 bg-transparent rounded-md transition-colors"
+							on:click={saveData}
+							disabled={isSaving}
+						>
+							{isSaving ? '저장 중...' : '저장'}
+						</button>
+					{/if}
 				</div>
 				
 				{#if editableData}
 					<!-- 수정 폼 -->
-					<div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm space-y-3">
+					<div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm">
 						{#if entityTypeValue === 'customer'}
 							<!-- 고객 정보 폼 -->
 							<div class="grid grid-cols-2 gap-3 p-3">
@@ -139,7 +148,7 @@
 									/>
 								</div>
 								
-								<div class="space-y-1">
+								<div class="space-y-1 col-span-2">
 									<label class="block text-sm font-medium text-gray-700 dark:text-gray-300">전화번호</label>
 									<input
 										type="text"
@@ -148,7 +157,7 @@
 									/>
 								</div>
 								
-								<div class="space-y-1">
+								<div class="space-y-1 col-span-2">
 									<label class="block text-sm font-medium text-gray-700 dark:text-gray-300">이메일</label>
 									<input
 										type="email"
@@ -160,7 +169,7 @@
 						{:else}
 							<!-- 기업 정보 폼 -->
 							<div class="grid grid-cols-2 gap-3 p-3">
-								<div class="space-y-1">
+								<div class="{$mobile ? 'col-span-2' : ''} space-y-1">
 									<label class="block text-sm font-medium text-gray-700 dark:text-gray-300">회사명</label>
 									<input
 										type="text"
@@ -169,7 +178,7 @@
 									/>
 								</div>
 								
-								<div class="space-y-1">
+								<div class="{$mobile ? 'col-span-2' : ''} space-y-1">
 									<label class="block text-sm font-medium text-gray-700 dark:text-gray-300">대표자</label>
 									<input
 										type="text"
@@ -187,7 +196,7 @@
 									/>
 								</div>
 								
-								<div class="space-y-1">
+								<div class="{$mobile ? 'col-span-2' : ''} space-y-1">
 									<label class="block text-sm font-medium text-gray-700 dark:text-gray-300">전화번호</label>
 									<input
 										type="text"
@@ -196,7 +205,7 @@
 									/>
 								</div>
 								
-								<div class="space-y-1">
+								<div class="{$mobile ? 'col-span-2' : ''} space-y-1">
 									<label class="block text-sm font-medium text-gray-700 dark:text-gray-300">팩스</label>
 									<input
 										type="text"
@@ -205,7 +214,7 @@
 									/>
 								</div>
 								
-								<div class="space-y-1">
+								<div class="{$mobile ? 'col-span-2' : ''} space-y-1">
 									<label class="block text-sm font-medium text-gray-700 dark:text-gray-300">이메일</label>
 									<input
 										type="email"
@@ -214,7 +223,7 @@
 									/>
 								</div>
 								
-								<div class="space-y-1">
+								<div class="{$mobile ? 'col-span-2' : ''} space-y-1">
 									<label class="block text-sm font-medium text-gray-700 dark:text-gray-300">웹사이트</label>
 									<input
 										type="text"
@@ -223,7 +232,7 @@
 									/>
 								</div>
 								
-								<div class="space-y-1">
+								<div class="{$mobile ? 'col-span-2' : ''} space-y-1">
 									<label class="block text-sm font-medium text-gray-700 dark:text-gray-300">설립일</label>
 									<input
 										type="date"
@@ -232,7 +241,7 @@
 									/>
 								</div>
 								
-								<div class="space-y-1">
+								<div class="{$mobile ? 'col-span-2' : ''} space-y-1">
 									<label class="block text-sm font-medium text-gray-700 dark:text-gray-300">직원수</label>
 									<input
 										type="number"
@@ -242,14 +251,9 @@
 								</div>
 							
 								<!-- 업종 정보 -->
-								<div class="space-y-1 pt-3 border-t border-gray-100 col-span-2 mt-2">
-									<h3 class="text-sm font-semibold text-gray-400 flex items-center gap-2 mb-3">
-										<Briefcase size={16} class="text-blue-500" />
-										업종 정보
-									</h3>
-									
+								<div class="pt-3 border-gray-100 col-span-2 mt-2">									
 									<div class="grid grid-cols-2 gap-3">
-										<div class="space-y-1 col-span-2">
+										<div class="{$mobile ? 'col-span-2' : ''}">
 											<label class="block text-sm font-medium text-gray-700 dark:text-gray-300">업종</label>
 											<input
 												type="text"
@@ -258,7 +262,7 @@
 											/>
 										</div>
 										
-										<div class="space-y-1 col-span-2">
+										<div class="{$mobile ? 'col-span-2' : ''}">
 											<label class="block text-sm font-medium text-gray-700 dark:text-gray-300">주요 상품</label>
 											<input
 												type="text"
@@ -270,16 +274,6 @@
 								</div>
 							</div>
 						{/if}
-						
-						<div class="flex justify-end space-x-2 mt-3 p-2">
-							<button
-								class="px-4 py-1.5 text-sm font-medium text-blue-500 border border-blue-500 hover:bg-blue-50 bg-transparent rounded-md transition-colors"
-								on:click={saveData}
-								disabled={isSaving}
-							>
-								{isSaving ? '저장 중...' : '저장'}
-							</button>
-						</div>
 					</div>
 				{:else}
 					<div class="h-40 flex items-center justify-center">
@@ -290,24 +284,22 @@
 
 			<!-- 업종 정보 (기업에만 표시) -->
 			{#if entityTypeValue !== 'customer' && (bookmark.industry || bookmark.main_product) && !editableData}
-				<div class="space-y-2 border-t border-gray-100 pt-4 text-gray-900 dark:text-gray-400">
-					<h3 class="text-sm font-semibold text-gray-400 flex items-center gap-2">
+				<div class="border-t border-gray-100 pt-4 mt-2 text-gray-900 dark:text-gray-400">
+					<h3 class="text-sm font-semibold text-gray-400 flex items-center gap-2 mb-2">
 						<Briefcase size={16} class="text-blue-500" />
 						업종 정보
 					</h3>
-					<div class="space-y-1">
-						{#if bookmark.industry}
-							<p class="text-sm flex items-center justify-between">
-								<span>업종</span>
-								<span>{bookmark.industry}</span>
-							</p>
-						{/if}
-						{#if bookmark.main_product}
-							<p class="text-sm flex items-center justify-between">
-								<span>주요상품</span>
-								<span>{bookmark.main_product}</span>
-							</p>
-						{/if}
+					<div>
+						<div class="text-sm flex items-center justify-between">
+							<div class="flex gap-2">
+								<span>업종:</span>
+								<span>{bookmark.industry || '-'}</span>
+							</div>
+							<div class="flex gap-2">
+								<span>주요상품:</span>
+								<span>{bookmark.main_product || '-'}</span>
+							</div>
+						</div>
 					</div>
 				</div>
 			{/if}
