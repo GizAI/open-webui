@@ -520,8 +520,14 @@ Return the result in the following JSON format:
                 done=True,
             )
 
-        # 4) 시스템 메시지 삽입
-        print_log("info", f"[{request_id}] 최종 시스템 메시지 삽입")
+        developer_message = None       
+        if "o3-mini" in str(body.get("metadata", {}).get("model", {}).get("info", {}).get("base_model_id", "")):
+            developer_message = {
+                "role": "developer",
+                "content": (
+                    "Formatting re-enabled.\n"
+                ),
+            }
         context_message = {
             "role": "system",
             "content": (
@@ -558,10 +564,13 @@ Return the result in the following JSON format:
                 "3. Concrete examples or illustrations if appropriate\n"
                 "4. A final bullet-point summary\n"
                 "5. Follow-up or further exploration suggestions if relevant\n\n"
-                "**IMPORTANT: Additionally, please respond in the language used by the user in their input.**"
+                "**IMPORTANT: Additionally, please respond in the language used by the user in their input.**\n\n"
+                
             ),
         }
 
+        if developer_message:
+            body.setdefault("messages", []).insert(0, developer_message)
         body.setdefault("messages", []).insert(0, context_message)
         print_log("info", f"[{request_id}] inlet 함수 종료")
 
