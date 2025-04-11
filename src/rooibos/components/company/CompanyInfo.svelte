@@ -88,6 +88,21 @@
 		onClose();
 	}
 
+	function isIPadMini() {
+		// iPad Mini 감지 (약 768 x 1024, iPad Mini 6 기준)
+		const userAgent = navigator.userAgent.toLowerCase();
+		const isIPad = /ipad/.test(userAgent);
+		const isTablet = isIPad || 
+			(/tablet/.test(userAgent) && !/android/.test(userAgent)) || 
+			((/iphone|ipod/.test(userAgent) || /android/.test(userAgent)) && 
+			window.innerWidth >= 750 && window.innerWidth <= 850);
+
+		// iPad Mini의 화면 크기를 고려 (가로/세로 모두 지원)
+		return isTablet && 
+			((window.innerWidth >= 750 && window.innerWidth <= 850) || 
+			(window.innerHeight >= 750 && window.innerHeight <= 850));
+	}
+
 	$: mobileHeight = (() => {
 		if (!$mobile) return '';
 
@@ -106,15 +121,15 @@
 </script>
 
 <div
-	class="company-info-wrapper active {isFullscreen
-		? 'fullscreen'
-		: ''} flex flex-col w-full bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-white-200"
+	class="company-info-wrapper active {isFullscreen ? 'fullscreen' : ''} {isIPadMini() ? 'ipad-mini' : ''} flex flex-col w-full bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-white-200"
 	class:mobile={$mobile}
 	style={$mobile
 		? isFullscreen
 			? `height: ${mobileHeight}; transition: ${isDragging ? 'none' : 'height 0.3s ease'}; top: env(safe-area-inset-top); bottom: auto;`
 			: `height: ${mobileHeight}; transition: ${isDragging ? 'none' : 'height 0.3s ease'}; top: auto; bottom: 0;`
-		: 'margin-top: 1rem;'}
+		: isIPadMini()
+			? 'height: 100vh; top: 0; bottom: auto;'
+			: 'margin-top: 1rem;'}
 >
 	{#if companyInfo}
 		<div
@@ -123,7 +138,7 @@
 		>
 			<div class="flex items-center justify-between w-full mb-1">
 				<h1
-					class="{$mobile
+					class="{$mobile || isIPadMini()
 						? 'sm:text-xl'
 						: 'text-xl'} font-semibold mb-1 mt-1 truncate text-gray-900 dark:text-gray-200"
 				>
@@ -132,7 +147,7 @@
 
 				<div class="flex items-center space-x-1 text-gray-900 dark:text-white-200">
 					<ActionButtons {companyInfo} {financialData} type="companyinfo" />
-					{#if !$mobile}
+					{#if !$mobile && !isIPadMini()}
 						<button
 							class="hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full"
 							on:click={closeCompanyInfo}
@@ -155,7 +170,7 @@
 					{:else}
 						<button
 							class="hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full"
-							on:click={isFullscreen ? closeCompanyInfo : toggleFullscreen}
+							on:click={isFullscreen || isIPadMini() ? closeCompanyInfo : toggleFullscreen}
 						>
 							<svg
 								xmlns="http://www.w3.org/2000/svg"
@@ -168,7 +183,7 @@
 									stroke-linecap="round"
 									stroke-linejoin="round"
 									stroke-width="2"
-									d={isFullscreen ? 'M6 18L18 6M6 6l12 12' : 'M5 15l7-7 7 7'}
+									d={isFullscreen || isIPadMini() ? 'M6 18L18 6M6 6l12 12' : 'M5 15l7-7 7 7'}
 								/>
 							</svg>
 						</button>
@@ -206,13 +221,31 @@
 		transform: translateX(0);
 	}
 
+	/* 아이패드 미니 전용 스타일 */
+	.company-info-wrapper.ipad-mini {
+		width: 100%;
+		top: 0;
+		left: 0;
+		right: 0;
+		height: 100vh;
+		z-index: 60;
+		border-left: none;
+	}
+
+	/* 태블릿(아이패드 미니 제외) 대응 */
+	@media (min-width: 769px) and (max-width: 1024px) {
+		.company-info-wrapper:not(.ipad-mini) {
+			width: 50%;
+		}
+	}
+
 	@media (max-width: 768px) {
-		.company-info-wrapper {
+		.company-info-wrapper:not(.ipad-mini) {
 			width: 100%;
 			border-left: none;
 		}
 
-		.company-info-wrapper.mobile {
+		.company-info-wrapper.mobile:not(.ipad-mini) {
 			top: auto;
 			bottom: 0;
 			height: 20vh;
@@ -222,7 +255,7 @@
 			z-index: 60;
 		}
 
-		.company-info-wrapper.mobile.fullscreen {
+		.company-info-wrapper.mobile.fullscreen:not(.ipad-mini) {
 			top: env(safe-area-inset-top);
 			bottom: auto;
 			height: calc(100vh - env(safe-area-inset-top) - env(safe-area-inset-bottom));
@@ -231,19 +264,19 @@
 			z-index: 60;
 		}
 
-		.company-info-wrapper.mobile.fullscreen.active {
+		.company-info-wrapper.mobile.fullscreen.active:not(.ipad-mini) {
 			border-top-left-radius: 0;
 			border-top-right-radius: 0;
 		}
 
-		.company-info-wrapper.mobile.active {
+		.company-info-wrapper.mobile.active:not(.ipad-mini) {
 			transform: translateY(0);
 			border-top: 1px solid #e5e7eb;
 			border-top-left-radius: 20px;
 			border-top-right-radius: 20px;
 		}
 
-		.company-info-wrapper.mobile.fullscreen .header-container {
+		.company-info-wrapper.mobile.fullscreen:not(.ipad-mini) .header-container {
 			top: 0 !important;
 		}
 	}

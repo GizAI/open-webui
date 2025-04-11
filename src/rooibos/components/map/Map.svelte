@@ -200,6 +200,7 @@
 	let zoom = 18;
 	let isFullscreen = false;
 	let markerClustering: any;
+	let isIPadMiniDevice = false;
 	let companyInfo: CompanyInfo = {
 		id: '',
 		company_id: '',
@@ -559,6 +560,13 @@
 	onMount(() => {
 		const initialize = async () => {
 			try {
+				// iPad Mini 감지
+				isIPadMiniDevice = detectIPadMini();
+				
+				if (isIPadMiniDevice && showCompanyInfo) {
+					isFullscreen = true;
+				}
+				
 				const options = {
 					enableHighAccuracy: true,
 					maximumAge: 0,
@@ -610,6 +618,17 @@
 				
 				// 지도 뷰로 강제 설정
 				resultViewMode = 'map';
+				
+				// 화면 크기 변화 감지
+				window.addEventListener('resize', () => {
+					// 아이패드 미니 감지 업데이트
+					isIPadMiniDevice = detectIPadMini();
+					
+					// 아이패드 미니에서 전체 화면 모드로 자동 전환
+					if (isIPadMiniDevice && showCompanyInfo) {
+						isFullscreen = true;
+					}
+				});
 			} catch (err) {
 				const errorMessage = (err as Error).message;
 				error = errorMessage;
@@ -681,6 +700,27 @@
 			selectedMarker = null;
 		}
 	}
+
+	function detectIPadMini() {
+		if (typeof window === 'undefined') return false;
+		
+		// iPad Mini 감지 (약 768 x 1024, iPad Mini 6 기준)
+		const userAgent = navigator.userAgent.toLowerCase();
+		const isIPad = /ipad/.test(userAgent);
+		const isTablet = isIPad || 
+			(/tablet/.test(userAgent) && !/android/.test(userAgent)) || 
+			((/iphone|ipod/.test(userAgent) || /android/.test(userAgent)) && 
+			window.innerWidth >= 750 && window.innerWidth <= 850);
+
+		// iPad Mini의 화면 크기를 고려 (가로/세로 모두 지원)
+		return isTablet && 
+			((window.innerWidth >= 750 && window.innerWidth <= 850) || 
+			(window.innerHeight >= 750 && window.innerHeight <= 850));
+	}
+
+	function isIPadMini() {
+		return isIPadMiniDevice;
+	}
 </script>
 
 <svelte:head>
@@ -689,7 +729,7 @@
 	</title>
 </svelte:head>
 
-{#if !($showSidebar && $mobile) && !($mobile && showCompanyInfo && isFullscreen)}
+{#if !($showSidebar && $mobile) && !($mobile && showCompanyInfo && isFullscreen) && !(showCompanyInfo && isIPadMini())}
 	<div class="search-bar-wrapper w-full" class:sidebar-visible={$showSidebar}>
 		<SearchBar
 			onSearch={handleSearch}
@@ -718,8 +758,12 @@
 {/if}
 
 {#if showCompanyInfo && companyInfo}
-	<div class="company-info-container" class:sidebar-visible={$showSidebar}>
-		<CompanyInfo {companyInfo} onClose={closeCompanyInfo} {isFullscreen} />
+	<div 
+		class="company-info-container" 
+		class:sidebar-visible={$showSidebar} 
+		class:ipad-mini-fullscreen={isIPadMini()}
+	>
+		<CompanyInfo {companyInfo} onClose={closeCompanyInfo} isFullscreen={isIPadMini() ? true : $mobile} />
 	</div>
 {/if}
 
@@ -776,7 +820,7 @@
 			width: 100%;
 		}
 	}
-
+	
 	.company-list-wrapper {
 		position: fixed;
 		top: 0;
@@ -807,6 +851,30 @@
 
 	.company-info-container.sidebar-visible {
 		width: calc(30% - 0px);
+	}
+
+	/* 아이패드 미니 전용 스타일 - 다른 기기에는 적용되지 않음 */
+	.company-info-container.ipad-mini-fullscreen {
+		width: 100%;
+		left: 0;
+		right: 0;
+		z-index: 60;
+		top: 0;
+		padding-top: 0;
+	}
+
+	/* 모바일 전용 스타일 */
+	@media (max-width: 760px) {
+		.company-info-container {
+			width: 100%;
+			left: 0;
+			right: 0;
+		}
+		
+		.company-info-container.sidebar-visible {
+			width: 100%;
+			margin-left: 0;
+		}
 	}
 
 	#map {
