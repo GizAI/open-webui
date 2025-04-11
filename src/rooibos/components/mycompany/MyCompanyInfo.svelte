@@ -10,7 +10,7 @@
 	import { page } from '$app/stores';
 	import { showSidebar, knowledge as _knowledge, user, mobile } from '$lib/stores';
 
-	import { updateFileDataContentById, uploadFile, updateFileFilenameById } from '$lib/apis/files';
+	import { updateFileDataContentById, uploadFile, updateFileFilenameById, getFileById } from '$lib/apis/files';
 
 	import { transcribeAudio } from '$lib/apis/audio';
 	import { blobToFile } from '$lib/utils';
@@ -289,9 +289,34 @@
 			) ?? []);
 	}
 
+	// selectedFileId 변경 시 파일 데이터 로드 로직 개선
 	$: if (selectedFileId) {
 		const file = (bookmark?.files ?? []).find((file) => file.id === selectedFileId);
 		if (file) {
+			if (!file.data) {
+				// 파일 데이터가 없으면 API에서 가져오기
+				getFileById(localStorage.token, selectedFileId)
+					.then(fileData => {
+						// 가져온 데이터로 파일 업데이트
+						if (fileData) {
+							selectedFile = { ...file, ...fileData, data: fileData.data || { content: '' } };
+							
+							// 북마크 파일 목록에도 업데이트
+							if (bookmark && bookmark.files) {
+								bookmark.files = bookmark.files.map(f => {
+									if (f.id === selectedFileId) {
+										return { ...f, ...fileData, data: fileData.data || { content: '' } };
+									}
+									return f;
+								});
+							}
+						}
+					})
+					.catch(error => {
+						console.error('파일 데이터 가져오기 실패:', error);
+					});
+			}
+			
 			file.data = file.data ?? { content: '' };
 			selectedFile = file;
 
@@ -483,6 +508,24 @@
 						keys: ['meta.name', 'meta.description']
 					});
 				}
+				
+				// 파일 데이터를 가져와서 업로드된 파일 정보 업데이트
+				try {
+					const fileData = await getFileById(localStorage.token, uploadedFile.id);
+					
+					// 북마크의 파일 목록에서 해당 파일 업데이트
+					if (bookmark && bookmark.files) {
+						bookmark.files = bookmark.files.map(f => {
+							if (f.id === uploadedFile.id) {
+								return { ...f, ...fileData, data: fileData.data || { content: '' } };
+							}
+							return f;
+						});
+					}
+				} catch (error) {
+					console.error('파일 데이터 가져오기 실패:', error);
+				}
+				
 				// 파일 업로드 후 자동으로 선택
 				selectedFileId = uploadedFile.id;
 				const isTxtFile = file.name.toLowerCase().endsWith('.txt');
